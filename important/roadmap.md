@@ -41,10 +41,10 @@ Fase 3 – Game Feel Pass (Dag 4–5)
 - Deliverables: `FxService` met presets, action bar teksten, consistente sounds/particles.
 - Succes: select/cast voelt snappy; duidelijke failure messaging (geen spam).
 
-Fase 4 – Spell Set v1 (Dag 5–7)
+Fase 4 - Spell Set v1 (Dag 5-7)
 - Doel: eerste volwaardige set combat/utility spells.
 - Deliverables: `Explosive`, `MagicMissile`, `GlacialSpike`, `GraspingVines`, `Heal`, `LifeSteal`.
-- Succes: 8+ spells stabiel; projectielen afgehandeld via `ProjectileListener`.
+- Succes: 8+ spells stabiel; projectielen afgehandeld via `EntityListener`.
 
 Fase 5 – Control & Special (Dag 7–8)
 - Doel: crowd control en state‑changes correct en revertibel.
@@ -56,10 +56,16 @@ Fase 6 – Permissions & Hardening (Dag 8–9)
 - Deliverables: permissie‑matrix, debouncers, PVP/region respect, logging/warnings.
 - Succes: geen abuse‑paden; lage tick‑kosten; heldere fouten.
 
-Fase 7 – Docs & Release (Dag 9–10)
+Fase 7 - Docs & Release (Dag 9-10)
 - Doel: shipbare build met volledige documentatie en voorbeeldconfigs.
-- Deliverables: `README`, `guidelines.md`, `technical.md`, `stappenplan.md`, `roadmap.md`, changelog.
-- Succes: plug‑and‑play release inclusief configs en permissies.
+- Deliverables:
+  - [x] `README`
+  - [x] `guidelines.md` (en `AGENTS.md` toegevoegd)
+  - [x] `technical.md`
+  - [x] `stappenplan.md` (ook `1_stappenplan.md`)
+  - [x] `roadmap.md`
+  - [ ] changelog
+- Succes: plug-and-play release inclusief configs en permissies.
 
 3) Gedetailleerde Taakverdeling per Fase
 
@@ -67,17 +73,17 @@ Fase 0 – Bootstrap
 - Project: controleer `build.gradle.kts` (Java 21), `settings.gradle.kts`.
 - `plugin.yml`: main = `com.example.empirewand.EmpireWandPlugin` (aanwezig).
 - Services: maak/valideer skeletons: `core/ConfigService.java`, `core/SpellRegistry.java`, `core/CooldownService.java`, `core/WandData.java`, `core/FxService.java`, `core/PermissionService.java`.
-- Listeners: registreer placeholders in `EmpireWandPlugin` voor `WandInteractionListener` en `ProjectileListener` (implementatie volgt in Fase 1/4).
+- Listeners: registreer in `EmpireWandPlugin` de `WandInteractionListener`; projectile hits worden afgehandeld in `EntityListener` (geen aparte `ProjectileListener` nodig).
 - Logging: startup logregel met serverversie.
 - Acceptatiecriteria (AC): plugin enablet zonder warnings/errors; klas‑exposure via getters in `EmpireWandPlugin`.
 
-Fase 1 – Core Loop
-- Wand herkenning: definieer PDC‑sleutels (namespace `empirewand`) en item‑criteria.
-- Commandos: `/ew get`, `/ew bind <spell>`, `/ew unbind <spell>`, `/ew list` (optioneel), met permissies.
-- Selecteren/casten: R‑klik next, Sneak+R‑klik previous, L‑klik cast.
-- Debounce/cooldown: eenvoudige per‑caster debouncer, cooldown in `CooldownService`.
-- Data: PDC velden voor lijst van spell‑keys en actieve index; persistency testen.
-- AC: 2 spells (Leap/Comet) werken; herstart verliest geen data; geen dubbel cast binnen debounce.
+Fase 1 - Core Loop
+- [x] Wand herkenning: PDC-sleutels (namespace `empirewand`) en item-criteria.
+- [x] Commandos: `/ew get`, `/ew bind <spell>`, `/ew unbind <spell>`; [`/ew list` optioneel nog open, permissiechecks deels TODO].
+- [x] Selecteren/casten: R-klik next, Sneak+R-klik previous, L-klik cast.
+- [x] Debounce/cooldown: per-caster debouncer + cooldown via `CooldownService`.
+- [x] Data: PDC-velden voor spell-lijst en actieve index.
+ - AC: 2 spells (Leap/Comet) werken; herstart verliest geen data; geen dubbel cast binnen debounce.
 
 Fase 2 – Config & Registry
 - YAML: `config.yml` (messages, feature flags), `spells.yml` (per‑spell balans).
@@ -226,7 +232,7 @@ Release
 Bijlagen – Overzicht Deliverables
 - Core: `SpellRegistry`, `CooldownService`, `WandData`, `FxService`, `ConfigService`, `PermissionService`.
 - Commands: `/ew get|bind|unbind|bindall|list|reload`.
-- Listeners: `WandInteractionListener`, `ProjectileListener`.
+- Listeners: `WandInteractionListener`, `EntityListener`.
 - Configs: `plugin.yml`, `config.yml`, `spells.yml` (met comments).
 - Spells v1: Leap, Comet, Explosive, MagicMissile, GlacialSpike, GraspingVines, Heal, LifeSteal, Polymorph, EtherealForm.
 
@@ -242,6 +248,4 @@ Metrieken (Succescriteria)
 - UX: acties binnen 100 ms feedback in action bar/sounds.
 - Config: balanswijziging via YAML werkt zonder restart.
 
-Out‑of‑Scope v1
-- Mana‑systeem, talentbomen, resource packs, cross‑server sync.
-
+<!-- Out-of-Scope section intentionally removed per request -->

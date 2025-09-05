@@ -54,7 +54,11 @@ Fase 6 - Permissions & Hardening (Dag 8-9)
 - Deliverables: permissies in `plugin.yml`, guard-clauses, lichte metrics.
 
 Fase 7 - Docs & Release (Dag 9-10)
-- Documentatie: README (installatie, gebruik), guidelines, technische uitleg, changelog.
+- Documentatie:
+  - [x] ~~Guidelines toegevoegd (`AGENTS.md`).~~
+  - [ ] README (installatie, gebruik)
+  - [ ] Technische uitleg
+  - [ ] Changelog
 - Voorbeelden: voorbeeld `config.yml`/`spells.yml`, permissies-tabel.
 - Release: semver-tagging, distributie-binary en verificatiestappen.
 - AC: plug-and-play; setup < 5 min; heldere changelog.

@@ -33,6 +33,7 @@ public class SpellRegistry {
         register(new GraspingVines());
         register(new LifeSteal());
         register(new Polymorph());
+        register(new EtherealForm());
     }
 
     public void register(Spell spell) {
@@ -47,4 +48,3 @@ public class SpellRegistry {
         return Collections.unmodifiableMap(spells);
     }
 }
-
