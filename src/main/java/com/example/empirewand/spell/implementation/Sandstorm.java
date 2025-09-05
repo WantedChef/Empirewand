@@ -29,9 +29,12 @@ public class Sandstorm implements Spell {
         BlockData sand = Material.SAND.createBlockData();
 
         for (var e : player.getWorld().getNearbyEntities(player.getLocation(), radius, radius, radius)) {
-            if (!(e instanceof LivingEntity living)) continue;
-            if (living.equals(player) && !friendlyFire) continue;
-            if (living.isDead() || !living.isValid()) continue;
+            if (!(e instanceof LivingEntity living))
+                continue;
+            if (living.equals(player) && !friendlyFire)
+                continue;
+            if (living.isDead() || !living.isValid())
+                continue;
 
             living.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, blindDur, 0, false, true));
             living.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, slowDur, slowAmp, false, true));
@@ -42,12 +45,22 @@ public class Sandstorm implements Spell {
     }
 
     @Override
-    public String getName() { return "sandstorm"; }
-    @Override
-    public String key() { return "sandstorm"; }
-    @Override
-    public Component displayName() { return Component.text("Sandstorm"); }
-    @Override
-    public Prereq prereq() { return new Prereq(true, Component.text("")); }
-}
+    public String getName() {
+        return "sandstorm";
+    }
 
+    @Override
+    public String key() {
+        return "sandstorm";
+    }
+
+    @Override
+    public Component displayName() {
+        return Component.text("Sandstorm");
+    }
+
+    @Override
+    public Prereq prereq() {
+        return new Prereq(true, Component.text(""));
+    }
+}

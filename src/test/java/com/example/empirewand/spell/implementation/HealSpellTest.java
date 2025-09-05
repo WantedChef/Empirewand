@@ -116,12 +116,11 @@ class HealSpellTest extends EmpireWandTestBase {
 
         // Then
         verify(mockFx).spawnParticles(
-            eq(mockLocation.add(0, 1.0, 0)),
-            eq(Particle.HEART),
-            eq(8),
-            eq(0.4), eq(0.4), eq(0.4),
-            eq(0.01)
-        );
+                eq(mockLocation.add(0, 1.0, 0)),
+                eq(Particle.HEART),
+                eq(8),
+                eq(0.4), eq(0.4), eq(0.4),
+                eq(0.01));
     }
 
     @Test
@@ -131,11 +130,10 @@ class HealSpellTest extends EmpireWandTestBase {
 
         // Then
         verify(mockFx).playSound(
-            eq(mockPlayer),
-            eq(Sound.ENTITY_PLAYER_LEVELUP),
-            eq(0.6f),
-            eq(1.4f)
-        );
+                eq(mockPlayer),
+                eq(Sound.ENTITY_PLAYER_LEVELUP),
+                eq(0.6f),
+                eq(1.4f));
     }
 
     @Test

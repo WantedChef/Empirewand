@@ -37,11 +37,11 @@ public class ArcaneOrb implements Spell {
 
         // Tag projectile
         orb.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL,
-            org.bukkit.persistence.PersistentDataType.STRING, "arcane-orb");
+                org.bukkit.persistence.PersistentDataType.STRING, "arcane-orb");
 
         // Register hit listener for this cast
         context.plugin().getServer().getPluginManager().registerEvents(
-            new HitListener(context, radius, damage, knockback, friendlyFire), context.plugin());
+                new HitListener(context, radius, damage, knockback, friendlyFire), context.plugin());
 
         // Launch FX
         context.fx().playSound(player, Sound.ENTITY_EVOKER_CAST_SPELL, 0.8f, 1.2f);
@@ -66,9 +66,12 @@ public class ArcaneOrb implements Spell {
         @EventHandler
         public void onProjectileHit(ProjectileHitEvent event) {
             Projectile projectile = event.getEntity();
-            if (!(projectile instanceof Snowball)) return;
-            String key = projectile.getPersistentDataContainer().get(Keys.PROJECTILE_SPELL, org.bukkit.persistence.PersistentDataType.STRING);
-            if (!"arcane-orb".equals(key)) return;
+            if (!(projectile instanceof Snowball))
+                return;
+            String key = projectile.getPersistentDataContainer().get(Keys.PROJECTILE_SPELL,
+                    org.bukkit.persistence.PersistentDataType.STRING);
+            if (!"arcane-orb".equals(key))
+                return;
 
             Location hit = projectile.getLocation();
 
@@ -77,12 +80,16 @@ public class ArcaneOrb implements Spell {
 
             // AoE damage/knockback
             for (var e : hit.getWorld().getNearbyEntities(hit, radius, radius, radius)) {
-                if (!(e instanceof LivingEntity living)) continue;
-                if (projectile.getShooter() != null && projectile.getShooter().equals(living) && !friendlyFire) continue;
-                if (living.isDead() || !living.isValid()) continue;
+                if (!(e instanceof LivingEntity living))
+                    continue;
+                if (projectile.getShooter() != null && projectile.getShooter().equals(living) && !friendlyFire)
+                    continue;
+                if (living.isDead() || !living.isValid())
+                    continue;
 
                 living.damage(damage, context.caster());
-                Vector push = living.getLocation().toVector().subtract(hit.toVector()).normalize().multiply(knockback).setY(0.2);
+                Vector push = living.getLocation().toVector().subtract(hit.toVector()).normalize().multiply(knockback)
+                        .setY(0.2);
                 living.setVelocity(living.getVelocity().add(push));
             }
 
@@ -91,12 +98,22 @@ public class ArcaneOrb implements Spell {
     }
 
     @Override
-    public String getName() { return "arcane-orb"; }
-    @Override
-    public String key() { return "arcane-orb"; }
-    @Override
-    public Component displayName() { return Component.text("Arcane Orb"); }
-    @Override
-    public Prereq prereq() { return new Prereq(true, Component.text("")); }
-}
+    public String getName() {
+        return "arcane-orb";
+    }
 
+    @Override
+    public String key() {
+        return "arcane-orb";
+    }
+
+    @Override
+    public Component displayName() {
+        return Component.text("Arcane Orb");
+    }
+
+    @Override
+    public Prereq prereq() {
+        return new Prereq(true, Component.text(""));
+    }
+}
