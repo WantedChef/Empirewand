@@ -25,6 +25,9 @@
     "onCommand:codexPlus.selectProfile",
     "onCommand:codexPlus.selectModel",
     "onCommand:codexPlus.toggleAutoApprove",
+    "onCommand:codexPlus.autoDetectPaths",
+    "onCommand:codexPlus.openHistoryFile",
+    "onCommand:codexPlus.openLogsFolder",
     "onView:codexPlus.settings",
     "onView:codexPlus.history",
     "onView:codexPlus.logs"
@@ -35,6 +38,9 @@
       { "command": "codexPlus.selectProfile", "title": "Codex Plus: Select Profile" },
       { "command": "codexPlus.selectModel", "title": "Codex Plus: Select Model" },
       { "command": "codexPlus.toggleAutoApprove", "title": "Codex Plus: Toggle Auto-Approve" },
+      { "command": "codexPlus.autoDetectPaths", "title": "Codex Plus: Auto-Detect History/Logs Paths" },
+      { "command": "codexPlus.openHistoryFile", "title": "Codex Plus: Open History File" },
+      { "command": "codexPlus.openLogsFolder", "title": "Codex Plus: Open Logs Folder" },
       { "command": "codexPlus.refreshHistory", "title": "Codex Plus: Refresh History" },
       { "command": "codexPlus.refreshLogs", "title": "Codex Plus: Refresh Logs" }
     ],

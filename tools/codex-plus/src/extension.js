@@ -35,6 +35,28 @@ function activate(context) {
     }),
     vscode.commands.registerCommand('codexPlus.refreshHistory', async () => { await loadHistory(); historyProvider.refresh(); }),
     vscode.commands.registerCommand('codexPlus.refreshLogs', async () => { await loadLogs(); logsProvider.refresh(); }),
+    vscode.commands.registerCommand('codexPlus.autoDetectPaths', async () => {
+      const changed = await autoDetectPaths();
+      if (changed) {
+        await Promise.all([loadHistory(), loadLogs()]);
+        historyProvider.refresh();
+        logsProvider.refresh();
+        vscode.window.showInformationMessage('Codex paths auto-detected and saved.');
+      } else {
+        vscode.window.showWarningMessage('No Codex history/log files detected.');
+      }
+    }),
+    vscode.commands.registerCommand('codexPlus.openHistoryFile', async () => {
+      const p = resolvedHistoryPath || await findHistoryPath();
+      if (!p) return vscode.window.showWarningMessage('No history file found.');
+      const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(p));
+      await vscode.window.showTextDocument(doc, { preview: false });
+    }),
+    vscode.commands.registerCommand('codexPlus.openLogsFolder', async () => {
+      const uris = logsUris.length ? logsUris : await findLogUris();
+      if (!uris.length) return vscode.window.showWarningMessage('No logs found.');
+      await vscode.commands.executeCommand('revealInExplorer', uris[0]);
+    }),
     vscode.window.registerTreeDataProvider('codexPlus.history', historyProvider),
     vscode.window.registerTreeDataProvider('codexPlus.logs', logsProvider),
     vscode.window.registerWebviewViewProvider('codexPlus.settings', new SettingsViewProvider())
@@ -103,6 +125,10 @@ async function getState() {
       networkAccess: conf.get('networkAccess', 'enabled'),
       codexConfig,
     },
+    resolved: {
+      historyPath: resolvedHistoryPath,
+      logFiles: logsUris.map(u => u.fsPath)
+    }
   };
 }
 
@@ -288,6 +314,7 @@ function getWebviewHtml() {
         </div>
       </div>
       <div class="btns">
+        <button id="autoDetect" class="ghost">Auto-Detect Paths</button>
         <button id="save">Save</button>
       </div>
     </div>
@@ -308,6 +335,7 @@ function getWebviewHtml() {
       const $networkAccess = els('networkAccess');
       const $applyProfile = els('applyProfile');
       const $save = els('save');
+      const $autoDetect = els('autoDetect');
 
       function post(type, payload) { vscode.postMessage({ type, payload }); }
       function setModels(list, current) {
@@ -363,6 +391,10 @@ function getWebviewHtml() {
       $temperature.addEventListener('input', ()=> $tempVal.textContent = $temperature.value);
       $applyProfile.addEventListener('click', ()=> post('applyProfile', { profile: $profile.value }));
       $save.addEventListener('click', ()=> post('saveState', collect()));
+      $autoDetect.addEventListener('click', ()=> {
+        const vscode2 = acquireVsCodeApi();
+        vscode2.postMessage({ type: 'autoDetectPaths' });
+      });
       post('requestState');
     </script>
   </body>
@@ -420,6 +452,8 @@ class SimpleListProvider {
 
 const historyItems = [];
 const logItems = [];
+let resolvedHistoryPath = undefined;
+let logsUris = [];
 
 function addHistoryEntry(entry) { historyItems.unshift(entry); if (historyItems.length > 100) historyItems.pop(); }
 function addLogEntry(entry) { logItems.unshift(entry); if (logItems.length > 200) logItems.pop(); }
@@ -428,8 +462,12 @@ async function loadHistory() {
   try {
     const root = getWorkspaceRoot(); if (!root) return;
     const p = vscode.workspace.getConfiguration('codex').get('historyPath', '.codex/history.json');
-    const full = path.join(root, p);
-    if (!fs.existsSync(full)) return;
+    let full = path.join(root, p);
+    if (!fs.existsSync(full)) {
+      const auto = await findHistoryPath();
+      if (!auto) return;
+      full = auto;
+    }
     const raw = fs.readFileSync(full, 'utf8');
     const items = [];
     // Try JSON array
@@ -446,6 +484,7 @@ async function loadHistory() {
       });
     }
     historyItems.splice(0, historyItems.length, ...items.reverse());
+    resolvedHistoryPath = full;
   } catch (e) {
     addLogEntry(`[history] error: ${e?.message || e}`);
   }
@@ -467,12 +506,7 @@ function formatHistoryItem(obj) {
 async function loadLogs() {
   try {
     const root = getWorkspaceRoot(); if (!root) return;
-    const globs = vscode.workspace.getConfiguration('codex').get('logGlobs', [ '.codex/logs/*.log', '.codex/*.log' ]);
-    const uris = [];
-    for (const g of globs) {
-      const list = await vscode.workspace.findFiles(new vscode.RelativePattern(root, g));
-      uris.push(...list);
-    }
+    let uris = await findLogUris();
     const lines = [];
     for (const uri of uris) {
       try {
@@ -483,6 +517,7 @@ async function loadLogs() {
       } catch {}
     }
     logItems.splice(0, logItems.length, ...lines.reverse().slice(0, 200));
+    logsUris = uris;
   } catch (e) {
     addLogEntry(`[logs] error: ${e?.message || e}`);
   }
@@ -511,4 +546,66 @@ function initWatchers(historyProvider, logsProvider) {
     w.onDidCreate(async () => { await loadLogs(); logsProvider.refresh(); });
     w.onDidDelete(async () => { await loadLogs(); logsProvider.refresh(); });
   });
+}
+
+async function findHistoryPath() {
+  const root = getWorkspaceRoot(); if (!root) return undefined;
+  const patterns = [
+    '.codex/history.json',
+    '.codex/history.jsonl',
+    '.codex/history/history.jsonl',
+    '.codex/history/history.json',
+    '.codex/*.jsonl',
+    '.codex/*.json'
+  ];
+  // direct files first
+  for (const rel of patterns) {
+    const full = path.join(root, rel);
+    if (fs.existsSync(full)) return full;
+  }
+  // glob search fallback
+  const globPatterns = [
+    '.codex/**/history*.jsonl',
+    '.codex/**/history*.json',
+    '.codex/**/codex*history*.json*'
+  ];
+  for (const g of globPatterns) {
+    const found = await vscode.workspace.findFiles(new vscode.RelativePattern(root, g), undefined, 1);
+    if (found.length) return found[0].fsPath;
+  }
+  return undefined;
+}
+
+async function findLogUris() {
+  const root = getWorkspaceRoot(); if (!root) return [];
+  const conf = vscode.workspace.getConfiguration('codex');
+  const globs = conf.get('logGlobs', [ '.codex/logs/*.log', '.codex/*.log', 'logs/**/codex*.log' ]);
+  const uris = [];
+  for (const g of globs) {
+    const list = await vscode.workspace.findFiles(new vscode.RelativePattern(root, g));
+    uris.push(...list);
+  }
+  return uris;
+}
+
+async function autoDetectPaths() {
+  const root = getWorkspaceRoot(); if (!root) return false;
+  const conf = vscode.workspace.getConfiguration('codex');
+  let changed = false;
+  const hist = await findHistoryPath();
+  if (hist && conf.get('historyPath') !== path.relative(root, hist)) {
+    await conf.update('historyPath', path.relative(root, hist), vscode.ConfigurationTarget.Workspace);
+    changed = true;
+  }
+  const logs = await findLogUris();
+  if (logs.length) {
+    const rels = logs.map(u => path.relative(root, u.fsPath));
+    const patterns = Array.from(new Set(rels.map(r => {
+      const dir = path.dirname(r).replace(/\\/g, '/');
+      return dir.endsWith('/') ? dir + '*.log' : dir + '/*.log';
+    })));
+    await conf.update('logGlobs', patterns, vscode.ConfigurationTarget.Workspace);
+    changed = true;
+  }
+  return changed;
 }
