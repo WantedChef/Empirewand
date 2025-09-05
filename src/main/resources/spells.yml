@@ -48,3 +48,38 @@ lifesteal:
   flags:
     hit-players: true
     hit-mobs: true
+
+ethereal-form:
+  display-name: "<#7FFFD4>Ethereal Form"
+  cooldown: 4000
+  values:
+    duration-ticks: 100       # 5 seconds
+
+leap:
+  display-name: "<#00FA9A>Leap"
+  cooldown: 1500
+  values:
+    velocity-multiplier: 1.5
+    vertical-boost: 0.0       # Optional extra lift
+
+heal:
+  display-name: "<#ADFF2F>Heal"
+  cooldown: 2000
+  values:
+    heal-amount: 8.0          # 4 hearts
+
+grasping-vines:
+  display-name: "<#228B22>Grasping Vines"
+  cooldown: 3000
+  values:
+    duration-ticks: 60
+    slow-amplifier: 250       # Extreme slow = near-root
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+polymorph:
+  display-name: "<#FFDAB9>Polymorph"
+  cooldown: 4000
+  values:
+    duration-ticks: 100

@@ -2,6 +2,8 @@ package com.example.empirewand.spell.implementation;
 
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -19,9 +21,22 @@ public class GraspingVines implements Spell {
             return;
         }
 
-        // Root/slow the target sharply for a short time
-        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 60, 250));
-        // TODO: Add particle/sound effects for vines grasping
+        var spells = context.config().getSpellsConfig();
+        boolean hitPlayers = spells.getBoolean("grasping-vines.flags.hit-players", true);
+        boolean hitMobs = spells.getBoolean("grasping-vines.flags.hit-mobs", true);
+        boolean isPlayer = target instanceof Player;
+        if ((isPlayer && !hitPlayers) || (!isPlayer && !hitMobs)) {
+            context.fx().fizzle(player.getLocation());
+            return;
+        }
+
+        // Root/slow the target sharply for a short time (configurable)
+        int duration = spells.getInt("grasping-vines.values.duration-ticks", 60);
+        int amplifier = spells.getInt("grasping-vines.values.slow-amplifier", 250);
+        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, duration, amplifier));
+        // Vines grasp FX
+        context.fx().spawnParticles(target.getLocation().add(0, 0.2, 0), Particle.SPORE_BLOSSOM_AIR, 18, 0.6, 0.4, 0.6, 0.0);
+        context.fx().playSound(target.getLocation(), Sound.BLOCK_VINE_STEP, 0.8f, 0.9f);
     }
 
     @Override

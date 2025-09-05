@@ -14,7 +14,10 @@ import org.bukkit.entity.Arrow;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -44,10 +47,48 @@ public class EntityListener implements Listener {
         if (spellName.equals("comet")) {
             fxService.spawnParticles(projectile.getLocation(), Particle.EXPLOSION, 30, 0.5, 0.5, 0.5, 0.1);
             fxService.playSound(projectile.getLocation(), Sound.ENTITY_BLAZE_SHOOT, 1.0f, 1.0f);
+
+            // Apply direct hit damage from config (does not affect AoE explosion)
+            if (event.getHitEntity() instanceof LivingEntity target) {
+                String ownerUUID = projectile.getPersistentDataContainer().get(Keys.PROJECTILE_OWNER, PersistentDataType.STRING);
+                double damage = plugin.getConfigService().getSpellsConfig().getDouble("comet.values.damage", 7.0);
+                boolean hitPlayers = plugin.getConfigService().getSpellsConfig().getBoolean("comet.flags.hit-players", true);
+                boolean hitMobs = plugin.getConfigService().getSpellsConfig().getBoolean("comet.flags.hit-mobs", true);
+                boolean isPlayer = target instanceof Player;
+                if (((isPlayer && hitPlayers) || (!isPlayer && hitMobs)) && ownerUUID != null) {
+                    Player caster = Bukkit.getPlayer(UUID.fromString(ownerUUID));
+                    if (caster != null) {
+                        boolean friendlyFire = plugin.getConfigService().getConfig().getBoolean("features.friendly-fire", false);
+                        boolean hittingSelfWhenNoFF = (target instanceof Player tgtPlayer) && !friendlyFire && tgtPlayer.getUniqueId().equals(caster.getUniqueId());
+                        if (!hittingSelfWhenNoFF) {
+                            target.damage(damage, caster);
+                        }
+                    }
+                }
+            }
         } else if (spellName.equals("explosive")) {
             fxService.spawnParticles(projectile.getLocation(), Particle.EXPLOSION_EMITTER, 5, 0, 0, 0, 0);
             fxService.spawnParticles(projectile.getLocation(), Particle.LARGE_SMOKE, 20, 1, 1, 1, 0.1);
             fxService.playSound(projectile.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 1.0f);
+
+            // Configurable AoE damage around impact
+            double damage = plugin.getConfigService().getSpellsConfig().getDouble("explosive.values.damage", 12.0);
+            double radius = plugin.getConfigService().getSpellsConfig().getDouble("explosive.values.radius", 4.0);
+            boolean hitPlayers = plugin.getConfigService().getSpellsConfig().getBoolean("explosive.flags.hit-players", true);
+            boolean hitMobs = plugin.getConfigService().getSpellsConfig().getBoolean("explosive.flags.hit-mobs", true);
+
+            String ownerUUID = projectile.getPersistentDataContainer().get(Keys.PROJECTILE_OWNER, PersistentDataType.STRING);
+            Player caster = ownerUUID != null ? Bukkit.getPlayer(UUID.fromString(ownerUUID)) : null;
+            boolean friendlyFire = plugin.getConfigService().getConfig().getBoolean("features.friendly-fire", false);
+
+            projectile.getWorld().getNearbyEntities(projectile.getLocation(), radius, radius, radius).forEach(e -> {
+                if (e instanceof LivingEntity le) {
+                    boolean isPlayer = le instanceof Player;
+                    if ((isPlayer && !hitPlayers) || (!isPlayer && !hitMobs)) return;
+                    if (caster != null && !friendlyFire && (le instanceof Player p) && p.getUniqueId().equals(caster.getUniqueId())) return;
+                    le.damage(damage, caster != null ? caster : projectile);
+                }
+            });
         } else if (spellName.equals("glacial-spike")) {
             // Apply slow on hit entity based on config flags, then shatter effect and clean up projectile
             if (event.getHitEntity() instanceof LivingEntity target) {
@@ -99,6 +140,32 @@ public class EntityListener implements Listener {
         // TODO: Add impact effects for other spells
     }
 
+    @EventHandler(ignoreCancelled = true)
+    public void onFallDamage(EntityDamageEvent event) {
+        if (event.getCause() != DamageCause.FALL) return;
+        if (!(event.getEntity() instanceof Player player)) return;
+
+        // Cancel fall damage if tagged as ethereal and not expired.
+        var pdc = player.getPersistentDataContainer();
+        boolean etherealFlag = pdc.has(Keys.ETHEREAL_ACTIVE, PersistentDataType.BYTE);
+        Long expires = pdc.get(Keys.ETHEREAL_EXPIRES_TICK, PersistentDataType.LONG);
+        long now = player.getWorld().getFullTime();
+        boolean activeByTime = (expires != null) && now <= expires;
+
+        if (etherealFlag && activeByTime) {
+            event.setCancelled(true);
+            // Soft landing FX
+            plugin.getFxService().spawnParticles(player.getLocation(), Particle.END_ROD, 8, 0.2, 0.1, 0.2, 0.0);
+            plugin.getFxService().playSound(player, Sound.BLOCK_AMETHYST_BLOCK_FALL, 0.5f, 1.5f);
+        }
+
+        // Cleanup if we detect expiry has passed but flags remain (failsafe)
+        if (etherealFlag && expires != null && now > expires) {
+            pdc.remove(Keys.ETHEREAL_ACTIVE);
+            pdc.remove(Keys.ETHEREAL_EXPIRES_TICK);
+        }
+    }
+
     @EventHandler
     public void onEntityDeath(EntityDeathEvent event) {
         LivingEntity deadEntity = event.getEntity();
@@ -110,6 +177,20 @@ public class EntityListener implements Listener {
                 originalEntity.setHealth(0);
             }
             polymorphSpell.getPolymorphedEntities().remove(deadEntity.getUniqueId());
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onEntityExplode(EntityExplodeEvent event) {
+        var entity = event.getEntity();
+        if (entity == null) return;
+        String spellName = entity.getPersistentDataContainer().get(Keys.PROJECTILE_SPELL, PersistentDataType.STRING);
+        if (!"explosive".equals(spellName)) return;
+
+        boolean blockDamage = plugin.getConfigService().getSpellsConfig().getBoolean("explosive.flags.block-damage", false);
+        if (!blockDamage) {
+            // Prevent blocks from being destroyed by our Explosive spell
+            event.blockList().clear();
         }
     }
 }

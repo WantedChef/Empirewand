@@ -15,7 +15,8 @@ public class GlacialSpike implements Spell {
     public void execute(SpellContext context) {
         Player player = context.caster();
         Arrow arrow = player.launchProjectile(Arrow.class);
-        arrow.setDamage(8.0);
+        double damage = context.config().getSpellsConfig().getDouble("glacial-spike.values.damage", 8.0);
+        arrow.setDamage(damage);
         // Prevent pickup and add a slightly punchier feel
         arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
         arrow.setCritical(true);

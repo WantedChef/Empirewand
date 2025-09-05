@@ -14,8 +14,11 @@ public class Comet implements Spell {
     @Override
     public void execute(SpellContext context) {
         Player player = context.caster();
+        var spells = context.config().getSpellsConfig();
+        float yield = (float) spells.getDouble("comet.values.yield", 2.5);
+
         Fireball fireball = player.launchProjectile(Fireball.class);
-        fireball.setYield(2.5f);
+        fireball.setYield(Math.max(0.0f, yield));
         fireball.setIsIncendiary(false);
         fireball.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, PersistentDataType.STRING, getName());
         fireball.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, PersistentDataType.STRING, player.getUniqueId().toString());
