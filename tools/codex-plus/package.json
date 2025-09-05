@@ -2,9 +2,8 @@
   "name": "codex-plus",
   "displayName": "Codex Plus",
   "description": "Companion UI for Codex: profiles, model picker (incl. legacy), and easy runtime settings.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "local",
-  "icon": "media/codex.svg",
   "engines": {
     "vscode": "^1.82.0"
   },
@@ -60,8 +59,7 @@
       "activitybar": [
         {
           "id": "codexPlus",
-          "title": "Codex Plus",
-          "icon": "media/codex.svg"
+          "title": "Codex Plus"
         }
       ]
     },
