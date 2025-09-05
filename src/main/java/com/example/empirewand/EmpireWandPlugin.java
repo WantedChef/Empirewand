@@ -7,6 +7,7 @@ import com.example.empirewand.core.PermissionService;
 import com.example.empirewand.core.SpellRegistry;
 import com.example.empirewand.core.WandData;
 import com.example.empirewand.listeners.EntityListener;
+import com.example.empirewand.listeners.ProjectileListener;
 import com.example.empirewand.listeners.WandInteractionListener;
 import com.example.empirewand.command.EmpireWandCommand;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -34,6 +35,7 @@ public final class EmpireWandPlugin extends JavaPlugin {
         var pm = getServer().getPluginManager();
         pm.registerEvents(new WandInteractionListener(this), this);
         pm.registerEvents(new EntityListener(this), this);
+        pm.registerEvents(new ProjectileListener(this), this);
 
         // Register commands
         getCommand("ew").setExecutor(new com.example.empirewand.command.EmpireWandCommand(this));

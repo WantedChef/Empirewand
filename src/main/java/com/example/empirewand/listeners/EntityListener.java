@@ -44,29 +44,7 @@ public class EntityListener implements Listener {
         }
 
         FxService fxService = plugin.getFxService();
-        if (spellName.equals("comet")) {
-            fxService.spawnParticles(projectile.getLocation(), Particle.EXPLOSION, 30, 0.5, 0.5, 0.5, 0.1);
-            fxService.playSound(projectile.getLocation(), Sound.ENTITY_BLAZE_SHOOT, 1.0f, 1.0f);
-
-            // Apply direct hit damage from config (does not affect AoE explosion)
-            if (event.getHitEntity() instanceof LivingEntity target) {
-                String ownerUUID = projectile.getPersistentDataContainer().get(Keys.PROJECTILE_OWNER, PersistentDataType.STRING);
-                double damage = plugin.getConfigService().getSpellsConfig().getDouble("comet.values.damage", 7.0);
-                boolean hitPlayers = plugin.getConfigService().getSpellsConfig().getBoolean("comet.flags.hit-players", true);
-                boolean hitMobs = plugin.getConfigService().getSpellsConfig().getBoolean("comet.flags.hit-mobs", true);
-                boolean isPlayer = target instanceof Player;
-                if (((isPlayer && hitPlayers) || (!isPlayer && hitMobs)) && ownerUUID != null) {
-                    Player caster = Bukkit.getPlayer(UUID.fromString(ownerUUID));
-                    if (caster != null) {
-                        boolean friendlyFire = plugin.getConfigService().getConfig().getBoolean("features.friendly-fire", false);
-                        boolean hittingSelfWhenNoFF = (target instanceof Player tgtPlayer) && !friendlyFire && tgtPlayer.getUniqueId().equals(caster.getUniqueId());
-                        if (!hittingSelfWhenNoFF) {
-                            target.damage(damage, caster);
-                        }
-                    }
-                }
-            }
-        } else if (spellName.equals("explosive")) {
+        if (spellName.equals("explosive")) {
             fxService.spawnParticles(projectile.getLocation(), Particle.EXPLOSION_EMITTER, 5, 0, 0, 0, 0);
             fxService.spawnParticles(projectile.getLocation(), Particle.LARGE_SMOKE, 20, 1, 1, 1, 0.1);
             fxService.playSound(projectile.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 1.0f);

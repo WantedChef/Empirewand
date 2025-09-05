@@ -5,6 +5,7 @@ import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -53,7 +54,8 @@ public class WandInteractionListener implements Listener {
 
             List<String> spells = plugin.getWandData().getSpells(item);
             if (spells.isEmpty()) {
-                player.sendActionBar(Component.text("No spells bound!").color(NamedTextColor.RED));
+                plugin.getFxService().noSpells(player);
+                plugin.getFxService().noSpells(player);
                 return;
             }
 
@@ -74,12 +76,12 @@ public class WandInteractionListener implements Listener {
             // Try to use configured display-name, fallback to key
             String display = plugin.getConfigService().getSpellsConfig().getString(activeSpellKey + ".display-name", activeSpellKey);
             display = stripMiniTags(display);
-            player.sendActionBar(Component.text("Selected: ").color(NamedTextColor.GRAY)
-                    .append(Component.text(display).color(NamedTextColor.AQUA)));
+            plugin.getFxService().selectedSpell(player, display);
         } else if (isLeftClick) {
             List<String> spells = plugin.getWandData().getSpells(item);
             if (spells.isEmpty()) {
-                player.sendActionBar(Component.text("No spells bound!").color(NamedTextColor.RED));
+                plugin.getFxService().noSpells(player);
+                plugin.getFxService().noSpells(player);
                 return;
             }
 
@@ -88,17 +90,20 @@ public class WandInteractionListener implements Listener {
                 currentIndex = 0;
             }
             String activeSpellKey = spells.get(currentIndex);
+            String display = plugin.getConfigService().getSpellsConfig().getString(activeSpellKey + ".display-name", activeSpellKey);
+            display = stripMiniTags(display);
 
             Spell spell = plugin.getSpellRegistry().getSpell(activeSpellKey);
             if (spell == null) {
-                player.sendMessage(Component.text("Error: Unknown spell '" + activeSpellKey + "' selected.").color(NamedTextColor.RED));
+                plugin.getFxService().actionBar(player, Component.text("Unknown spell '" + activeSpellKey + "'").color(NamedTextColor.RED));
                 return;
             }
 
             // Permission: empirewand.spell.use.<key>
             String node = "empirewand.spell.use." + activeSpellKey;
             if (!plugin.getPermissionService().has(player, node)) {
-                player.sendActionBar(Component.text("You don't have permission to cast that.").color(NamedTextColor.RED));
+                plugin.getFxService().noPermission(player);
+                plugin.getFxService().noPermission(player);
                 return;
             }
 
@@ -108,7 +113,8 @@ public class WandInteractionListener implements Listener {
             long cdTicks = Math.max(1, cdMs / 50);
             long nowTicks = player.getWorld().getFullTime();
             if (plugin.getCooldownService().isOnCooldown(player.getUniqueId(), activeSpellKey, nowTicks)) {
-                player.sendActionBar(Component.text("That spell is on cooldown!").color(NamedTextColor.RED));
+                long remainingMs = plugin.getCooldownService().remaining(player.getUniqueId(), activeSpellKey, nowTicks) * 50;
+                plugin.getFxService().onCooldown(player, display, remainingMs);
                 return;
             }
 
@@ -118,10 +124,10 @@ public class WandInteractionListener implements Listener {
             // Set cooldown window
             plugin.getCooldownService().set(player.getUniqueId(), activeSpellKey, nowTicks + cdTicks);
 
-            String display = plugin.getConfigService().getSpellsConfig().getString(activeSpellKey + ".display-name", activeSpellKey);
-            display = stripMiniTags(display);
-            player.sendActionBar(Component.text("Casting: ").color(NamedTextColor.YELLOW)
-                    .append(Component.text(display).color(NamedTextColor.AQUA)));
+            plugin.getFxService().actionBarSound(player,
+                    Component.text("Casting: ").color(NamedTextColor.YELLOW)
+                            .append(Component.text(display).color(NamedTextColor.AQUA)),
+                    Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.8f, 1.5f);
         }
     }
 

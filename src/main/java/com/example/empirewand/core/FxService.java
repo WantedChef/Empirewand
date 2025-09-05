@@ -6,7 +6,7 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
+import org.bukkit.util.Vector;
 
 import java.util.Map;
 
@@ -46,27 +46,43 @@ public class FxService {
         actionBar(player, applyPlaceholders(raw, placeholders));
     }
 
+    public void actionBarSound(Player player, Component message, Sound sound, float volume, float pitch) {
+        actionBar(player, message);
+        playSound(player, sound, volume, pitch);
+    }
+
+    public void actionBarSound(Player player, String messageKey, Sound sound, float volume, float pitch) {
+        String raw = config.getMessage(messageKey);
+        actionBarSound(player, Component.text(stripMiniTags(raw)), sound, volume, pitch);
+    }
+
+    public void actionBarSound(Player player, String messageKey, Map<String, String> placeholders,
+                               Sound sound, float volume, float pitch) {
+        String raw = config.getMessage(messageKey);
+        String formatted = applyPlaceholders(raw, placeholders);
+        actionBarSound(player, Component.text(stripMiniTags(formatted)), sound, volume, pitch);
+    }
+
     public void selectedSpell(Player player, String displayName) {
-        // Uses messages.spell-selected with {spell}
-        actionBarKey(player, "spell-selected", Map.of("spell", stripMiniTags(displayName)));
+        actionBarSound(player, "spell-selected", Map.of("spell", stripMiniTags(displayName)),
+                Sound.UI_BUTTON_CLICK, 0.6f, 1.8f);
     }
 
     public void onCooldown(Player player, String displayName, long msRemaining) {
-        // Fallback to generic message if the template doesn't contain {time}
         String raw = config.getMessage("on-cooldown");
         String formatted = applyPlaceholders(raw, Map.of(
                 "spell", stripMiniTags(displayName),
                 "time", Long.toString(Math.max(0, msRemaining))
         ));
-        actionBar(player, formatted);
+        actionBarSound(player, Component.text(stripMiniTags(formatted)), Sound.BLOCK_NOTE_BLOCK_HAT, 1.0f, 1.5f);
     }
 
     public void noSpells(Player player) {
-        actionBarKey(player, "no-spells-bound");
+        actionBarSound(player, "no-spells-bound", Sound.BLOCK_NOTE_BLOCK_BASS, 0.7f, 0.8f);
     }
 
     public void noPermission(Player player) {
-        actionBarKey(player, "no-permission");
+        actionBarSound(player, "no-permission", Sound.ENTITY_VILLAGER_NO, 1.0f, 0.9f);
     }
 
     public void fizzle(Player player) {
@@ -112,12 +128,51 @@ public class FxService {
         }
     }
 
+    public void trail(Location start, Location end, Particle particle, int perStep) {
+        if (start == null || end == null || particle == null || perStep <= 0) return;
+        Vector dir = end.toVector().subtract(start.toVector());
+        double length = dir.length();
+        if (length <= 0.001) return;
+        int steps = Math.max(1, (int) (length * 4));
+        Vector step = dir.normalize().multiply(length / steps);
+        Location point = start.clone();
+        for (int i = 0; i < steps; i++) {
+            spawnParticles(point, particle, perStep, 0, 0, 0, 0);
+            point.add(step);
+        }
+    }
+
+    public void impact(Location location, Particle particle, int count, Sound sound, float volume, float pitch) {
+        impact(location, particle, count, 0.2, sound, volume, pitch);
+    }
+
+    public void impact(Location location, Particle particle, int count, double spread, Sound sound, float volume, float pitch) {
+        if (location == null) return;
+        spawnParticles(location, particle, count, spread, spread, spread, 0);
+        playSound(location, sound, volume, pitch);
+    }
+
     /**
      * Subtle failure effect: short extinguish + smoke.
      */
     public void fizzle(Location location) {
         playSound(location, Sound.BLOCK_FIRE_EXTINGUISH, 1.0f, 1.5f);
         spawnParticles(location, Particle.SMOKE, 10, 0.1, 0.1, 0.1, 0.05);
+    }
+
+    /**
+     * Generic projectile trail effect.
+     */
+    public void trail(Location location) {
+        spawnParticles(location, Particle.SOUL_FIRE_FLAME, 10, 0.1, 0.1, 0.1, 0.05);
+    }
+
+    /**
+     * Generic projectile impact effect.
+     */
+    public void impact(Location location) {
+        spawnParticles(location, Particle.EXPLOSION, 30, 0.5, 0.5, 0.5, 0.1);
+        playSound(location, Sound.ENTITY_BLAZE_SHOOT, 1.0f, 1.0f);
     }
 
     // ---- Small utilities ----

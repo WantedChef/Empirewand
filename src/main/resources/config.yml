@@ -2,6 +2,7 @@
 
 messages:
   no-permission: "<red>You don't have permission to do that."
+  no-line-of-sight: "<red>You can't see your target."
   wand-received: "<green>You have received an Empire Wand!"
   spell-bound: "<green>Bound spell {spell} to your wand."
   spell-unbound: "<green>Unbound spell {spell} from your wand."
