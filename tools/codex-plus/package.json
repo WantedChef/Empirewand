@@ -121,6 +121,17 @@
           "type": "string",
           "default": "",
           "description": "Custom API endpoint for model requests (optional)."
+        },
+        "codex.historyPath": {
+          "type": "string",
+          "default": ".codex/history.json",
+          "description": "Path to Codex history file (JSON or JSONL) relative to workspace root."
+        },
+        "codex.logGlobs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [".codex/logs/*.log", ".codex/*.log"],
+          "description": "Glob patterns for Codex log files to display in the Logs view."
         }
       }
     }

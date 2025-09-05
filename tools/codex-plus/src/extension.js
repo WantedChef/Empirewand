@@ -33,12 +33,17 @@ function activate(context) {
       await syncCodexConfig();
       vscode.window.showInformationMessage(`Auto-approve ${!current ? 'enabled' : 'disabled'}`);
     }),
-    vscode.commands.registerCommand('codexPlus.refreshHistory', () => historyProvider.refresh()),
-    vscode.commands.registerCommand('codexPlus.refreshLogs', () => logsProvider.refresh()),
+    vscode.commands.registerCommand('codexPlus.refreshHistory', async () => { await loadHistory(); historyProvider.refresh(); }),
+    vscode.commands.registerCommand('codexPlus.refreshLogs', async () => { await loadLogs(); logsProvider.refresh(); }),
     vscode.window.registerTreeDataProvider('codexPlus.history', historyProvider),
     vscode.window.registerTreeDataProvider('codexPlus.logs', logsProvider),
     vscode.window.registerWebviewViewProvider('codexPlus.settings', new SettingsViewProvider())
   );
+
+  // Initial load + file watchers
+  loadHistory().then(() => historyProvider.refresh());
+  loadLogs().then(() => logsProvider.refresh());
+  initWatchers(historyProvider, logsProvider);
 }
 
 function deactivate() {}
@@ -419,3 +424,91 @@ const logItems = [];
 function addHistoryEntry(entry) { historyItems.unshift(entry); if (historyItems.length > 100) historyItems.pop(); }
 function addLogEntry(entry) { logItems.unshift(entry); if (logItems.length > 200) logItems.pop(); }
 
+async function loadHistory() {
+  try {
+    const root = getWorkspaceRoot(); if (!root) return;
+    const p = vscode.workspace.getConfiguration('codex').get('historyPath', '.codex/history.json');
+    const full = path.join(root, p);
+    if (!fs.existsSync(full)) return;
+    const raw = fs.readFileSync(full, 'utf8');
+    const items = [];
+    // Try JSON array
+    try {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        for (const it of arr.slice(-200)) items.push(formatHistoryItem(it));
+      }
+    } catch {
+      // Try JSONL
+      raw.split(/\r?\n/).forEach(line => {
+        line = line.trim(); if (!line) return;
+        try { items.push(formatHistoryItem(JSON.parse(line))); } catch {}
+      });
+    }
+    historyItems.splice(0, historyItems.length, ...items.reverse());
+  } catch (e) {
+    addLogEntry(`[history] error: ${e?.message || e}`);
+  }
+}
+
+function formatHistoryItem(obj) {
+  try {
+    const ts = obj.ts || obj.time || obj.timestamp || new Date().toISOString();
+    const act = obj.action || obj.event || obj.type || 'event';
+    const who = obj.requester || obj.actor || '';
+    const target = obj.target || obj.file || obj.command || '';
+    const d = typeof obj.detail === 'string' ? obj.detail : '';
+    return `[${ts}] ${act}${target ? ' ' + target : ''}${who ? ' by ' + who : ''}${d ? ' — ' + d : ''}`;
+  } catch {
+    return JSON.stringify(obj).slice(0, 200);
+  }
+}
+
+async function loadLogs() {
+  try {
+    const root = getWorkspaceRoot(); if (!root) return;
+    const globs = vscode.workspace.getConfiguration('codex').get('logGlobs', [ '.codex/logs/*.log', '.codex/*.log' ]);
+    const uris = [];
+    for (const g of globs) {
+      const list = await vscode.workspace.findFiles(new vscode.RelativePattern(root, g));
+      uris.push(...list);
+    }
+    const lines = [];
+    for (const uri of uris) {
+      try {
+        const f = uri.fsPath;
+        if (fs.existsSync(f)) {
+          readLastLines(f, 80).forEach(l => lines.push(`${path.basename(f)}: ${l}`));
+        }
+      } catch {}
+    }
+    logItems.splice(0, logItems.length, ...lines.reverse().slice(0, 200));
+  } catch (e) {
+    addLogEntry(`[logs] error: ${e?.message || e}`);
+  }
+}
+
+function readLastLines(file, n) {
+  try {
+    const raw = fs.readFileSync(file, 'utf8');
+    const arr = raw.split(/\r?\n/).filter(Boolean);
+    return arr.slice(-n);
+  } catch { return []; }
+}
+
+function initWatchers(historyProvider, logsProvider) {
+  const root = getWorkspaceRoot(); if (!root) return;
+  const conf = vscode.workspace.getConfiguration('codex');
+  const historyPath = conf.get('historyPath', '.codex/history.json');
+  const histWatcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(root, historyPath));
+  histWatcher.onDidChange(async () => { await loadHistory(); historyProvider.refresh(); });
+  histWatcher.onDidCreate(async () => { await loadHistory(); historyProvider.refresh(); });
+  histWatcher.onDidDelete(async () => { historyItems.splice(0); historyProvider.refresh(); });
+  const globs = conf.get('logGlobs', [ '.codex/logs/*.log', '.codex/*.log' ]);
+  const logWatchers = globs.map(glob => vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(root, glob)));
+  logWatchers.forEach(w => {
+    w.onDidChange(async () => { await loadLogs(); logsProvider.refresh(); });
+    w.onDidCreate(async () => { await loadLogs(); logsProvider.refresh(); });
+    w.onDidDelete(async () => { await loadLogs(); logsProvider.refresh(); });
+  });
+}
