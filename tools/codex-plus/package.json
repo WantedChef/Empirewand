@@ -4,10 +4,22 @@
   "description": "Companion UI for Codex: profiles, model picker (incl. legacy), and easy runtime settings.",
   "version": "0.1.0",
   "publisher": "local",
+  "icon": "media/codex.svg",
   "engines": {
     "vscode": "^1.82.0"
   },
   "categories": ["Other"],
+  "repository": {
+    "type": "git",
+    "url": "https://example.com/your/repo.git"
+  },
+  "bugs": {
+    "url": "https://example.com/your/repo/issues"
+  },
+  "scripts": {
+    "package": "node ./scripts/package.js",
+    "install:vsix": "node ./scripts/install.js"
+  },
   "activationEvents": [
     "onCommand:codexPlus.openSettings",
     "onCommand:codexPlus.selectProfile",
