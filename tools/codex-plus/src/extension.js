@@ -57,6 +57,32 @@ function activate(context) {
       if (!uris.length) return vscode.window.showWarningMessage('No logs found.');
       await vscode.commands.executeCommand('revealInExplorer', uris[0]);
     }),
+    vscode.commands.registerCommand('codexPlus.clearHistory', async () => {
+      try {
+        const file = resolvedHistoryPath || await findHistoryPath();
+        if (!file) return vscode.window.showWarningMessage('No history file to clear.');
+        const isJsonl = /\.jsonl$/i.test(file);
+        fs.writeFileSync(file, isJsonl ? '' : '[]\n', 'utf8');
+        historyItems.splice(0);
+        historyProvider.refresh();
+        vscode.window.showInformationMessage('Codex history cleared.');
+      } catch (e) {
+        vscode.window.showErrorMessage(`Failed to clear history: ${e?.message || e}`);
+      }
+    }),
+    vscode.commands.registerCommand('codexPlus.openLogsInEditor', async () => {
+      try {
+        const uris = logsUris.length ? logsUris : await findLogUris();
+        if (!uris.length) return vscode.window.showWarningMessage('No logs found.');
+        const openUris = uris.slice(0, 3);
+        for (const uri of openUris) {
+          const doc = await vscode.workspace.openTextDocument(uri);
+          await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Beside });
+        }
+      } catch (e) {
+        vscode.window.showErrorMessage(`Failed to open logs: ${e?.message || e}`);
+      }
+    }),
     vscode.window.registerTreeDataProvider('codexPlus.history', historyProvider),
     vscode.window.registerTreeDataProvider('codexPlus.logs', logsProvider),
     vscode.window.registerWebviewViewProvider('codexPlus.settings', new SettingsViewProvider())
@@ -512,7 +538,7 @@ async function loadLogs() {
       try {
         const f = uri.fsPath;
         if (fs.existsSync(f)) {
-          readLastLines(f, 80).forEach(l => lines.push(`${path.basename(f)}: ${l}`));
+          readLastLines(f, 80).forEach(l => lines.push(formatLogLine(path.basename(f), l)));
         }
       } catch {}
     }
@@ -529,6 +555,26 @@ function readLastLines(file, n) {
     const arr = raw.split(/\r?\n/).filter(Boolean);
     return arr.slice(-n);
   } catch { return []; }
+}
+
+function formatLogLine(fileBase, line) {
+  try {
+    const obj = JSON.parse(line);
+    const ts = obj.ts || obj.time || obj.timestamp || '';
+    const lvl = (obj.level || obj.lvl || '').toString().toUpperCase();
+    const msg = obj.msg || obj.message || '';
+    const cmd = obj.command || obj.cmd || obj.action || '';
+    const dur = obj.durationMs || obj.duration || obj.ms || '';
+    const parts = [];
+    if (ts) parts.push(`[${ts}]`);
+    if (lvl) parts.push(lvl);
+    if (cmd) parts.push(`{${cmd}}`);
+    if (msg) parts.push(msg);
+    if (dur) parts.push(`(${dur} ms)`);
+    return parts.join(' ') || `${fileBase}: ${line}`;
+  } catch {
+    return `${fileBase}: ${line}`;
+  }
 }
 
 function initWatchers(historyProvider, logsProvider) {

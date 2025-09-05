@@ -28,6 +28,8 @@
     "onCommand:codexPlus.autoDetectPaths",
     "onCommand:codexPlus.openHistoryFile",
     "onCommand:codexPlus.openLogsFolder",
+    "onCommand:codexPlus.clearHistory",
+    "onCommand:codexPlus.openLogsInEditor",
     "onView:codexPlus.settings",
     "onView:codexPlus.history",
     "onView:codexPlus.logs"
@@ -41,9 +43,19 @@
       { "command": "codexPlus.autoDetectPaths", "title": "Codex Plus: Auto-Detect History/Logs Paths" },
       { "command": "codexPlus.openHistoryFile", "title": "Codex Plus: Open History File" },
       { "command": "codexPlus.openLogsFolder", "title": "Codex Plus: Open Logs Folder" },
+      { "command": "codexPlus.clearHistory", "title": "Codex Plus: Clear History" },
+      { "command": "codexPlus.openLogsInEditor", "title": "Codex Plus: Open Logs in Editor" },
       { "command": "codexPlus.refreshHistory", "title": "Codex Plus: Refresh History" },
       { "command": "codexPlus.refreshLogs", "title": "Codex Plus: Refresh Logs" }
     ],
+    "menus": {
+      "view/title": [
+        { "command": "codexPlus.refreshHistory", "when": "view == codexPlus.history", "group": "navigation@1" },
+        { "command": "codexPlus.clearHistory", "when": "view == codexPlus.history", "group": "navigation@2" },
+        { "command": "codexPlus.refreshLogs", "when": "view == codexPlus.logs", "group": "navigation@1" },
+        { "command": "codexPlus.openLogsInEditor", "when": "view == codexPlus.logs", "group": "navigation@2" }
+      ]
+    },
     "viewsContainers": {
       "activitybar": [
         {
