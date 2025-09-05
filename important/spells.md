@@ -1,253 +1,995 @@
-EmpireWand – Spell Design Gids
-Doel: snelle, consistente referentie zodat je elke spell straks direct kan bouwen. Elke spell heeft dezelfde secties: Doel, Input/Output, Mechanics, Events, Visuals/SFX, Balance, Randvoorwaarden, Pseudocode.
+# 🌟 EmpireWand - Spell Design Guide
 
-Terminologie
-- Hartje: 2.0 health (1 hart).
-- Tick: 1/20e seconde.
-- Caster: de speler die cast.
-- Target: entiteit die geraakt wordt.
+> **Doel:** Snelle, consistente referentie voor het ontwikkelen van spells. Elke spell volgt dezelfde gestructureerde aanpak voor optimale implementatie.
 
-Categorie: Direct Damage
+## 📚 Inhoudsopgave
+- [📖 Terminologie](#-terminologie)
+- [⚔️ Direct Damage Spells](#️-direct-damage-spells)
+- [🛡️ Utility & Healing Spells](#️-utility--healing-spells)
+- [🚀 Next Coming Spells](#-next-coming-spells)
 
-Comet
-- Doel: snelle AoE projectile voor algemene combat.
-- Input/Output: input = cast zonder target; output = explosie bij impact.
-- Mechanics: `player.launchProjectile(Fireball.class)` met power ~2.5F; `setIsIncendiary(false)`; snelheid: default. Volgproject via scheduler voor trail.
-- Events: `ProjectileHitEvent` voor impact en schade-afhandeling; metadata tag `spell=comet`.
-- Visuals/SFX: `SOUL_FIRE_FLAME` trail, `EXPLOSION_NORMAL` bij hit, `ENTITY_BLAZE_SHOOT` geluid.
-- Balance: ~3.5 harten schade in centrum; lichte falloff mogelijk.
-- Randvoorwaarden: respecteer PVP en region flags; geen block damage indien gewenst.
-- Pseudocode:
-  - onCast: fireball = launch Fireball; fireball.setIncendiary(false); setYield(2.5); tag(fireball,"comet")
-  - onTick: spawn trail bij fireball.loc (2 ticks interval)
-  - onHit(if tag==comet): doExplosionDamage(no block break)
+## 📖 Terminologie
+- **❤️ Hartje:** 2.0 health (1 hart)
+- **⏱️ Tick:** 1/20e seconde
+- **🎯 Caster:** De speler die de spell cast
+- **🎯 Target:** Entiteit die geraakt wordt
 
-Explosive
-- Doel: trage, zware AoE burst voor verdedigingsbreuk.
-- Input/Output: input = cast; output = grote explosie on hit.
-- Mechanics: `player.launchProjectile(WitherSkull.class)`; langzame snelheid; op impact `world.createExplosion(loc, 4.0F, false, false)` of custom radius.
-- Events: `ProjectileHitEvent`, metadata `spell=explosive`.
-- Visuals/SFX: `SMOKE_LARGE`, `EXPLOSION_HUGE`; `ENTITY_GENERIC_EXPLODE`.
-- Balance: ~6 harten in centrum; makkelijk te ontwijken; friendly-fire mogelijk.
-- Randvoorwaarden: toggle voor block damage (config); immuniteit voor caster 4 ticks.
-- Pseudocode:
-  - onCast: skull = launch WitherSkull; tag(skull)
-  - onHit: createExplosion(no fire, no block break); applyAoEDamage()
+## ⚔️ Direct Damage Spells
 
-Magic Missile
-- Doel: gegarandeerde hit met lage burst (3 salvo’s).
-- Input/Output: input = auto-target of crosshair target; output = 3 hits met korte delay.
-- Mechanics: geen echt projectiel; bepaal `target = player.getTargetEntity(range)` of auto-lock laatste damage source; scheduler die 3 keer `target.damage(x, caster)` triggert met 6–8 ticks tussenruimte; cancel als target weg is.
-- Events: none/projectile; gebruik `EntityDamageByEntityEvent` alleen voor modifiers.
-- Visuals/SFX: partikelstraal `ENCHANTMENT_TABLE` langs een line-interpolate van caster→target; `ENTITY_ILLUSIONER_CAST_SPELL`.
-- Balance: 3×1.5 harten, totaal ~4.5; werkt tegen snelle targets.
-- Randvoorwaarden: line-of-sight check per salvo; niet door muren tenzij feature.
-- Pseudocode:
-  - onCast: lock target; for i in 1..3 schedule after i*7t: if valid(target) then damage(target, 3.0); drawBeam()
+### 🔥 Comet
+**Doel:** Snelle AoE projectile voor algemene combat situaties.
 
-Glacial Spike
-- Doel: damage plus sterke slow (control tool).
-- Input/Output: input = cast; output = impact damage + slow.
-- Mechanics: simpele variant via `Arrow` of `Trident`; alternatief: ArmorStand met ICE helm, voortbewegen via vector; bij hit: `damage(8.0)` en `SLOW(80t, amplifier=2)`.
-- Events: `ProjectileHitEvent` of collision check per tick.
-- Visuals/SFX: `SNOWFLAKE`/`ITEM_SNOWBALL` trail; `BLOCK_ICE_BREAK` bij impact; koude sound.
-- Balance: ~4 harten + SLOW II (4s). Sterk in duels.
-- Randvoorwaarden: één Spike tegelijk per caster (cooldown) om spam te voorkomen.
-- Pseudocode:
-  - onCast: proj = launch Arrow; tag; onHit: applyDamageAndSlow()
+**📥 Input/Output:**
+- **Input:** Cast zonder target
+- **Output:** Explosie bij impact
 
-Grasping Vines
-- Doel: root/immobilize voor korte duur.
-- Input/Output: AoE cone of op target-block.
-- Mechanics: apply `SLOWNESS` met hoog level (bv. 250) voor 2–3s; optioneel `ROOTED` logica door movement te cancelen in `PlayerMoveEvent` zolang flagged.
-- Events: `PlayerMoveEvent` hard-stop; `EntityDamageEvent` om root te breken als gewenst.
-- Visuals/SFX: `VILLAGER_HAPPY`/`SLIME` of `BLOCK_MOSS_BREAK`; lianen-plaatsing als decor (tijdelijk).
-- Balance: geen directe damage; sterke setup tool; cooldown hoger.
-- Randvoorwaarden: niet toepassen op bosses; dispel door `MILK_BUCKET`?
-- Pseudocode: flag target; onMove if flagged then setToFrom(); after duration unflag.
+**⚙️ Mechanics:**
+```java
+player.launchProjectile(Fireball.class)
+fireball.setYield(2.5F)
+fireball.setIsIncendiary(false)
+```
 
-Polymorph
-- Doel: tijdelijk uitschakelen door transform naar schaap.
-- Input/Output: entity→sheep, behoud positie en naam.
-- Mechanics: despawn originele mob (of hide/invuln), spawn `Sheep` met metadata link naar originele UUID; na duur revert: remove Sheep, respawn/re-enable originele met health snapshot.
-- Events: `EntityDeathEvent` van sheep map je terug naar originele als “kill”.
-- Visuals/SFX: `SPELL_MOB`/`POOF`; `ENTITY_SHEEP_AMBIENT`.
-- Balance: geen damage; harde CC; korte duur (3–5s) en dispellable.
-- Randvoorwaarden: niet op spelers tenzij gamemode-acceptabel; drop/aggro state bewaren.
-- Pseudocode: snapshot(orig); removeOrHide(orig); sheep=spawnSheep(tag=link); schedule revert.
+**🎯 Events:**
+- `ProjectileHitEvent` voor impact en schade-afhandeling
+- Metadata tag `spell=comet`
 
-Ethereal Form
-- Doel: tijdelijk door mobs/players heen lopen en valdamage negeren.
-- Input/Output: buff op caster.
-- Mechanics: `player.setCollidable(false)`; `player.addPotionEffect(SLOW_FALLING)` of custom valdamage-cancel; toggel `noClip` niet beschikbaar in Bukkit, dus gebruik collision ignore lijsten en `EntityDamageEvent` cancel voor fall.
-- Events: `EntityDamageEvent` (FALL) cancel; `PlayerToggleSneakEvent` kan als exit.
-- Visuals/SFX: `SPELL_INSTANT` aura, `PHANTOM` geluid.
-- Balance: mobiliteit en ontsnapping; geen attack tijdens effect (disable damage output).
-- Randvoorwaarden: disable block-interact; eindigt bij schade ontvangen?
-- Pseudocode: applyState(nonCollidable,true); onEnd: revert state.
+**✨ Visuals/SFX:**
+- `SOUL_FIRE_FLAME` trail particles
+- `EXPLOSION_NORMAL` bij impact
+- `ENTITY_BLAZE_SHOOT` cast geluid
 
-Categorie: Utility & Healing
+**⚖️ Balance:**
+- ~3.5 harten schade in centrum
+- Licht falloff mogelijk
+- Medium range, hoge snelheid
 
-LifeSteal
-- Doel: sustain door damage te converteren naar heal.
-- Input/Output: projectile hit → heal caster.
-- Mechanics: custom Snowball met tag; op `ProjectileHitEvent` bereken damage en `caster.setHealth(min(max, health + damage/2))`.
-- Events: `ProjectileHitEvent`, `EntityDamageByEntityEvent` voor exacte damage.
-- Visuals/SFX: rode partikeltrail, `ENTITY_PLAYER_BURP` zacht of `VEX_CHARGE`.
-- Balance: ~3 harten damage, ~1.5 hart heal; reward agressie.
-- Randvoorwaarden: cap op overheal; geen effect op undead (optioneel).
-- Pseudocode: onHit: if isTaggedSnowball then dealDamage(); healCaster(dmg*0.5).
+**📋 Randvoorwaarden:**
+- Respecteert PVP en region flags
+- Geen block damage indien gewenst
+- Caster immuniteit
 
-Heal
-- Doel: directe genezing, no-nonsense.
-- Input/Output: instant health.
-- Mechanics: `player.setHealth(min(max, health + 8.0))` (4 harten); immuniteit-frames 5 ticks om chain damage te dempen.
-- Events: none, behalve geluid/particles.
-- Visuals/SFX: `HEART` + `ENTITY_PLAYER_LEVELUP`.
-- Balance: geen offensief voordeel; matige cooldown.
-- Randvoorwaarden: respecteer combat-tag systemen.
-- Pseudocode: onCast: heal(8.0); playFX()
+**💻 Pseudocode:**
+```java
+onCast:
+    fireball = launch Fireball
+    fireball.setIsIncendiary(false)
+    setYield(2.5)
+    tag(fireball, "comet")
 
-Implementatienoten
-- Metadata tagging: gebruik `PersistentDataContainer` of `Projectile#setCustomName` + invisible voor koppeling.
-- Cooldowns: centraal beheren per spell key in een `CooldownService` met ticks.
-- Config: schade, duur, radius en flags (block damage, friendly fire) in `config.yml`.
-- Veiligheid: check `WorldGuard`/region hooks indien gebruikt; null-check targets; NPE’s voorkomen.
-- Testing checklist: cast zonder target, cast met target achter muur, PVP aan/uit, in water, tegen undead.
+onTick (2 ticks interval):
+    spawn trail bij fireball.loc
+
+onHit (if tag==comet):
+    doExplosionDamage(no block break)
+```
+
+---
+
+### 💥 Explosive
+**Doel:** Trage, zware AoE burst voor verdedigingsbreuk en structureel damage.
+
+**📥 Input/Output:**
+- **Input:** Cast richting
+- **Output:** Grote explosie on hit
+
+**⚙️ Mechanics:**
+```java
+player.launchProjectile(WitherSkull.class)
+world.createExplosion(loc, 4.0F, false, false)
+```
+
+**🎯 Events:**
+- `ProjectileHitEvent` voor impact
+- Metadata tag `spell=explosive`
+
+**✨ Visuals/SFX:**
+- `SMOKE_LARGE` particles
+- `EXPLOSION_HUGE` bij impact
+- `ENTITY_GENERIC_EXPLODE` geluid
+
+**⚖️ Balance:**
+- ~6 harten schade in centrum
+- Makkelijk te ontwijken door lage snelheid
+- Friendly-fire mogelijk
+
+**📋 Randvoorwaarden:**
+- Toggle voor block damage (config)
+- Immuniteit voor caster (4 ticks)
+- Werkt op mobs en players
+
+**💻 Pseudocode:**
+```java
+onCast:
+    skull = launch WitherSkull
+    tag(skull)
+
+onHit:
+    createExplosion(no fire, no block break)
+    applyAoEDamage()
+```
+
+---
+
+### 🔮 Magic Missile
+**Doel:** Gegarandeerde hit met lage burst damage - perfect tegen snelle targets.
+
+**📥 Input/Output:**
+- **Input:** Auto-target of crosshair target
+- **Output:** 3 hits met korte delay
+
+**⚙️ Mechanics:**
+```java
+target = player.getTargetEntity(range)
+scheduler: 3x target.damage(3.0, caster) met 7 ticks delay
+```
+
+**🎯 Events:**
+- Geen speciale projectile events
+- `EntityDamageByEntityEvent` voor modifiers
+
+**✨ Visuals/SFX:**
+- `ENCHANTMENT_TABLE` particle straal
+- `ENTITY_ILLUSIONER_CAST_SPELL` cast sound
+- Beam effect tussen caster en target
+
+**⚖️ Balance:**
+- 3 × 1.5 harten = totaal ~4.5 damage
+- Werkt tegen snelle/evasieve targets
+- Lage individuele damage
+
+**📋 Randvoorwaarden:**
+- Line-of-sight check per salvo
+- Niet door muren (tenzij feature)
+- Target validation per hit
+
+**💻 Pseudocode:**
+```java
+onCast:
+    lock target
+    for i in 1..3:
+        schedule after i*7ticks:
+            if valid(target):
+                damage(target, 3.0)
+                drawBeam()
+```
+
+---
+
+### ❄️ Glacial Spike
+**Doel:** Damage plus sterke slow effect - ideale control tool.
+
+**📥 Input/Output:**
+- **Input:** Cast richting
+- **Output:** Impact damage + slow debuff
+
+**⚙️ Mechanics:**
+```java
+proj = launch Arrow
+onHit: damage(8.0) + SLOW(80ticks, amplifier=2)
+```
+
+**🎯 Events:**
+- `ProjectileHitEvent` voor impact
+- Collision check per tick
+
+**✨ Visuals/SFX:**
+- `SNOWFLAKE` trail particles
+- `BLOCK_ICE_BREAK` bij impact
+- Koude ambient sounds
+
+**⚖️ Balance:**
+- ~4 harten damage + SLOW II (4s)
+- Sterk in duels en kiting
+- Medium range
+
+**📋 Randvoorwaarden:**
+- Max één Spike per caster tegelijk
+- Line-of-sight vereist
+- Target immuniteit na hit
+
+**💻 Pseudocode:**
+```java
+onCast:
+    proj = launch Arrow
+    tag(proj)
+
+onHit:
+    applyDamageAndSlow()
+```
+
+---
+
+### 🌿 Grasping Vines
+**Doel:** Root/immobilize voor korte duur - setup tool voor combos.
+
+**📥 Input/Output:**
+- **Input:** Cast op target area
+- **Output:** AoE slow/root effect
+
+**⚙️ Mechanics:**
+```java
+apply SLOWNESS(level=250) voor 60 ticks
+optional: ROOTED logica via PlayerMoveEvent
+```
+
+**🎯 Events:**
+- `PlayerMoveEvent` voor hard-stop
+- `EntityDamageEvent` om root te breken
+
+**✨ Visuals/SFX:**
+- `BLOCK_MOSS_BREAK` particles
+- Lianen als tijdelijke decor
+- Nature ambient sounds
+
+**⚖️ Balance:**
+- Geen directe damage
+- Sterke setup tool voor combos
+- Hoge cooldown
+
+**📋 Randvoorwaarden:**
+- Niet toepassen op bosses
+- Dispellable door milk bucket
+- Werkt op players en mobs
+
+**💻 Pseudocode:**
+```java
+onCast:
+    flag target
+    applySlowness(250, 60ticks)
+
+onMove (if flagged):
+    setToFrom() // Cancel movement
+
+after duration:
+    unflag target
+```
+
+---
+
+### 🐑 Polymorph
+**Doel:** Tijdelijk uitschakelen door transform naar schaap.
+
+**📥 Input/Output:**
+- **Input:** Target entity
+- **Output:** Entity → Sheep transform
+
+**⚙️ Mechanics:**
+```java
+hide original entity
+spawn Sheep met metadata link
+schedule revert na duration
+```
+
+**🎯 Events:**
+- `EntityDeathEvent` van sheep maps terug
+- Duration-based revert
+
+**✨ Visuals/SFX:**
+- `SPELL_MOB` particles
+- `ENTITY_SHEEP_AMBIENT` sounds
+- `POOF` transform effect
+
+**⚖️ Balance:**
+- Geen damage, pure CC
+- Korte duur (3-5s)
+- Dispellable
+
+**📋 Randvoorwaarden:**
+- Niet op players (tenzij gamemode)
+- Bewaart aggro state
+- Health snapshot voor revert
+
+**💻 Pseudocode:**
+```java
+onCast:
+    snapshot(original)
+    removeOrHide(original)
+    sheep = spawnSheep(tag=link)
+    schedule revert(duration)
+```
+
+---
+
+### 👻 Ethereal Form
+**Doel:** Tijdelijk door mobs/players heen lopen en valdamage negeren.
+
+**📥 Input/Output:**
+- **Input:** Cast op zelf
+- **Output:** Collision disable + fall damage immunity
+
+**⚙️ Mechanics:**
+```java
+player.setCollidable(false)
+player.addPotionEffect(SLOW_FALLING)
+cancel EntityDamageEvent(FALL)
+```
+
+**🎯 Events:**
+- `EntityDamageEvent` (FALL) cancel
+- `PlayerToggleSneakEvent` voor manual exit
+
+**✨ Visuals/SFX:**
+- `SPELL_INSTANT` aura particles
+- `PHANTOM` ambient sound
+- Ghostly transparency effect
+
+**⚖️ Balance:**
+- Mobiliteit en ontsnapping
+- Geen attack tijdens effect
+- Medium duration
+
+**📋 Randvoorwaarden:**
+- Disable block interaction
+- Eindigt bij ontvangen damage
+- No-clip simulatie
+
+**💻 Pseudocode:**
+```java
+onCast:
+    applyState(nonCollidable=true)
+    addSlowFalling(duration)
+
+onEnd:
+    revert state
+```
+
+---
+
+## 🛡️ Utility & Healing Spells
+
+### 🩸 LifeSteal
+**Doel:** Sustain door damage te converteren naar healing.
+
+**📥 Input/Output:**
+- **Input:** Cast richting
+- **Output:** Projectile hit → heal caster
+
+**⚙️ Mechanics:**
+```java
+snowball = launch Snowball
+onHit: damage + healCaster(damage * 0.5)
+```
+
+**🎯 Events:**
+- `ProjectileHitEvent` voor impact
+- `EntityDamageByEntityEvent` voor exact damage
+
+**✨ Visuals/SFX:**
+- Rode particle trail
+- `VEX_CHARGE` impact sound
+- Healing particles bij caster
+
+**⚖️ Balance:**
+- ~3 harten damage, ~1.5 hart heal
+- Rewards agressie
+- Medium range
+
+**📋 Randvoorwaarden:**
+- Cap op overheal
+- Optioneel: geen effect op undead
+- Self-damage protection
+
+**💻 Pseudocode:**
+```java
+onHit:
+    if isTaggedSnowball:
+        dealDamage()
+        healCaster(dmg * 0.5)
+```
+
+---
+
+### ❤️ Heal
+**Doel:** Directe genezing - no-nonsense health restore.
+
+**📥 Input/Output:**
+- **Input:** Cast op zelf
+- **Output:** Instant health boost
+
+**⚙️ Mechanics:**
+```java
+player.setHealth(min(max, health + 8.0))
+```
+
+**🎯 Events:**
+- Geen speciale events
+- Particle/sound effects
+
+**✨ Visuals/SFX:**
+- `HEART` particles
+- `ENTITY_PLAYER_LEVELUP` sound
+- Healing aura effect
+
+**⚖️ Balance:**
+- 4 harten healing
+- Geen offensief voordeel
+- Matige cooldown
+
+**📋 Randvoorwaarden:**
+- Respect combat-tag systemen
+- Immuniteit frames (5 ticks)
+- Max health cap
+
+**💻 Pseudocode:**
+```java
+onCast:
+    heal(8.0)
+    playFX()
+```
+
+---
+
+### 🦘 Leap
+**Doel:** Snelle mobiliteit boost voor positioning en ontsnapping.
+
+**📥 Input/Output:**
+- **Input:** Cast richting
+- **Output:** Velocity boost in kijkrichting
+
+**⚙️ Mechanics:**
+```java
+direction = player.getDirection().normalize()
+player.setVelocity(direction * multiplier + verticalBoost)
+```
+
+**🎯 Events:**
+- Geen speciale events
+- Instant effect
+
+**✨ Visuals/SFX:**
+- `CLOUD` burst particles
+- `ENTITY_RABBIT_JUMP` sound
+- Motion trail effect
+
+**⚖️ Balance:**
+- ~1.5x snelheid boost
+- Korte cooldown voor frequente gebruik
+- Vertical boost optioneel
+
+**📋 Randvoorwaarden:**
+- Geen collision checks
+- Werkt in lucht en op grond
+- Direction-based velocity
+
+**💻 Pseudocode:**
+```java
+onCast:
+    dir = player.getDirection().normalize()
+    dir.y += verticalBoost
+    player.setVelocity(dir * multiplier)
+    playFX()
+```
+
+---
+
+## 🚀 Next Coming Spells
+
+> **Deze spells zijn gepland voor toekomstige implementatie**
+
+### 🌑 Dark Circle
+**Doel:** Grote AoE crowd control voor groepen vijanden - belegeringsspell.
+
+**📥 Input/Output:**
+- **Input:** Cast op locatie
+- **Output:** Cirkel die vijanden naar midden trekt en omhoog gooit
+
+**⚙️ Mechanics:**
+```java
+entities = world.getNearbyEntities(caster, radius)
+pullEntitiesToCenter()
+scheduleLaunch(upPower)
+```
+
+**🎯 Events:**
+- `EntityDamageEvent` voor valdamage
+- Scheduler voor pull→launch sequence
+
+**✨ Visuals/SFX:**
+- `SMOKE_LARGE` cirkel particles
+- `ENTITY_ENDER_DRAGON_FLAP` pull sound
+- `ENTITY_GENERIC_EXPLODE` launch effect
+
+**⚖️ Balance:**
+- Radius ~8 blokken
+- Launch height ~15 blokken
+- Hoge cooldown voor balans
+
+**📋 Randvoorwaarden:**
+- Respect PVP flags
+- Caster immuniteit
+- Alleen op grond
+
+**💻 Pseudocode:**
+```java
+onCast:
+    createCircle(radius)
+    pullEntitiesToCenter()
+    scheduleLaunch(upPower)
+```
+
+---
+
+### 🌊 Dark Pulse
+**Doel:** Ranged golf aanval met wither effect - sustained damage.
+
+**📥 Input/Output:**
+- **Input:** Cast richting
+- **Output:** Golf die vooruit gaat en targets withert
+
+**⚙️ Mechanics:**
+```java
+launchPulse(direction)
+onHit: target.addPotionEffect(WITHER, duration, amplifier)
+```
+
+**🎯 Events:**
+- `ProjectileHitEvent` of area scan
+- Wither effect application
+
+**✨ Visuals/SFX:**
+- `SMOKE_NORMAL` trail
+- `ENTITY_WITHER_SHOOT` cast sound
+- `ENTITY_WITHER_HURT` impact
+
+**⚖️ Balance:**
+- Range ~20 blokken
+- Wither damage ~1 hart per 2s
+- Medium cooldown
+
+**📋 Randvoorwaarden:**
+- Line-of-sight vereist
+- Friendly-fire toggle
+- Duration-based effect
+
+**💻 Pseudocode:**
+```java
+onCast:
+    launchPulse(direction)
+
+onHit:
+    applyWitherEffect()
+```
+
+---
+
+### 💠 Aura
+**Doel:** Passieve damage aura rondom caster - gebiedscontrole.
+
+**📥 Input/Output:**
+- **Input:** Cast op zelf
+- **Output:** Continue damage aan nearby entities
+
+**⚙️ Mechanics:**
+```java
+startAuraScheduler()
+onTick: damageNearbyEntities()
+```
+
+**🎯 Events:**
+- `PlayerMoveEvent` voor range checks
+- `EntityDamageEvent` voor custom damage
+
+**✨ Visuals/SFX:**
+- `PORTAL` ambient particles
+- `BLOCK_BEACON_AMBIENT` hum sound
+- Dark energy aura effect
+
+**⚖️ Balance:**
+- Radius ~5 blokken
+- Damage ~2 per seconde
+- Lange cooldown
+
+**📋 Randvoorwaarden:**
+- Caster immuniteit
+- Eindigt bij movement of damage
+- Duration-based
+
+**💻 Pseudocode:**
+```java
+onCast:
+    startAuraScheduler()
+
+onTick:
+    damageNearbyEntities()
+```
+
+---
+
+Empire Launch
+- Doel: krachtige launch voor crowd control.
+- Input/Output: input = target entity; output = entity gelanceerd omhoog.
+- Mechanics: `target.setVelocity(upVector * power)`; optioneel richting component.
+- Events: `EntityDamageEvent` voor valdamage; target validation.
+- Visuals/SFX: `ENTITY_FIREWORK_ROCKET_LAUNCH` sound, `FIREWORK` particles.
+- Balance: launch power ~2.0; valdamage ~10 harten; medium cooldown.
+- Randvoorwaarden: target moet in range zijn; werkt op mobs/players.
+- Pseudocode: onCast: if targetValid then target.setVelocity(upVector * power)
+
+Confuse
+- Doel: disorientatie en slow effect voor control.
+- Input/Output: input = target; output = confusion + slow + damage.
+- Mechanics: `target.addPotionEffect(CONFUSION, duration)` + `SLOW`; direct damage component.
+- Events: `EntityDamageByEntityEvent` voor damage; potion effect application.
+- Visuals/SFX: `ENTITY_PLAYER_ATTACK_NODAMAGE` dizzy sound, `SPELL_MOB_AMBIENT` particles.
+- Balance: duration ~4s; slow amplifier 2; damage ~3 harten.
+- Randvoorwaarden: line-of-sight vereist; werkt op players/mobs.
+- Pseudocode: onCast: applyConfusion(target); applySlow(target); dealDamage(target)
+
+Teleport
+- Doel: instant positionering voor mobiliteit.
+- Input/Output: input = target location; output = caster teleport naar locatie.
+- Mechanics: `player.teleport(targetLocation)` met range en line-of-sight checks.
+- Events: `PlayerTeleportEvent` voor validation; location safety checks.
+- Visuals/SFX: `ENTITY_ENDERMAN_TELEPORT` sound, `PORTAL` particles bij cast en aankomst.
+- Balance: range ~15 blokken; korte cooldown; geen damage.
+- Randvoorwaarden: destination moet veilig zijn; geen teleport door muren.
+- Pseudocode: onCast: if validLocation then player.teleport(location)
+
+Thunder Blast
+- Doel: bliksem AoE voor openingsaanvallen.
+- Input/Output: input = cast; output = lightning explosie op targets.
+- Mechanics: `world.strikeLightning(targetLoc)` met custom damage; AoE scan voor multiple targets.
+- Events: `LightningStrikeEvent` voor custom handling; area damage application.
+- Visuals/SFX: `ENTITY_LIGHTNING_BOLT_THUNDER` sound, `ELECTRIC_SPARK` particles.
+- Balance: radius ~6 blokken; damage ~8 harten; lange cooldown.
+- Randvoorwaarden: werkt alleen buiten; kan block damage veroorzaken.
+- Pseudocode: onCast: strikeLightningArea(center, radius)
+
+Lightning Bolt
+- Doel: gerichte bliksem aanval voor precision damage.
+- Input/Output: input = target; output = lightning strike op target.
+- Mechanics: `world.strikeLightning(target.getLocation())`; custom damage multiplier.
+- Events: `LightningStrikeEvent` voor damage control; target validation.
+- Visuals/SFX: `ENTITY_LIGHTNING_BOLT_IMPACT` sound, `ELECTRIC_SPARK` trail.
+- Balance: damage ~12 harten; kans op fire; medium cooldown.
+- Randvoorwaarden: line-of-sight vereist; target moet exposed zijn.
+- Pseudocode: onCast: if targetExposed then world.strikeLightning(targetLoc)
+
+Fireball
+- Doel: explosieve projectile voor ranged damage.
+- Input/Output: input = cast richting; output = fireball projectile met explosie.
+- Mechanics: `player.launchProjectile(Fireball.class)` met custom yield en speed.
+- Events: `ProjectileHitEvent` voor impact handling; explosion control.
+- Visuals/SFX: `ENTITY_BLAZE_SHOOT` sound, `FLAME` trail particles.
+- Balance: yield ~3.0; damage ~10 harten; medium cooldown.
+- Randvoorwaarden: kan fire veroorzaken; block damage toggle.
+- Pseudocode: onCast: fireball = launch Fireball; setYield(3.0); setIsIncendiary(true)
+
+Explosion Trail
+- Doel: bewegende explosieve zone voor area denial.
+- Input/Output: input = cast; output = explosies volgen caster movement.
+- Mechanics: scheduler die elke tick explosie creëert bij caster locatie.
+- Events: `PlayerMoveEvent` voor trail updates; explosion events.
+- Visuals/SFX: `ENTITY_GENERIC_EXPLODE` repeated, `EXPLOSION_NORMAL` particles.
+- Balance: duration ~5s; damage ~4 per explosie; lange cooldown.
+- Randvoorwaarden: caster immuniteit; geen block damage.
+- Pseudocode: onCast: startTrailScheduler(); onTick: createExplosion(playerLoc)
+
+Blaze Launch
+- Doel: zelf-propulsie met vuur effecten.
+- Input/Output: input = cast richting; output = caster velocity boost met vuur trail.
+- Mechanics: `player.setVelocity(direction * power)` + fire effects op omgeving.
+- Events: `PlayerMoveEvent` voor trail effects; velocity application.
+- Visuals/SFX: `FLAME` particles, `ENTITY_BLAZE_AMBIENT` sound.
+- Balance: power ~1.8; korte cooldown; geen self-damage.
+- Randvoorwaarden: werkt in lucht; kan omgeving in brand zetten.
+- Pseudocode: onCast: player.setVelocity(direction * power); startFireTrail()
+
+Lightning Storm
+- Doel: multiple lightning strikes in gebied.
+- Input/Output: input = target area; output = meerdere bliksems in geselecteerd gebied.
+- Mechanics: scheduler voor multiple `world.strikeLightning()` calls in radius.
+- Events: `LightningStrikeEvent` voor elke strike; area selection.
+- Visuals/SFX: `ENTITY_LIGHTNING_BOLT_THUNDER` repeated, `ELECTRIC_SPARK` storm.
+- Balance: strikes ~5-8; radius ~10 blokken; zeer lange cooldown.
+- Randvoorwaarden: alleen buiten; hoge mana cost.
+- Pseudocode: onCast: for i in 1..strikes: scheduleLightning(randomLocInRadius)
+
+*Deze spells zijn volledig uitgewerkt en klaar voor implementatie in toekomstige updates.* ✨
 
 
-Lore-Integratie: Empire, The Kingdom en Elementos
-- Context: de EmpireWand is geïnspireerd op The Kingdom roleplay/PvP-servers (o.a. DusDavidGames, Empire/Entropia/Kingdom 2). Onderstaande uitbreidingen verbinden mechanics met thematiek/namen zoals Jenava, Cemal en RAGTHANATOS zodat je spells ook “in-lore” kloppen.
-- Elementos: eenvoudig element-systeem (Vuur, Water, Aarde, Lucht, Licht, Schaduw) dat schade-types, weerstanden en VFX bepaalt. Koppeling via `wand.element` en `spell.elementMask`.
-  - Vuur: extra DoT, ontsteekt entities zonder block fire; partikel `FLAME`/`LAVA`.
-  - Water: slow + uitblussen vuur; partikel `WATER_SPLASH`.
-  - Aarde: knockback-reductie + korte root; partikel `BLOCK_DUST(DIRT/STONE)`.
-  - Lucht: hogere projectile-speed en val-immu; partikel `CLOUD`.
-  - Licht: bonus vs undead, kleine heal pulse; partikel `SPELL_INSTANT`/`GLOW`.
-  - Schaduw: lifesteal-opschaling in duisternis; partikel `SMOKE_NORMAL`.
-- Fracties & namen: Entropia (chaos/schaduw), Empire (orde/licht), Kingdom (balans). NPC/figuren: Jenava (healing/protectie), Cemal (defensief/aarde), RAGTHANATOS (doom/schaduw), “DusDavid” (rally/buff).
 
-Elementos – Systeemhooks
-- Damage tags: voeg `DamageCause.CUSTOM("element:<name>")` of metadata toe zodat andere plugins kunnen reageren.
-- Weerstanden: `ConfigService` map met per element `multiplier` (bv. undead: licht 1.25x, schaduw 0.8x vs undead).
-- UI: toon element op item-lore en actionbar bij cast.
+===================================================================================
+Upcoming :
 
-Categorie: Elemental Core Spells
+Little Spark
 
-Elemental Surge (Empire)
-- Doel: basale ranged nuke die per element anders schaalt.
-- Input/Output: rechtlijnig projectiel → enkeldoel damage + lichte bijwerking per element.
-- Mechanics: `Snowball`/`SmallFireball` afhankelijk van element; bij hit: baseDamage 5.0, mod via `elementMultiplier` en side-effect (DoT/Slow/Glow/Knockback-reduce/etc.).
-- Events: `ProjectileHitEvent` met metadata `spell=elemental_surge` en `element`.
-- Visuals/SFX: partikel afhankelijk van element; geluid `ENTITY_ILLUSIONER_CAST_SPELL` of element-variant (`BLAZE_SHOOT` voor vuur).
-- Balance: middenklasse nuke; cooldown ~6–8s; side-effects klein maar voelbaar.
-- Randvoorwaarden: friendly-fire regels volgen; geen block fire.
-- Pseudocode: cast→spawn projectile(element); onHit→calcDamage(base*mult); applySmallSideEffect(element).
+Doel: piepkleine poke op range; tikje/mini-knockback.
 
-Entropic Rift (Entropia)
-- Doel: area denial door een schaduw-rift die slow + DoT geeft.
-- Input/Output: AoE op grond, duurt 5s.
-- Mechanics: target block raycast; spawn onzichtbare armorstand anchor; elke 10t: entiteiten in radius 3 krijgen `SLOW I (20t)` en `damage 1.0` schaduw.
-- Events: scheduler tick; cancel bij `WorldChange`/`Unload`.
-- Visuals/SFX: `SMOKE_LARGE`, `SOUL`-achtige particle cirkel; zacht `WITHER_AMBIENT`.
-- Balance: lage TotD maar sterke zone-control; cooldown 18–22s.
-- Randvoorwaarden: niet stacken; één rift per caster.
-- Pseudocode: placeAnchor(); repeat 10x every 10t: affectEntitiesInRadius(); cleanup.
+Input/Output: input = kijkrichting; output = licht elektrisch projectiel.
 
-Jenava’s Grace (Empire/Kingdom)
-- Doel: burst heal + korte damage-reduction aura voor allies.
-- Input/Output: aoe heal 4 harten + DR 20% voor 6s binnen 6 blok.
-- Mechanics: party/kingdom detectie via teams/scoreboard of permission-groep; status `metadata:grace` met eindtijd; DR toegepast in `EntityDamageEvent` voor flagged targets.
-- Events: `EntityDamageEvent` voor DR, scheduler voor expiratie.
-- Visuals/SFX: `HEART`, `GLOW` kort voor allies, `ENTITY_PLAYER_LEVELUP`.
-- Balance: sterke support; cooldown 25–30s; geen stack met Heal spell-effect (neem hoogste).
-- Randvoorwaarden: geen effect op vijanden; PVP respect.
-- Pseudocode: healAllies(radius,8.0); flagDR(allies,0.8,6s); fx().
+Mechanics: Snowball of SmallFireball met lage snelheid & mini-damage; geef een korte Vector impuls op hit. Snowball of smallfireball wel onzichtbaar maken en
 
-Cemal’s Bulwark (Aarde/Defensief)
-- Doel: tijdelijke stenen koepel + knockback-reduce binnen koepel.
-- Input/Output: spawnt tijdelijke barrier (client-side via falling blocks of echte blocks als server toelaat) 5s.
-- Mechanics: bij voorkeur visuele koepel met `BlockDisplay`/`FallingBlock` en collision-flag; binnen radius: `RESISTANCE I` en `KNOCKBACK_RESISTANCE` attribuut 0.5.
-- Events: cleanup scheduler; `PlayerMoveEvent` om inside/outside te tracken.
-- Visuals/SFX: `BLOCK_CRACK(STONE)`, `BASALT_PLACE`; subtiele `SHIELD_BLOCK`.
-- Balance: hoge utility; cooldown 35s; geen volledige afscherming tegen projectielen.
-- Randvoorwaarden: geen permanente block-place; worldguard-safe.
-- Pseudocode: spawnDomeDisplays(); applyBuffsInside(); after 5s removeDisplays(); unbuff().
+Events: ProjectileHitEvent voor hit/knockback.
 
-Judgement of RAGTHANATOS (Schaduw/Execute)
-- Doel: execute-achtige single-target nuke die sterker wordt als target low is.
-- Input/Output: straal op target binnen 18 blok; damage schalen op ontbrekende health.
-- Mechanics: bereken `missing = maxHealth - health`; `damage = 2.0 + missing * 0.35` met cap; extra 25% in duisternis (lichtniveau < 5).
-- Events: line-of-sight check; `EntityDamageByEntityEvent`.
-- Visuals/SFX: donkere beam `SMOKE_NORMAL` + `SOUL_FIRE_FLAME`; geluid `WITHER_SHOOT`.
-- Balance: dreigend, maar counterable via licht, dodge, immuniteiten; cooldown 28–32s.
-- Randvoorwaarden: niet op bosses tenzij expliciet.
-- Pseudocode: t=findTarget(); if los(t) dealScaledShadowDamage(t).
+Visuals/SFX: Particle.ELECTRIC_SPARK + zacht bow/blaze-sound. 
+hub.spigotmc.org
++1
 
-DusDavid’s Rally (Empire/Buff)
-- Doel: korte team-rally: speed + attack speed buff.
-- Input/Output: allies binnen 8 blok krijgen `SPEED I (8s)` en `HASTE I (tools)` of attribuut-aanpassing voor aanvalssnelheid (paper API).
-- Mechanics: gebruik teams of same-faction check; toon actionbar “Rally!” met resterende duur.
-- Events: scheduler tick voor HUD; remove on end.
-- Visuals/SFX: `NOTE` stijgende toon, `VILLAGER_HAPPY`.
-- Balance: goede engage tool; cooldown 22–26s.
-- Randvoorwaarden: geen effect op vijanden; conflict met andere speed-buffs: kies hoogste.
-- Pseudocode: buffAllies(radius); startHUD(); scheduleClear().
+Balance: 1–2 ♥; knockback klein; cd 0.75s.
 
-Empire Seal (Licht/Control)
-- Doel: heilige zegel dat 1 target stillegt als het cast (silence/interupt).
-- Input/Output: projectile of beam; bij hit: `SILENCE`-achtige status 3s (blokkeer spell casts via CooldownService check + flag).
-- Mechanics: voeg `isSilenced(uuid)` gating in `EmpireWandCommand`/cast entry.
-- Events: custom `SpellCastEvent` afbreken indien `isSilenced`.
-- Visuals/SFX: `SPELL_INSTANT`, gouden runes met `ENCHANTMENT_TABLE`.
-- Balance: sterk vs casters; cooldown 18s; werkt niet op non-casters.
-- Randvoorwaarden: duidelijk feedback aan target (title/subtitle).
-- Pseudocode: if hitLiving then setSilenced(target,3s).
+Randvoorwaarden: geen block damage.
 
-Kingdom Recall (Utility/Teleport)
-- Doel: terugroep naar dichtstbijzijnde kingdom-outpost/beacon.
-- Input/Output: channel 3s → teleport, cancel bij damage of bewegen > 0.3 blok.
-- Mechanics: vind `nearestOutpostLoc(faction)`; gebruik `PlayerTeleportEvent` met `TeleportCause.PLUGIN`; set temp invuln 1s na aankomst.
-- Events: `PlayerMoveEvent` (cancel), `EntityDamageEvent` (interrupt).
-- Visuals/SFX: `PORTAL`, `ENDERMAN_TELEPORT`.
-- Balance: sterke macro; cooldown 60–90s.
-- Randvoorwaarden: verboden in combat-tag; niet in vijandige region.
-- Pseudocode: beginChannel(); if not interrupted after 60t then teleport().
+Pseudocode:
 
-Entropia Collapse (AoE/Finisher)
-- Doel: trage implosie die vijanden naar midden trekt en eindburst geeft.
-- Input/Output: ground-targeted; 2.5s pull, dan burst 5 harten schaduw.
-- Mechanics: elke 5t: apply vector naar center met sterkte ~0.4; bij einde `damage` in radius 4; caster immuun voor pull.
-- Events: tick scheduler; knockback resist respecteren.
-- Visuals/SFX: `REVERSE_PORTAL`, `SOUL` swirl, `WITHER_SPAWN` zacht.
-- Balance: sterk als setup met Vines; cooldown 35–40s.
-- Randvoorwaarden: geen fall damage toevoegen; geen block-grief.
-- Pseudocode: createCenter(); tickPull(); finalBurst(); cleanup().
+onCast:
+  proj = p.launchProjectile(Snowball)
+  proj.setVelocity(p.getLocation().getDirection().multiply(0.8))
+on ProjectileHit:
+  if hitEntity: hitEntity.setVelocity(dirFromCaster.multiply(0.3))
 
-Implementatiekoppelingen in codebase
-- `SpellRegistry` koppelt `id`→klasse: voeg nieuwe ids (`elemental_surge`, `jenavas_grace`, etc.).
-- `ConfigService`: per spell: cooldown, baseDamage, radius, elementMultipliers.
-- `EmpireWandCommand`: voeg `silence`/channel-interrupt checks (voor Seal/Recall).
-- `FxService`: voeg helpers voor element-particles en beams.
-- `spells.yml`: definities per spell + beschrijving (voor lore/tooltip).
+Spark
 
-Voorbeeld `spells.yml` entries (schets)
-- elemental_surge:
-  - element: FIRE|WATER|EARTH|AIR|LIGHT|SHADOW
-  - baseDamage: 5.0
-  - cooldown: 7
-  - sideEffects:
-    - fire: dot: 2 over 3s
-    - water: slow: 20t amp 1
-    - earth: kbReduce: 0.3 dur: 3s
-- jenavas_grace:
-  - heal: 8.0
-  - damageReduction: 0.2
-  - duration: 6s
-  - radius: 6
-  - cooldown: 28
+Doel: zwaardere variant van Little Spark.
 
-Testscenario’s (Kingdom/Empire thematiek)
-- Entropia-combo: Grasping Vines → Entropic Rift → Entropia Collapse.
-- Empire-support: Jenava’s Grace → DusDavid’s Rally → Magic Missile follow-up.
-- Shadow-execute: LifeSteal om te sustainen → Judgement of RAGTHANATOS op low target.
+Mechanics: SmallFireball met iets hogere snelheid/yield=0 (geen explosie), extra knockback.
+
+Events: ProjectileHitEvent.
+
+Visuals/SFX: ELECTRIC_SPARK trail; ENTITY_BLAZE_SHOOT. 
+hub.spigotmc.org
+advancedplugins.net
+
+Balance: 3–4 ♥; cd 1.5s.
+
+Pseudocode: als Little Spark maar velocity*1.2 en knockback*1.5.
+
+LightningArrow
+
+Doel: pijl die bij impact bliksem triggert.
+
+Mechanics: bij ProjectileHitEvent op Arrow: world.strikeLightning() of strikeLightningEffect() (schade vs. alleen effect). 
+hub.spigotmc.org
+helpch.at
+
+Visuals/SFX: vanilla lightning; optioneel GLOWING op doelwit voor 3s. 
+hub.spigotmc.org
+
+Balance: 4–6 ♥ plus lightning; cd 3–5s.
+
+Randvoorwaarden: optie “no-block-fire” via strikeLightningEffect. 
+helpch.at
+
+Pseudocode:
+
+on ProjectileHit(Arrow):
+  if blockDamageOff: world.strikeLightningEffect(hitLoc)
+  else: world.strikeLightning(hitLoc)
+
+PoisonWave
+
+Doel: vergiftigende kegel/golf.
+
+Mechanics: zoek entiteiten in kegel voor speler; geef PotionEffectType.POISON. 
+Bukkit
+helpch.at
+
+Events: none (tick-timer intern).
+
+Visuals/SFX: Particle.SPELL_MOB/ITEM_SLIME; zacht cave-sound.
+
+Balance: Poison I, 5–7s; cd 6s; cone 60°, range 6.
+
+Pseudocode:
+
+targets = coneEntities(p, 6, 60deg)
+for e in targets: e.addPotionEffect(POISON, 7*20, 0)
+
+ExplosionWave
+
+Doel: niet-projectiel AOE-explosie (boog/kegel) zonder block damage.
+
+Mechanics: per target: custom knockback + World#createExplosion(loc, 1.5F, false, false) voor geluid/feel; of alleen velocity. 
+hub.spigotmc.org
+
+Events: optioneel EntityExplodeEvent cancel voor 100% zekerheid. 
+Javatips.net
+
+Visuals/SFX: EXPLOSION_NORMAL, ENTITY_GENERIC_EXPLODE. 
+hub.spigotmc.org
+
+Balance: 3–4 ♥; cd 5s; cone 70°, range 6–8.
+
+Pseudocode:
+
+for e in coneEntities(...):
+  kb = e.getLocation().toVector().subtract(p.getLocation().toVector()).normalize().multiply(0.9).setY(0.4)
+  e.setVelocity(kb)  // knockback tips: normalize+multiply. :contentReference[oaicite:10]{index=10}
+world.createExplosion(center, 1.5F, false, false)
+
+FlameWave
+
+Doel: vuurgolf; zet targets (kort) in brand.
+
+Mechanics: cone-hit; setFireTicks(60–100); lichte damage. 
+hub.spigotmc.org
+
+Visuals/SFX: FLAME/SMOKE + blaze-shoot sound. 
+hub.spigotmc.org
+
+Balance: 2–3 ♥ + burn; cd 5s.
+
+Pseudocode: gelijk aan PoisonWave maar met e.setFireTicks(80).
+
+EmpireAura
+
+Doel: aura rond caster: buff allies, debuff enemies.
+
+Mechanics: start runTaskTimer (tick-loop); per tick scope 5–6 blokken, geef allies REGEN/SPEED I, enemies WEAKNESS I of GLOWING. 
+docs.papermc.io
+hub.spigotmc.org
+
+Events: task stopt na duur of bij cancel.
+
+Visuals/SFX: ring Particle.SPELL_WITCH of cirkel via spawnParticle(...). 
+hub.spigotmc.org
+
+Balance: duur 8s; cd 18s.
+
+Pseudocode:
+
+task = Bukkit.getScheduler().runTaskTimer(..., 0, 10) // 0.5s tick. :contentReference[oaicite:15]{index=15}
+each tick: apply buffs/debuffs in radius; spawnParticle(RING)
+
+Empire Levitate
+
+Doel: target tijdelijk laten leviteren.
+
+Mechanics: PotionEffectType.LEVITATION voor X ticks. 
+hub.spigotmc.org
+
+Visuals/SFX: CLOUD/ENCHANTMENT_TABLE.
+
+Balance: 2–3s levitation; cd 10s; niet op bosses.
+
+Pseudocode: e.addPotionEffect(new PotionEffect(LEVITATION, 60, 0, false, true)). 
+leonardosnt.github.io
+
+Blood Block (Ravasha)
+
+Doel: 1e cast plaatst redstone-blok; 2e cast lanceert ’m richting mikpunt.
+
+Mechanics: stateful: placeLoc onthouden. Tweede cast: spawn FallingBlock(REDSTONE_BLOCK) of BlockDisplay en geef velocity naar raytrace-hit. 
+hub.spigotmc.org
++2
+hub.spigotmc.org
++2
+
+Visuals/SFX: REDSTONE (DustOptions donkerrood) trail. 
+hub.spigotmc.org
+
+Balance: impact 4–6 ♥ + mini-stun (knockup); cd 8s.
+
+Pseudocode:
+
+if !state.hasBlock: state.placeLoc = targetBlockPos; world.getBlockAt(...).setType(REDSTONE_BLOCK)
+else:
+  fb = world.spawnFallingBlock(state.placeLoc, Material.REDSTONE_BLOCK.createBlockData())
+  aim = rayTraceFromPlayer(20).getHitPosition()  // raytrace. :contentReference[oaicite:20]{index=20}
+  fb.setVelocity(aim.toVector().subtract(fb.getLocation().toVector()).normalize().multiply(1.2).setY(0.4))
+  state.clear()
+
+
+(Issue “Blood Block Spell” bestaat in EmpireWandPlus.) 
+GitHub
+
+EmpireComet
+
+Doel: zware, tragere “comet” met grotere explosie.
+
+Mechanics: Fireball/LargeFireball met verhoogde Explosive#setYield, evt. setIsIncendiary(false) en eigen createExplosion op impact voor controle. 
+hub.spigotmc.org
++1
+
+Visuals/SFX: FLAME + SMOKE_LARGE; explode-sound.
+
+Balance: 7–10 ♥ in kleine radius; cd 9s.
+
+Pseudocode:
+
+fb = p.launchProjectile(LargeFireball); fb.setYield(3.5F); fb.setIsIncendiary(false)
+on ProjectileHit(fb): world.createExplosion(hitLoc, 3.2F, false, blockDamageToggle)
+
+Blood Spam
+
+Doel: snelle burst van mini “blood” projectielen.
+
+Mechanics: schedule 6–8 korte ticks die Snowball/SmallFireball schieten met REDSTONE (Dust) trail; lichte damage per hit. 
+docs.papermc.io
+hub.spigotmc.org
+
+Visuals/SFX: “splatter” particles.
+
+Balance: 0.5–1 ♥ per hit, dps via spam; cd 6s.
+
+Pseudocode:
+
+repeat 6 every 2t:
+  proj = p.launchProjectile(Snowball); proj.setVelocity(dir*1.3)
+  trail REDSTONE dust
+
+
+(Issue “Blood Spam Spell” bestaat in EmpireWandPlus.) 
+GitHub
+
+EmpireLaunch
+
+Doel: krachtige verticale/diagonale launch met val-bescherming.
+
+Mechanics: player.setVelocity(dir.normalize().multiply(0.4).setY(1.0)) + SLOW_FALLING 4s. 
+helpch.at
+
+Visuals/SFX: CLOUD burst; elytra-whoosh.
+
+Balance: cd 8s; valdamage mitigatie via effect.
+
+Pseudocode: velocity + addPotionEffect(SLOW_FALLING, 80, 0).
+
+EarthQuake
+
+Doel: grondschok met AOE-knockback.
+
+Mechanics: zoek entiteiten in 6–8 blokken; bereken vector van caster→target, normalize().multiply(strength).setY(0.3); zet velocity. 
+Bukkit
+SpigotMC
+
+Visuals/SFX: BLOCK_CRACK/DUST, anvil/bass-sound.
+
+Balance: 0–2 ♥ + knockback; cd 7s; werkt niet door muren.
+
+Pseudocode:
+
+for e in nearEntities(p, 7):
+  v = e.getLocation().toVector().subtract(p.getLocation().toVector()).normalize().multiply(1.1)
+  e.setVelocity(v.setY(0.35))
+
+EmpireEscape
+
+Doel: verbeterde ontsnapping (blink/dash).
+
+Mechanics: rayTraceBlocks max 12–16m; teleport naar veilige hit of fallback 6m vooruit; korte INVISIBILITY/SPEED. 
+hub.spigotmc.org
+
+Visuals/SFX: SMOKE_NORMAL puff; enderman-teleport sound.
+
+Balance: cd 10s; reset fall damage.
+
+Pseudocode: dest = safeRayEnd(...); p.teleport(dest); p.addPotionEffect(SPEED, 40, 0).
+
+CometShower
+
+Doel: salvo/regengebied van meerdere kometen.
+
+Mechanics: schedule N keer LargeFireball/createExplosion op willekeurige punten binnen cirkel boven target; dalen met Vector(0, -speed, 0). 
+docs.papermc.io
+hub.spigotmc.org
+
+Visuals/SFX: herhaalde explode-sounds; FLAME/LAVA drips.
+
+Balance: 5–7 kometen; elk 3–4 ♥; cd 16s; block damage optioneel.
+
+Pseudocode:
+
+center = targetedLocation()
+repeat 5 every 6t:
+  drop = center.add(rand2D(radius)).add(0, 12, 0)
+  world.createExplosion(drop, 2.6F, false, blockDamageToggle)
+
+GodCloud
+
+Doel: cosmetische “vlieg-wolk” onder goden tijdens vliegen.
+
+Mechanics: zolang speler isFlying()/gliding: elke 2–3 ticks spawnParticle(Particle.CLOUD / CAMPFIRE_COSY_SMOKE) net onder voeten. 
+hub.spigotmc.org
+
+Events: task start bij enable, stopt bij land.
+
+Visuals/SFX: continue CLOUD; zachte wind-sound.
+
+Balance: alleen FX; performance-vriendelijke particle-count.
+
+Pseudocode:
+
+task.runTaskTimer(..., 0, 2):
+  if p.isFlying(): world.spawnParticle(CLOUD, p.getLocation().add(0,-0.9,0), 6, 0.3,0.05,0.3)

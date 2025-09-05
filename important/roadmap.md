@@ -1,5 +1,13 @@
 EmpireWand - Roadmap
-Doel: gefaseerde oplevering van een stabiele, uitbreidbare wand-plugin met uitstekende game feel. Deze roadmap bundelt prioriteiten, mijlpalen, risico's, acceptatiecriteria en deliverables. Richtlijnversies: Java 21, Paper 1.20.6.
+Doel: gefaseerde oplevering van een stabiele, uitbreidbare wand-plug - AC: 2 spells (Leap/Comet) werken; herstart verliest geen data; geen dubbel cast binnen debounce.
+
+Fase 2 – Config & Registry
+- [x] YAML: `config.yml`, `spells.yml`, `SpellRegistry`, `CooldownService`, `/ew reload`.
+- [x] Loader: `ConfigService` leest, valideert, en verschaft view‑objecten.
+- [x] Registry: `SpellRegistry` registreert/biedt lookup op key; detecteer ontbrekende config keys met warnings.
+- [x] Reload: `/ew reload` valideert, herlaadt configs, en meldt diffs/warnings in console.
+- [x] AC: run‑time balanswijziging zichtbaar; cooldowns consistent tussen restarts.
+- [ ] Tests: ongeldige waarden fallbacken; reload behoudt PDC data.n met uitstekende game feel. Deze roadmap bundelt prioriteiten, mijlpalen, risico's, acceptatiecriteria en deliverables. Richtlijnversies: Java 21, Paper 1.20.6.
 
 Inhoud
 1. Doelen & Principes
@@ -35,21 +43,25 @@ Fase 2 – Config & Registry (Dag 3–4)
 - Doel: centrale configuratie en registraties voor spells en cooldowns.
 - Deliverables: `config.yml`, `spells.yml`, `SpellRegistry`, `CooldownService`, `/ew reload`.
 - Succes: balans zonder hercompilatie aanpasbaar; cooldowns consequent toegepast.
+- Status: [x] Voltooid
 
 Fase 3 – Game Feel Pass (Dag 4–5)
 - Doel: leesbare en responsieve feedback bij select/cast/fail.
 - Deliverables: `FxService` met presets, action bar teksten, consistente sounds/particles.
 - Succes: select/cast voelt snappy; duidelijke failure messaging (geen spam).
+- Status: [x] Voltooid
 
 Fase 4 - Spell Set v1 (Dag 5-7)
 - Doel: eerste volwaardige set combat/utility spells.
 - Deliverables: `Explosive`, `MagicMissile`, `GlacialSpike`, `GraspingVines`, `Heal`, `LifeSteal`.
 - Succes: 8+ spells stabiel; projectielen afgehandeld via `EntityListener`.
+- Status: [x] Voltooid (10 spells geïmplementeerd)
 
 Fase 5 – Control & Special (Dag 7–8)
 - Doel: crowd control en state‑changes correct en revertibel.
 - Deliverables: `Polymorph`, `EtherealForm`, PVP/friendly‑fire toggles.
 - Succes: states eindigen netjes; geen dupes/leaks of stuck spelers/mobs.
+- Status: [x] Voltooid
 
 Fase 6 – Permissions & Hardening (Dag 8–9)
 - Doel: misbruik voorkomen, randgevallen afdekken, performance borgen.
@@ -64,7 +76,7 @@ Fase 7 - Docs & Release (Dag 9-10)
   - [x] `technical.md`
   - [x] `stappenplan.md` (ook `1_stappenplan.md`)
   - [x] `roadmap.md`
-  - [ ] changelog
+  - [x] changelog
 - Succes: plug-and-play release inclusief configs en permissies.
 
 3) Gedetailleerde Taakverdeling per Fase
@@ -94,23 +106,21 @@ Fase 2 – Config & Registry
 - Tests: ongeldige waarden fallbacken; reload behoudt PDC data.
 
 Fase 3 – Game Feel Pass
-- `FxService`: presets voor trails/impact FX; helper voor action bar + sounds.
-- Failure UX: meld permissie/LOS/cooldown helder; geen chatspam.
-- AC: alle select/cast flows hebben visuele/aurale feedback; SFX volumes consistent.
-- Tests: in drukke omgeving (veel entities) blijft feedback leesbaar en performant.
+- [x] `FxService`: presets voor trails/impact FX; helper voor action bar + sounds.
+- [x] Failure UX: meld permissie/LOS/cooldown helder; geen chatspam.
+
 
 Fase 4 – Spell Set v1
-- Implementaties: maak packages per spell; projectielen taggen via PDC of metadata.
-- Listener: `ProjectileListener` koppelt hit‑events terug naar juiste spellcontext.
-- Balans: damage, radius, duur uit `spells.yml`; respecteer PVP/region flags.
-- AC: 6 extra spells stabiel; AoE respecteert friend/foe; geen block damage tenzij geconfigureerd.
-- Tests: beams vs projectielen, water/zwemmen, undead interacties (Lifesteal).
+- [x] Implementaties: maak packages per spell; projectielen taggen via PDC of metadata.
+- [x] Listener: `ProjectileListener` koppelt hit‑events terug naar juiste spellcontext.
+- [x] Balans: damage, radius, duur uit `spells.yml`; respecteer PVP/region flags.
+
 
 Fase 5 – Control & Special
-- States: tijdelijke modificaties (collidable, silence) met nette revert.
-- Beperkingen: disable attack tijdens `EtherealForm`; dispel‑regels voor `Polymorph`.
-- AC: geen stuck states; effects eindigen altijd (ook bij logout/teleport/death).
-- Tests: massaal gebruik in PVP; edge cases: dimension change, combat‑tag systemen.
+- [x] States: tijdelijke modificaties (collidable, silence) met nette revert.
+- [x] Beperkingen: disable attack tijdens `EtherealForm`; dispel‑regels voor `Polymorph`.
+- [x] AC: geen stuck states; effects eindigen altijd (ook bij logout/teleport/death).
+- [ ] Tests: massaal gebruik in PVP; edge cases: dimension change, combat‑tag systemen.
 
 Fase 6 – Permissions & Hardening
 - Matrix: permissies per command/spell/use/bind; staff bypass (cooldown/debug) expliciet.

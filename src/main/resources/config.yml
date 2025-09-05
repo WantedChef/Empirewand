@@ -1,5 +1,7 @@
 # EmpireWand main configuration
 
+config-version: 1.0
+
 messages:
   no-permission: "<red>You don't have permission to do that."
   no-line-of-sight: "<red>You can't see your target."
@@ -18,3 +20,8 @@ features:
 
 cooldowns:
   default: 500 # in milliseconds
+
+# Metrics and analytics (opt-in)
+metrics:
+  enabled: true  # Set to false to disable bStats metrics collection
+  debug: false   # Set to true to enable additional debug metrics

@@ -3,6 +3,8 @@ package com.example.empirewand.spell.implementation;
 import com.example.empirewand.core.Keys;
 import com.example.empirewand.spell.ProjectileSpell;
 import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.Prereq;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.LivingEntity;
@@ -65,5 +67,20 @@ public class Comet implements ProjectileSpell {
     @Override
     public String getName() {
         return "comet";
+    }
+
+    @Override
+    public String key() {
+        return "comet";
+    }
+
+    @Override
+    public Component displayName() {
+        return Component.text("Comet");
+    }
+
+    @Override
+    public Prereq prereq() {
+        return new Prereq(true, Component.text(""));
     }
 }

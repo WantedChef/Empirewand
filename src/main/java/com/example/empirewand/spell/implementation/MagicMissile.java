@@ -9,6 +9,8 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.Prereq;
+import net.kyori.adventure.text.Component;
 
 public class MagicMissile implements Spell {
     @Override
@@ -72,5 +74,20 @@ public class MagicMissile implements Spell {
     @Override
     public String getName() {
         return "magic-missile";
+    }
+
+    @Override
+    public String key() {
+        return "magic-missile";
+    }
+
+    @Override
+    public Component displayName() {
+        return Component.text("Magic Missile");
+    }
+
+    @Override
+    public Prereq prereq() {
+        return new Prereq(true, Component.text(""));
     }
 }

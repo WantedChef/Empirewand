@@ -5,21 +5,23 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Snowball;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import com.example.empirewand.core.Keys;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.Prereq;
+import net.kyori.adventure.text.Component;
 
 public class LifeSteal implements Spell {
     @Override
     public void execute(SpellContext context) {
         Player player = context.caster();
         Snowball snowball = player.launchProjectile(Snowball.class);
-        snowball.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, PersistentDataType.STRING, getName());
-        snowball.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, PersistentDataType.STRING, player.getUniqueId().toString());
+        snowball.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, Keys.STRING_TYPE.getType(), getName());
+        snowball.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, Keys.STRING_TYPE.getType(),
+                player.getUniqueId().toString());
         // Give a crisp initial speed for better feel
         Vector dir = player.getEyeLocation().getDirection().normalize().multiply(1.2);
         snowball.setVelocity(dir);
@@ -40,8 +42,7 @@ public class LifeSteal implements Spell {
                         8,
                         0.08, 0.08, 0.08,
                         0,
-                        new Particle.DustOptions(Color.fromRGB(170, 0, 0), 1.0f)
-                );
+                        new Particle.DustOptions(Color.fromRGB(170, 0, 0), 1.0f));
             }
         }.runTaskTimer(context.plugin(), 0L, 1L);
     }
@@ -49,5 +50,20 @@ public class LifeSteal implements Spell {
     @Override
     public String getName() {
         return "lifesteal";
+    }
+
+    @Override
+    public String key() {
+        return "lifesteal";
+    }
+
+    @Override
+    public Component displayName() {
+        return Component.text("Life Steal");
+    }
+
+    @Override
+    public Prereq prereq() {
+        return new Prereq(true, Component.text(""));
     }
 }

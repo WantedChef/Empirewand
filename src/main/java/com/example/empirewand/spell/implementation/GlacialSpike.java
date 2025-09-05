@@ -3,11 +3,12 @@ package com.example.empirewand.spell.implementation;
 import com.example.empirewand.core.Keys;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.Prereq;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Particle;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Player;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class GlacialSpike implements Spell {
@@ -20,8 +21,9 @@ public class GlacialSpike implements Spell {
         // Prevent pickup and add a slightly punchier feel
         arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
         arrow.setCritical(true);
-        arrow.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, PersistentDataType.STRING, getName());
-        arrow.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, PersistentDataType.STRING, player.getUniqueId().toString());
+        arrow.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, Keys.STRING_TYPE.getType(), getName());
+        arrow.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, Keys.STRING_TYPE.getType(),
+                player.getUniqueId().toString());
 
         new BukkitRunnable() {
             @Override
@@ -39,5 +41,20 @@ public class GlacialSpike implements Spell {
     @Override
     public String getName() {
         return "glacial-spike";
+    }
+
+    @Override
+    public String key() {
+        return "glacial-spike";
+    }
+
+    @Override
+    public Component displayName() {
+        return Component.text("Glacial Spike");
+    }
+
+    @Override
+    public Prereq prereq() {
+        return new Prereq(true, Component.text(""));
     }
 }

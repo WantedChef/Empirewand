@@ -3,10 +3,11 @@ package com.example.empirewand.spell.implementation;
 import com.example.empirewand.core.Keys;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.Prereq;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.WitherSkull;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class Explosive implements Spell {
@@ -20,8 +21,8 @@ public class Explosive implements Spell {
         WitherSkull skull = player.launchProjectile(WitherSkull.class);
         skull.setYield(Math.max(0.0f, yield));
         skull.setIsIncendiary(setsFire);
-        skull.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, PersistentDataType.STRING, getName());
-        skull.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, PersistentDataType.STRING, player.getUniqueId().toString());
+        skull.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, Keys.STRING_TYPE.getType(), getName());
+        skull.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, Keys.STRING_TYPE.getType(), player.getUniqueId().toString());
 
         // Subtle smoke trail while travelling
         new BukkitRunnable() {
@@ -39,5 +40,20 @@ public class Explosive implements Spell {
     @Override
     public String getName() {
         return "explosive";
+    }
+
+    @Override
+    public String key() {
+        return "explosive";
+    }
+
+    @Override
+    public Component displayName() {
+        return Component.text("Explosive");
+    }
+
+    @Override
+    public Prereq prereq() {
+        return new Prereq(true, Component.text(""));
     }
 }

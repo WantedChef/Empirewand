@@ -1,0 +1,100 @@
+  values:
+    base-damage: 2.0
+    movement-bonus: 0.5
+    movement-threshold: 0.8
+    duration-ticks: 120
+    check-interval-ticks: 10
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+blood-nova:
+  display-name: "<#8B0000>Blood Nova"
+  cooldown: 12000
+  values:
+    base-damage: 4.0
+    damage-per-charge: 2.0
+    radius: 4.0
+    knockback-strength: 1.0
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+# Chatage’s Ster
+radiant-beacon:
+  display-name: "<#FFD700>Stralingsbaken"
+  cooldown: 16000
+  values:
+    radius: 6.0
+    heal-amount: 1.0
+    damage-amount: 1.0
+    duration-pulses: 8
+    pulse-interval-ticks: 20
+    max-targets: 8
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+lightwall:
+  display-name: "<#FFFFFF>Lichtmuur"
+  cooldown: 18000
+  values:
+    width: 6.0
+    height: 3.0
+    duration-ticks: 100
+    knockback-strength: 0.5
+    blindness-duration-ticks: 30
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+solar-lance:
+  display-name: "<#FFD700>Zonschicht"
+  cooldown: 10000
+  values:
+    range: 20.0
+    damage: 6.0
+    glowing-duration-ticks: 60
+    max-pierce: 3
+    sample-step: 0.5
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+# Extra spells
+sunburst-step:
+  display-name: "<#FFD700>Sunburst Step"
+  cooldown: 7000
+  values:
+    max-distance: 10.0
+    pulse-radius: 3.5
+    ally-heal: 1.0
+    enemy-damage: 1.0
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+crimson-chains:
+  display-name: "<#8B0000>Crimson Chains"
+  cooldown: 9000
+  values:
+    pull-strength: 0.5
+    slowness-duration-ticks: 40
+    slowness-amplifier: 1
+    projectile-speed: 1.5
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+mephidic-reap:
+  display-name: "<#000000>Mephidic Reap"
+  cooldown: 10000
+  values:
+    range: 8.0
+    damage: 2.0
+    slowness-duration-ticks: 20
+    max-pierce: 3
+    travel-ticks: 14
+  flags:
+    hit-players: true
+    hit-mobs: true

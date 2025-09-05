@@ -2,6 +2,8 @@ package com.example.empirewand.spell.implementation;
 
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.Prereq;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Entity;
@@ -42,5 +44,20 @@ public class GraspingVines implements Spell {
     @Override
     public String getName() {
         return "grasping-vines";
+    }
+
+    @Override
+    public String key() {
+        return "grasping-vines";
+    }
+
+    @Override
+    public Component displayName() {
+        return Component.text("Grasping Vines");
+    }
+
+    @Override
+    public Prereq prereq() {
+        return new Prereq(true, Component.text(""));
     }
 }

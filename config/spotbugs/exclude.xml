@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Exclude test classes -->
+    <Match>
+        <Class name="~.*\.test\..*"/>
+    </Match>
+
+    <!-- Exclude generated sources -->
+    <Match>
+        <Source name="~.*generated.*"/>
+    </Match>
+
+    <!-- Exclude main class with intentional System.out.println for debugging -->
+    <Match>
+        <Class name="com.example.empirewand.EmpireWandPlugin"/>
+        <Bug pattern="DM_DEFAULT_ENCODING"/>
+    </Match>
+
+    <!-- Allow intentional empty catch blocks in some cases -->
+    <Match>
+        <Bug pattern="DE_MIGHT_IGNORE"/>
+    </Match>
+
+    <!-- Allow mutable static fields in registries (by design) -->
+    <Match>
+        <Bug pattern="MS_MUTABLE_COLLECTION"/>
+        <Class name="com.example.empirewand.core.SpellRegistry"/>
+    </Match>
+
+    <!-- Allow mutable static fields in services (by design) -->
+    <Match>
+        <Bug pattern="MS_MUTABLE_COLLECTION"/>
+        <Class name="com.example.empirewand.core.CooldownService"/>
+    </Match>
+</FindBugsFilter>

@@ -27,5 +27,9 @@ public class CooldownService {
     public void set(UUID playerId, String key, long untilTicks) {
         cooldowns.computeIfAbsent(playerId, k -> new HashMap<>()).put(key, untilTicks);
     }
+
+    public void clearAll(UUID playerId) {
+        cooldowns.remove(playerId);
+    }
 }
 

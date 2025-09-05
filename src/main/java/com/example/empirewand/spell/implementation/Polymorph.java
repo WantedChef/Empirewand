@@ -2,6 +2,7 @@ package com.example.empirewand.spell.implementation;
 
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.Prereq;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -28,7 +29,8 @@ public class Polymorph implements Spell {
         int durationTicks = context.config().getSpellsConfig().getInt("polymorph.values.duration-ticks", 100);
 
         Entity looked = player.getTargetEntity(12);
-        if (!(looked instanceof LivingEntity target) || target instanceof Player || !target.isValid() || target.isDead()) {
+        if (!(looked instanceof LivingEntity target) || target instanceof Player || !target.isValid()
+                || target.isDead()) {
             context.fx().fizzle(player);
             return;
         }
@@ -44,7 +46,7 @@ public class Polymorph implements Spell {
         context.fx().playSound(target.getLocation(), Sound.ENTITY_SHEEP_AMBIENT, 0.8f, 1.2f);
 
         Sheep sheep = (Sheep) target.getWorld().spawnEntity(target.getLocation(), EntityType.SHEEP);
-        sheep.customName(Component.text("Polymorphed"));
+        sheep.customName(Component.text(context.plugin().getTextService().getMessage("polymorph-name")));
         sheep.setCustomNameVisible(true);
 
         polymorphedEntities.put(sheep.getUniqueId(), target.getUniqueId());
@@ -52,7 +54,8 @@ public class Polymorph implements Spell {
         new BukkitRunnable() {
             @Override
             public void run() {
-                // If the sheep is gone or the mapping was cleared (e.g., sheep died -> original killed), do nothing
+                // If the sheep is gone or the mapping was cleared (e.g., sheep died -> original
+                // killed), do nothing
                 UUID originalId = polymorphedEntities.get(sheep.getUniqueId());
                 if (originalId == null) {
                     return;
@@ -69,7 +72,8 @@ public class Polymorph implements Spell {
                     target.setInvulnerable(false);
                     target.setInvisible(false);
                     target.setCollidable(true);
-                    context.fx().spawnParticles(target.getLocation().add(0, 1.0, 0), Particle.CLOUD, 10, 0.3, 0.3, 0.3, 0.01);
+                    context.fx().spawnParticles(target.getLocation().add(0, 1.0, 0), Particle.CLOUD, 10, 0.3, 0.3, 0.3,
+                            0.01);
                 }
 
                 polymorphedEntities.remove(sheep.getUniqueId());
@@ -80,6 +84,21 @@ public class Polymorph implements Spell {
     @Override
     public String getName() {
         return "polymorph";
+    }
+
+    @Override
+    public String key() {
+        return "polymorph";
+    }
+
+    @Override
+    public Component displayName() {
+        return Component.text("Polymorph");
+    }
+
+    @Override
+    public Prereq prereq() {
+        return new Prereq(true, Component.text(""));
     }
 
     public HashMap<UUID, UUID> getPolymorphedEntities() {

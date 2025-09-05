@@ -11,7 +11,6 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.ProjectileHitEvent;
-import org.bukkit.persistence.PersistentDataType;
 
 import java.util.UUID;
 
@@ -29,7 +28,7 @@ public class ProjectileListener implements Listener {
     @EventHandler
     public void onProjectileHit(ProjectileHitEvent event) {
         Projectile projectile = event.getEntity();
-        String spellName = projectile.getPersistentDataContainer().get(Keys.PROJECTILE_SPELL, PersistentDataType.STRING);
+        String spellName = projectile.getPersistentDataContainer().get(Keys.PROJECTILE_SPELL, Keys.STRING_TYPE.getType());
         if (spellName == null) {
             return;
         }
@@ -40,7 +39,7 @@ public class ProjectileListener implements Listener {
         }
 
         Player caster = null;
-        String ownerId = projectile.getPersistentDataContainer().get(Keys.PROJECTILE_OWNER, PersistentDataType.STRING);
+        String ownerId = projectile.getPersistentDataContainer().get(Keys.PROJECTILE_OWNER, Keys.STRING_TYPE.getType());
         if (ownerId != null) {
             caster = Bukkit.getPlayer(UUID.fromString(ownerId));
         }

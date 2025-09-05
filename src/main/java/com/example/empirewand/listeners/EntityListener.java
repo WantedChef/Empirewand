@@ -3,6 +3,7 @@ package com.example.empirewand.listeners;
 import com.example.empirewand.EmpireWandPlugin;
 import com.example.empirewand.core.FxService;
 import com.example.empirewand.core.Keys;
+import com.example.empirewand.core.PerformanceMonitor;
 import org.bukkit.Bukkit;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -18,7 +19,6 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.Material;
@@ -36,97 +36,143 @@ public class EntityListener implements Listener {
 
     @EventHandler
     public void onProjectileHit(ProjectileHitEvent event) {
+        PerformanceMonitor.TimingContext timing = PerformanceMonitor.startTiming("onProjectileHit");
+
         Projectile projectile = event.getEntity();
-        String spellName = projectile.getPersistentDataContainer().get(Keys.PROJECTILE_SPELL, PersistentDataType.STRING);
+        String spellName = projectile.getPersistentDataContainer().get(Keys.PROJECTILE_SPELL,
+                Keys.STRING_TYPE.getType());
 
         if (spellName == null) {
+            timing.complete(1);
             return;
         }
 
         FxService fxService = plugin.getFxService();
-        if (spellName.equals("explosive")) {
-            fxService.spawnParticles(projectile.getLocation(), Particle.EXPLOSION_EMITTER, 5, 0, 0, 0, 0);
-            fxService.spawnParticles(projectile.getLocation(), Particle.LARGE_SMOKE, 20, 1, 1, 1, 0.1);
-            fxService.playSound(projectile.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 1.0f);
 
-            // Configurable AoE damage around impact
-            double damage = plugin.getConfigService().getSpellsConfig().getDouble("explosive.values.damage", 12.0);
-            double radius = plugin.getConfigService().getSpellsConfig().getDouble("explosive.values.radius", 4.0);
-            boolean hitPlayers = plugin.getConfigService().getSpellsConfig().getBoolean("explosive.flags.hit-players", true);
-            boolean hitMobs = plugin.getConfigService().getSpellsConfig().getBoolean("explosive.flags.hit-mobs", true);
-
-            String ownerUUID = projectile.getPersistentDataContainer().get(Keys.PROJECTILE_OWNER, PersistentDataType.STRING);
-            Player caster = ownerUUID != null ? Bukkit.getPlayer(UUID.fromString(ownerUUID)) : null;
-            boolean friendlyFire = plugin.getConfigService().getConfig().getBoolean("features.friendly-fire", false);
-
-            projectile.getWorld().getNearbyEntities(projectile.getLocation(), radius, radius, radius).forEach(e -> {
-                if (e instanceof LivingEntity le) {
-                    boolean isPlayer = le instanceof Player;
-                    if ((isPlayer && !hitPlayers) || (!isPlayer && !hitMobs)) return;
-                    if (caster != null && !friendlyFire && (le instanceof Player p) && p.getUniqueId().equals(caster.getUniqueId())) return;
-                    le.damage(damage, caster != null ? caster : projectile);
-                }
-            });
-        } else if (spellName.equals("glacial-spike")) {
-            // Apply slow on hit entity based on config flags, then shatter effect and clean up projectile
-            if (event.getHitEntity() instanceof LivingEntity target) {
-                boolean hitPlayers = plugin.getConfigService().getSpellsConfig().getBoolean("glacial-spike.flags.hit-players", true);
-                boolean hitMobs = plugin.getConfigService().getSpellsConfig().getBoolean("glacial-spike.flags.hit-mobs", true);
-                boolean isPlayer = target instanceof Player;
-                if ((isPlayer && hitPlayers) || (!isPlayer && hitMobs)) {
-                    int slowTicks = plugin.getConfigService().getSpellsConfig().getInt("glacial-spike.values.slow-duration-ticks", 80);
-                    int slowAmp = plugin.getConfigService().getSpellsConfig().getInt("glacial-spike.values.slow-amplifier", 2);
-                    target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, slowTicks, slowAmp));
-                }
-            }
-            // ITEM_CRACK requires data; use FxService overload with data
-            fxService.spawnParticles(projectile.getLocation(), Particle.ITEM, 30, 0.2, 0.2, 0.2, 0.1, new ItemStack(Material.ICE));
-            fxService.playSound(projectile.getLocation(), Sound.BLOCK_GLASS_BREAK, 1.0f, 1.0f);
-            // Remove arrow to avoid it sticking around
-            if (projectile instanceof Arrow) {
-                projectile.remove();
-            }
-        } else if (spellName.equals("lifesteal")) {
-            if (event.getHitEntity() instanceof LivingEntity target) {
-                String ownerUUID = projectile.getPersistentDataContainer().get(Keys.PROJECTILE_OWNER, PersistentDataType.STRING);
-                if (ownerUUID != null) {
-                    Player caster = Bukkit.getPlayer(UUID.fromString(ownerUUID));
-                    if (caster != null) {
-                        // Respect friendly fire: skip if target is the caster and FF disabled
-                        boolean friendlyFire = plugin.getConfigService().getConfig().getBoolean("features.friendly-fire", false);
-                        boolean hitPlayers = plugin.getConfigService().getSpellsConfig().getBoolean("lifesteal.flags.hit-players", true);
-                        boolean hitMobs = plugin.getConfigService().getSpellsConfig().getBoolean("lifesteal.flags.hit-mobs", true);
-                        boolean isPlayer = target instanceof Player;
-                        boolean allowedByFlags = (isPlayer && hitPlayers) || (!isPlayer && hitMobs);
-                        boolean hittingSelfWhenNoFF = (target instanceof Player tgtPlayer) && !friendlyFire && tgtPlayer.getUniqueId().equals(caster.getUniqueId());
-                        if (allowedByFlags && !hittingSelfWhenNoFF) {
-                            double damage = plugin.getConfigService().getSpellsConfig().getDouble("lifesteal.values.damage", 6.0);
-                            target.damage(damage, caster);
-                            var maxAttr = caster.getAttribute(Attribute.GENERIC_MAX_HEALTH);
-                            double maxHealth = maxAttr != null ? maxAttr.getValue() : 20.0;
-                            double currentHealth = caster.getHealth();
-                            caster.setHealth(Math.min(maxHealth, currentHealth + (damage / 2.0)));
-                        }
-                    }
-                }
-            }
-            fxService.playSound(projectile.getLocation(), Sound.ENTITY_VEX_CHARGE, 1.0f, 1.0f);
-            // Snowball can linger briefly; ensure cleanup
-            projectile.remove();
+        switch (spellName) {
+            case "explosive" -> handleExplosiveSpell(projectile, fxService);
+            case "glacial-spike" -> handleGlacialSpikeSpell(projectile, event, fxService);
+            case "lifesteal" -> handleLifestealSpell(projectile, event, fxService);
+            // TODO: Add impact effects for spells like comet, magic-missile, etc.
         }
 
-        // TODO: Add impact effects for other spells
+        timing.complete(15); // Projectile hit should complete within 15ms
+    }
+
+    private void handleExplosiveSpell(Projectile projectile, FxService fxService) {
+        PerformanceMonitor.TimingContext timing = PerformanceMonitor.startTiming("handleExplosiveSpell");
+
+        // Batch particle effects for better performance
+        fxService.batchParticles(projectile.getLocation(), Particle.EXPLOSION_EMITTER, 5, 0, 0, 0, 0);
+        fxService.batchParticles(projectile.getLocation(), Particle.LARGE_SMOKE, 20, 1, 1, 1, 0.1);
+        fxService.flushParticleBatch(); // Execute all batched particles at once
+
+        fxService.playSound(projectile.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 1.0f);
+
+        // Configurable AoE damage around impact
+        double damage = plugin.getConfigService().getSpellsConfig().getDouble("explosive.values.damage", 12.0);
+        double radius = plugin.getConfigService().getSpellsConfig().getDouble("explosive.values.radius", 4.0);
+        boolean hitPlayers = plugin.getConfigService().getSpellsConfig().getBoolean("explosive.flags.hit-players",
+                true);
+        boolean hitMobs = plugin.getConfigService().getSpellsConfig().getBoolean("explosive.flags.hit-mobs", true);
+
+        String ownerUUID = projectile.getPersistentDataContainer().get(Keys.PROJECTILE_OWNER,
+                Keys.STRING_TYPE.getType());
+        Player caster = ownerUUID != null ? Bukkit.getPlayer(UUID.fromString(ownerUUID)) : null;
+        boolean friendlyFire = plugin.getConfigService().getConfig().getBoolean("features.friendly-fire", false);
+
+        projectile.getWorld().getNearbyEntities(projectile.getLocation(), radius, radius, radius).forEach(e -> {
+            if (e instanceof LivingEntity le) {
+                boolean isPlayer = le instanceof Player;
+                if ((isPlayer && !hitPlayers) || (!isPlayer && !hitMobs))
+                    return;
+                if (caster != null && !friendlyFire && (le instanceof Player p)
+                        && p.getUniqueId().equals(caster.getUniqueId()))
+                    return;
+                le.damage(damage, caster != null ? caster : projectile);
+            }
+        });
+
+        timing.complete(20); // Explosive spell should complete within 20ms
+    }
+
+    private void handleGlacialSpikeSpell(Projectile projectile, ProjectileHitEvent event, FxService fxService) {
+        // Apply slow on hit entity based on config flags, then shatter effect and clean
+        // up projectile
+        if (event.getHitEntity() instanceof LivingEntity target) {
+            boolean hitPlayers = plugin.getConfigService().getSpellsConfig()
+                    .getBoolean("glacial-spike.flags.hit-players", true);
+            boolean hitMobs = plugin.getConfigService().getSpellsConfig().getBoolean("glacial-spike.flags.hit-mobs",
+                    true);
+            boolean isPlayer = target instanceof Player;
+            if ((isPlayer && hitPlayers) || (!isPlayer && hitMobs)) {
+                int slowTicks = plugin.getConfigService().getSpellsConfig()
+                        .getInt("glacial-spike.values.slow-duration-ticks", 80);
+                int slowAmp = plugin.getConfigService().getSpellsConfig().getInt("glacial-spike.values.slow-amplifier",
+                        2);
+                target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, slowTicks, slowAmp));
+            }
+        }
+        // ITEM_CRACK requires data; use FxService overload with data
+        fxService.spawnParticles(projectile.getLocation(), Particle.ITEM, 30, 0.2, 0.2, 0.2, 0.1,
+                new ItemStack(Material.ICE));
+        fxService.playSound(projectile.getLocation(), Sound.BLOCK_GLASS_BREAK, 1.0f, 1.0f);
+        // Remove arrow to avoid it sticking around
+        if (projectile instanceof Arrow) {
+            projectile.remove();
+        }
+    }
+
+    private void handleLifestealSpell(Projectile projectile, ProjectileHitEvent event, FxService fxService) {
+        if (event.getHitEntity() instanceof LivingEntity target) {
+            String ownerUUID = projectile.getPersistentDataContainer().get(Keys.PROJECTILE_OWNER,
+                    Keys.STRING_TYPE.getType());
+            if (ownerUUID != null) {
+                Player caster = Bukkit.getPlayer(UUID.fromString(ownerUUID));
+                if (caster != null && canDamageTarget(caster, target)) {
+                    double damage = plugin.getConfigService().getSpellsConfig().getDouble("lifesteal.values.damage",
+                            6.0);
+                    target.damage(damage, caster);
+                    var maxAttr = caster.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+                    double maxHealth = maxAttr != null ? maxAttr.getValue() : 20.0;
+                    double currentHealth = caster.getHealth();
+                    caster.setHealth(Math.min(maxHealth, currentHealth + (damage / 2.0)));
+                }
+            }
+        }
+        fxService.playSound(projectile.getLocation(), Sound.ENTITY_VEX_CHARGE, 1.0f, 1.0f);
+        // Snowball can linger briefly; ensure cleanup
+        projectile.remove();
+    }
+
+    private boolean canDamageTarget(Player caster, LivingEntity target) {
+        // Respect friendly fire: skip if target is the caster and FF disabled
+        boolean friendlyFire = plugin.getConfigService().getConfig().getBoolean("features.friendly-fire", false);
+        boolean hitPlayers = plugin.getConfigService().getSpellsConfig().getBoolean("lifesteal.flags.hit-players",
+                true);
+        boolean hitMobs = plugin.getConfigService().getSpellsConfig().getBoolean("lifesteal.flags.hit-mobs", true);
+        boolean isPlayer = target instanceof Player;
+        boolean allowedByFlags = (isPlayer && hitPlayers) || (!isPlayer && hitMobs);
+        boolean hittingSelfWhenNoFF = (target instanceof Player tgtPlayer) && !friendlyFire
+                && tgtPlayer.getUniqueId().equals(caster.getUniqueId());
+        return allowedByFlags && !hittingSelfWhenNoFF;
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onFallDamage(EntityDamageEvent event) {
-        if (event.getCause() != DamageCause.FALL) return;
-        if (!(event.getEntity() instanceof Player player)) return;
+        if (event.getCause() != DamageCause.FALL)
+            return;
+        if (!(event.getEntity() instanceof Player player))
+            return;
+
+        // Guard: Ensure player is in a valid world
+        if (player.getWorld() == null)
+            return;
 
         // Cancel fall damage if tagged as ethereal and not expired.
         var pdc = player.getPersistentDataContainer();
-        boolean etherealFlag = pdc.has(Keys.ETHEREAL_ACTIVE, PersistentDataType.BYTE);
-        Long expires = pdc.get(Keys.ETHEREAL_EXPIRES_TICK, PersistentDataType.LONG);
+        boolean etherealFlag = pdc.has(Keys.ETHEREAL_ACTIVE, Keys.BYTE_TYPE.getType());
+        Long expires = pdc.get(Keys.ETHEREAL_EXPIRES_TICK, Keys.LONG_TYPE.getType());
         long now = player.getWorld().getFullTime();
         boolean activeByTime = (expires != null) && now <= expires;
 
@@ -147,7 +193,8 @@ public class EntityListener implements Listener {
     @EventHandler
     public void onEntityDeath(EntityDeathEvent event) {
         LivingEntity deadEntity = event.getEntity();
-        com.example.empirewand.spell.implementation.Polymorph polymorphSpell = (com.example.empirewand.spell.implementation.Polymorph) plugin.getSpellRegistry().getSpell("polymorph");
+        com.example.empirewand.spell.implementation.Polymorph polymorphSpell = (com.example.empirewand.spell.implementation.Polymorph) plugin
+                .getSpellRegistry().getSpell("polymorph");
         if (polymorphSpell != null && polymorphSpell.getPolymorphedEntities().containsKey(deadEntity.getUniqueId())) {
             UUID originalEntityUUID = polymorphSpell.getPolymorphedEntities().get(deadEntity.getUniqueId());
             LivingEntity originalEntity = (LivingEntity) Bukkit.getEntity(originalEntityUUID);
@@ -161,11 +208,14 @@ public class EntityListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onEntityExplode(EntityExplodeEvent event) {
         var entity = event.getEntity();
-        if (entity == null) return;
-        String spellName = entity.getPersistentDataContainer().get(Keys.PROJECTILE_SPELL, PersistentDataType.STRING);
-        if (!"explosive".equals(spellName)) return;
+        if (entity == null)
+            return;
+        String spellName = entity.getPersistentDataContainer().get(Keys.PROJECTILE_SPELL, Keys.STRING_TYPE.getType());
+        if (!"explosive".equals(spellName))
+            return;
 
-        boolean blockDamage = plugin.getConfigService().getSpellsConfig().getBoolean("explosive.flags.block-damage", false);
+        boolean blockDamage = plugin.getConfigService().getSpellsConfig().getBoolean("explosive.flags.block-damage",
+                false);
         if (!blockDamage) {
             // Prevent blocks from being destroyed by our Explosive spell
             event.blockList().clear();

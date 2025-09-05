@@ -1,5 +1,9 @@
 package com.example.empirewand.core;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Material;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -17,12 +21,29 @@ import static com.example.empirewand.core.Keys.WAND_SPELLS;
 /**
  * Skeleton PDC helpers for wand data.
  */
-public class WandData {
+public class WandData implements com.example.empirewand.api.WandService {
 
     public WandData(Plugin plugin) {
         // Constructor can be used for DI if needed, but keys are now static
     }
 
+    @Override
+    public ItemStack createWand() {
+        ItemStack wand = new ItemStack(Material.STICK);
+        ItemMeta meta = wand.getItemMeta();
+        if (meta != null) {
+            meta.displayName(Component.text("Empire Wand", NamedTextColor.GOLD));
+            meta.lore(Arrays.asList(
+                Component.text("A powerful magical wand", NamedTextColor.GRAY),
+                Component.text("Right-click to cast spells", NamedTextColor.GRAY)
+            ));
+            wand.setItemMeta(meta);
+        }
+        markWand(wand);
+        return wand;
+    }
+
+    @Override
     public boolean isWand(ItemStack item) {
         if (item == null) return false;
         ItemMeta meta = item.getItemMeta();
@@ -36,6 +57,70 @@ public class WandData {
         if (meta == null) return;
         meta.getPersistentDataContainer().set(WAND_KEY, PersistentDataType.BYTE, (byte) 1);
         item.setItemMeta(meta);
+    }
+
+    @Override
+    public List<String> getBoundSpells(ItemStack wand) {
+        return getSpells(wand);
+    }
+
+    @Override
+    public boolean bindSpell(ItemStack wand, String spellKey) {
+        List<String> spells = new ArrayList<>(getSpells(wand));
+        if (!spells.contains(spellKey)) {
+            spells.add(spellKey);
+            setSpells(wand, spells);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean unbindSpell(ItemStack wand, String spellKey) {
+        List<String> spells = new ArrayList<>(getSpells(wand));
+        if (spells.remove(spellKey)) {
+            setSpells(wand, spells);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean setActiveSpell(ItemStack wand, int index) {
+        List<String> spells = getSpells(wand);
+        if (index >= 0 && index < spells.size()) {
+            setActiveIndex(wand, index);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public int getActiveSpellIndex(ItemStack wand) {
+        return getActiveIndex(wand);
+    }
+
+    @Override
+    public String getActiveSpellKey(ItemStack wand) {
+        List<String> spells = getSpells(wand);
+        int index = getActiveIndex(wand);
+        if (index >= 0 && index < spells.size()) {
+            return spells.get(index);
+        }
+        return null;
+    }
+
+    @Override
+    public ItemStack getHeldWand(Player player) {
+        ItemStack item = player.getInventory().getItemInMainHand();
+        return isWand(item) ? item : null;
+    }
+
+    @Override
+    public boolean giveWand(Player player) {
+        ItemStack wand = createWand();
+        player.getInventory().addItem(wand);
+        return true;
     }
 
     public List<String> getSpells(ItemStack item) {
