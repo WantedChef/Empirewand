@@ -4,4 +4,16 @@ main: com.example.empirewand.EmpireWandPlugin
 api-version: '1.20'
 authors: [ "YourName" ]
 description: EmpireWand example plugin
+commands:
+  ew:
+    description: EmpireWand commands
+    usage: /ew <get|bind|unbind|bindall|list|reload>
+permissions:
+  empirewand.command.get: { default: op }
+  empirewand.command.bind: { default: op }
+  empirewand.command.unbind: { default: op }
+  empirewand.command.bindall: { default: op }
+  empirewand.command.reload: { default: op }
+  empirewand.spell.use.*: { default: true }
+  empirewand.spell.bind.*: { default: op }
 

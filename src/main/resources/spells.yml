@@ -1,0 +1,50 @@
+# Spell configuration for EmpireWand
+
+comet:
+  display-name: "<#FF8C00>Comet"
+  cooldown: 2500 # ms
+  values:
+    damage: 7.0 # 3.5 hearts
+    yield: 2.5
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+explosive:
+  display-name: "<#8B0000>Explosive"
+  cooldown: 5000
+  values:
+    damage: 12.0 # 6 hearts
+    radius: 4.0
+  flags:
+    sets-fire: false
+    block-damage: false # Overrides global setting
+
+magic-missile:
+  display-name: "<#9932CC>Magic Missile"
+  cooldown: 3000
+  values:
+    damage-per-missile: 3.0 # 1.5 hearts
+    missile-count: 3
+    delay-ticks: 7
+  flags:
+    requires-los: true
+
+glacial-spike:
+  display-name: "<#00BFFF>Glacial Spike"
+  cooldown: 2500
+  values:
+    slow-duration-ticks: 80   # 4s
+    slow-amplifier: 2         # Slowness III (amplifier is 0-based)
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+lifesteal:
+  display-name: "<#AA0000>Life Steal"
+  cooldown: 3000
+  values:
+    damage: 6.0               # 3 hearts
+  flags:
+    hit-players: true
+    hit-mobs: true

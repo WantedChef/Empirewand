@@ -1,0 +1,19 @@
+# EmpireWand main configuration
+
+messages:
+  no-permission: "<red>You don't have permission to do that."
+  wand-received: "<green>You have received an Empire Wand!"
+  spell-bound: "<green>Bound spell {spell} to your wand."
+  spell-unbound: "<green>Unbound spell {spell} from your wand."
+  all-spells-bound: "<green>Bound all available spells to your wand."
+  no-spells-bound: "<red>No spells bound!"
+  spell-selected: "<gray>Selected: <aqua>{spell}"
+  on-cooldown: "<red>That spell is on cooldown!"
+  fizzle: "<gray>...fizzle..."
+
+features:
+  block-damage: false
+  friendly-fire: false
+
+cooldowns:
+  default: 500 # in milliseconds
