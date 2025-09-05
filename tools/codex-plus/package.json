@@ -12,15 +12,36 @@
     "onCommand:codexPlus.openSettings",
     "onCommand:codexPlus.selectProfile",
     "onCommand:codexPlus.selectModel",
-    "onCommand:codexPlus.toggleAutoApprove"
+    "onCommand:codexPlus.toggleAutoApprove",
+    "onView:codexPlus.settings",
+    "onView:codexPlus.history",
+    "onView:codexPlus.logs"
   ],
   "contributes": {
     "commands": [
       { "command": "codexPlus.openSettings", "title": "Codex Plus: Open Settings" },
       { "command": "codexPlus.selectProfile", "title": "Codex Plus: Select Profile" },
       { "command": "codexPlus.selectModel", "title": "Codex Plus: Select Model" },
-      { "command": "codexPlus.toggleAutoApprove", "title": "Codex Plus: Toggle Auto-Approve" }
+      { "command": "codexPlus.toggleAutoApprove", "title": "Codex Plus: Toggle Auto-Approve" },
+      { "command": "codexPlus.refreshHistory", "title": "Codex Plus: Refresh History" },
+      { "command": "codexPlus.refreshLogs", "title": "Codex Plus: Refresh Logs" }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codexPlus",
+          "title": "Codex Plus",
+          "icon": "media/codex.svg"
+        }
+      ]
+    },
+    "views": {
+      "codexPlus": [
+        { "id": "codexPlus.settings", "name": "Settings" },
+        { "id": "codexPlus.history", "name": "History" },
+        { "id": "codexPlus.logs", "name": "Logs" }
+      ]
+    },
     "configuration": {
       "title": "Codex Plus",
       "properties": {

@@ -7,6 +7,9 @@ const path = require('path');
 function activate(context) {
   const cfg = () => vscode.workspace.getConfiguration('codex');
 
+  const historyProvider = new SimpleListProvider(() => historyItems.map(text => ({ label: text })), 'History');
+  const logsProvider = new SimpleListProvider(() => logItems.map(text => ({ label: text })), 'Logs');
+
   context.subscriptions.push(
     vscode.commands.registerCommand('codexPlus.openSettings', () => openSettingsPanel(context)),
     vscode.commands.registerCommand('codexPlus.selectProfile', async () => {
@@ -29,7 +32,12 @@ function activate(context) {
       await cfg().update('autoApprove', !current, vscode.ConfigurationTarget.Workspace);
       await syncCodexConfig();
       vscode.window.showInformationMessage(`Auto-approve ${!current ? 'enabled' : 'disabled'}`);
-    })
+    }),
+    vscode.commands.registerCommand('codexPlus.refreshHistory', () => historyProvider.refresh()),
+    vscode.commands.registerCommand('codexPlus.refreshLogs', () => logsProvider.refresh()),
+    vscode.window.registerTreeDataProvider('codexPlus.history', historyProvider),
+    vscode.window.registerTreeDataProvider('codexPlus.logs', logsProvider),
+    vscode.window.registerWebviewViewProvider('codexPlus.settings', new SettingsViewProvider())
   );
 }
 
@@ -358,4 +366,56 @@ function getWebviewHtml() {
 }
 
 module.exports = { activate, deactivate };
+class SettingsViewProvider {
+  /** @param {vscode.WebviewView} webviewView */
+  resolveWebviewView(webviewView) {
+    webviewView.webview.options = { enableScripts: true, retainContextWhenHidden: true };
+    webviewView.webview.html = getWebviewHtml();
+    webviewView.webview.onDidReceiveMessage(async (msg) => {
+      try {
+        if (msg.type === 'requestState') {
+          webviewView.webview.postMessage({ type: 'state', payload: await getState() });
+        }
+        if (msg.type === 'saveState') {
+          await saveState(msg.payload);
+          webviewView.webview.postMessage({ type: 'saved' });
+          vscode.window.showInformationMessage('Codex settings saved.');
+        }
+        if (msg.type === 'applyProfile') {
+          await applyProfilePresets(msg.payload.profile);
+          webviewView.webview.postMessage({ type: 'state', payload: await getState() });
+        }
+        if (msg.type === 'quickPickModel') {
+          const { models } = computeModels();
+          webviewView.webview.postMessage({ type: 'models', payload: models });
+        }
+      } catch (e) {
+        vscode.window.showErrorMessage(`Codex Plus error: ${e?.message || e}`);
+      }
+    });
+    // Initialize state
+    setTimeout(async () => {
+      webviewView?.webview?.postMessage({ type: 'state', payload: await getState() });
+    }, 0);
+  }
+}
+
+class SimpleListProvider {
+  /** @param {() => {label:string}[]} itemsFn */
+  constructor(itemsFn, title) {
+    this.itemsFn = itemsFn;
+    this.title = title;
+    this._emitter = new vscode.EventEmitter();
+    this.onDidChangeTreeData = this._emitter.event;
+  }
+  refresh() { this._emitter.fire(); }
+  getTreeItem(element) { return new vscode.TreeItem(element.label); }
+  getChildren() { return Promise.resolve(this.itemsFn().map(o => new vscode.TreeItem(o.label))); }
+}
+
+const historyItems = [];
+const logItems = [];
+
+function addHistoryEntry(entry) { historyItems.unshift(entry); if (historyItems.length > 100) historyItems.pop(); }
+function addLogEntry(entry) { logItems.unshift(entry); if (logItems.length > 200) logItems.pop(); }
 
