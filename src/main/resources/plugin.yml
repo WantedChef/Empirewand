@@ -1,0 +1,7 @@
+name: ${name}
+version: ${version}
+main: com.example.empirewand.EmpireWandPlugin
+api-version: '1.20'
+authors: [ "YourName" ]
+description: EmpireWand example plugin
+
