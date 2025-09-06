@@ -74,7 +74,8 @@ public class DebugMetricsService {
      */
     public double getSpellCastSuccessRate() {
         long total = totalSpellCasts.get() + totalFailedCasts.get();
-        if (total == 0) return 100.0;
+        if (total == 0)
+            return 100.0;
         return (totalSpellCasts.get() * 100.0) / total;
     }
 
@@ -103,7 +104,8 @@ public class DebugMetricsService {
      * Calculates the P95 (95th percentile) from a collection of samples.
      */
     private long calculateP95(ConcurrentLinkedQueue<Long> samples) {
-        if (samples.isEmpty()) return 0;
+        if (samples.isEmpty())
+            return 0;
 
         // Create a sorted copy for percentile calculation
         var sortedSamples = samples.stream().sorted().toList();
@@ -116,20 +118,19 @@ public class DebugMetricsService {
      */
     public String getDebugInfo() {
         return String.format(
-            "Debug Metrics:\n" +
-            "  Total Spell Casts: %d\n" +
-            "  Total Failed Casts: %d\n" +
-            "  Success Rate: %.2f%%\n" +
-            "  Spell Cast P95: %dms\n" +
-            "  Event Processing P95: %dms\n" +
-            "  Active Samples: %d spell casts, %d events",
-            getTotalSpellCasts(),
-            getTotalFailedCasts(),
-            getSpellCastSuccessRate(),
-            getSpellCastP95(),
-            getEventProcessingP95(),
-            spellCastTimes.size(),
-            eventProcessingTimes.size()
-        );
+                "Debug Metrics:%n" +
+                        "  Total Spell Casts: %d%n" +
+                        "  Total Failed Casts: %d%n" +
+                        "  Success Rate: %.2f%%%n" +
+                        "  Spell Cast P95: %dms%n" +
+                        "  Event Processing P95: %dms%n" +
+                        "  Active Samples: %d spell casts, %d events",
+                getTotalSpellCasts(),
+                getTotalFailedCasts(),
+                getSpellCastSuccessRate(),
+                getSpellCastP95(),
+                getEventProcessingP95(),
+                spellCastTimes.size(),
+                eventProcessingTimes.size());
     }
 }

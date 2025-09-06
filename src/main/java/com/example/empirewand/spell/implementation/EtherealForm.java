@@ -5,6 +5,7 @@ import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.Prereq;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -24,7 +25,10 @@ public class EtherealForm implements Spell {
         // Fall damage is cancelled in EntityListener.onFallDamage
 
         // Ambient ethereal FX
-        context.fx().spawnParticles(player.getLocation().add(0, 1.0, 0), Particle.END_ROD, 16, 0.4, 0.4, 0.4, 0.01);
+        Location loc = player.getLocation();
+        if (loc != null) {
+            context.fx().spawnParticles(loc.add(0, 1.0, 0), Particle.END_ROD, 16, 0.4, 0.4, 0.4, 0.01);
+        }
         context.fx().playSound(player, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.7f, 1.3f);
 
         // Tag player as ethereal via PDC for listeners

@@ -3,6 +3,7 @@ package com.example.empirewand.spell.implementation;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -38,14 +39,76 @@ public class LittleSpark implements Spell {
 
         // Tag projectile
         proj.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL,
-            Keys.STRING_TYPE.getType(), "little-spark");
+                Keys.STRING_TYPE.getType(), "little-spark");
+
+        // Visual trail config (particle only – no temp blocks)
+        int trailSteps = spells.getInt("little-spark.values.trail-steps", 6);
+        int particleCount = spells.getInt("little-spark.values.particle-count", 4);
+
+        // Attach repeating particle trail while projectile alive
+        new ParticleTrail(context, proj, particleCount, trailSteps).runTaskTimer(context.plugin(), 0L, 1L);
 
         // Register listener for hit detection
         context.plugin().getServer().getPluginManager().registerEvents(
-            new SparkListener(context, damage, knockbackStrength, friendlyFire), context.plugin());
+                new SparkListener(context, damage, knockbackStrength, friendlyFire), context.plugin());
 
         // Cast sound
         context.fx().playSound(player, Sound.ENTITY_BLAZE_SHOOT, 0.5f, 1.5f);
+    }
+
+    /**
+     * Lightweight particle-only trail that renders a short electric tail behind the
+     * snowball.
+     * It stores up to trailSteps historical locations and draws particles along
+     * them each tick
+     * until the projectile is invalid or removed.
+     */
+    private static class ParticleTrail extends BukkitRunnable {
+        private final SpellContext context;
+        private final Snowball projectile;
+        private final int particleCount;
+        private final int maxSteps;
+        private final java.util.Deque<Location> history = new java.util.ArrayDeque<>();
+        private int safetyTicks = 0;
+
+        ParticleTrail(SpellContext context, Snowball projectile, int particleCount, int maxSteps) {
+            this.context = context;
+            this.projectile = projectile;
+            this.particleCount = particleCount;
+            this.maxSteps = Math.max(1, maxSteps);
+        }
+
+        @Override
+        public void run() {
+            if (!projectile.isValid() || projectile.isDead() || projectile.isOnGround()) {
+                cancel();
+                return;
+            }
+            // Safety cutoff to avoid runaway tasks (5s)
+            if (safetyTicks++ > 20 * 5) {
+                cancel();
+                return;
+            }
+
+            Location current = projectile.getLocation().clone();
+            history.addFirst(current);
+            while (history.size() > maxSteps) {
+                history.removeLast();
+            }
+
+            // Render along stored path; fade particle density with distance index
+            int idx = 0;
+            for (Location loc : history) {
+                double scale = 1.0 - (idx / (double) maxSteps);
+                int count = (int) Math.max(1, Math.round(particleCount * scale));
+                context.fx().spawnParticles(loc, Particle.ELECTRIC_SPARK, count, 0.05, 0.05, 0.05, 0.01);
+                if (idx == 0) {
+                    // Slight core glow
+                    context.fx().spawnParticles(loc, Particle.CRIT, 1, 0, 0, 0, 0);
+                }
+                idx++;
+            }
+        }
     }
 
     private static class SparkListener implements Listener {
@@ -64,23 +127,27 @@ public class LittleSpark implements Spell {
         @EventHandler
         public void onProjectileHit(ProjectileHitEvent event) {
             Projectile projectile = event.getEntity();
-            if (!(projectile instanceof Snowball)) return;
+            if (!(projectile instanceof Snowball))
+                return;
 
             var pdc = projectile.getPersistentDataContainer();
             String spellType = pdc.get(Keys.PROJECTILE_SPELL, Keys.STRING_TYPE.getType());
-            if (!"little-spark".equals(spellType)) return;
+            if (!"little-spark".equals(spellType))
+                return;
 
             // Check if hit entity
             if (event.getHitEntity() instanceof LivingEntity living) {
-                if (living.equals(projectile.getShooter()) && !friendlyFire) return;
-                if (living.isDead() || !living.isValid()) return;
+                if (living.equals(projectile.getShooter()) && !friendlyFire)
+                    return;
+                if (living.isDead() || !living.isValid())
+                    return;
 
                 // Apply damage
                 living.damage(damage, context.caster());
 
                 // Apply knockback
                 Vector direction = living.getLocation().toVector()
-                    .subtract(projectile.getLocation().toVector()).normalize();
+                        .subtract(projectile.getLocation().toVector()).normalize();
                 living.setVelocity(direction.multiply(knockbackStrength));
 
                 // Effects

@@ -22,7 +22,8 @@ public class BlinkStrike implements Spell {
         double range = spells.getDouble("blink-strike.values.range", 15.0);
         double behind = spells.getDouble("blink-strike.values.behind-distance", 1.5);
         double damage = spells.getDouble("blink-strike.values.damage", 10.0);
-        boolean requiresLos = spells.getBoolean("blink-strike.flags.requires-los", true);
+        // Read for future behavior; not currently used
+        spells.getBoolean("blink-strike.flags.requires-los", true);
 
         var looked = player.getTargetEntity((int) range);
         if (!(looked instanceof LivingEntity target) || target.isDead() || !target.isValid()) {
@@ -78,4 +79,3 @@ public class BlinkStrike implements Spell {
     @Override
     public Prereq prereq() { return new Prereq(true, Component.text("")); }
 }
-

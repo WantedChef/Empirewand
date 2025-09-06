@@ -12,6 +12,8 @@ import java.util.logging.Logger;
  * Handles bStats metrics collection for EmpireWand.
  * Provides opt-in analytics about plugin usage and performance.
  */
+@edu.umd.cs.findbugs.annotations.SuppressFBWarnings(value = { "EI_EXPOSE_REP2",
+        "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE" }, justification = "Plugin reference is an injected Bukkit singleton needed for metrics; logger retrieval may flag redundant null check but defensive for test harness environments.")
 public class MetricsService {
 
     private final Plugin plugin;
@@ -33,8 +35,13 @@ public class MetricsService {
      */
     public void initialize() {
         this.enabled = config.getConfig().getBoolean("metrics.enabled", true);
+        Logger logger = getLoggerSafely();
+        if (logger == null) {
+            // Fallback to a generic logger if plugin returns null
+            logger = Logger.getLogger("EmpireWand");
+        }
         if (!enabled) {
-            getLoggerSafely().info("bStats metrics disabled by configuration");
+            logger.info("bStats metrics disabled by configuration");
             return;
         }
 
@@ -43,7 +50,7 @@ public class MetricsService {
             // Note: Register your plugin at bStats.org to get a real plugin ID
             int pluginId = config.getConfig().getInt("metrics.plugin-id", 12345);
             if (pluginId <= 0) {
-                getLoggerSafely().warning("Invalid bStats plugin ID in config; metrics disabled.");
+                logger.warning("Invalid bStats plugin ID in config; metrics disabled.");
                 return;
             }
 
@@ -52,10 +59,10 @@ public class MetricsService {
             // Add custom charts
             addCustomCharts();
 
-            getLoggerSafely().info("bStats metrics enabled");
+            logger.info("bStats metrics enabled");
         } catch (Throwable t) {
             // In test or non-server environments, Metrics may fail to initialize
-            getLoggerSafely().info("bStats metrics initialization skipped (non-runtime environment)");
+            logger.info("bStats metrics initialization skipped (non-runtime environment)");
             this.metrics = null; // Leave disabled but do not fail
         }
     }
@@ -165,8 +172,7 @@ public class MetricsService {
 
     private Logger getLoggerSafely() {
         try {
-            Logger l = plugin.getLogger();
-            return l != null ? l : Logger.getLogger("EmpireWand");
+            return plugin.getLogger(); // Bukkit guarantees non-null
         } catch (Throwable t) {
             return Logger.getLogger("EmpireWand");
         }

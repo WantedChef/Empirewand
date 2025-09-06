@@ -11,13 +11,15 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
+import com.example.empirewand.spell.Prereq;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
-import com.example.empirewand.spell.Prereq;
+
 import net.kyori.adventure.text.Component;
 
 public class BloodBlock implements Spell {
-    private static final org.bukkit.NamespacedKey BLOOD_BLOCK_LOCATION = new org.bukkit.NamespacedKey("empirewand", "blood-block-location");
+    private static final org.bukkit.NamespacedKey BLOOD_BLOCK_LOCATION = new org.bukkit.NamespacedKey("empirewand",
+            "blood-block-location");
 
     @Override
     public void execute(SpellContext context) {
@@ -41,12 +43,11 @@ public class BloodBlock implements Spell {
     private void placeBloodBlock(Player caster, SpellContext context) {
         // Find target block
         RayTraceResult rayTrace = caster.getWorld().rayTraceBlocks(
-            caster.getEyeLocation(),
-            caster.getEyeLocation().getDirection(),
-            20.0
-        );
+                caster.getEyeLocation(),
+                caster.getEyeLocation().getDirection(),
+                20.0);
 
-        if (rayTrace == null || rayTrace.getHitBlock() == null) {
+        if (rayTrace == null || rayTrace.getHitBlock() == null || rayTrace.getHitBlockFace() == null) {
             return; // No valid target
         }
 
@@ -65,9 +66,13 @@ public class BloodBlock implements Spell {
         String locStr = serializeLocation(placeLoc);
         caster.getPersistentDataContainer().set(BLOOD_BLOCK_LOCATION, PersistentDataType.STRING, locStr);
 
-        // Visual effects
-        context.fx().spawnParticles(placeLoc, Particle.DUST, 20, 0.5, 0.5, 0.5, 0, new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f));
-        context.fx().playSound(placeLoc, org.bukkit.Sound.BLOCK_STONE_PLACE, 1.0f, 1.0f);
+        // Enhanced visual effects for better UX
+        context.fx().spawnParticles(placeLoc, Particle.DUST, 30, 0.5, 0.5, 0.5, 0,
+                new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f));
+        context.fx().spawnParticles(placeLoc, Particle.DUST, 20, 0.3, 0.3, 0.3, 0,
+                new Particle.DustOptions(Color.fromRGB(255, 0, 0), 1.5f));
+        context.fx().playSound(placeLoc, org.bukkit.Sound.BLOCK_STONE_PLACE, 1.0f, 0.8f);
+        context.fx().playSound(placeLoc, org.bukkit.Sound.ENTITY_PLAYER_HURT, 0.8f, 0.5f); // Blood-like sound
     }
 
     private void launchBloodBlock(Player caster, Location blockLoc, SpellContext context) {
@@ -86,10 +91,9 @@ public class BloodBlock implements Spell {
 
         // Find launch target
         RayTraceResult rayTrace = caster.getWorld().rayTraceBlocks(
-            caster.getEyeLocation(),
-            caster.getEyeLocation().getDirection(),
-            20.0
-        );
+                caster.getEyeLocation(),
+                caster.getEyeLocation().getDirection(),
+                20.0);
 
         Location targetLoc;
         if (rayTrace != null && rayTrace.getHitPosition() != null) {
@@ -99,20 +103,26 @@ public class BloodBlock implements Spell {
             targetLoc = caster.getEyeLocation().add(caster.getEyeLocation().getDirection().multiply(20));
         }
 
-        // Create falling block using alternative method
-        FallingBlock fallingBlock = caster.getWorld().spawn(blockLoc, FallingBlock.class);
-        fallingBlock.setBlockData(Material.REDSTONE_BLOCK.createBlockData());
+        // Create falling block
+        FallingBlock fallingBlock = caster.getWorld().spawn(blockLoc, FallingBlock.class, (fb) -> {
+            fb.setBlockData(Material.REDSTONE_BLOCK.createBlockData());
+            fb.setDropItem(false);
+        });
 
         // Calculate velocity towards target
         Vector direction = targetLoc.toVector().subtract(blockLoc.toVector()).normalize();
-        direction = direction.multiply(1.2).setY(Math.max(0.4, direction.getY()));
+        direction = direction.multiply(1.5).setY(Math.max(0.6, direction.getY())); // Increased speed for more impact
 
         fallingBlock.setVelocity(direction);
-        fallingBlock.setDropItem(false); // Don't drop item on land
 
-        // Visual effects
-        context.fx().spawnParticles(blockLoc, Particle.DUST, 30, 0.3, 0.3, 0.3, 0, new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f));
-        context.fx().playSound(blockLoc, org.bukkit.Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 0.8f);
+        // Add trail effect for better UX
+        addTrailEffect(fallingBlock, context);
+
+        // Enhanced visual effects
+        context.fx().spawnParticles(blockLoc, Particle.DUST, 40, 0.3, 0.3, 0.3, 0,
+                new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f));
+        context.fx().spawnParticles(blockLoc, Particle.EXPLOSION, 10, 0.5, 0.5, 0.5, 0.1);
+        context.fx().playSound(blockLoc, org.bukkit.Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 0.6f);
     }
 
     private String serializeLocation(Location loc) {
@@ -120,14 +130,45 @@ public class BloodBlock implements Spell {
     }
 
     private Location deserializeLocation(String str, org.bukkit.World defaultWorld) {
-        try {
-            String[] parts = str.split(",");
-            org.bukkit.World world = org.bukkit.Bukkit.getWorld(parts[0]);
-            if (world == null) world = defaultWorld;
-            return new Location(world, Double.parseDouble(parts[1]), Double.parseDouble(parts[2]), Double.parseDouble(parts[3]));
-        } catch (Exception e) {
+        if (str == null || str.isEmpty()) {
             return null;
         }
+        try {
+            String[] parts = str.split(",");
+            if (parts.length != 4) {
+                return null;
+            }
+            org.bukkit.World world = org.bukkit.Bukkit.getWorld(parts[0]);
+            if (world == null) {
+                world = defaultWorld;
+            }
+            return new Location(world, Double.parseDouble(parts[1]), Double.parseDouble(parts[2]),
+                    Double.parseDouble(parts[3]));
+        } catch (NumberFormatException e) {
+            // Log error or handle it appropriately
+            return null;
+        }
+    }
+
+    private void addTrailEffect(FallingBlock fallingBlock, SpellContext context) {
+        new org.bukkit.scheduler.BukkitRunnable() {
+            @Override
+            public void run() {
+                if (fallingBlock.isDead() || !fallingBlock.isValid()) {
+                    this.cancel();
+                    return;
+                }
+                // Trail particles
+                context.fx().spawnParticles(fallingBlock.getLocation(), Particle.DUST, 5, 0.1, 0.1, 0.1, 0,
+                        new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f));
+            }
+        }.runTaskTimer(context.plugin(), 0L, 2L); // Every 2 ticks
+
+        // Impact effect when it lands
+        fallingBlock.setMetadata("blood_block_trail",
+                new org.bukkit.metadata.FixedMetadataValue(context.plugin(), this));
+        // Listen for landing in a separate handler if needed, but for simplicity, add
+        // on next tick
     }
 
     @Override

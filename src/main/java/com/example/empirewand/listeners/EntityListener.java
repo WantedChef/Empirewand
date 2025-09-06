@@ -27,6 +27,8 @@ import com.example.empirewand.core.FxService;
 import com.example.empirewand.core.Keys;
 import com.example.empirewand.core.PerformanceMonitor;
 
+@edu.umd.cs.findbugs.annotations.SuppressFBWarnings(value = {
+        "EI_EXPOSE_REP2" }, justification = "Retains plugin reference per Bukkit listener pattern; not exposing internal mutable state beyond required service access.")
 public class EntityListener implements Listener {
 
     private final EmpireWandPlugin plugin;
@@ -64,20 +66,6 @@ public class EntityListener implements Listener {
         }
 
         timing.complete(15); // Projectile hit should complete within 15ms
-    }
-
-    private void handleCometSpell(Projectile projectile, FxService fxService) {
-        fxService.spawnParticles(projectile.getLocation(), Particle.LAVA, 10, 0.1, 0.1, 0.1, 0);
-        fxService.spawnParticles(projectile.getLocation(), Particle.FLAME, 25, 0.5, 0.5, 0.5, 0.1);
-        fxService.playSound(projectile.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 0.8f);
-        projectile.remove();
-    }
-
-    private void handleMagicMissileSpell(Projectile projectile, FxService fxService) {
-        fxService.spawnParticles(projectile.getLocation(), Particle.ENCHANT, 50, 0.3, 0.3, 0.3, 0.1);
-        fxService.spawnParticles(projectile.getLocation(), Particle.WITCH, 25, 0.3, 0.3, 0.3, 0);
-        fxService.playSound(projectile.getLocation(), Sound.ENTITY_ILLUSIONER_CAST_SPELL, 1.0f, 1.2f);
-        projectile.remove();
     }
 
     private void handleExplosiveSpell(Projectile projectile, FxService fxService) {

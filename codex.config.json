@@ -1,5 +1,5 @@
 {
-  "approval_policy": "never",
+  "approval_policy": "on-failure",
   "sandbox_mode": "danger-full-access",
   "network_access": "enabled",
   "auto_apply_patches": true

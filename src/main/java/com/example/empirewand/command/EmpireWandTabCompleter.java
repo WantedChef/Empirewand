@@ -14,9 +14,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
+@edu.umd.cs.findbugs.annotations.SuppressFBWarnings(value = {
+        "EI_EXPOSE_REP2" }, justification = "Tab completer holds plugin reference to access spell registry and server APIs; standard Bukkit pattern.")
 public class EmpireWandTabCompleter implements TabCompleter {
 
-    private static final List<String> SUBS = List.of("get", "bind", "unbind", "bindall", "set-spell", "list", "reload", "cooldown");
+    private static final List<String> SUBS = List.of("get", "bind", "unbind", "bindall", "set-spell", "list", "reload",
+            "cooldown", "migrate");
     private final EmpireWandPlugin plugin;
 
     public EmpireWandTabCompleter(EmpireWandPlugin plugin) {
@@ -24,7 +27,8 @@ public class EmpireWandTabCompleter implements TabCompleter {
     }
 
     @Override
-    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
+    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command,
+            @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
             String prefix = args[0].toLowerCase(Locale.ROOT);
             return SUBS.stream().filter(s -> s.startsWith(prefix)).collect(Collectors.toList());
@@ -32,7 +36,8 @@ public class EmpireWandTabCompleter implements TabCompleter {
         if (args.length == 2) {
             String sub = args[0].toLowerCase(Locale.ROOT);
             String prefix = args[1].toLowerCase(Locale.ROOT);
-            if (!(sender instanceof Player p)) return List.of();
+            if (!(sender instanceof Player p))
+                return List.of();
 
             if (sub.equals("bind")) {
                 ItemStack item = p.getInventory().getItemInMainHand();
@@ -45,13 +50,17 @@ public class EmpireWandTabCompleter implements TabCompleter {
             }
             if (sub.equals("unbind")) {
                 ItemStack item = p.getInventory().getItemInMainHand();
-                if (!plugin.getWandData().isWand(item)) return List.of();
-                return plugin.getWandData().getSpells(item).stream().filter(k -> k.startsWith(prefix)).sorted().collect(Collectors.toList());
+                if (!plugin.getWandData().isWand(item))
+                    return List.of();
+                return plugin.getWandData().getSpells(item).stream().filter(k -> k.startsWith(prefix)).sorted()
+                        .collect(Collectors.toList());
             }
             if (sub.equals("set-spell")) {
                 ItemStack item = p.getInventory().getItemInMainHand();
-                if (!plugin.getWandData().isWand(item)) return List.of();
-                return plugin.getWandData().getSpells(item).stream().filter(k -> k.startsWith(prefix)).sorted().collect(Collectors.toList());
+                if (!plugin.getWandData().isWand(item))
+                    return List.of();
+                return plugin.getWandData().getSpells(item).stream().filter(k -> k.startsWith(prefix)).sorted()
+                        .collect(Collectors.toList());
             }
             if (sub.equals("cooldown")) {
                 return plugin.getServer().getOnlinePlayers().stream()

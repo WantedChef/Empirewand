@@ -3,6 +3,7 @@ package com.example.empirewand.spell.implementation;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -58,6 +59,15 @@ public class DarkPulse implements Spell {
         skull.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL,
                 Keys.STRING_TYPE.getType(), "dark-pulse");
 
+        // Visual flight config
+        int ringParticleCount = spells.getInt("dark-pulse.values.ring-particle-count", 14);
+        double ringRadiusStep = spells.getDouble("dark-pulse.values.ring-radius-step", 0.25);
+        int ringEveryTicks = spells.getInt("dark-pulse.values.ring-interval-ticks", 2);
+
+        // Attach ring pulse runnable (purely cosmetic)
+        new RingPulse(context, skull, ringParticleCount, ringRadiusStep, ringEveryTicks).runTaskTimer(context.plugin(),
+                0L, 1L);
+
         // Cast sound
         context.fx().playSound(player, Sound.ENTITY_WITHER_SHOOT, 1.0f, 1.0f);
 
@@ -66,6 +76,63 @@ public class DarkPulse implements Spell {
                 new PulseListener(context, witherDuration, witherAmplifier, blindDuration, radius, damage, knockback,
                         friendlyFire),
                 context.plugin());
+    }
+
+    /**
+     * Emits concentric shrinking dark rings behind the wither skull to give a
+     * pulsing void ripple effect.
+     */
+    private static class RingPulse extends BukkitRunnable {
+        private final SpellContext context;
+        private final WitherSkull projectile;
+        private final int ringParticleCount;
+        private final double radiusStep;
+        private final int interval;
+        private int ticks = 0;
+        private double accumRadius = 0;
+
+        RingPulse(SpellContext context, WitherSkull projectile, int ringParticleCount, double radiusStep,
+                int interval) {
+            this.context = context;
+            this.projectile = projectile;
+            this.ringParticleCount = Math.max(4, ringParticleCount);
+            this.radiusStep = Math.max(0.05, radiusStep);
+            this.interval = Math.max(1, interval);
+        }
+
+        @Override
+        public void run() {
+            if (!projectile.isValid() || projectile.isDead()) {
+                cancel();
+                return;
+            }
+            if (ticks++ > 20 * 6) { // 6s safety
+                cancel();
+                return;
+            }
+
+            if (ticks % interval != 0)
+                return;
+
+            // Increase radius accumulation then draw ring
+            accumRadius += radiusStep;
+            double radius = accumRadius;
+            Location center = projectile.getLocation();
+
+            for (int i = 0; i < ringParticleCount; i++) {
+                double angle = (Math.PI * 2 * i) / ringParticleCount;
+                double x = center.getX() + radius * Math.cos(angle);
+                double z = center.getZ() + radius * Math.sin(angle);
+                Location p = new Location(center.getWorld(), x, center.getY() + 0.15, z);
+                context.fx().spawnParticles(p, Particle.SMOKE, 1, 0, 0, 0, 0);
+                if (i % 3 == 0) {
+                    context.fx().spawnParticles(p, Particle.SOUL_FIRE_FLAME, 1, 0, 0, 0, 0.0);
+                }
+            }
+
+            // Gentle inner void spark
+            context.fx().spawnParticles(center, Particle.REVERSE_PORTAL, 1, 0.1, 0.1, 0.1, 0.0);
+        }
     }
 
     private static class PulseListener implements Listener {

@@ -6,8 +6,11 @@ import org.bukkit.entity.Player;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for PermissionService.
@@ -23,7 +26,7 @@ class PermissionServiceTest extends EmpireWandTestBase {
     @Test
     void testHasPermission() {
         // Given
-        PermissionService permissionService = new PermissionService();
+        PermissionServiceImpl permissionService = new PermissionServiceImpl();
         when(mockCommandSender.hasPermission("test.permission")).thenReturn(true);
 
         // When
@@ -37,7 +40,7 @@ class PermissionServiceTest extends EmpireWandTestBase {
     @Test
     void testHasNoPermission() {
         // Given
-        PermissionService permissionService = new PermissionService();
+        PermissionServiceImpl permissionService = new PermissionServiceImpl();
         when(mockCommandSender.hasPermission("test.permission")).thenReturn(false);
 
         // When
@@ -51,7 +54,7 @@ class PermissionServiceTest extends EmpireWandTestBase {
     @Test
     void testCanUseSpell() {
         // Given
-        PermissionService permissionService = new PermissionService();
+        PermissionServiceImpl permissionService = new PermissionServiceImpl();
         String spellKey = "magic-missile";
         String expectedPermission = "empirewand.spell.use." + spellKey;
         when(mockPlayer.hasPermission(expectedPermission)).thenReturn(true);
@@ -67,7 +70,7 @@ class PermissionServiceTest extends EmpireWandTestBase {
     @Test
     void testCannotUseSpell() {
         // Given
-        PermissionService permissionService = new PermissionService();
+        PermissionServiceImpl permissionService = new PermissionServiceImpl();
         String spellKey = "magic-missile";
         String expectedPermission = "empirewand.spell.use." + spellKey;
         when(mockPlayer.hasPermission(expectedPermission)).thenReturn(false);
@@ -83,7 +86,7 @@ class PermissionServiceTest extends EmpireWandTestBase {
     @Test
     void testCanBindSpell() {
         // Given
-        PermissionService permissionService = new PermissionService();
+        PermissionServiceImpl permissionService = new PermissionServiceImpl();
         String spellKey = "magic-missile";
         String expectedPermission = "empirewand.spell.bind." + spellKey;
         when(mockPlayer.hasPermission(expectedPermission)).thenReturn(true);
@@ -99,7 +102,7 @@ class PermissionServiceTest extends EmpireWandTestBase {
     @Test
     void testCannotBindSpell() {
         // Given
-        PermissionService permissionService = new PermissionService();
+        PermissionServiceImpl permissionService = new PermissionServiceImpl();
         String spellKey = "magic-missile";
         String expectedPermission = "empirewand.spell.bind." + spellKey;
         when(mockPlayer.hasPermission(expectedPermission)).thenReturn(false);
@@ -115,7 +118,7 @@ class PermissionServiceTest extends EmpireWandTestBase {
     @Test
     void testGetSpellUsePermission() {
         // Given
-        PermissionService permissionService = new PermissionService();
+        PermissionServiceImpl permissionService = new PermissionServiceImpl();
         String spellKey = "magic-missile";
 
         // When
@@ -128,7 +131,7 @@ class PermissionServiceTest extends EmpireWandTestBase {
     @Test
     void testGetSpellBindPermission() {
         // Given
-        PermissionService permissionService = new PermissionService();
+        PermissionServiceImpl permissionService = new PermissionServiceImpl();
         String spellKey = "magic-missile";
 
         // When
@@ -141,7 +144,7 @@ class PermissionServiceTest extends EmpireWandTestBase {
     @Test
     void testGetCommandPermission() {
         // Given
-        PermissionService permissionService = new PermissionService();
+        PermissionServiceImpl permissionService = new PermissionServiceImpl();
         String command = "reload";
 
         // When
@@ -154,7 +157,7 @@ class PermissionServiceTest extends EmpireWandTestBase {
     @Test
     void testPermissionNodesWithSpecialCharacters() {
         // Given
-        PermissionService permissionService = new PermissionService();
+        PermissionServiceImpl permissionService = new PermissionServiceImpl();
         String spellKey = "glacial-spike";
 
         // When

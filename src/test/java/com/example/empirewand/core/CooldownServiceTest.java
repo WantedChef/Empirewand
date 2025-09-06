@@ -1,36 +1,32 @@
 package com.example.empirewand.core;
 
-import com.example.empirewand.EmpireWandTestBase;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for CooldownService.
  */
-class CooldownServiceTest extends EmpireWandTestBase {
+class CooldownServiceTest {
 
-    private CooldownService cooldownService;
+    private CooldownService service;
     private UUID playerId;
-    private String spellKey;
+    private final long defaultTicks = 1000L;
 
     @BeforeEach
     void setUp() {
-        cooldownService = new CooldownService();
+        service = new CooldownService();
         playerId = UUID.randomUUID();
-        spellKey = "test-spell";
     }
 
     @Test
     void testNotOnCooldownInitially() {
-        // Given
-        long nowTicks = 1000;
-
         // When
-        boolean onCooldown = cooldownService.isOnCooldown(playerId, spellKey, nowTicks);
+        boolean onCooldown = service.isOnCooldown(playerId, "spell", defaultTicks);
 
         // Then
         assertFalse(onCooldown);
@@ -38,11 +34,8 @@ class CooldownServiceTest extends EmpireWandTestBase {
 
     @Test
     void testRemainingTimeInitially() {
-        // Given
-        long nowTicks = 1000;
-
         // When
-        long remaining = cooldownService.remaining(playerId, spellKey, nowTicks);
+        long remaining = service.remaining(playerId, "spell", defaultTicks);
 
         // Then
         assertEquals(0L, remaining);
@@ -51,105 +44,123 @@ class CooldownServiceTest extends EmpireWandTestBase {
     @Test
     void testSetCooldown() {
         // Given
-        long nowTicks = 1000;
         long cooldownUntil = 1500;
 
         // When
-        cooldownService.set(playerId, spellKey, cooldownUntil);
+        service.set(playerId, "spell", cooldownUntil);
 
         // Then
-        assertTrue(cooldownService.isOnCooldown(playerId, spellKey, nowTicks));
-        assertEquals(500L, cooldownService.remaining(playerId, spellKey, nowTicks));
+        assertTrue(service.isOnCooldown(playerId, "spell", defaultTicks));
+        assertEquals(500L, service.remaining(playerId, "spell", defaultTicks));
     }
 
     @Test
     void testCooldownExpires() {
         // Given
-        long nowTicks = 1000;
         long cooldownUntil = 1500;
-        cooldownService.set(playerId, spellKey, cooldownUntil);
+        service.set(playerId, "spell", cooldownUntil);
 
         // When
         long afterExpiry = 1600;
 
         // Then
-        assertFalse(cooldownService.isOnCooldown(playerId, spellKey, afterExpiry));
-        assertEquals(0L, cooldownService.remaining(playerId, spellKey, afterExpiry));
+        assertFalse(service.isOnCooldown(playerId, "spell", afterExpiry));
+        assertEquals(0L, service.remaining(playerId, "spell", afterExpiry));
     }
 
     @Test
     void testMultipleSpellsPerPlayer() {
         // Given
         String spellKey2 = "test-spell-2";
-        long nowTicks = 1000;
-        cooldownService.set(playerId, spellKey, 1500);
-        cooldownService.set(playerId, spellKey2, 2000);
+        service.set(playerId, "spell", 1500);
+        service.set(playerId, spellKey2, 2000);
 
         // Then
-        assertTrue(cooldownService.isOnCooldown(playerId, spellKey, nowTicks));
-        assertTrue(cooldownService.isOnCooldown(playerId, spellKey2, nowTicks));
-        assertEquals(500L, cooldownService.remaining(playerId, spellKey, nowTicks));
-        assertEquals(1000L, cooldownService.remaining(playerId, spellKey2, nowTicks));
+        assertTrue(service.isOnCooldown(playerId, "spell", defaultTicks));
+        assertTrue(service.isOnCooldown(playerId, spellKey2, defaultTicks));
+        assertEquals(500L, service.remaining(playerId, "spell", defaultTicks));
+        assertEquals(1000L, service.remaining(playerId, spellKey2, defaultTicks));
     }
 
     @Test
     void testMultiplePlayers() {
         // Given
         UUID playerId2 = UUID.randomUUID();
-        long nowTicks = 1000;
-        cooldownService.set(playerId, spellKey, 1500);
-        cooldownService.set(playerId2, spellKey, 2000);
+        service.set(playerId, "spell", 1500);
+        service.set(playerId2, "spell", 2000);
 
         // Then
-        assertTrue(cooldownService.isOnCooldown(playerId, spellKey, nowTicks));
-        assertTrue(cooldownService.isOnCooldown(playerId2, spellKey, nowTicks));
-        assertEquals(500L, cooldownService.remaining(playerId, spellKey, nowTicks));
-        assertEquals(1000L, cooldownService.remaining(playerId2, spellKey, nowTicks));
+        assertTrue(service.isOnCooldown(playerId, "spell", defaultTicks));
+        assertTrue(service.isOnCooldown(playerId2, "spell", defaultTicks));
+        assertEquals(500L, service.remaining(playerId, "spell", defaultTicks));
+        assertEquals(1000L, service.remaining(playerId2, "spell", defaultTicks));
     }
 
     @Test
     void testClearAll() {
         // Given
         String spellKey2 = "test-spell-2";
-        long nowTicks = 1000;
-        cooldownService.set(playerId, spellKey, 1500);
-        cooldownService.set(playerId, spellKey2, 2000);
+        service.set(playerId, "spell", 1500);
+        service.set(playerId, spellKey2, 2000);
 
         // When
-        cooldownService.clearAll(playerId);
+        service.clearAll(playerId);
 
         // Then
-        assertFalse(cooldownService.isOnCooldown(playerId, spellKey, nowTicks));
-        assertFalse(cooldownService.isOnCooldown(playerId, spellKey2, nowTicks));
+        assertFalse(service.isOnCooldown(playerId, "spell", defaultTicks));
+        assertFalse(service.isOnCooldown(playerId, spellKey2, defaultTicks));
     }
 
     @Test
     void testClearAllDoesNotAffectOtherPlayers() {
         // Given
         UUID playerId2 = UUID.randomUUID();
-        long nowTicks = 1000;
-        cooldownService.set(playerId, spellKey, 1500);
-        cooldownService.set(playerId2, spellKey, 2000);
+        service.set(playerId, "spell", 1500);
+        service.set(playerId2, "spell", 2000);
 
         // When
-        cooldownService.clearAll(playerId);
+        service.clearAll(playerId);
 
         // Then
-        assertFalse(cooldownService.isOnCooldown(playerId, spellKey, nowTicks));
-        assertTrue(cooldownService.isOnCooldown(playerId2, spellKey, nowTicks));
+        assertFalse(service.isOnCooldown(playerId, "spell", defaultTicks));
+        assertTrue(service.isOnCooldown(playerId2, "spell", defaultTicks));
     }
 
     @Test
     void testOverwriteCooldown() {
         // Given
-        long nowTicks = 1000;
-        cooldownService.set(playerId, spellKey, 1500);
+        service.set(playerId, "spell", 1500);
 
         // When
-        cooldownService.set(playerId, spellKey, 1200);
+        service.set(playerId, "spell", 1200);
 
         // Then
-        assertTrue(cooldownService.isOnCooldown(playerId, spellKey, nowTicks));
-        assertEquals(200L, cooldownService.remaining(playerId, spellKey, nowTicks));
+        assertTrue(service.isOnCooldown(playerId, "spell", defaultTicks));
+        assertEquals(200L, service.remaining(playerId, "spell", defaultTicks));
+    }
+
+    @Test
+    void testIsOnCooldownFalseInitially() {
+        assertFalse(service.isOnCooldown(playerId, "spell", defaultTicks));
+    }
+
+    @Test
+    void testSetAndIsOnCooldownTrue() {
+        service.set(playerId, "spell", defaultTicks + 10);
+        assertTrue(service.isOnCooldown(playerId, "spell", defaultTicks));
+    }
+
+    @Test
+    void testRemaining() {
+        service.set(playerId, "spell", defaultTicks + 15);
+        assertEquals(15, service.remaining(playerId, "spell", defaultTicks));
+        assertEquals(0, service.remaining(playerId, "other", defaultTicks));
+    }
+
+    @Test
+    void testExpiredCooldown() {
+        service.set(playerId, "spell", defaultTicks - 1);
+        assertFalse(service.isOnCooldown(playerId, "spell", defaultTicks));
+        assertEquals(0, service.remaining(playerId, "spell", defaultTicks));
     }
 }

@@ -5,7 +5,7 @@ import com.example.empirewand.EmpireWandPlugin;
 import com.example.empirewand.core.Keys;
 import com.example.empirewand.core.ConfigService;
 import org.bukkit.block.Block;
-import org.bukkit.configuration.file.FileConfiguration;
+import com.example.empirewand.core.config.ReadableConfig;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -21,12 +21,18 @@ import static org.mockito.Mockito.when;
 
 class EntityListenerTest extends EmpireWandTestBase {
 
-    @Mock private EmpireWandPlugin mockPlugin;
-    @Mock private ConfigService mockConfig;
-    @Mock private FileConfiguration mockSpellsConfig;
-    @Mock private EntityExplodeEvent mockExplodeEvent;
-    @Mock private Entity mockEntity;
-    @Mock private PersistentDataContainer mockPdc;
+    @Mock
+    private EmpireWandPlugin mockPlugin;
+    @Mock
+    private ConfigService mockConfig;
+    @Mock
+    private ReadableConfig mockSpellsConfig;
+    @Mock
+    private EntityExplodeEvent mockExplodeEvent;
+    @Mock
+    private Entity mockEntity;
+    @Mock
+    private PersistentDataContainer mockPdc;
 
     private EntityListener listener;
 
@@ -60,4 +66,3 @@ class EntityListenerTest extends EmpireWandTestBase {
         assertEquals(0, blocks.size());
     }
 }
-

@@ -1,6 +1,7 @@
 package com.example.empirewand.spell.implementation;
 
 import org.bukkit.Particle;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -26,8 +27,9 @@ public class Hemorrhage implements Spell {
         boolean hitPlayers = spells.getBoolean("hemorrhage.flags.hit-players", true);
         boolean hitMobs = spells.getBoolean("hemorrhage.flags.hit-mobs", true);
 
-        LivingEntity target = (LivingEntity) player.getTargetEntity(20);
-        if (!(target instanceof LivingEntity) || target.isDead() || !target.isValid()) {
+        Entity targetEntity = player.getTargetEntity(20);
+        if (targetEntity == null || !(targetEntity instanceof LivingEntity target) || target.isDead()
+                || !target.isValid()) {
             context.fx().fizzle(player);
             return;
         }
@@ -44,7 +46,8 @@ public class Hemorrhage implements Spell {
         // Apply initial damage
         target.damage(baseDamage, player);
 
-        new HemorrhageTask(target, player, movementBonus, movementThreshold, checkInterval, duration).runTaskTimer(context.plugin(), 0L, checkInterval);
+        new HemorrhageTask(target, player, movementBonus, movementThreshold, checkInterval, duration)
+                .runTaskTimer(context.plugin(), 0L, checkInterval);
     }
 
     private static class HemorrhageTask extends BukkitRunnable {
@@ -58,7 +61,7 @@ public class Hemorrhage implements Spell {
         private int ticksElapsed = 0;
 
         public HemorrhageTask(LivingEntity target, Player caster, double movementBonus, double movementThreshold,
-                            int checkInterval, int totalDuration) {
+                int checkInterval, int totalDuration) {
             this.target = target;
             this.caster = caster;
             this.movementBonus = movementBonus;
@@ -100,7 +103,8 @@ public class Hemorrhage implements Spell {
                 double x = (Math.random() - 0.5) * 1;
                 double y = Math.random() * 1;
                 double z = (Math.random() - 0.5) * 1;
-                target.getWorld().spawnParticle(Particle.FALLING_LAVA, target.getLocation().add(x, y, z), 1, 0, 0, 0, 0);
+                target.getWorld().spawnParticle(Particle.FALLING_LAVA, target.getLocation().add(x, y, z), 1, 0, 0, 0,
+                        0);
             }
         }
     }

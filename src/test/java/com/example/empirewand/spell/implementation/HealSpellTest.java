@@ -4,6 +4,7 @@ import com.example.empirewand.EmpireWandTestBase;
 import com.example.empirewand.core.ConfigService;
 import com.example.empirewand.core.FxService;
 import com.example.empirewand.spell.SpellContext;
+import net.kyori.adventure.text.TextComponent;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -14,9 +15,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for Heal spell implementation.
@@ -47,15 +52,15 @@ class HealSpellTest extends EmpireWandTestBase {
         healSpell = new Heal();
 
         // Setup mock player
-        when(mockPlayer.getLocation()).thenReturn(mockLocation);
-        when(mockPlayer.getHealth()).thenReturn(10.0);
-        when(mockPlayer.getAttribute(Attribute.GENERIC_MAX_HEALTH)).thenReturn(mockAttributeInstance);
-        when(mockAttributeInstance.getValue()).thenReturn(20.0);
+        lenient().when(mockPlayer.getLocation()).thenReturn(mockLocation);
+        lenient().when(mockPlayer.getHealth()).thenReturn(10.0);
+        lenient().when(mockPlayer.getAttribute(Attribute.GENERIC_MAX_HEALTH)).thenReturn(mockAttributeInstance);
+        lenient().when(mockAttributeInstance.getValue()).thenReturn(20.0);
 
         // Setup mock config
-        var mockConfigSection = mock(org.bukkit.configuration.file.FileConfiguration.class);
-        when(mockConfig.getSpellsConfig()).thenReturn(mockConfigSection);
-        when(mockConfigSection.getDouble("heal.values.heal-amount", 8.0)).thenReturn(8.0);
+        var mockConfigSection = mock(com.example.empirewand.core.config.ReadableConfig.class);
+        lenient().when(mockConfig.getSpellsConfig()).thenReturn(mockConfigSection);
+        lenient().when(mockConfigSection.getDouble("heal.values.heal-amount", 8.0)).thenReturn(8.0);
 
         context = new SpellContext(null, mockPlayer, mockConfig, mockFx);
     }
@@ -164,7 +169,7 @@ class HealSpellTest extends EmpireWandTestBase {
     @Test
     void testHealDisplayName() {
         // When & Then
-        assertEquals("Heal", healSpell.displayName().toString());
+        assertEquals("Heal", ((net.kyori.adventure.text.TextComponent) healSpell.displayName()).content());
     }
 
     @Test
@@ -174,6 +179,7 @@ class HealSpellTest extends EmpireWandTestBase {
 
         // Then
         assertTrue(prereq.canCast());
-        assertEquals("", prereq.reason().toString());
+        assertEquals("", ((TextComponent) prereq.reason()).content());
     }
+
 }

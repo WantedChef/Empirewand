@@ -30,4 +30,9 @@ public interface Spell {
     String key();
     Component displayName();
     Prereq prereq();
+
+    /**
+     * Optional categorization of a spell. Defaults to MISC.
+     */
+    default SpellType type() { return SpellType.MISC; }
 }

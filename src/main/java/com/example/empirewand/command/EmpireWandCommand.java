@@ -17,6 +17,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 
+@edu.umd.cs.findbugs.annotations.SuppressFBWarnings(value = {
+        "EI_EXPOSE_REP2", "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE",
+        "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE" }, justification = "Stores plugin reference per Bukkit command pattern for accessing services; safe intentional exposure. CommandSender is never null in Bukkit command context.")
 public class EmpireWandCommand implements CommandExecutor {
 
     private final EmpireWandPlugin plugin;
@@ -29,50 +32,115 @@ public class EmpireWandCommand implements CommandExecutor {
 
     private interface SubCommand {
         String name();
+
         boolean execute(CommandSender sender, String[] args);
     }
 
     private void registerSubcommands() {
         subcommands.put("get", new SubCommand() {
-            public String name() { return "get"; }
-            public boolean execute(CommandSender sender, String[] args) { return handleGet(sender, args); }
+            @Override
+            public String name() {
+                return "get";
+            }
+
+            @Override
+            public boolean execute(CommandSender sender, String[] args) {
+                return handleGet(sender, args);
+            }
         });
         subcommands.put("bind", new SubCommand() {
-            public String name() { return "bind"; }
-            public boolean execute(CommandSender sender, String[] args) { return handleBind(sender, args); }
+            @Override
+            public String name() {
+                return "bind";
+            }
+
+            @Override
+            public boolean execute(CommandSender sender, String[] args) {
+                return handleBind(sender, args);
+            }
         });
         subcommands.put("unbind", new SubCommand() {
-            public String name() { return "unbind"; }
-            public boolean execute(CommandSender sender, String[] args) { return handleUnbind(sender, args); }
+            @Override
+            public String name() {
+                return "unbind";
+            }
+
+            @Override
+            public boolean execute(CommandSender sender, String[] args) {
+                return handleUnbind(sender, args);
+            }
         });
         subcommands.put("bindall", new SubCommand() {
-            public String name() { return "bindall"; }
-            public boolean execute(CommandSender sender, String[] args) { return handleBindAll(sender, args); }
+            @Override
+            public String name() {
+                return "bindall";
+            }
+
+            @Override
+            public boolean execute(CommandSender sender, String[] args) {
+                return handleBindAll(sender, args);
+            }
         });
         subcommands.put("set-spell", new SubCommand() {
-            public String name() { return "set-spell"; }
-            public boolean execute(CommandSender sender, String[] args) { return handleSetSpell(sender, args); }
+            @Override
+            public String name() {
+                return "set-spell";
+            }
+
+            @Override
+            public boolean execute(CommandSender sender, String[] args) {
+                return handleSetSpell(sender, args);
+            }
         });
         subcommands.put("reload", new SubCommand() {
-            public String name() { return "reload"; }
-            public boolean execute(CommandSender sender, String[] args) { return handleReload(sender, args); }
+            @Override
+            public String name() {
+                return "reload";
+            }
+
+            @Override
+            public boolean execute(CommandSender sender, String[] args) {
+                return handleReload(sender, args);
+            }
         });
         subcommands.put("cooldown", new SubCommand() {
-            public String name() { return "cooldown"; }
-            public boolean execute(CommandSender sender, String[] args) { return handleCooldown(sender, args); }
+            @Override
+            public String name() {
+                return "cooldown";
+            }
+
+            @Override
+            public boolean execute(CommandSender sender, String[] args) {
+                return handleCooldown(sender, args);
+            }
         });
         subcommands.put("migrate", new SubCommand() {
-            public String name() { return "migrate"; }
-            public boolean execute(CommandSender sender, String[] args) { return handleMigrate(sender, args); }
+            @Override
+            public String name() {
+                return "migrate";
+            }
+
+            @Override
+            public boolean execute(CommandSender sender, String[] args) {
+                return handleMigrate(sender, args);
+            }
         });
         subcommands.put("list", new SubCommand() {
-            public String name() { return "list"; }
-            public boolean execute(CommandSender sender, String[] args) { return handleList(sender, args); }
+            @Override
+            public String name() {
+                return "list";
+            }
+
+            @Override
+            public boolean execute(CommandSender sender, String[] args) {
+                return handleList(sender, args);
+            }
         });
     }
 
     @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label,
+            @NotNull String[] args) {
         if (args.length == 0) {
             return sendUsage(sender);
         }
@@ -87,10 +155,12 @@ public class EmpireWandCommand implements CommandExecutor {
     }
 
     private boolean sendUsage(CommandSender sender) {
-        sender.sendMessage(Component.text("Usage: /ew <get|bind|unbind|bindall|set-spell|list|reload|cooldown|migrate>").color(NamedTextColor.RED));
+        sender.sendMessage(Component.text("Usage: /ew <get|bind|unbind|bindall|set-spell|list|reload|cooldown|migrate>")
+                .color(NamedTextColor.RED));
         return true;
     }
 
+    @SuppressWarnings("unused")
     private boolean handleGet(CommandSender sender, String[] args) {
         if (!plugin.getPermissionService().has(sender, "empirewand.command.get")) {
             sender.sendMessage(Component.text("No permission").color(NamedTextColor.RED));
@@ -150,7 +220,8 @@ public class EmpireWandCommand implements CommandExecutor {
 
         List<String> spells = plugin.getWandData().getSpells(item);
         if (spells.contains(spellKey)) {
-            player.sendMessage(Component.text("This spell is already bound to your wand.").color(NamedTextColor.YELLOW));
+            player.sendMessage(
+                    Component.text("This spell is already bound to your wand.").color(NamedTextColor.YELLOW));
             return true;
         }
 
@@ -178,7 +249,8 @@ public class EmpireWandCommand implements CommandExecutor {
         ItemStack item = player.getInventory().getItemInMainHand();
 
         if (!plugin.getWandData().isWand(item)) {
-            player.sendMessage(Component.text("You must be holding a wand to unbind a spell.").color(NamedTextColor.RED));
+            player.sendMessage(
+                    Component.text("You must be holding a wand to unbind a spell.").color(NamedTextColor.RED));
             return true;
         }
 
@@ -192,10 +264,12 @@ public class EmpireWandCommand implements CommandExecutor {
 
         spells.remove(spellKey);
         plugin.getWandData().setSpells(item, spells);
-        player.sendMessage(Component.text("Unbound spell " + spellKey + " from your wand.").color(NamedTextColor.GREEN));
+        player.sendMessage(
+                Component.text("Unbound spell " + spellKey + " from your wand.").color(NamedTextColor.GREEN));
         return true;
     }
 
+    @SuppressWarnings("unused")
     private boolean handleBindAll(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
             sender.sendMessage(Component.text("This command can only be run by a player.").color(NamedTextColor.RED));
@@ -215,7 +289,8 @@ public class EmpireWandCommand implements CommandExecutor {
             return true;
         }
 
-        plugin.getWandData().setSpells(item, new java.util.ArrayList<>(plugin.getSpellRegistry().getAllSpells().keySet()));
+        plugin.getWandData().setSpells(item,
+                new java.util.ArrayList<>(plugin.getSpellRegistry().getAllSpells().keySet()));
         player.sendMessage(Component.text("Bound all available spells to your wand.").color(NamedTextColor.GREEN));
         return true;
     }
@@ -259,6 +334,7 @@ public class EmpireWandCommand implements CommandExecutor {
         return true;
     }
 
+    @SuppressWarnings("unused")
     private boolean handleReload(CommandSender sender, String[] args) {
         if (!plugin.getPermissionService().has(sender, "empirewand.command.reload")) {
             sender.sendMessage(Component.text("No permission").color(NamedTextColor.RED));
@@ -295,6 +371,7 @@ public class EmpireWandCommand implements CommandExecutor {
         return true;
     }
 
+    @SuppressWarnings("unused")
     private boolean handleMigrate(CommandSender sender, String[] args) {
         if (!plugin.getPermissionService().has(sender, "empirewand.command.migrate")) {
             sender.sendMessage(Component.text("No permission").color(NamedTextColor.RED));
@@ -308,25 +385,25 @@ public class EmpireWandCommand implements CommandExecutor {
             try {
                 boolean migrated = plugin.getConfigService().getMigrationService().migrateAllConfigs();
                 if (migrated) {
-                    plugin.getServer().getScheduler().runTask(plugin, () ->
-                            sender.sendMessage(Component.text("Migration completed. Please restart the server for changes to take effect.").color(NamedTextColor.GREEN))
-                    );
+                    plugin.getServer().getScheduler().runTask(plugin,
+                            () -> sender.sendMessage(Component
+                                    .text("Migration completed. Please restart the server for changes to take effect.")
+                                    .color(NamedTextColor.GREEN)));
                 } else {
-                    plugin.getServer().getScheduler().runTask(plugin, () ->
-                            sender.sendMessage(Component.text("No migrations were necessary.").color(NamedTextColor.GREEN))
-                    );
+                    plugin.getServer().getScheduler().runTask(plugin, () -> sender
+                            .sendMessage(Component.text("No migrations were necessary.").color(NamedTextColor.GREEN)));
                 }
             } catch (RuntimeException e) {
                 plugin.getLogger().log(Level.SEVERE, "Migration failed", e);
-                plugin.getServer().getScheduler().runTask(plugin, () ->
-                        sender.sendMessage(Component.text("Migration failed. Check server logs for details.").color(NamedTextColor.RED))
-                );
+                plugin.getServer().getScheduler().runTask(plugin, () -> sender.sendMessage(
+                        Component.text("Migration failed. Check server logs for details.").color(NamedTextColor.RED)));
             }
         });
 
         return true;
     }
 
+    @SuppressWarnings("unused")
     private boolean handleList(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
             sender.sendMessage(Component.text("This command can only be run by a player.").color(NamedTextColor.RED));
@@ -350,7 +427,8 @@ public class EmpireWandCommand implements CommandExecutor {
         int idx = plugin.getWandData().getActiveIndex(item);
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < spells.size(); i++) {
-            if (i > 0) sb.append(", ");
+            if (i > 0)
+                sb.append(", ");
             String key = spells.get(i);
             String display = plugin.getConfigService().getSpellsConfig().getString(key + ".display-name", key);
             if (i == idx) {

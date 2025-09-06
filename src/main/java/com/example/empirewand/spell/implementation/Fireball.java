@@ -1,8 +1,15 @@
 package com.example.empirewand.spell.implementation;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.Set;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -10,6 +17,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Vector;
 
 import com.example.empirewand.core.Keys;
 import com.example.empirewand.spell.Spell;
@@ -28,6 +37,9 @@ public class Fireball implements Spell {
         double projectileSpeed = spells.getDouble("fireball.values.speed", 1.0);
         boolean incendiary = spells.getBoolean("fireball.flags.incendiary", true);
         boolean blockDamage = spells.getBoolean("fireball.flags.block-damage", true);
+        int trailLength = spells.getInt("fireball.values.trail_length", 4);
+        int particleCount = spells.getInt("fireball.values.particle_count", 2);
+        int lifeTicks = spells.getInt("fireball.values.block_lifetime_ticks", 40);
 
         // Launch fireball
         Location spawnLoc = player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(0.5));
@@ -40,6 +52,9 @@ public class Fireball implements Spell {
         // Tag projectile
         fireball.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL,
                 Keys.STRING_TYPE.getType(), "fireball");
+
+        // Fire trail effect
+        new FireTrail(context, fireball, trailLength, particleCount, lifeTicks).runTaskTimer(context.plugin(), 0L, 1L);
 
         // Register listener for custom explosion handling
         context.plugin().getServer().getPluginManager().registerEvents(
@@ -100,6 +115,105 @@ public class Fireball implements Spell {
 
             // Unregister listener after handling to avoid leaks
             HandlerList.unregisterAll(this);
+        }
+    }
+
+    /**
+     * Trails the fireball with FLAME particles and temporary ASH blocks, cleans up
+     * after lifeTicks.
+     */
+    private static final class FireTrail extends BukkitRunnable {
+        private final org.bukkit.entity.Fireball fireball;
+        private final org.bukkit.World world;
+        private final int trailLength;
+        private final int particleCount;
+        private final int lifeTicks;
+
+        private int tick = 0;
+        private final Deque<TempBlock> queue = new ArrayDeque<>();
+        private final Set<Block> ours = new HashSet<>();
+
+        FireTrail(SpellContext ctx, org.bukkit.entity.Fireball fireball, int trailLength, int particleCount,
+                int lifeTicks) {
+            this.fireball = fireball;
+            this.world = fireball.getWorld();
+            this.trailLength = Math.max(1, trailLength);
+            this.particleCount = Math.max(1, particleCount);
+            this.lifeTicks = Math.max(5, lifeTicks);
+        }
+
+        @Override
+        public void run() {
+            if (!fireball.isValid() || fireball.isDead()) {
+                cleanup();
+                cancel();
+                return;
+            }
+
+            Vector dir = fireball.getVelocity().clone();
+            if (dir.lengthSquared() < 0.0001) {
+                dir = fireball.getLocation().getDirection();
+            }
+            dir.normalize();
+
+            Location base = fireball.getLocation().clone().add(0, -0.25, 0);
+
+            for (int i = 0; i < trailLength; i++) {
+                Location l = base.clone().add(dir.clone().multiply(-i));
+                Block b = l.getBlock();
+
+                if (!ours.contains(b) && isReplaceable(b.getType())) {
+                    BlockData prev = b.getBlockData().clone();
+                    queue.addLast(new TempBlock(b, prev, tick + lifeTicks));
+                    b.setType(Material.MAGMA_BLOCK, false);
+                    ours.add(b);
+
+                    world.spawnParticle(Particle.BLOCK, l.add(0.5, 0.5, 0.5), particleCount, 0.05, 0.05, 0.05, 0,
+                            Material.MAGMA_BLOCK.createBlockData());
+                    world.spawnParticle(Particle.FLAME, l, particleCount, 0.1, 0.1, 0.1, 0.01);
+                }
+            }
+
+            while (!queue.isEmpty() && queue.peekFirst().expireTick <= tick) {
+                TempBlock tb = queue.pollFirst();
+                if (tb.block.getType() == Material.MAGMA_BLOCK && ours.contains(tb.block)) {
+                    tb.block.setBlockData(tb.previous, false);
+                }
+                ours.remove(tb.block);
+            }
+
+            tick++;
+            if (tick > 20 * 15) {
+                cleanup();
+                cancel();
+            }
+        }
+
+        private void cleanup() {
+            while (!queue.isEmpty()) {
+                TempBlock tb = queue.pollFirst();
+                if (tb.block.getType() == Material.MAGMA_BLOCK && ours.contains(tb.block)) {
+                    tb.block.setBlockData(tb.previous, false);
+                }
+                ours.remove(tb.block);
+            }
+        }
+
+        private boolean isReplaceable(Material m) {
+            return m == Material.AIR || m == Material.CAVE_AIR || m == Material.VOID_AIR ||
+                    m == Material.SHORT_GRASS || m == Material.TALL_GRASS || m == Material.SNOW || m == Material.FIRE;
+        }
+
+        private static final class TempBlock {
+            final Block block;
+            final BlockData previous;
+            final int expireTick;
+
+            TempBlock(Block block, BlockData previous, int expireTick) {
+                this.block = block;
+                this.previous = previous;
+                this.expireTick = expireTick;
+            }
         }
     }
 

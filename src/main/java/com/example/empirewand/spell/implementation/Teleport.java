@@ -3,6 +3,7 @@ package com.example.empirewand.spell.implementation;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.util.BlockIterator;
@@ -10,8 +11,12 @@ import org.bukkit.util.BlockIterator;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.Prereq;
+import com.example.empirewand.visual.RingRenderer;
+import com.example.empirewand.visual.Afterimages;
 import net.kyori.adventure.text.Component;
 
+@edu.umd.cs.findbugs.annotations.SuppressFBWarnings(value = {
+        "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE" }, justification = "Defensive world/location checks kept for safety; SpotBugs may consider some redundant given Bukkit guarantees.")
 public class Teleport implements Spell {
     @Override
     public void execute(SpellContext context) {
@@ -35,16 +40,53 @@ public class Teleport implements Spell {
             return;
         }
 
-        // Cast particles and sound
-        context.fx().spawnParticles(player.getLocation(), Particle.PORTAL, 20, 0.3, 0.3, 0.3, 0.1);
+        // Departure implosion visuals
+        Location from = player.getLocation().clone();
+        Afterimages.get(); // ensure initialized
+        if (Afterimages.get() != null)
+            Afterimages.get().record(from);
+        context.fx().spawnParticles(from, Particle.PORTAL, 35, 0.5, 0.8, 0.5, 0.15);
+        new BukkitRunnable() {
+            double r = 2.2;
+            int steps = 0;
+
+            @Override
+            public void run() {
+                if (steps > 6 || from.getWorld() == null) {
+                    cancel();
+                    return;
+                }
+                RingRenderer.renderRing(from, r, 30, Particle.CRIT);
+                r -= 0.3;
+                steps++;
+            }
+        }.runTaskTimer(context.plugin(), 0L, 2L);
         context.fx().playSound(player, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.0f);
 
         // Teleport
         player.teleport(targetLoc);
 
-        // Arrival effects
-        context.fx().spawnParticles(targetLoc, Particle.PORTAL, 20, 0.3, 0.3, 0.3, 0.1);
-        context.fx().playSound(targetLoc, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.0f);
+        // Arrival expanding ring + afterimage
+        Location to = targetLoc.clone();
+        if (Afterimages.get() != null)
+            Afterimages.get().record(to);
+        context.fx().spawnParticles(to, Particle.PORTAL, 45, 0.6, 1.0, 0.6, 0.2);
+        new BukkitRunnable() {
+            double r = 0.3;
+            int steps = 0;
+
+            @Override
+            public void run() {
+                if (steps > 6 || to.getWorld() == null) {
+                    cancel();
+                    return;
+                }
+                RingRenderer.renderRing(to, r, 32, Particle.CRIT);
+                r += 0.35;
+                steps++;
+            }
+        }.runTaskTimer(context.plugin(), 0L, 2L);
+        context.fx().playSound(to, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.0f);
     }
 
     private Location getTargetLocation(Player player, double range, boolean requiresLineOfSight) {
@@ -54,7 +96,6 @@ public class Teleport implements Spell {
         while (iterator.hasNext()) {
             Block block = iterator.next();
             if (block.getType().isSolid()) {
-                // Found solid block, teleport to the block in front of it
                 targetLoc = block.getLocation();
                 targetLoc.setY(targetLoc.getY() + 1); // Stand on top of the block
                 break;
@@ -67,10 +108,11 @@ public class Teleport implements Spell {
         }
 
         // Ensure location is within world bounds
-        if (targetLoc.getY() < 0) targetLoc.setY(0);
-        if (targetLoc.getY() > targetLoc.getWorld().getMaxHeight()) {
-            targetLoc.setY(targetLoc.getWorld().getMaxHeight());
-        }
+        org.bukkit.World world = player.getWorld();
+        if (targetLoc.getY() < world.getMinHeight())
+            targetLoc.setY(world.getMinHeight());
+        if (targetLoc.getY() > world.getMaxHeight())
+            targetLoc.setY(world.getMaxHeight());
 
         return targetLoc;
     }

@@ -18,6 +18,8 @@ public class LifeReap implements Spell {
     @Override
     public void execute(SpellContext context) {
         Player player = context.caster();
+        if (player == null)
+            return;
 
         // Config values
         var spells = context.config().getSpellsConfig();
@@ -30,11 +32,8 @@ public class LifeReap implements Spell {
 
         // Find targets in cone
         List<LivingEntity> targets = getEntitiesInCone(player, range, angleDegrees);
-        targets.removeIf(entity -> {
-            if (entity instanceof Player && !hitPlayers) return true;
-            if (!(entity instanceof Player) && !hitMobs) return true;
-            return false;
-        });
+        targets.removeIf(
+                entity -> (entity instanceof Player && !hitPlayers) || (!(entity instanceof Player) && !hitMobs));
 
         if (targets.isEmpty()) {
             context.fx().fizzle(player);
@@ -49,26 +48,37 @@ public class LifeReap implements Spell {
         }
 
         // Heal player
-        double maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
+        var maxAttr = player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH);
+        double maxHealth = maxAttr != null ? maxAttr.getValue() : 20.0;
         double newHealth = Math.min(maxHealth, player.getHealth() + totalHeal);
         player.setHealth(newHealth);
 
         // Visuals and SFX
         context.fx().playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 0.8f);
-        spawnSweepParticles(player, context);
+        spawnSweepParticles(player);
     }
 
     private List<LivingEntity> getEntitiesInCone(Player player, double range, double angleDegrees) {
         List<LivingEntity> targets = new ArrayList<>();
-        Vector playerDirection = player.getLocation().getDirection().normalize();
+        org.bukkit.World world = player.getWorld();
+        var originLoc = player.getLocation();
+        Vector playerDir = originLoc.getDirection();
+        if (playerDir == null) {
+            return targets; // No direction available
+        }
+        Vector playerDirection = playerDir.normalize();
         double angleRadians = Math.toRadians(angleDegrees / 2.0);
 
-        for (LivingEntity entity : player.getWorld().getLivingEntities()) {
-            if (entity.equals(player) || entity.isDead() || !entity.isValid()) continue;
+        for (LivingEntity entity : world.getLivingEntities()) {
+            if (entity.equals(player) || entity.isDead() || !entity.isValid())
+                continue;
 
-            Vector toEntity = entity.getLocation().toVector().subtract(player.getLocation().toVector());
+            var entLoc = entity.getLocation();
+            var playerLoc = player.getLocation();
+            Vector toEntity = entLoc.toVector().subtract(playerLoc.toVector());
             double distance = toEntity.length();
-            if (distance > range) continue;
+            if (distance > range)
+                continue;
 
             toEntity = toEntity.normalize();
             double dotProduct = playerDirection.dot(toEntity);
@@ -82,18 +92,21 @@ public class LifeReap implements Spell {
         return targets;
     }
 
-    private void spawnSweepParticles(Player player, SpellContext context) {
-        // Sweep attack particles
+    private void spawnSweepParticles(Player player) {
         var loc = player.getLocation();
-        if (loc == null) return; // Guard against possible null pointer
+        org.bukkit.World world = player.getWorld();
+        if (world == null) {
+            return; // Invalid world
+        }
 
-        player.getWorld().spawnParticle(org.bukkit.Particle.SWEEP_ATTACK, loc.add(0, 1, 0), 1, 0, 0, 0, 0);
+        // Sweep attack particles
+        world.spawnParticle(org.bukkit.Particle.SWEEP_ATTACK, loc.add(0, 1, 0), 1, 0, 0, 0, 0);
 
         // Dark redstone dust trail
         Vector direction = loc.getDirection().multiply(0.5);
         for (int i = 0; i < 10; i++) {
-            player.getWorld().spawnParticle(Particle.DUST, loc.add(direction.clone().multiply(i)), 5,
-                new Particle.DustOptions(org.bukkit.Color.fromRGB(64, 0, 0), 1.0f));
+            world.spawnParticle(Particle.DUST, loc.add(direction.clone().multiply(i)), 5,
+                    new Particle.DustOptions(org.bukkit.Color.fromRGB(64, 0, 0), 1.0f));
         }
     }
 

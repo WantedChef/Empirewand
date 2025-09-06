@@ -1,11 +1,11 @@
 package com.example.empirewand;
 
 import com.example.empirewand.api.EmpireWandAPI;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import com.example.empirewand.core.CooldownService;
 import com.example.empirewand.core.ConfigService;
 import com.example.empirewand.core.FxService;
-import com.example.empirewand.core.Keys;
-import com.example.empirewand.core.PermissionService;
+import com.example.empirewand.core.PermissionServiceImpl;
 import com.example.empirewand.core.SpellRegistryImpl;
 import com.example.empirewand.core.WandData;
 import com.example.empirewand.core.text.TextService;
@@ -14,8 +14,11 @@ import com.example.empirewand.listeners.EntityListener;
 import com.example.empirewand.listeners.ProjectileListener;
 import com.example.empirewand.listeners.WandInteractionListener;
 import com.example.empirewand.listeners.PlayerLifecycleListener;
+import com.example.empirewand.visual.Afterimages;
 import org.bukkit.plugin.java.JavaPlugin;
 
+@SuppressFBWarnings(value = { "EI_EXPOSE_REP",
+        "EI_EXPOSE_REP2" }, justification = "Service getters intentionally expose internal singletons (Bukkit plugin architecture). Wrapping or copying would break shared state semantics and add overhead; consumers treat them as services not data containers.")
 public final class EmpireWandPlugin extends JavaPlugin implements EmpireWandAPI.EmpireWandProvider {
 
     private SpellRegistryImpl spellRegistry;
@@ -23,16 +26,13 @@ public final class EmpireWandPlugin extends JavaPlugin implements EmpireWandAPI.
     private WandData wandData;
     private FxService fxService;
     private ConfigService configService;
-    private PermissionService permissionService;
+    private PermissionServiceImpl permissionService;
     private TextService textService;
     private MetricsService metricsService;
 
     @Override
     public void onEnable() {
         try {
-            // Initialize Keys with plugin instance
-            Keys.initialize(this);
-
             // Init services (skeletons)
             this.configService = new ConfigService(this);
             this.textService = new TextService();
@@ -40,7 +40,7 @@ public final class EmpireWandPlugin extends JavaPlugin implements EmpireWandAPI.
             this.cooldownService = new CooldownService();
             this.wandData = new WandData(this);
             this.fxService = new FxService(this.configService, this.textService);
-            this.permissionService = new PermissionService();
+            this.permissionService = new PermissionServiceImpl();
             this.metricsService = new MetricsService(this, this.configService);
 
             // Register listeners (skeletons)
@@ -61,6 +61,19 @@ public final class EmpireWandPlugin extends JavaPlugin implements EmpireWandAPI.
 
             getLogger().info(String.format("EmpireWand enabled on %s", getServer().getVersion()));
 
+            // Initialize global afterimage system (configurable) under spells.yml root
+            // 'afterimages'
+            var spellsCfg = this.configService.getSpellsConfig();
+            int aiMax = spellsCfg.getInt("afterimages.max-size", 32);
+            int aiLifetime = spellsCfg.getInt("afterimages.lifetime-ticks", 18);
+            long aiPeriod = spellsCfg.getLong("afterimages.period-ticks", 2L);
+            boolean aiEnabled = spellsCfg.getBoolean("afterimages.enabled", true);
+            if (aiEnabled) {
+                Afterimages.initialize(this, aiMax, aiLifetime, aiPeriod);
+            } else {
+                getLogger().info("Afterimages disabled via config");
+            }
+
             // Initialize metrics
             if (this.metricsService != null) {
                 this.metricsService.initialize();
@@ -69,7 +82,7 @@ public final class EmpireWandPlugin extends JavaPlugin implements EmpireWandAPI.
             // Register API provider
             EmpireWandAPI.setProvider(this);
         } catch (Exception e) {
-            getLogger().severe("Failed to enable EmpireWand: " + e.getMessage());
+            getLogger().severe(String.format("Failed to enable EmpireWand: %s", e.getMessage()));
             e.printStackTrace();
             getServer().getPluginManager().disablePlugin(this);
         }
@@ -82,12 +95,12 @@ public final class EmpireWandPlugin extends JavaPlugin implements EmpireWandAPI.
             try {
                 this.metricsService.shutdown();
             } catch (Exception e) {
-                getLogger().warning("Error shutting down metrics: " + e.getMessage());
+                getLogger().warning(String.format("Error shutting down metrics: %s", e.getMessage()));
             }
         }
 
-        // Remove API provider
-        EmpireWandAPI.setProvider(null);
+        // Reset API provider to no-op
+        EmpireWandAPI.clearProvider();
 
         getLogger().info("EmpireWand has been disabled");
     }
@@ -113,7 +126,7 @@ public final class EmpireWandPlugin extends JavaPlugin implements EmpireWandAPI.
         return configService;
     }
 
-    public PermissionService getInternalPermissionService() {
+    public PermissionServiceImpl getInternalPermissionService() {
         return permissionService;
     }
 

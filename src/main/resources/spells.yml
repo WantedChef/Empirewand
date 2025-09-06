@@ -1,6 +1,131 @@
 # Spell configuration for EmpireWand
 
 config-version: 1.0
+comet:
+  display-name: "<#FF8C00>Comet"
+  cooldown: 2500 # ms
+  values:
+    damage: 7.0 # 3.5 hearts
+    yield: 2.5
+    # Visual trail (purely cosmetic)
+    trail_length: 5
+    particle_count: 3
+  flags:
+    hit-players: true
+    hit-mobs: true
+chain-lightning:
+  display-name: "<#87CEEB>Chain Lightning"
+  cooldown: 7000
+  values:
+    range: 20.0
+    jump-radius: 8.0
+  jumps: 4
+  damage: 8.0
+  # Visual arc (purely cosmetic)
+  arc_particle_count: 8
+  arc_steps: 12
+  max_arc_length: 15.0
+arcane-orb:
+  display-name: "<#7FFFD4>Arcane Orb"
+  cooldown: 6000
+  values:
+    speed: 0.6
+    radius: 3.5
+    damage: 8.0
+  knockback: 0.6
+  # Visual halo + trail (purely cosmetic)
+  trail_length: 4
+  particle_count: 3
+  block_lifetime_ticks: 30
+  halo_particles: 8
+  halo_rotation_speed: 12.0
+empire-comet:
+  display-name: "<#FF4500>Empire Comet"
+  cooldown: 9000
+  values:
+    yield: 3.5
+    speed: 0.8
+    # Visual flaming tail (purely cosmetic)
+    trail_length: 7
+    particle_count: 4
+    block_lifetime_ticks: 40
+    burst_interval_ticks: 6
+little-spark:
+  display-name: "<#FFFF00>Little Spark"
+  cooldown: 1500
+  values:
+    range: 20.0
+    damage: 4.0
+    knockback: 0.5
+    speed: 2.0
+    # Visual lightweight electric trail (purely cosmetic)
+    trail-steps: 6
+    particle-count: 4
+spark:
+  display-name: "<#FFD700>Spark"
+  cooldown: 2000
+  values:
+    range: 25.0
+    damage: 6.0
+    knockback: 0.7
+    speed: 2.2
+    # Visual trail + bursts (purely cosmetic)
+    trail-steps: 8
+    particle-count: 6
+    burst-interval-ticks: 10
+dark-pulse:
+  display-name: "<#4B0082>Dark Pulse"
+  cooldown: 4000
+  values:
+    range: 24.0                # Targeting range for initial shot
+    speed: 1.8                 # Wither skull speed multiplier
+    explosion-radius: 4.0      # AoE radius on impact (blocks)
+    damage: 6.0                # Direct damage at impact
+    knockback: 0.6             # Outward knockback strength
+    wither-duration-ticks: 120 # Wither duration on hit
+    wither-amplifier: 1        # Wither level (0-based)
+    blind-duration-ticks: 60   # Blindness duration on hit
+    # Visual ring pulse (purely cosmetic)
+    ring-particle-count: 14
+    ring-radius-step: 0.25
+    ring-interval-ticks: 2
+explosion-trail:
+  display-name: "<#DC143C>Explosion Trail"
+  cooldown: 8000
+  values:
+    duration-ticks: 100
+    damage: 8.0
+    tick-interval: 10
+    # Visual scorch trail (purely cosmetic)
+    trail-length: 12
+    particle-count: 10
+    block-lifetime-ticks: 40
+    place-temp-blocks: true
+blood-spam:
+  display-name: "<#8B0000>Blood Spam"
+  cooldown: 6000
+  values:
+    projectile-count: 8
+    damage: 1.0
+    delay-ticks: 2
+    # Visual projectile trail (purely cosmetic)
+    trail-steps: 6
+    red-dust-count: 5
+aura:
+  display-name: "<#9932CC>Aura"
+  cooldown: 10000
+  values:
+    radius: 5.0
+    damage-per-tick: 2.0
+    duration-ticks: 200
+    tick-interval: 20
+    # Visual expanding ring (purely cosmetic)
+    ring-particle-count: 40
+    ring-max-radius: 5.0
+    ring-expand-step: 0.6
+# Spell configuration for EmpireWand
+
+config-version: 1.0
 
 comet:
   display-name: "<#FF8C00>Comet"
@@ -39,6 +164,8 @@ magic-missile:
     damage-per-missile: 3.0 # 1.5 hearts
     missile-count: 3
     delay-ticks: 7
+    # Visual enhancement parameters
+    extra_particle_count: 4
   flags:
     requires-los: true
 
@@ -183,6 +310,10 @@ fireball:
   values:
     yield: 3.0
     speed: 1.0
+    # Visual trail parameters
+    trail_length: 4
+    particle_count: 2
+    block_lifetime_ticks: 40
   flags:
     incendiary: true
     block-damage: true
@@ -237,6 +368,11 @@ lightning-arrow:
     damage: 8.0
     lightning-damage: 12.0
     speed: 2.5
+    # Visual trail parameters (purely cosmetic)
+    trail_length: 5
+    particle_count: 3
+    block_lifetime_ticks: 30
+    spark_interval_ticks: 4
 
 poison-wave:
   display-name: "<#32CD32>Poison Wave"
@@ -508,6 +644,12 @@ frost-nova:
     damage: 6.0
     slow-duration-ticks: 100
     slow-amplifier: 2
+  # Visual frost effects (purely cosmetic)
+  ring-particle-count: 32
+  ring-expand-step: 0.4
+  snow-swirl-density: 18
+  ice-burst-count: 6
+  enable-reversible-floor: true
 
 chain-lightning:
   display-name: "<#87CEEB>Chain Lightning"
@@ -517,6 +659,10 @@ chain-lightning:
     jump-radius: 8.0
     jumps: 4
     damage: 8.0
+  # Visual arc (purely cosmetic)
+  arc_particle_count: 8
+  arc_steps: 12
+  max_arc_length: 15.0
 
 blink-strike:
   display-name: "<#9932CC>Blink Strike"
@@ -527,6 +673,10 @@ blink-strike:
     damage: 10.0
   flags:
     requires-los: true
+  # Visual blink effects (purely cosmetic)
+  echo-count: 3
+  mist-density: 12
+  invert-ring-radius: 2.5
 
 shadow-cloak:
   display-name: "<#2F4F4F>Shadow Cloak"
@@ -541,6 +691,10 @@ stasis-field:
   values:
     radius: 6.0
     duration-ticks: 80
+  # Visual temporal bubble effects (purely cosmetic)
+  bubble-count: 5
+  bubble-radius: 1.2
+  sweep-interval-ticks: 20
 
 gust:
   display-name: "<#ADD8E6>Gust"
@@ -559,6 +713,12 @@ arcane-orb:
     radius: 3.5
     damage: 8.0
     knockback: 0.6
+  # Visual halo + trail (purely cosmetic)
+  trail_length: 4
+  particle_count: 3
+  block_lifetime_ticks: 30
+  halo_particles: 8
+  halo_rotation_speed: 12.0
 
 void-swap:
   display-name: "<#800080>Void Swap"
@@ -576,6 +736,11 @@ sandstorm:
     blind-duration-ticks: 80
     slow-duration-ticks: 100
     slow-amplifier: 1
+  # Visual sandstorm effects (purely cosmetic)
+  spiral-height: 6.0
+  spiral-density: 14
+  grit-pulse-interval-ticks: 8
+  haze-particle-multiplier: 1.0
 
 tornado:
   display-name: "<#00CED1>Tornado"

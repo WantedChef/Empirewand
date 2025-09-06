@@ -30,6 +30,11 @@ public class ChainLightning implements Spell {
         double damage = spells.getDouble("chain-lightning.values.damage", 8.0);
         boolean friendlyFire = context.config().getConfig().getBoolean("features.friendly-fire", false);
 
+        // Visual-only enhancement parameters (purely cosmetic)
+        int arcParticleCount = spells.getInt("chain-lightning.values.arc_particle_count", 8); // per segment burst
+        int arcSteps = spells.getInt("chain-lightning.values.arc_steps", 12); // interpolation steps along arc
+        double maxArcLength = spells.getDouble("chain-lightning.values.max_arc_length", 15.0); // clamp for safety
+
         var first = player.getTargetEntity((int) range);
         if (!(first instanceof LivingEntity current) || current.isDead() || !current.isValid()) {
             context.fx().fizzle(player);
@@ -64,9 +69,10 @@ public class ChainLightning implements Spell {
                     .min(Comparator.comparingDouble(l -> l.getLocation().distanceSquared(currentLoc)))
                     .orElse(null);
 
-            // Trail from current to next
+            // Enhanced arc visuals between strikes
             if (next != null) {
-                context.fx().trail(current.getEyeLocation(), next.getEyeLocation(), Particle.ELECTRIC_SPARK, 3);
+                renderArc(context, current.getEyeLocation(), next.getEyeLocation(), arcParticleCount, arcSteps,
+                        maxArcLength);
             }
 
             current = next;
@@ -78,6 +84,46 @@ public class ChainLightning implements Spell {
             Vector away = last.getLocation().toVector().subtract(player.getLocation().toVector()).normalize()
                     .multiply(0.2).setY(0.1);
             last.setVelocity(last.getVelocity().add(away));
+        }
+    }
+
+    /**
+     * Renders an electric arc between two points using linear interpolation with
+     * slight random jitter
+     * to create a jagged lightning feel. Purely visual; does not affect gameplay.
+     */
+    private void renderArc(SpellContext context, Location from, Location to, int particleCount, int steps,
+            double maxLen) {
+        if (from == null || to == null || from.getWorld() == null || to.getWorld() == null)
+            return;
+        if (!from.getWorld().equals(to.getWorld()))
+            return;
+        // Normalize input points with slight vertical offset
+        Location start = from.clone().add(0, 0.25, 0);
+        Vector full = to.clone().add(0, 0.25, 0).toVector().subtract(start.toVector());
+        double length = full.length();
+        if (length < 0.001)
+            return;
+        if (length > maxLen) {
+            full.normalize().multiply(maxLen);
+            length = maxLen;
+        }
+
+        Vector step = full.clone().multiply(1.0 / Math.max(1, steps));
+        double jitterScale = Math.min(0.6, Math.max(0.15, length * 0.08));
+        Location cursor = start.clone();
+        for (int i = 0; i <= steps; i++) {
+            Location point = cursor.clone();
+            if (i != 0 && i != steps) {
+                point.add((Math.random() - 0.5) * jitterScale,
+                        (Math.random() - 0.5) * jitterScale,
+                        (Math.random() - 0.5) * jitterScale);
+            }
+            point.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, point, particleCount, 0.05, 0.05, 0.05, 0.02);
+            if (i % Math.max(2, steps / 6) == 0) {
+                point.getWorld().spawnParticle(Particle.CRIT, point, 1, 0, 0, 0, 0);
+            }
+            cursor.add(step);
         }
     }
 

@@ -17,6 +17,8 @@ import java.util.logging.Level;
  * Handles configuration migrations based on config-version.
  * Performs non-destructive migrations with automatic backups.
  */
+@edu.umd.cs.findbugs.annotations.SuppressFBWarnings(value = {
+        "EI_EXPOSE_REP2" }, justification = "Holds reference to Bukkit Plugin to access its logger/data folder; lifecycle-managed singleton per server instance; not exposing mutable internal representation externally.")
 public class ConfigMigrationService {
 
     private final Plugin plugin;
@@ -30,7 +32,7 @@ public class ConfigMigrationService {
     /**
      * Migrates the main config if necessary.
      *
-     * @param config the current config
+     * @param config     the current config
      * @param configFile the config file
      * @return true if migration was performed, false otherwise
      */
@@ -41,9 +43,9 @@ public class ConfigMigrationService {
     /**
      * Migrates the main config if necessary.
      *
-     * @param config the current config
+     * @param config     the current config
      * @param configFile the config file
-     * @param force force migration even if versions match
+     * @param force      force migration even if versions match
      * @return true if migration was performed, false otherwise
      */
     public boolean migrateMainConfig(FileConfiguration config, File configFile, boolean force) {
@@ -59,7 +61,8 @@ public class ConfigMigrationService {
             return false; // No migration needed
         }
 
-        plugin.getLogger().info("Migrating main config from version " + currentVersion + " to " + targetVersion);
+        plugin.getLogger()
+                .info(String.format("Migrating main config from version %s to %s", currentVersion, targetVersion));
 
         // Perform step-by-step migration
         boolean migrated = false;
@@ -71,7 +74,7 @@ public class ConfigMigrationService {
 
         // Future migrations:
         // if (compareVersions(currentVersion, "1.1") < 0) {
-        //     migrated = migrateTo11(config, configFile) || migrated;
+        // migrated = migrateTo11(config, configFile) || migrated;
         // }
 
         if (migrated) {
@@ -85,7 +88,7 @@ public class ConfigMigrationService {
      * Migrates the spells config if necessary.
      *
      * @param spellsConfig the current spells config
-     * @param spellsFile the spells file
+     * @param spellsFile   the spells file
      * @return true if migration was performed, false otherwise
      */
     public boolean migrateSpellsConfig(FileConfiguration spellsConfig, File spellsFile) {
@@ -96,8 +99,8 @@ public class ConfigMigrationService {
      * Migrates the spells config if necessary.
      *
      * @param spellsConfig the current spells config
-     * @param spellsFile the spells file
-     * @param force force migration even if versions match
+     * @param spellsFile   the spells file
+     * @param force        force migration even if versions match
      * @return true if migration was performed, false otherwise
      */
     public boolean migrateSpellsConfig(FileConfiguration spellsConfig, File spellsFile, boolean force) {
@@ -113,7 +116,8 @@ public class ConfigMigrationService {
             return false; // No migration needed
         }
 
-        plugin.getLogger().info("Migrating spells config from version " + currentVersion + " to " + targetVersion);
+        plugin.getLogger()
+                .info(String.format("Migrating spells config from version %s to %s", currentVersion, targetVersion));
 
         // Perform step-by-step migration
         boolean migrated = false;
@@ -156,7 +160,8 @@ public class ConfigMigrationService {
             // Validate the migrated config
             var errors = validator.validateSpellsConfig(spellsConfig);
             if (!errors.isEmpty()) {
-                plugin.getLogger().severe("Spells migration validation failed: " + String.join(", ", errors));
+                plugin.getLogger().log(Level.SEVERE, "Spells migration validation failed: {0}",
+                        String.join(", ", errors));
                 // Restore from backup
                 restoreFromBackup(backup, spellsFile);
                 return false;
@@ -165,7 +170,7 @@ public class ConfigMigrationService {
             plugin.getLogger().info("Successfully migrated spells config to version 1.0");
             return true;
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             plugin.getLogger().log(Level.SEVERE, "Spells migration failed", e);
             // Restore from backup
             restoreFromBackup(backup, spellsFile);
@@ -198,7 +203,8 @@ public class ConfigMigrationService {
         }
 
         if (migrated) {
-            plugin.getLogger().info("Forced migration completed. Please restart the server for changes to take effect.");
+            plugin.getLogger()
+                    .info("Forced migration completed. Please restart the server for changes to take effect.");
         } else {
             plugin.getLogger().info("No migrations were necessary.");
         }
@@ -220,10 +226,12 @@ public class ConfigMigrationService {
             Path backupPath = originalFile.getParentFile().toPath().resolve(backupFileName);
 
             Files.copy(originalPath, backupPath, StandardCopyOption.REPLACE_EXISTING);
-            plugin.getLogger().info("Created backup: " + backupPath.getFileName());
+            plugin.getLogger().log(Level.INFO, "Created backup: {0}", backupPath.getFileName());
             return backupPath.toFile();
         } catch (IOException e) {
-            plugin.getLogger().log(Level.SEVERE, "Failed to create backup for " + originalFile.getName(), e);
+            plugin.getLogger().log(Level.SEVERE, "Failed to create backup for {0}",
+                    new Object[] { originalFile.getName() });
+            plugin.getLogger().log(Level.SEVERE, "Backup exception", e);
             return null;
         }
     }
@@ -238,10 +246,12 @@ public class ConfigMigrationService {
     public boolean restoreFromBackup(File backupFile, File targetFile) {
         try {
             Files.copy(backupFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            plugin.getLogger().info("Restored config from backup: " + backupFile.getName());
+            plugin.getLogger().log(Level.INFO, "Restored config from backup: {0}", backupFile.getName());
             return true;
         } catch (IOException e) {
-            plugin.getLogger().log(Level.SEVERE, "Failed to restore from backup " + backupFile.getName(), e);
+            plugin.getLogger().log(Level.SEVERE, "Failed to restore from backup {0}",
+                    new Object[] { backupFile.getName() });
+            plugin.getLogger().log(Level.SEVERE, "Restore exception", e);
             return false;
         }
     }
@@ -257,8 +267,8 @@ public class ConfigMigrationService {
         if (version == null) {
             return null;
         }
-        if (version instanceof String) {
-            return (String) version;
+        if (version instanceof String s) {
+            return s;
         }
         if (version instanceof Number) {
             return String.valueOf(version);
@@ -311,7 +321,7 @@ public class ConfigMigrationService {
             // Validate the migrated config
             var errors = validator.validateMainConfig(config);
             if (!errors.isEmpty()) {
-                plugin.getLogger().severe("Migration validation failed: " + String.join(", ", errors));
+                plugin.getLogger().log(Level.SEVERE, "Migration validation failed: {0}", String.join(", ", errors));
                 // Restore from backup
                 restoreFromBackup(backup, configFile);
                 return false;
@@ -320,7 +330,7 @@ public class ConfigMigrationService {
             plugin.getLogger().info("Successfully migrated config to version 1.0");
             return true;
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             plugin.getLogger().log(Level.SEVERE, "Migration failed", e);
             // Restore from backup
             restoreFromBackup(backup, configFile);
@@ -333,7 +343,8 @@ public class ConfigMigrationService {
      * Returns negative if v1 < v2, 0 if equal, positive if v1 > v2.
      */
     private int compareVersions(String v1, String v2) {
-        if (v1 == null || v2 == null) return 0;
+        if (v1 == null || v2 == null)
+            return 0;
 
         String[] parts1 = v1.split("\\.");
         String[] parts2 = v2.split("\\.");
@@ -343,8 +354,10 @@ public class ConfigMigrationService {
             int part1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
             int part2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
 
-            if (part1 < part2) return -1;
-            if (part1 > part2) return 1;
+            if (part1 < part2)
+                return -1;
+            if (part1 > part2)
+                return 1;
         }
         return 0;
     }

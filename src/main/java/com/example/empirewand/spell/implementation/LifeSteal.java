@@ -5,13 +5,13 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Snowball;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import com.example.empirewand.core.Keys;
+import com.example.empirewand.spell.Prereq;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
-import com.example.empirewand.spell.Prereq;
+
 import net.kyori.adventure.text.Component;
 
 public class LifeSteal implements Spell {

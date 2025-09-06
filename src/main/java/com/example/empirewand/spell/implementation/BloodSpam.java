@@ -25,6 +25,9 @@ public class BloodSpam implements ProjectileSpell {
         int projectileCount = spells.getInt("blood-spam.values.projectile-count", 8);
         double damage = spells.getDouble("blood-spam.values.damage", 1.0);
         int delayTicks = spells.getInt("blood-spam.values.delay-ticks", 2);
+        // Visual config
+        int trailSteps = spells.getInt("blood-spam.values.trail-steps", 6);
+        int redDustCount = spells.getInt("blood-spam.values.red-dust-count", 5);
 
         // Launch projectiles in burst
         new BukkitRunnable() {
@@ -37,63 +40,93 @@ public class BloodSpam implements ProjectileSpell {
                     return;
                 }
 
-                launchProjectile(caster, context, damage);
+                launchProjectile(caster, context, damage, trailSteps, redDustCount);
                 launched++;
             }
         }.runTaskTimer(context.plugin(), 0L, delayTicks);
     }
 
-    private void launchProjectile(Player caster, SpellContext context, double damage) {
+    private void launchProjectile(Player caster, SpellContext context, double damage, int trailSteps,
+            int redDustCount) {
         // Launch snowball as projectile
         Snowball projectile = caster.launchProjectile(Snowball.class);
 
         // Register projectile with spell system
         projectile.getPersistentDataContainer().set(
-            new org.bukkit.NamespacedKey("empirewand", "projectile.spell"),
-            org.bukkit.persistence.PersistentDataType.STRING,
-            getName()
-        );
+                new org.bukkit.NamespacedKey("empirewand", "projectile.spell"),
+                org.bukkit.persistence.PersistentDataType.STRING,
+                getName());
         projectile.getPersistentDataContainer().set(
-            new org.bukkit.NamespacedKey("empirewand", "projectile.owner"),
-            org.bukkit.persistence.PersistentDataType.STRING,
-            caster.getUniqueId().toString()
-        );
+                new org.bukkit.NamespacedKey("empirewand", "projectile.owner"),
+                org.bukkit.persistence.PersistentDataType.STRING,
+                caster.getUniqueId().toString());
 
         // Add slight random spread
         Vector direction = caster.getEyeLocation().getDirection();
         direction = direction.add(new Vector(
-            (Math.random() - 0.5) * 0.3,
-            (Math.random() - 0.5) * 0.3,
-            (Math.random() - 0.5) * 0.3
-        )).normalize();
+                (Math.random() - 0.5) * 0.3,
+                (Math.random() - 0.5) * 0.3,
+                (Math.random() - 0.5) * 0.3)).normalize();
 
         projectile.setVelocity(direction.multiply(1.3));
 
         // Store damage in projectile metadata
         projectile.getPersistentDataContainer().set(
-            new org.bukkit.NamespacedKey("empirewand", "blood-spam-damage"),
-            org.bukkit.persistence.PersistentDataType.DOUBLE,
-            damage
-        );
+                new org.bukkit.NamespacedKey("empirewand", "blood-spam-damage"),
+                org.bukkit.persistence.PersistentDataType.DOUBLE,
+                damage);
 
-        // Visual effects
+        // Initial cast visual
         context.fx().spawnParticles(
-            caster.getEyeLocation(),
-            Particle.DUST,
-            5,
-            0.1, 0.1, 0.1,
-            0,
-            new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f)
-        );
+                caster.getEyeLocation(),
+                Particle.DUST,
+                redDustCount,
+                0.1, 0.1, 0.1,
+                0,
+                new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f));
+
+        // Attach particle trail runnable (lightweight, stops when projectile removed)
+        new org.bukkit.scheduler.BukkitRunnable() {
+            private final java.util.Deque<org.bukkit.Location> history = new java.util.ArrayDeque<>();
+            private int ticks = 0;
+
+            @Override
+            public void run() {
+                if (!projectile.isValid() || projectile.isDead()) {
+                    cancel();
+                    return;
+                }
+                if (ticks++ > 20 * 4) { // safety 4s
+                    cancel();
+                    return;
+                }
+                org.bukkit.Location loc = projectile.getLocation().clone();
+                history.addFirst(loc);
+                while (history.size() > trailSteps)
+                    history.removeLast();
+                int idx = 0;
+                for (org.bukkit.Location h : history) {
+                    double scale = 1.0 - (idx / (double) trailSteps);
+                    int count = Math.max(1, (int) Math.round(redDustCount * scale));
+                    context.fx().spawnParticles(
+                            h,
+                            Particle.DUST,
+                            count,
+                            0.02, 0.02, 0.02,
+                            0,
+                            new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f));
+                    idx++;
+                }
+            }
+        }.runTaskTimer(context.plugin(), 0L, 1L);
     }
 
     @Override
     public void onProjectileHit(SpellContext context, Projectile projectile, ProjectileHitEvent event) {
         // Get damage from projectile metadata
         Double damage = projectile.getPersistentDataContainer().get(
-            new org.bukkit.NamespacedKey("empirewand", "blood-spam-damage"),
-            org.bukkit.persistence.PersistentDataType.DOUBLE
-        );
+                new org.bukkit.NamespacedKey("empirewand", "blood-spam-damage"),
+                org.bukkit.persistence.PersistentDataType.DOUBLE);
 
         if (damage == null || event.getHitEntity() == null) {
             return;
@@ -104,13 +137,12 @@ public class BloodSpam implements ProjectileSpell {
 
             // Visual effects on hit
             context.fx().spawnParticles(
-                living.getLocation(),
-                Particle.DUST,
-                8,
-                0.2, 0.2, 0.2,
-                0,
-                new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f)
-            );
+                    living.getLocation(),
+                    Particle.DUST,
+                    8,
+                    0.2, 0.2, 0.2,
+                    0,
+                    new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f));
         }
     }
 

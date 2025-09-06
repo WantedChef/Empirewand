@@ -23,6 +23,8 @@ public class Lightwall implements Spell {
     @Override
     public void execute(SpellContext context) {
         Player player = context.caster();
+        if (player == null)
+            return;
 
         // Config values
         var spells = context.config().getSpellsConfig();
@@ -34,16 +36,21 @@ public class Lightwall implements Spell {
         boolean hitPlayers = spells.getBoolean("lightwall.flags.hit-players", true);
         boolean hitMobs = spells.getBoolean("lightwall.flags.hit-mobs", true);
 
-        Location center = player.getLocation().clone().add(player.getLocation().getDirection().multiply(3));
+        var baseLoc = player.getLocation();
+        var dir = baseLoc.getDirection();
+        if (dir == null) {
+            return; // No direction available
+        }
+        Location center = baseLoc.clone().add(dir.multiply(3));
 
         // Create wall of invisible armor stands
         List<ArmorStand> wallStands = new ArrayList<>();
-        Vector direction = player.getLocation().getDirection().normalize();
+        Vector direction = baseLoc.getDirection().normalize();
         Vector right = direction.clone().crossProduct(new Vector(0, 1, 0)).normalize();
 
         for (int w = 0; w < width; w++) {
             for (int h = 0; h < height; h++) {
-                Vector offset = right.clone().multiply(w - width/2).add(new Vector(0, h, 0));
+                Vector offset = right.clone().multiply(w - width / 2).add(new Vector(0, h, 0));
                 Location standLocation = center.clone().add(offset);
 
                 ArmorStand stand = player.getWorld().spawn(standLocation, ArmorStand.class);
@@ -56,7 +63,8 @@ public class Lightwall implements Spell {
         }
 
         // Start wall task
-        new WallTask(wallStands, center, width, height, knockbackStrength, blindnessDuration, hitPlayers, hitMobs).runTaskTimer(context.plugin(), 0L, 1L);
+        new WallTask(wallStands, center, width, height, knockbackStrength, blindnessDuration, hitPlayers, hitMobs)
+                .runTaskTimer(context.plugin(), 0L, 1L);
 
         // Auto-cleanup after duration
         new BukkitRunnable() {
@@ -86,7 +94,7 @@ public class Lightwall implements Spell {
         private final boolean hitMobs;
 
         public WallTask(List<ArmorStand> wallStands, Location center, double width, double height,
-                       double knockbackStrength, int blindnessDuration, boolean hitPlayers, boolean hitMobs) {
+                double knockbackStrength, int blindnessDuration, boolean hitPlayers, boolean hitMobs) {
             this.wallStands = wallStands;
             this.center = center;
             this.width = width;
@@ -101,14 +109,16 @@ public class Lightwall implements Spell {
         public void run() {
             // Check for entities near the wall
             for (ArmorStand stand : wallStands) {
-                if (!stand.isValid()) continue;
+                if (!stand.isValid())
+                    continue;
 
                 for (LivingEntity entity : stand.getWorld().getLivingEntities()) {
                     if (entity.getLocation().distance(stand.getLocation()) <= 1.5) {
                         boolean isPlayer = entity instanceof Player;
                         if ((isPlayer && hitPlayers) || (!isPlayer && hitMobs)) {
                             // Apply knockback away from wall
-                            Vector knockback = entity.getLocation().toVector().subtract(stand.getLocation().toVector()).normalize();
+                            Vector knockback = entity.getLocation().toVector().subtract(stand.getLocation().toVector())
+                                    .normalize();
                             knockback.multiply(knockbackStrength);
                             knockback.setY(0.2);
                             entity.setVelocity(entity.getVelocity().add(knockback));
@@ -133,7 +143,7 @@ public class Lightwall implements Spell {
 
         for (int w = 0; w < width; w++) {
             for (int h = 0; h < height; h++) {
-                Vector offset = right.clone().multiply(w - width/2).add(new Vector(0, h, 0));
+                Vector offset = right.clone().multiply(w - width / 2).add(new Vector(0, h, 0));
                 Location particleLoc = center.clone().add(offset);
 
                 // White ash particles

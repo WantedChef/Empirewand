@@ -1,9 +1,10 @@
 package com.example.empirewand.listeners;
 
-import com.example.empirewand.EmpireWandPlugin;
-import com.example.empirewand.core.PerformanceMonitor;
-import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.SpellContext;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -12,11 +13,13 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import com.example.empirewand.EmpireWandPlugin;
+import com.example.empirewand.core.PerformanceMonitor;
+import com.example.empirewand.spell.Spell;
+import com.example.empirewand.spell.SpellContext;
 
+@edu.umd.cs.findbugs.annotations.SuppressFBWarnings(value = {
+        "EI_EXPOSE_REP2" }, justification = "Listener holds plugin reference as required by Bukkit for accessing services and scheduling; no safer alternative without global statics.")
 public class WandInteractionListener implements Listener {
 
     private final EmpireWandPlugin plugin;
@@ -143,13 +146,6 @@ public class WandInteractionListener implements Listener {
 
     private void handleSpellCast(Player player, ItemStack item) {
         PerformanceMonitor.TimingContext timing = PerformanceMonitor.startTiming("handleSpellCast");
-
-        // Guard: Ensure player is in a valid world
-        if (player.getWorld() == null) {
-            plugin.getFxService().showError(player, "invalid-world");
-            timing.complete(1);
-            return;
-        }
 
         List<String> spells = plugin.getWandData().getSpells(item);
         if (spells.isEmpty()) {

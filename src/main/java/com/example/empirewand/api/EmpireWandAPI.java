@@ -5,12 +5,19 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Main entry point for the EmpireWand API.
  *
- * <p>This class provides static access to EmpireWand's public services and utilities.
- * External plugins should use this class to obtain service instances.</p>
+ * <p>
+ * This class provides static access to EmpireWand's public services and
+ * utilities.
+ * External plugins should use this class to obtain service instances.
+ * </p>
  *
- * <p><b>API Stability:</b> Experimental - Subject to change in future versions</p>
+ * <p>
+ * <b>API Stability:</b> Experimental - Subject to change in future versions
+ * </p>
  *
- * <p><b>Usage Example:</b>
+ * <p>
+ * <b>Usage Example:</b>
+ * 
  * <pre>{@code
  * // Get the spell registry
  * SpellRegistry registry = EmpireWandAPI.getSpellRegistry();
@@ -27,6 +34,22 @@ import org.jetbrains.annotations.NotNull;
 public final class EmpireWandAPI {
 
     private static EmpireWandProvider provider;
+    private static final EmpireWandProvider NO_OP_PROVIDER = new EmpireWandProvider() {
+        @Override
+        public @NotNull SpellRegistry getSpellRegistry() {
+            throw new IllegalStateException("EmpireWand API provider not available (no-op)");
+        }
+
+        @Override
+        public @NotNull PermissionService getPermissionService() {
+            throw new IllegalStateException("EmpireWand API provider not available (no-op)");
+        }
+
+        @Override
+        public @NotNull WandService getWandService() {
+            throw new IllegalStateException("EmpireWand API provider not available (no-op)");
+        }
+    };
 
     /**
      * Private constructor to prevent instantiation.
@@ -41,10 +64,20 @@ public final class EmpireWandAPI {
      * @param provider the provider implementation
      */
     public static void setProvider(@NotNull EmpireWandProvider provider) {
-        if (EmpireWandAPI.provider != null) {
+        if (EmpireWandAPI.provider != null && EmpireWandAPI.provider != NO_OP_PROVIDER) {
             throw new IllegalStateException("Provider already set");
         }
         EmpireWandAPI.provider = provider;
+    }
+
+    /**
+     * Clears (resets) the provider back to a guarded no-op implementation.
+     * Subsequent
+     * API calls will throw the same IllegalStateException but we avoid null and
+     * related NPE warnings.
+     */
+    public static void clearProvider() {
+        EmpireWandAPI.provider = NO_OP_PROVIDER;
     }
 
     /**
@@ -89,7 +122,7 @@ public final class EmpireWandAPI {
      * @return true if the API is available, false otherwise
      */
     public static boolean isAvailable() {
-        return provider != null;
+        return provider != null && provider != NO_OP_PROVIDER;
     }
 
     /**
@@ -98,7 +131,7 @@ public final class EmpireWandAPI {
      * @throws IllegalStateException if no provider is available
      */
     private static void ensureProvider() {
-        if (provider == null) {
+        if (provider == null || provider == NO_OP_PROVIDER) {
             throw new IllegalStateException("EmpireWand API provider not available. Make sure EmpireWand is loaded.");
         }
     }

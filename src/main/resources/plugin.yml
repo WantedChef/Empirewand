@@ -7,13 +7,140 @@ description: EmpireWand example plugin
 commands:
   ew:
     description: EmpireWand commands
-    usage: /ew <get|bind|unbind|bindall|list|reload>
+    usage: /ew <get|bind|unbind|bindall|set-spell|list|reload|cooldown|migrate>
 permissions:
   empirewand.command.get: { default: op }
   empirewand.command.bind: { default: op }
   empirewand.command.unbind: { default: op }
   empirewand.command.bindall: { default: op }
+  empirewand.command.set-spell: { default: op }
+  empirewand.command.list: { default: true }
   empirewand.command.reload: { default: op }
+  empirewand.command.cooldown: { default: op }
+  empirewand.command.migrate: { default: op }
   empirewand.spell.use.*: { default: true }
   empirewand.spell.bind.*: { default: op }
-
+  
+  # Individual spell permissions
+  empirewand.spell.use.leap: { default: true }
+  empirewand.spell.use.comet: { default: true }
+  empirewand.spell.use.explosive: { default: true }
+  empirewand.spell.use.magic-missile: { default: true }
+  empirewand.spell.use.heal: { default: true }
+  empirewand.spell.use.glacial-spike: { default: true }
+  empirewand.spell.use.grasping-vines: { default: true }
+  empirewand.spell.use.lifesteal: { default: true }
+  empirewand.spell.use.polymorph: { default: true }
+  empirewand.spell.use.ethereal-form: { default: true }
+  empirewand.spell.use.frost-nova: { default: true }
+  empirewand.spell.use.chain-lightning: { default: true }
+  empirewand.spell.use.blink-strike: { default: true }
+  empirewand.spell.use.shadow-cloak: { default: true }
+  empirewand.spell.use.stasis-field: { default: true }
+  empirewand.spell.use.gust: { default: true }
+  empirewand.spell.use.arcane-orb: { default: true }
+  empirewand.spell.use.void-swap: { default: true }
+  empirewand.spell.use.sandstorm: { default: true }
+  empirewand.spell.use.tornado: { default: true }
+  empirewand.spell.use.aura: { default: true }
+  empirewand.spell.use.blaze-launch: { default: true }
+  empirewand.spell.use.blood-barrier: { default: true }
+  empirewand.spell.use.blood-block: { default: true }
+  empirewand.spell.use.blood-nova: { default: true }
+  empirewand.spell.use.blood-spam: { default: true }
+  empirewand.spell.use.blood-tap: { default: true }
+  empirewand.spell.use.comet-shower: { default: true }
+  empirewand.spell.use.confuse: { default: true }
+  empirewand.spell.use.crimson-chains: { default: true }
+  empirewand.spell.use.dark-circle: { default: true }
+  empirewand.spell.use.dark-pulse: { default: true }
+  empirewand.spell.use.earth-quake: { default: true }
+  empirewand.spell.use.empire-aura: { default: true }
+  empirewand.spell.use.empire-comet: { default: true }
+  empirewand.spell.use.empire-escape: { default: true }
+  empirewand.spell.use.empire-launch: { default: true }
+  empirewand.spell.use.empire-levitate: { default: true }
+  empirewand.spell.use.explosion-trail: { default: true }
+  empirewand.spell.use.explosion-wave: { default: true }
+  empirewand.spell.use.fireball: { default: true }
+  empirewand.spell.use.flame-wave: { default: true }
+  empirewand.spell.use.god-cloud: { default: true }
+  empirewand.spell.use.hemorrhage: { default: true }
+  empirewand.spell.use.life-reap: { default: true }
+  empirewand.spell.use.lightning-arrow: { default: true }
+  empirewand.spell.use.lightning-bolt: { default: true }
+  empirewand.spell.use.lightning-storm: { default: true }
+  empirewand.spell.use.lightwall: { default: true }
+  empirewand.spell.use.little-spark: { default: true }
+  empirewand.spell.use.mephidic-reap: { default: true }
+  empirewand.spell.use.poison-wave: { default: true }
+  empirewand.spell.use.radiant-beacon: { default: true }
+  empirewand.spell.use.ritual-of-unmaking: { default: true }
+  empirewand.spell.use.solar-lance: { default: true }
+  empirewand.spell.use.soul-sever: { default: true }
+  empirewand.spell.use.spark: { default: true }
+  empirewand.spell.use.sunburst-step: { default: true }
+  empirewand.spell.use.teleport: { default: true }
+  empirewand.spell.use.thunder-blast: { default: true }
+  
+  # Individual spell bind permissions
+  empirewand.spell.bind.leap: { default: op }
+  empirewand.spell.bind.comet: { default: op }
+  empirewand.spell.bind.explosive: { default: op }
+  empirewand.spell.bind.magic-missile: { default: op }
+  empirewand.spell.bind.heal: { default: op }
+  empirewand.spell.bind.glacial-spike: { default: op }
+  empirewand.spell.bind.grasping-vines: { default: op }
+  empirewand.spell.bind.lifesteal: { default: op }
+  empirewand.spell.bind.polymorph: { default: op }
+  empirewand.spell.bind.ethereal-form: { default: op }
+  empirewand.spell.bind.frost-nova: { default: op }
+  empirewand.spell.bind.chain-lightning: { default: op }
+  empirewand.spell.bind.blink-strike: { default: op }
+  empirewand.spell.bind.shadow-cloak: { default: op }
+  empirewand.spell.bind.stasis-field: { default: op }
+  empirewand.spell.bind.gust: { default: op }
+  empirewand.spell.bind.arcane-orb: { default: op }
+  empirewand.spell.bind.void-swap: { default: op }
+  empirewand.spell.bind.sandstorm: { default: op }
+  empirewand.spell.bind.tornado: { default: op }
+  empirewand.spell.bind.aura: { default: op }
+  empirewand.spell.bind.blaze-launch: { default: op }
+  empirewand.spell.bind.blood-barrier: { default: op }
+  empirewand.spell.bind.blood-block: { default: op }
+  empirewand.spell.bind.blood-nova: { default: op }
+  empirewand.spell.bind.blood-spam: { default: op }
+  empirewand.spell.bind.blood-tap: { default: op }
+  empirewand.spell.bind.comet-shower: { default: op }
+  empirewand.spell.bind.confuse: { default: op }
+  empirewand.spell.bind.crimson-chains: { default: op }
+  empirewand.spell.bind.dark-circle: { default: op }
+  empirewand.spell.bind.dark-pulse: { default: op }
+  empirewand.spell.bind.earth-quake: { default: op }
+  empirewand.spell.bind.empire-aura: { default: op }
+  empirewand.spell.bind.empire-comet: { default: op }
+  empirewand.spell.bind.empire-escape: { default: op }
+  empirewand.spell.bind.empire-launch: { default: op }
+  empirewand.spell.bind.empire-levitate: { default: op }
+  empirewand.spell.bind.explosion-trail: { default: op }
+  empirewand.spell.bind.explosion-wave: { default: op }
+  empirewand.spell.bind.fireball: { default: op }
+  empirewand.spell.bind.flame-wave: { default: op }
+  empirewand.spell.bind.god-cloud: { default: op }
+  empirewand.spell.bind.hemorrhage: { default: op }
+  empirewand.spell.bind.life-reap: { default: op }
+  empirewand.spell.bind.lightning-arrow: { default: op }
+  empirewand.spell.bind.lightning-bolt: { default: op }
+  empirewand.spell.bind.lightning-storm: { default: op }
+  empirewand.spell.bind.lightwall: { default: op }
+  empirewand.spell.bind.little-spark: { default: op }
+  empirewand.spell.bind.mephidic-reap: { default: op }
+  empirewand.spell.bind.poison-wave: { default: op }
+  empirewand.spell.bind.radiant-beacon: { default: op }
+  empirewand.spell.bind.ritual-of-unmaking: { default: op }
+  empirewand.spell.bind.solar-lance: { default: op }
+  empirewand.spell.bind.soul-sever: { default: op }
+  empirewand.spell.bind.spark: { default: op }
+  empirewand.spell.bind.sunburst-step: { default: op }
+  empirewand.spell.bind.teleport: { default: op }
+  empirewand.spell.bind.thunder-blast: { default: op }

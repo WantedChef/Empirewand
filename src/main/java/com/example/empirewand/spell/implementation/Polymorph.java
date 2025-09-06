@@ -14,6 +14,8 @@ import org.bukkit.entity.Sheep;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Collections;
 import java.util.UUID;
 
 public class Polymorph implements Spell {
@@ -101,7 +103,7 @@ public class Polymorph implements Spell {
         return new Prereq(true, Component.text(""));
     }
 
-    public HashMap<UUID, UUID> getPolymorphedEntities() {
-        return polymorphedEntities;
+    public Map<UUID, UUID> getPolymorphedEntities() {
+        return Collections.unmodifiableMap(polymorphedEntities);
     }
 }

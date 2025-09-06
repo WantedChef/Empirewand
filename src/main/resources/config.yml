@@ -25,3 +25,4 @@ cooldowns:
 metrics:
   enabled: true  # Set to false to disable bStats metrics collection
   debug: false   # Set to true to enable additional debug metrics
+  plugin-id: 12345  # Register at bStats.org to get your actual plugin ID

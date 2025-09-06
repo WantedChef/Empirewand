@@ -17,6 +17,8 @@ import java.util.UUID;
 /**
  * Routes projectile hit events back to the originating spell.
  */
+@edu.umd.cs.findbugs.annotations.SuppressFBWarnings(value = {
+        "EI_EXPOSE_REP2" }, justification = "Listener keeps plugin reference for spell registry + config access; unavoidable in Bukkit event routing pattern.")
 public class ProjectileListener implements Listener {
 
     private final EmpireWandPlugin plugin;
@@ -28,7 +30,8 @@ public class ProjectileListener implements Listener {
     @EventHandler
     public void onProjectileHit(ProjectileHitEvent event) {
         Projectile projectile = event.getEntity();
-        String spellName = projectile.getPersistentDataContainer().get(Keys.PROJECTILE_SPELL, Keys.STRING_TYPE.getType());
+        String spellName = projectile.getPersistentDataContainer().get(Keys.PROJECTILE_SPELL,
+                Keys.STRING_TYPE.getType());
         if (spellName == null) {
             return;
         }

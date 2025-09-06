@@ -8,6 +8,8 @@ import org.bukkit.event.player.PlayerQuitEvent;
 /**
  * Handles player lifecycle events such as quit to clean up per-player state.
  */
+@edu.umd.cs.findbugs.annotations.SuppressFBWarnings(value = {
+        "EI_EXPOSE_REP2" }, justification = "Listener stores plugin reference to access services; standard Bukkit lifecycle pattern.")
 public class PlayerLifecycleListener implements Listener {
 
     private final EmpireWandPlugin plugin;
@@ -23,4 +25,3 @@ public class PlayerLifecycleListener implements Listener {
         plugin.getCooldownService().clearAll(player.getUniqueId());
     }
 }
-

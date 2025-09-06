@@ -16,10 +16,15 @@ import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.Prereq;
 import net.kyori.adventure.text.Component;
 
+@edu.umd.cs.findbugs.annotations.SuppressFBWarnings(value = {
+        "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE" }, justification = "Projectile/caster references validated via Bukkit API; additional guards retained for defensive clarity.")
 public class CrimsonChains implements Spell {
     @Override
     public void execute(SpellContext context) {
         Player player = context.caster();
+        if (player == null || !player.isValid()) {
+            return; // Defensive: context should always supply caster
+        }
 
         // Config values
         var spells = context.config().getSpellsConfig();
@@ -32,10 +37,14 @@ public class CrimsonChains implements Spell {
 
         // Launch snowball projectile
         Snowball projectile = player.launchProjectile(Snowball.class);
+        if (projectile == null) {
+            return; // Could not spawn
+        }
         projectile.setVelocity(player.getLocation().getDirection().multiply(projectileSpeed));
 
         // Track the projectile
-        new ProjectileTracker(projectile, player, pullStrength, slownessDuration, slownessAmplifier, hitPlayers, hitMobs, context).runTaskTimer(context.plugin(), 0L, 1L);
+        new ProjectileTracker(projectile, player, pullStrength, slownessDuration, slownessAmplifier, hitPlayers,
+                hitMobs, context).runTaskTimer(context.plugin(), 0L, 1L);
 
         // Visuals
         spawnChainTrail(projectile.getLocation(), context);
@@ -53,7 +62,7 @@ public class CrimsonChains implements Spell {
         private Location lastLocation;
 
         public ProjectileTracker(Snowball projectile, Player caster, double pullStrength, int slownessDuration,
-                               int slownessAmplifier, boolean hitPlayers, boolean hitMobs, SpellContext context) {
+                int slownessAmplifier, boolean hitPlayers, boolean hitMobs, SpellContext context) {
             this.projectile = projectile;
             this.caster = caster;
             this.pullStrength = pullStrength;
@@ -72,11 +81,14 @@ public class CrimsonChains implements Spell {
                 return;
             }
 
-            // Check for hits
-            for (LivingEntity entity : projectile.getWorld().getLivingEntities()) {
+            // Check for hits (projectile world guaranteed non-null)
+            var world = projectile.getWorld();
+            for (LivingEntity entity : world.getLivingEntities()) {
                 if (entity.getLocation().distance(projectile.getLocation()) <= 1.5 && !entity.equals(caster)) {
-                    if (entity instanceof Player && !hitPlayers) continue;
-                    if (!(entity instanceof Player) && !hitMobs) continue;
+                    if (entity instanceof Player && !hitPlayers)
+                        continue;
+                    if (!(entity instanceof Player) && !hitMobs)
+                        continue;
 
                     // Apply effects
                     applyChainEffects(entity, caster, pullStrength, slownessDuration, slownessAmplifier);
@@ -93,13 +105,15 @@ public class CrimsonChains implements Spell {
             lastLocation = projectile.getLocation().clone();
         }
 
-        private void applyChainEffects(LivingEntity target, Player caster, double pullStrength, int slownessDuration, int slownessAmplifier) {
+        private void applyChainEffects(LivingEntity target, Player caster, double pullStrength, int slownessDuration,
+                int slownessAmplifier) {
             // Apply slowness
             target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, slownessDuration, slownessAmplifier));
 
             // Apply pull (unless it's a boss - simplified check)
             if (!isBoss(target)) {
-                Vector pullVector = caster.getLocation().toVector().subtract(target.getLocation().toVector()).normalize();
+                Vector pullVector = caster.getLocation().toVector().subtract(target.getLocation().toVector())
+                        .normalize();
                 pullVector.multiply(pullStrength);
                 target.setVelocity(target.getVelocity().add(pullVector));
             }
@@ -110,26 +124,35 @@ public class CrimsonChains implements Spell {
 
         private boolean isBoss(LivingEntity entity) {
             // Simplified boss check - in practice you'd check for specific boss entities
-            double maxHealth = entity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
+            var attr = entity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH);
+            double maxHealth = attr != null ? attr.getValue() : 0.0;
             return maxHealth > 100;
         }
 
         private void spawnChainTrail(Location current, Location last) {
-            Vector direction = current.toVector().subtract(last.toVector()).normalize();
-            double distance = current.distance(last);
+            if (current == null || last == null || current.getWorld() == null) {
+                return;
+            }
+            Vector direction = current.toVector().subtract(last.toVector());
+            double distance = direction.length();
+            if (distance == 0) {
+                return;
+            }
+            direction.normalize();
 
             for (double d = 0; d <= distance; d += 0.2) {
                 Location particleLoc = last.clone().add(direction.clone().multiply(d));
                 particleLoc.getWorld().spawnParticle(Particle.DUST, particleLoc, 1,
-                    new Particle.DustOptions(org.bukkit.Color.fromRGB(128, 0, 0), 1.0f));
+                        new Particle.DustOptions(org.bukkit.Color.fromRGB(128, 0, 0), 1.0f));
             }
         }
     }
 
     private void spawnChainTrail(Location location, SpellContext context) {
         // Initial trail
+        // Location/world from projectile spawn are guaranteed non-null
         location.getWorld().spawnParticle(Particle.DUST, location, 3,
-            new Particle.DustOptions(org.bukkit.Color.fromRGB(128, 0, 0), 1.0f));
+                new Particle.DustOptions(org.bukkit.Color.fromRGB(128, 0, 0), 1.0f));
     }
 
     @Override

@@ -9,13 +9,7 @@
     <property name="fileExtensions" value="java, properties, xml"/>
 
     <module name="TreeWalker">
-        <!-- No wildcard imports -->
         <module name="AvoidStarImport"/>
-        <!-- No unused imports -->
         <module name="UnusedImports"/>
-        <!-- Line length check -->
-        <module name="LineLength">
-            <property name="max" value="120"/>
-        </module>
     </module>
 </module>

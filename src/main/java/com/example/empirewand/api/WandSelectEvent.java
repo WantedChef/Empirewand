@@ -6,17 +6,24 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Event fired when a player selects a different spell on their wand.
  *
- * <p>This event is fired when players cycle through their bound spells using
- * scroll wheel, sneak+click, or command-based selection.</p>
+ * <p>
+ * This event is fired when players cycle through their bound spells using
+ * scroll wheel, sneak+click, or command-based selection.
+ * </p>
  *
- * <p><b>API Stability:</b> Experimental - Subject to change in future versions</p>
+ * <p>
+ * <b>API Stability:</b> Experimental - Subject to change in future versions
+ * </p>
  *
  * @since 1.1.0
  */
+@SuppressFBWarnings(value = { "EI_EXPOSE_REP",
+        "EI_EXPOSE_REP2" }, justification = "Bukkit event pattern; direct references are conventional and required for listener interaction.")
 public class WandSelectEvent extends Event {
 
     private static final HandlerList HANDLERS = new HandlerList();
@@ -31,15 +38,16 @@ public class WandSelectEvent extends Event {
     /**
      * Creates a new WandSelectEvent.
      *
-     * @param player the player who changed spell selection
-     * @param previousSpell the previously selected spell (may be null)
-     * @param newSpell the newly selected spell
-     * @param previousSpellKey the key of the previously selected spell (may be null)
-     * @param newSpellKey the key of the newly selected spell
-     * @param method the method used for selection
+     * @param player           the player who changed spell selection
+     * @param previousSpell    the previously selected spell (may be null)
+     * @param newSpell         the newly selected spell
+     * @param previousSpellKey the key of the previously selected spell (may be
+     *                         null)
+     * @param newSpellKey      the key of the newly selected spell
+     * @param method           the method used for selection
      */
     public WandSelectEvent(@NotNull Player player, @Nullable Spell previousSpell, @NotNull Spell newSpell,
-                          @Nullable String previousSpellKey, @NotNull String newSpellKey, @NotNull SelectionMethod method) {
+            @Nullable String previousSpellKey, @NotNull String newSpellKey, @NotNull SelectionMethod method) {
         this.player = player;
         this.previousSpell = previousSpell;
         this.newSpell = newSpell;

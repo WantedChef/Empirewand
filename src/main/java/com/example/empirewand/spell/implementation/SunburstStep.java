@@ -18,6 +18,9 @@ public class SunburstStep implements Spell {
     @Override
     public void execute(SpellContext context) {
         Player player = context.caster();
+        if (player == null || !player.isValid()) {
+            return;
+        }
 
         // Config values
         var spells = context.config().getSpellsConfig();
@@ -28,8 +31,9 @@ public class SunburstStep implements Spell {
         boolean hitPlayers = spells.getBoolean("sunburst-step.flags.hit-players", true);
         boolean hitMobs = spells.getBoolean("sunburst-step.flags.hit-mobs", true);
 
-        Vector direction = player.getLocation().getDirection().normalize();
-        Location start = player.getLocation().clone();
+        var loc = player.getLocation();
+        Vector direction = loc.getDirection().normalize();
+        Location start = loc.clone();
         Location destination = findSafeDestination(start, direction, maxDistance);
 
         if (destination == null) {
@@ -38,20 +42,26 @@ public class SunburstStep implements Spell {
         }
 
         // Perform teleport
-        player.teleport(destination);
+        if (!player.teleport(destination)) {
+            context.fx().fizzle(player);
+            return;
+        }
 
         // Apply pulse effects
         applyPulseEffects(player, destination, pulseRadius, allyHeal, enemyDamage, hitPlayers, hitMobs);
 
         // Visuals and SFX
         context.fx().playSound(player, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.2f);
-        spawnDashTrail(start, destination, context);
+        spawnDashTrail(start, destination);
     }
 
     private Location findSafeDestination(Location start, Vector direction, double maxDistance) {
-        for (double dist = maxDistance; dist >= 1.0; dist -= 0.5) {
+        int steps = (int) Math.ceil((maxDistance - 1.0) / 0.5);
+        for (int i = 0; i <= steps; i++) {
+            double dist = maxDistance - (i * 0.5);
+            if (dist < 1.0)
+                break;
             Location testLoc = start.clone().add(direction.clone().multiply(dist));
-
             if (isSafeLocation(testLoc)) {
                 return testLoc;
             }
@@ -67,14 +77,17 @@ public class SunburstStep implements Spell {
         return feet.getType() == Material.AIR && head.getType() == Material.AIR && ground.getType().isSolid();
     }
 
-    private void applyPulseEffects(Player player, Location center, double radius, double allyHeal, double enemyDamage, boolean hitPlayers, boolean hitMobs) {
+    private void applyPulseEffects(Player player, Location center, double radius, double allyHeal, double enemyDamage,
+            boolean hitPlayers, boolean hitMobs) {
         for (LivingEntity entity : player.getWorld().getLivingEntities()) {
             if (entity.getLocation().distance(center) <= radius && !entity.equals(player)) {
-                boolean isAlly = entity instanceof Player && ((Player) entity).getUniqueId().equals(player.getUniqueId());
+                boolean isAlly = entity instanceof Player
+                        && ((Player) entity).getUniqueId().equals(player.getUniqueId());
 
                 if (isAlly) {
                     // Heal ally
-                    double maxHealth = entity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
+                    var attr = entity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH);
+                    double maxHealth = attr != null ? attr.getValue() : entity.getHealth();
                     double newHealth = Math.min(maxHealth, entity.getHealth() + allyHeal);
                     entity.setHealth(newHealth);
                 } else {
@@ -87,11 +100,19 @@ public class SunburstStep implements Spell {
         }
     }
 
-    private void spawnDashTrail(Location start, Location end, SpellContext context) {
-        Vector direction = end.toVector().subtract(start.toVector()).normalize();
-        double distance = start.distance(end);
+    private void spawnDashTrail(Location start, Location end) {
+        // start/end are guaranteed by callers
+        Vector direction = end.toVector().subtract(start.toVector());
+        double distance = direction.length();
+        if (distance == 0) {
+            return;
+        }
+        direction.normalize();
+        int steps = (int) Math.ceil(distance / 0.5);
+        double stepSize = distance / steps;
 
-        for (double d = 0; d <= distance; d += 0.5) {
+        for (int i = 0; i <= steps; i++) {
+            double d = i * stepSize;
             Location particleLoc = start.clone().add(direction.clone().multiply(d));
 
             // End rod particles
@@ -99,7 +120,7 @@ public class SunburstStep implements Spell {
 
             // Golden redstone dust
             particleLoc.getWorld().spawnParticle(Particle.DUST, particleLoc, 2,
-                new Particle.DustOptions(org.bukkit.Color.fromRGB(255, 215, 0), 1.0f));
+                    new Particle.DustOptions(org.bukkit.Color.fromRGB(255, 215, 0), 1.0f));
         }
     }
 

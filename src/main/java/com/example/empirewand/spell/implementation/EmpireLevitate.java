@@ -29,8 +29,12 @@ public class EmpireLevitate implements Spell {
 
         // Check if target is a boss (optional - could be configurable)
         // Note: getMaxHealth() is deprecated, using a simple check for now
-        if (living.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue() > 100) {
-            return; // Don't affect bosses
+        var maxHealthAttr = living.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH);
+        if (maxHealthAttr != null) {
+            double maxHealth = maxHealthAttr.getValue();
+            if (maxHealth > 100) {
+                return; // Don't affect bosses
+            }
         }
 
         // Apply levitation effect

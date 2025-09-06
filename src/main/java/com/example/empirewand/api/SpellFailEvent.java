@@ -6,17 +6,26 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Event fired when a spell fails to cast.
  *
- * <p>This event is fired when a spell cannot be cast due to various reasons such as
- * insufficient permissions, cooldown active, invalid target, or other validation failures.</p>
+ * <p>
+ * This event is fired when a spell cannot be cast due to various reasons such
+ * as
+ * insufficient permissions, cooldown active, invalid target, or other
+ * validation failures.
+ * </p>
  *
- * <p><b>API Stability:</b> Experimental - Subject to change in future versions</p>
+ * <p>
+ * <b>API Stability:</b> Experimental - Subject to change in future versions
+ * </p>
  *
  * @since 1.1.0
  */
+@SuppressFBWarnings(value = { "EI_EXPOSE_REP",
+        "EI_EXPOSE_REP2" }, justification = "Bukkit event pattern; exposes Player/Spell for listener logic; immutable contract externally.")
 public class SpellFailEvent extends Event {
 
     private static final HandlerList HANDLERS = new HandlerList();
@@ -30,14 +39,14 @@ public class SpellFailEvent extends Event {
     /**
      * Creates a new SpellFailEvent.
      *
-     * @param caster the player who attempted to cast the spell
-     * @param spell the spell that failed (may be null if spell lookup failed)
+     * @param caster   the player who attempted to cast the spell
+     * @param spell    the spell that failed (may be null if spell lookup failed)
      * @param spellKey the registry key of the attempted spell
-     * @param reason the reason for the failure
-     * @param message the user-facing failure message
+     * @param reason   the reason for the failure
+     * @param message  the user-facing failure message
      */
     public SpellFailEvent(@NotNull Player caster, @Nullable Spell spell, @NotNull String spellKey,
-                         @NotNull FailReason reason, @NotNull String message) {
+            @NotNull FailReason reason, @NotNull String message) {
         this.caster = caster;
         this.spell = spell;
         this.spellKey = spellKey;
