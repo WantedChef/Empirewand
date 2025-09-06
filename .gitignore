@@ -18,6 +18,7 @@ CON
 gradlew
 
 # Local caches and distributions (do not commit)
+# Local caches and distributions (do not commit)
 gradle-*.zip
 /gradle-*/
 /temp-gradle/
@@ -25,5 +26,23 @@ gradle-*.zip
 
 # Compiled classes (should live under build/ only)
 *.class
+
+# Ignore most markdown and text files repo-wide except the root README
+**/*.md
+**/*.MD
+**/*.markdown
+**/*.txt
+**/*.TXT
+!/README.md
+
+# Ignore GitHub chatmodes/dev docs
+/.github/chatmodes/
+
+# Ignore dev-only docs by name (redundant safety)
+/important/
+/spells.md
+/Plan.md
+/EmpireWand_Structure.md
+/1_stappenplan.md
 
 # Dev-only docs (ignored)`n/important/`n/spells.md`n/Plan.md`n/EmpireWand_Structure.md`n/1_stappenplan.md`n
