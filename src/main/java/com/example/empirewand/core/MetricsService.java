@@ -1,11 +1,12 @@
 package com.example.empirewand.core;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.bstats.bukkit.Metrics;
 import org.bstats.charts.SimplePie;
 import org.bstats.charts.SingleLineChart;
 import org.bukkit.plugin.Plugin;
-
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
 
 /**
  * Handles bStats metrics collection for EmpireWand.
@@ -16,6 +17,7 @@ public class MetricsService {
     private final Plugin plugin;
     private final ConfigService config;
     private Metrics metrics;
+    private boolean enabled = false;
     private final AtomicInteger spellsCast = new AtomicInteger(0);
     private final AtomicInteger wandsCreated = new AtomicInteger(0);
     private final DebugMetricsService debugMetrics;
@@ -30,19 +32,32 @@ public class MetricsService {
      * Initializes bStats metrics if enabled in configuration.
      */
     public void initialize() {
-        if (!config.getConfig().getBoolean("metrics.enabled", true)) {
-            plugin.getLogger().info("bStats metrics disabled by configuration");
+        this.enabled = config.getConfig().getBoolean("metrics.enabled", true);
+        if (!enabled) {
+            getLoggerSafely().info("bStats metrics disabled by configuration");
             return;
         }
 
-        // Initialize bStats with plugin ID (use a unique ID for your plugin)
-        // Note: You should get an actual plugin ID from bStats when you submit your plugin
-        this.metrics = new Metrics((org.bukkit.plugin.java.JavaPlugin) plugin, 12345); // Replace with actual bStats plugin ID
+        try {
+            // Get plugin ID from config, fallback to a default
+            // Note: Register your plugin at bStats.org to get a real plugin ID
+            int pluginId = config.getConfig().getInt("metrics.plugin-id", 12345);
+            if (pluginId <= 0) {
+                getLoggerSafely().warning("Invalid bStats plugin ID in config; metrics disabled.");
+                return;
+            }
 
-        // Add custom charts
-        addCustomCharts();
+            this.metrics = new Metrics((org.bukkit.plugin.java.JavaPlugin) plugin, pluginId);
 
-        plugin.getLogger().info("bStats metrics enabled");
+            // Add custom charts
+            addCustomCharts();
+
+            getLoggerSafely().info("bStats metrics enabled");
+        } catch (Throwable t) {
+            // In test or non-server environments, Metrics may fail to initialize
+            getLoggerSafely().info("bStats metrics initialization skipped (non-runtime environment)");
+            this.metrics = null; // Leave disabled but do not fail
+        }
     }
 
     /**
@@ -114,21 +129,23 @@ public class MetricsService {
      * Adds custom charts to bStats.
      */
     private void addCustomCharts() {
-        if (metrics == null) return;
+        if (metrics == null)
+            return;
 
         // Chart for server software
         metrics.addCustomChart(new SimplePie("server_software", () -> {
             String version = plugin.getServer().getVersion();
-            if (version.contains("Paper")) return "Paper";
-            if (version.contains("Spigot")) return "Spigot";
-            if (version.contains("Bukkit")) return "Bukkit";
+            if (version.contains("Paper"))
+                return "Paper";
+            if (version.contains("Spigot"))
+                return "Spigot";
+            if (version.contains("Bukkit"))
+                return "Bukkit";
             return "Other";
         }));
 
         // Chart for Java version
-        metrics.addCustomChart(new SimplePie("java_version", () ->
-            System.getProperty("java.version", "Unknown")
-        ));
+        metrics.addCustomChart(new SimplePie("java_version", () -> System.getProperty("java.version", "Unknown")));
 
         // Chart for spells cast (debug mode only)
         if (config.getConfig().getBoolean("metrics.debug", false)) {
@@ -143,6 +160,15 @@ public class MetricsService {
      * Checks if metrics are enabled.
      */
     public boolean isEnabled() {
-        return metrics != null;
+        return enabled;
+    }
+
+    private Logger getLoggerSafely() {
+        try {
+            Logger l = plugin.getLogger();
+            return l != null ? l : Logger.getLogger("EmpireWand");
+        } catch (Throwable t) {
+            return Logger.getLogger("EmpireWand");
+        }
     }
 }

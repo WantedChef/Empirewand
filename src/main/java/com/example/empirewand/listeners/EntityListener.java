@@ -1,30 +1,31 @@
 package com.example.empirewand.listeners;
 
-import com.example.empirewand.EmpireWandPlugin;
-import com.example.empirewand.core.FxService;
-import com.example.empirewand.core.Keys;
-import com.example.empirewand.core.PerformanceMonitor;
+import java.util.UUID;
+
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.entity.Arrow;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
-import org.bukkit.entity.Arrow;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.Material;
-import org.bukkit.inventory.ItemStack;
 
-import java.util.UUID;
+import com.example.empirewand.EmpireWandPlugin;
+import com.example.empirewand.core.FxService;
+import com.example.empirewand.core.Keys;
+import com.example.empirewand.core.PerformanceMonitor;
 
 public class EntityListener implements Listener {
 
@@ -53,10 +54,30 @@ public class EntityListener implements Listener {
             case "explosive" -> handleExplosiveSpell(projectile, fxService);
             case "glacial-spike" -> handleGlacialSpikeSpell(projectile, event, fxService);
             case "lifesteal" -> handleLifestealSpell(projectile, event, fxService);
-            // TODO: Add impact effects for spells like comet, magic-missile, etc.
+            default -> {
+                // Unknown or handled elsewhere; flush any batched particles and clean up arrows
+                fxService.flushParticleBatch();
+                if (projectile instanceof Arrow) {
+                    projectile.remove();
+                }
+            }
         }
 
         timing.complete(15); // Projectile hit should complete within 15ms
+    }
+
+    private void handleCometSpell(Projectile projectile, FxService fxService) {
+        fxService.spawnParticles(projectile.getLocation(), Particle.LAVA, 10, 0.1, 0.1, 0.1, 0);
+        fxService.spawnParticles(projectile.getLocation(), Particle.FLAME, 25, 0.5, 0.5, 0.5, 0.1);
+        fxService.playSound(projectile.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 0.8f);
+        projectile.remove();
+    }
+
+    private void handleMagicMissileSpell(Projectile projectile, FxService fxService) {
+        fxService.spawnParticles(projectile.getLocation(), Particle.ENCHANT, 50, 0.3, 0.3, 0.3, 0.1);
+        fxService.spawnParticles(projectile.getLocation(), Particle.WITCH, 25, 0.3, 0.3, 0.3, 0);
+        fxService.playSound(projectile.getLocation(), Sound.ENTITY_ILLUSIONER_CAST_SPELL, 1.0f, 1.2f);
+        projectile.remove();
     }
 
     private void handleExplosiveSpell(Projectile projectile, FxService fxService) {
@@ -165,10 +186,6 @@ public class EntityListener implements Listener {
         if (!(event.getEntity() instanceof Player player))
             return;
 
-        // Guard: Ensure player is in a valid world
-        if (player.getWorld() == null)
-            return;
-
         // Cancel fall damage if tagged as ethereal and not expired.
         var pdc = player.getPersistentDataContainer();
         boolean etherealFlag = pdc.has(Keys.ETHEREAL_ACTIVE, Keys.BYTE_TYPE.getType());
@@ -208,8 +225,6 @@ public class EntityListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onEntityExplode(EntityExplodeEvent event) {
         var entity = event.getEntity();
-        if (entity == null)
-            return;
         String spellName = entity.getPersistentDataContainer().get(Keys.PROJECTILE_SPELL, Keys.STRING_TYPE.getType());
         if (!"explosive".equals(spellName))
             return;

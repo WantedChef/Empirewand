@@ -7,7 +7,10 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Entity;
 import org.bukkit.util.Vector;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +24,7 @@ import java.util.Map;
  * operations.
  */
 public class FxService {
+    @SuppressWarnings("unused")
     private final ConfigService config;
     private final TextService textService;
 
@@ -79,7 +83,7 @@ public class FxService {
 
     public void actionBar(Player player, String plainText) {
         if (player != null && plainText != null && !plainText.isEmpty()) {
-            player.sendActionBar(Component.text(textService.stripMiniTags(plainText)));
+            player.sendActionBar(Component.text(plainText));
         }
     }
 
@@ -89,7 +93,9 @@ public class FxService {
     }
 
     public void actionBarKey(Player player, String messageKey, Map<String, String> placeholders) {
-        String raw = textService.getMessage(messageKey, placeholders);
+        String raw = (placeholders == null || placeholders.isEmpty())
+                ? textService.getMessage(messageKey)
+                : textService.getMessage(messageKey, placeholders);
         actionBar(player, raw);
     }
 
@@ -100,31 +106,33 @@ public class FxService {
 
     public void actionBarSound(Player player, String messageKey, Sound sound, float volume, float pitch) {
         String raw = textService.getMessage(messageKey);
-        actionBarSound(player, Component.text(textService.stripMiniTags(raw)), sound, volume, pitch);
+        actionBarSound(player, Component.text(raw), sound, volume, pitch);
     }
 
     public void actionBarSound(Player player, String messageKey, Map<String, String> placeholders,
             Sound sound, float volume, float pitch) {
-        String raw = textService.getMessage(messageKey, placeholders);
-        actionBarSound(player, Component.text(textService.stripMiniTags(raw)), sound, volume, pitch);
+        String raw = (placeholders == null || placeholders.isEmpty())
+                ? textService.getMessage(messageKey)
+                : textService.getMessage(messageKey, placeholders);
+        actionBarSound(player, Component.text(raw), sound, volume, pitch);
     }
 
     public void selectedSpell(Player player, String displayName) {
-        showInfo(player, "spell-selected", Map.of("spell", textService.stripMiniTags(displayName)));
+        actionBarKey(player, "spell-selected", Map.of("spell", textService.stripMiniTags(displayName)));
     }
 
     public void onCooldown(Player player, String displayName, long msRemaining) {
-        showError(player, "on-cooldown", Map.of(
+        actionBarKey(player, "on-cooldown", Map.of(
                 "spell", textService.stripMiniTags(displayName),
                 "time", Long.toString(Math.max(0, msRemaining))));
     }
 
     public void noSpells(Player player) {
-        showError(player, "no-spells-bound");
+        actionBarKey(player, "no-spells-bound");
     }
 
     public void noPermission(Player player) {
-        showError(player, "no-permission");
+        actionBarKey(player, "no-permission");
     }
 
     public void fizzle(Player player) {
@@ -145,9 +153,9 @@ public class FxService {
     public void title(Player player, Component title, Component subtitle, int fadeIn, int stay, int fadeOut) {
         if (player != null) {
             var times = net.kyori.adventure.title.Title.Times.times(
-                    java.time.Duration.ofMillis(fadeIn * 50),
-                    java.time.Duration.ofMillis(stay * 50),
-                    java.time.Duration.ofMillis(fadeOut * 50));
+                    java.time.Duration.ofMillis((long) fadeIn * 50),
+                    java.time.Duration.ofMillis((long) stay * 50),
+                    java.time.Duration.ofMillis((long) fadeOut * 50));
             player.showTitle(net.kyori.adventure.title.Title.title(title, subtitle, times));
         }
     }
@@ -220,8 +228,11 @@ public class FxService {
     public void playSound(Player player, Sound sound, float volume, float pitch) {
         PerformanceMonitor.TimingContext timing = PerformanceMonitor.startTiming("playSoundPlayer");
 
-        if (player != null && sound != null && player.getLocation() != null) {
-            player.playSound(player.getLocation(), sound, volume, pitch);
+        if (player != null && sound != null) {
+            Location location = player.getLocation();
+            if (location != null) {
+                player.playSound(location, sound, volume, pitch);
+            }
         }
 
         timing.complete(2); // Log if sound playing takes > 2ms
@@ -335,7 +346,7 @@ public class FxService {
             return;
         }
 
-        int steps = Math.max(1, (int) (length * 4));
+        int steps = (int) Math.max(1, Math.round(length));
         Vector step = dir.normalize().multiply(length / steps);
         Location point = start.clone();
 
@@ -387,5 +398,46 @@ public class FxService {
     public void impact(Location location) {
         spawnParticles(location, Particle.EXPLOSION, 30, 0.5, 0.5, 0.5, 0.1);
         playSound(location, Sound.ENTITY_BLAZE_SHOOT, 1.0f, 1.0f);
+    }
+
+    /**
+     * Follows an entity with a particle effect on a fixed period until it becomes invalid or dead.
+     * Lightweight helper to reduce boilerplate runnables in spells.
+     */
+    public void followParticles(Plugin plugin, Entity entity, Particle particle, int count,
+                                double offsetX, double offsetY, double offsetZ, double speed, Object data,
+                                long periodTicks) {
+        if (plugin == null || entity == null || particle == null || periodTicks <= 0) return;
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!entity.isValid() || entity.isDead()) {
+                    cancel();
+                    return;
+                }
+                if (data != null) {
+                    spawnParticles(entity.getLocation(), particle, count, offsetX, offsetY, offsetZ, speed, data);
+                } else {
+                    spawnParticles(entity.getLocation(), particle, count, offsetX, offsetY, offsetZ, speed);
+                }
+            }
+        }.runTaskTimer(plugin, 0L, Math.max(1L, periodTicks));
+    }
+
+    /**
+     * Follows an entity with the generic trail effect.
+     */
+    public void followTrail(Plugin plugin, Entity entity, long periodTicks) {
+        if (plugin == null || entity == null || periodTicks <= 0) return;
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!entity.isValid() || entity.isDead()) {
+                    cancel();
+                    return;
+                }
+                trail(entity.getLocation());
+            }
+        }.runTaskTimer(plugin, 0L, Math.max(1L, periodTicks));
     }
 }

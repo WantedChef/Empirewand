@@ -25,16 +25,7 @@ public class Explosive implements Spell {
         skull.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, Keys.STRING_TYPE.getType(), player.getUniqueId().toString());
 
         // Subtle smoke trail while travelling
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (!skull.isValid() || skull.isDead()) {
-                    this.cancel();
-                    return;
-                }
-                context.fx().spawnParticles(skull.getLocation(), Particle.SMOKE, 6, 0.12, 0.12, 0.12, 0.02);
-            }
-        }.runTaskTimer(context.plugin(), 0L, 1L);
+        context.fx().followParticles(context.plugin(), skull, Particle.SMOKE, 6, 0.12, 0.12, 0.12, 0.02, null, 1L);
     }
 
     @Override

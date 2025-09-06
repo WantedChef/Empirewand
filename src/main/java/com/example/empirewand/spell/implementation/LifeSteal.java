@@ -29,22 +29,15 @@ public class LifeSteal implements Spell {
         // Light cast SFX
         context.fx().playSound(player, Sound.ENTITY_WITCH_THROW, 0.8f, 1.2f);
 
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (!snowball.isValid() || snowball.isDead() || snowball.isOnGround()) {
-                    this.cancel();
-                    return;
-                }
-                context.fx().spawnParticles(
-                        snowball.getLocation(),
-                        Particle.DUST,
-                        8,
-                        0.08, 0.08, 0.08,
-                        0,
-                        new Particle.DustOptions(Color.fromRGB(170, 0, 0), 1.0f));
-            }
-        }.runTaskTimer(context.plugin(), 0L, 1L);
+        context.fx().followParticles(
+                context.plugin(),
+                snowball,
+                Particle.DUST,
+                8,
+                0.08, 0.08, 0.08,
+                0,
+                new Particle.DustOptions(Color.fromRGB(170, 0, 0), 1.0f),
+                1L);
     }
 
     @Override

@@ -29,16 +29,8 @@ public class Comet implements ProjectileSpell {
         fireball.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, PersistentDataType.STRING, getName());
         fireball.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, PersistentDataType.STRING, player.getUniqueId().toString());
 
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (fireball.isDead()) {
-                    this.cancel();
-                    return;
-                }
-                context.fx().trail(fireball.getLocation());
-            }
-        }.runTaskTimer(context.plugin(), 0L, 2L);
+        // Follow with a generic trail while travelling
+        context.fx().followTrail(context.plugin(), fireball, 2L);
     }
 
     @Override
