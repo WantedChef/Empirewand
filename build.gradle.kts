@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.example"
-version = "1.0.0"
+version = "1.1.0"
 
 java {
     toolchain {
@@ -22,17 +22,27 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT")
-    compileOnly("org.bstats:bstats-bukkit:3.0.2")
+    compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.5")
+    implementation("org.bstats:bstats-bukkit:3.0.2")
 
     testImplementation("io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT")
-    testImplementation(platform("org.junit:junit-bom:5.10.2"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.2")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.2")
+    testImplementation("org.junit.platform:junit-platform-launcher:1.10.2")
     testImplementation("org.mockito:mockito-core:5.11.0")
     testImplementation("org.mockito:mockito-junit-jupiter:5.11.0")
 }
 
 tasks.test {
     useJUnitPlatform()
+    jvmArgs("-Xshare:off")
+    // Disable automatic test framework detection to avoid deprecation warning
+    systemProperty("junit.platform.autoDetect.classpath", "false")
+    // Allow bStats to initialize in unit tests without relocation
+    systemProperty("bstats.relocatecheck", "false")
+    // Suppress the deprecation warning
+    logging.captureStandardError(LogLevel.INFO)
 }
 
 tasks.withType<JavaCompile>().configureEach {
@@ -69,3 +79,35 @@ tasks.check {
     dependsOn(tasks.test, tasks.jacocoTestReport)
 }
 
+// Expand Gradle properties into plugin.yml
+tasks.processResources {
+    filteringCharset = "UTF-8"
+    filesMatching("plugin.yml") {
+        expand(
+            mapOf(
+                "name" to (project.findProperty("pluginName") ?: project.name),
+                "version" to project.version
+            )
+        )
+    }
+}
+
+// Create a fat JAR including runtime dependencies (fallback when Shadow plugin is unavailable)
+val fatJar = tasks.register<Jar>("fatJar") {
+    archiveClassifier.set("all")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from(sourceSets.main.get().output)
+    dependsOn(configurations.runtimeClasspath)
+    from({
+        configurations.runtimeClasspath.get()
+            .filter { it.name.endsWith(".jar") }
+            .map { zipTree(it) }
+    })
+    manifest {
+        attributes["Main-Class"] = "com.example.empirewand.EmpireWandPlugin"
+    }
+}
+
+artifacts { archives(fatJar) }
+
+tasks.build { dependsOn(fatJar) }

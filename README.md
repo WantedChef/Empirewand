@@ -10,7 +10,7 @@ EmpireWand is a Minecraft Paper plugin for 1.20.6 providing magical wand mechani
 
 ## Build
 
-- `./gradlew clean build` - Builds the JAR in `build/libs/empirewand-1.0.0.jar`.
+- `./gradlew clean build` - Builds the JAR in `build/libs/empirewand-1.1.0.jar`.
 - `./gradlew test` - Runs JUnit tests.
 - `./gradlew spotbugsMain` - Static analysis.
 

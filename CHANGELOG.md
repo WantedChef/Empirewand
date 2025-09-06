@@ -1,5 +1,20 @@
 # EmpireWand Changelog
 
+## [1.1.0] - 2025-09-06
+
+### Added
+- PlayerLifecycleListener clears per-player cooldowns on quit
+- FX helpers in FxService: `followParticles` and `followTrail` to reduce duplicate schedulers
+- Unit tests: lifecycle cleanup and Explosive block-damage policy
+
+### Changed
+- Hybrid projectile routing: remove duplicate comet/magic-missile hit handling from EntityListener; rely on ProjectileListener for `ProjectileSpell`
+- EmpireWandCommand refactored to subcommand dispatcher for readability (behavior unchanged)
+- MetricsService logging hardened to avoid NPEs in tests/non-runtime
+
+### Docs
+- Updated roadmap with decisions, improved README best practices, and spells guidelines
+
 ## [1.0.0] - 2025-09-05
 
 ### Added
