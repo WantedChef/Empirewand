@@ -16,3 +16,14 @@ Thumbs.db
 
 CON
 gradlew
+
+# Local caches and distributions (do not commit)
+gradle-*.zip
+/gradle-*/
+/temp-gradle/
+/tools/.gradle-dist/
+
+# Compiled classes (should live under build/ only)
+*.class
+
+# Dev-only docs (ignored)`n/important/`n/spells.md`n/Plan.md`n/EmpireWand_Structure.md`n/1_stappenplan.md`n
