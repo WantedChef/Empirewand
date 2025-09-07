@@ -131,7 +131,6 @@ comet:
   display-name: "<#FF8C00>Comet"
   cooldown: 2500 # ms
   range: 20.0
-  mana-cost: 0
   fx:
     particles: "EXPLOSION_LARGE"
     sound: "ENTITY_GENERIC_EXPLODE"
@@ -156,7 +155,6 @@ magic-missile:
   display-name: "<#9932CC>Magic Missile"
   cooldown: 3000
   range: 20.0
-  mana-cost: 0
   fx:
     particles: "CRIT"
     sound: "ENTITY_ILLUSIONER_CAST_SPELL"
@@ -205,7 +203,6 @@ heal:
   display-name: "<#ADFF2F>Heal"
   cooldown: 2000
   range: 0.0 # self-cast
-  mana-cost: 0
   fx:
     particles: "HEART"
     sound: "ENTITY_EXPERIENCE_ORB_PICKUP"

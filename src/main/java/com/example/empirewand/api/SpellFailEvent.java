@@ -116,8 +116,6 @@ public class SpellFailEvent extends Event {
         INVALID_TARGET,
         /** Target is out of range */
         OUT_OF_RANGE,
-        /** Insufficient mana or resources */
-        INSUFFICIENT_MANA,
         /** Spell is disabled in configuration */
         SPELL_DISABLED,
         /** Unknown spell key */

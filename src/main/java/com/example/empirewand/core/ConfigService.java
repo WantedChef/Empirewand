@@ -133,7 +133,7 @@ public class ConfigService {
      */
     public java.util.List<String> getCategorySpells(String name) {
         java.util.List<String> list = config.getStringList("categories." + name + ".spells");
-        return list == null ? java.util.List.of() : list;
+        return list;
     }
 
     /**
@@ -141,7 +141,8 @@ public class ConfigService {
      */
     public java.util.Set<String> getCategoryNames() {
         var section = config.getConfigurationSection("categories");
-        if (section == null) return java.util.Set.of();
+        if (section == null)
+            return java.util.Set.of();
         return section.getKeys(false);
     }
 }

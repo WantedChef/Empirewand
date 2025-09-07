@@ -9,6 +9,13 @@ public enum SpellType {
     LIFE,
     HEAL,
     DARK,
+    FIRE,
+    ICE,
+    EARTH,
+    WEATHER,
+    MOVEMENT,
+    PROJECTILE,
+    AURA,
+    CONTROL,
     MISC;
 }
-

@@ -1,0 +1,52 @@
+package com.example.empirewand.spell.implementation.fire;
+
+import org.bukkit.Particle;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.WitherSkull;
+
+import com.example.empirewand.core.storage.Keys;
+import com.example.empirewand.spell.Prereq;
+import com.example.empirewand.spell.Spell;
+import com.example.empirewand.spell.SpellContext;
+
+import net.kyori.adventure.text.Component;
+
+public class Explosive implements Spell {
+    @Override
+    public void execute(SpellContext context) {
+        Player player = context.caster();
+        var spells = context.config().getSpellsConfig();
+        float yield = (float) spells.getDouble("explosive.values.radius", 4.0);
+        boolean setsFire = spells.getBoolean("explosive.flags.sets-fire", false);
+
+        WitherSkull skull = player.launchProjectile(WitherSkull.class);
+        skull.setYield(Math.max(0.0f, yield));
+        skull.setIsIncendiary(setsFire);
+        skull.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, Keys.STRING_TYPE.getType(), getName());
+        skull.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, Keys.STRING_TYPE.getType(),
+                player.getUniqueId().toString());
+
+        // Subtle smoke trail while travelling
+        context.fx().followParticles(context.plugin(), skull, Particle.SMOKE, 6, 0.12, 0.12, 0.12, 0.02, null, 1L);
+    }
+
+    @Override
+    public String getName() {
+        return "explosive";
+    }
+
+    @Override
+    public String key() {
+        return "explosive";
+    }
+
+    @Override
+    public Component displayName() {
+        return Component.text("Explosive");
+    }
+
+    @Override
+    public Prereq prereq() {
+        return new Prereq(true, Component.text(""));
+    }
+}

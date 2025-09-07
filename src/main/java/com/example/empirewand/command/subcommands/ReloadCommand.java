@@ -1,0 +1,47 @@
+package com.example.empirewand.command.subcommands;
+
+import com.example.empirewand.command.framework.CommandContext;
+import com.example.empirewand.command.framework.CommandException;
+import com.example.empirewand.command.framework.SubCommand;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+/**
+ * Command to reload plugin configuration.
+ */
+public class ReloadCommand implements SubCommand {
+
+    private final String wandType;
+
+    public ReloadCommand(String wandType) {
+        this.wandType = wandType;
+    }
+
+    @Override
+    public @NotNull String getName() {
+        return "reload";
+    }
+
+    @Override
+    public @Nullable String getPermission() {
+        return wandType + ".command.reload";
+    }
+
+    @Override
+    public @NotNull String getUsage() {
+        return "reload";
+    }
+
+    @Override
+    public @NotNull String getDescription() {
+        return "Reload plugin configuration";
+    }
+
+    @Override
+    public void execute(@NotNull CommandContext context) throws CommandException {
+        context.config().loadConfigs();
+        context.sendMessage(Component.text("Configuration reloaded").color(NamedTextColor.GREEN));
+    }
+}

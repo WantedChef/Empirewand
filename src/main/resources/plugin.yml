@@ -7,17 +7,46 @@ description: EmpireWand example plugin
 commands:
   ew:
     description: EmpireWand commands
-    usage: /ew <get|bind|unbind|bindall|set-spell|list|reload|cooldown|migrate>
+    usage: /ew <get|bind|unbind|bindall|bindtype|bindcat|set-spell|list|reload|migrate|spells|cd>
+  mz:
+    description: MephidantesZeist commands
+    usage: /mz <get|bind|unbind|bindall|bindtype|bindcat|set-spell|list|reload|migrate|spells|cd>
 permissions:
   empirewand.command.get: { default: op }
   empirewand.command.bind: { default: op }
   empirewand.command.unbind: { default: op }
   empirewand.command.bindall: { default: op }
+  empirewand.command.bindtype: { default: op }
+  empirewand.command.bindcat: { default: op }
   empirewand.command.set-spell: { default: op }
   empirewand.command.list: { default: true }
+  empirewand.command.spells: { default: true }
   empirewand.command.reload: { default: op }
-  empirewand.command.cooldown: { default: op }
   empirewand.command.migrate: { default: op }
+  
+  # Cooldown permissions
+  empirewand.command.cooldown.toggle: { default: true }
+  empirewand.command.cooldown.clear: { default: op }
+  empirewand.command.cooldown.status: { default: true }
+  empirewand.command.cooldown.admin: { default: op }
+  
+  mephidanteszeist.command.get: { default: op }
+  mephidanteszeist.command.bind: { default: op }
+  mephidanteszeist.command.unbind: { default: op }
+  mephidanteszeist.command.bindall: { default: op }
+  mephidanteszeist.command.bindtype: { default: op }
+  mephidanteszeist.command.bindcat: { default: op }
+  mephidanteszeist.command.set-spell: { default: op }
+  mephidanteszeist.command.list: { default: true }
+  mephidanteszeist.command.spells: { default: true }
+  mephidanteszeist.command.reload: { default: op }
+  mephidanteszeist.command.migrate: { default: op }
+  
+  # Cooldown permissions for MephidantesZeist
+  mephidanteszeist.command.cooldown.toggle: { default: true }
+  mephidanteszeist.command.cooldown.clear: { default: op }
+  mephidanteszeist.command.cooldown.status: { default: true }
+  mephidanteszeist.command.cooldown.admin: { default: op }
   empirewand.spell.use.*: { default: true }
   empirewand.spell.bind.*: { default: op }
   

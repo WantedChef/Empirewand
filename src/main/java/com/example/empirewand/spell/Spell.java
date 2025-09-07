@@ -27,12 +27,18 @@ public interface Spell {
 
     // Existing methods
     String getName();
+
     String key();
+
     Component displayName();
+
     Prereq prereq();
 
     /**
-     * Optional categorization of a spell. Defaults to MISC.
+     * Optional categorization of a spell. Defaults to automatic resolution from
+     * key.
      */
-    default SpellType type() { return SpellType.MISC; }
+    default SpellType type() {
+        return SpellTypes.resolveTypeFromKey(key());
+    }
 }

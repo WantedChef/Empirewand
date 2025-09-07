@@ -6,8 +6,8 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
 import com.example.empirewand.EmpireWandPlugin;
-import com.example.empirewand.core.ConfigService;
-import com.example.empirewand.core.FxService;
+import com.example.empirewand.core.services.ConfigService;
+import com.example.empirewand.core.services.FxService;
 
 /**
  * Immutable context passed to spells. Provides access to core services plus

@@ -11,12 +11,21 @@ messages:
   all-spells-bound: "<green>Bound all available spells to your wand."
   no-spells-bound: "<red>No spells bound!"
   spell-selected: "<gray>Selected: <aqua>{spell}"
-  on-cooldown: "<red>That spell is on cooldown!"
+  on-cooldown: "<red>That spell is on cooldown! Wait {remaining} seconds."
   fizzle: "<gray>...fizzle..."
+  wand:
+    no-spells: "Je wand heeft geen spells ingesteld."
+    unknown-spell: "Onbekende spreuk."
+    no-permission: "Je hebt geen toestemming voor deze spreuk."
+    cannot-cast: "Je kunt deze spreuk nu niet gebruiken."
+    cast-error: "Er ging iets mis tijdens het casten."
+    on-cooldown: "Wacht nog {seconds}s."
+    swap-blocked: "Wisselen naar offhand is uitgeschakeld voor de wand."
+    drop-blocked: "Je kunt de wand niet droppen."
 
 features:
-  block-damage: false
-  friendly-fire: false
+  block-damage: true
+  friendly-fire: true
 
 cooldowns:
   default: 500 # in milliseconds
@@ -25,4 +34,81 @@ cooldowns:
 metrics:
   enabled: true  # Set to false to disable bStats metrics collection
   debug: false   # Set to true to enable additional debug metrics
-  plugin-id: 12345  # Register at bStats.org to get your actual plugin ID
+  plugin-id: 27206  
+
+# Custom spell categories for convenience commands like /ew bindcat <category>
+# Provide lists of spell keys to bind together. Keys must match those in spells.yml
+categories:
+  empire:
+    spells:
+      - empire-launch
+      - empire-escape
+      - empire-aura
+      - empire-comet
+      - empire-levitate
+  dark:
+    spells:
+      - dark-circle
+      - dark-pulse
+      - shadow-cloak
+      - shadow-step
+  magic:
+    spells:
+      - magic-missile
+      - arcane-orb
+      - polymorph
+      - ritual-of-unmaking
+  support:
+    spells:
+      - heal
+      - radiant-beacon
+      - god-cloud
+      - blood-barrier
+  lightning:
+    spells:
+      - chain-lightning
+      - lightning-bolt
+      - lightning-arrow
+      - lightning-storm
+      - spark
+      - little-spark
+      - thunder-blast
+      - solar-lance
+  fire:
+    spells:
+      - fireball
+      - flame-wave
+      - blaze-launch
+      - explosive
+      - explosion-trail
+  ice:
+    spells:
+      - frost-nova
+      - glacial-spike
+  earth:
+    spells:
+      - sandstorm
+      - grasping-vines
+      - earth-quake
+      - lightwall
+  weather:
+    spells:
+      - gust
+      - tornado
+  movement:
+    spells:
+      - teleport
+      - blink-strike
+      - sunburst-step
+  projectile:
+    spells:
+      - comet
+      - comet-shower
+  aura:
+    spells:
+      - empire-aura
+  control:
+    spells:
+      - polymorph
+      - confuse
+      - stasis-field

@@ -5,21 +5,17 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Public API interface for EmpireWand's permission system.
+ * Service for managing EmpireWand permissions.
+ * Provides permission checking and management capabilities.
  *
- * <p>This interface provides methods to check permissions related to spells and commands.
- * External plugins can use this to integrate with EmpireWand's permission structure.</p>
- *
- * <p><b>API Stability:</b> Experimental - Subject to change in future versions</p>
- *
- * @since 1.1.0
+ * @since 2.0.0
  */
-public interface PermissionService {
+public interface PermissionService extends EmpireWandService {
 
     /**
      * Checks if a command sender has a specific permission.
      *
-     * @param sender the command sender to check
+     * @param sender     the command sender to check
      * @param permission the permission node
      * @return true if the sender has the permission, false otherwise
      */
@@ -28,7 +24,7 @@ public interface PermissionService {
     /**
      * Checks if a player has permission to use a specific spell.
      *
-     * @param player the player to check
+     * @param player   the player to check
      * @param spellKey the spell key (kebab-case)
      * @return true if the player can use the spell, false otherwise
      */
@@ -37,7 +33,7 @@ public interface PermissionService {
     /**
      * Checks if a player has permission to bind a specific spell.
      *
-     * @param player the player to check
+     * @param player   the player to check
      * @param spellKey the spell key (kebab-case)
      * @return true if the player can bind the spell, false otherwise
      */
