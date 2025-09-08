@@ -2,7 +2,7 @@ package com.example.empirewand.spell;
 
 import com.example.empirewand.EmpireWandPlugin;
 import com.example.empirewand.api.EmpireWandAPI;
-import com.example.empirewand.api.EffectService;
+
 import com.example.empirewand.api.ConfigService;
 import com.example.empirewand.core.storage.Keys;
 import org.bukkit.Location;

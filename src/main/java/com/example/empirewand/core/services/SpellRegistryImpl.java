@@ -1,26 +1,5 @@
 package com.example.empirewand.core.services;
 
-import com.example.empirewand.api.EmpireWandAPI;
-import com.example.empirewand.api.ServiceHealth;
-import com.example.empirewand.api.SpellMetadata;
-import com.example.empirewand.api.SpellQuery;
-import com.example.empirewand.api.SpellRegistry;
-import com.example.empirewand.api.Version;
-import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.implementation.aura.*;
-import com.example.empirewand.spell.implementation.control.*;
-import com.example.empirewand.spell.implementation.dark.*;
-import com.example.empirewand.spell.implementation.earth.*;
-import com.example.empirewand.spell.implementation.fire.*;
-import com.example.empirewand.spell.implementation.heal.*;
-import com.example.empirewand.spell.implementation.ice.*;
-import com.example.empirewand.spell.implementation.life.*;
-import com.example.empirewand.spell.implementation.lightning.*;
-import com.example.empirewand.spell.implementation.misc.*;
-import com.example.empirewand.spell.implementation.movement.*;
-import com.example.empirewand.spell.implementation.poison.*;
-import com.example.empirewand.spell.implementation.projectile.*;
-import com.example.empirewand.spell.implementation.weather.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -31,20 +10,86 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 
+import com.example.empirewand.api.ServiceHealth;
+import com.example.empirewand.api.SpellMetadata;
+import com.example.empirewand.api.SpellRegistry;
+import com.example.empirewand.api.Version;
+import com.example.empirewand.spell.Spell;
+import com.example.empirewand.spell.implementation.aura.Aura;
+import com.example.empirewand.spell.implementation.aura.EmpireAura;
+import com.example.empirewand.spell.implementation.control.Confuse;
+import com.example.empirewand.spell.implementation.control.Polymorph;
+import com.example.empirewand.spell.implementation.control.StasisField;
+import com.example.empirewand.spell.implementation.dark.DarkCircle;
+import com.example.empirewand.spell.implementation.dark.DarkPulse;
+import com.example.empirewand.spell.implementation.dark.RitualOfUnmaking;
+import com.example.empirewand.spell.implementation.dark.ShadowCloak;
+import com.example.empirewand.spell.implementation.dark.ShadowStep;
+import com.example.empirewand.spell.implementation.dark.VoidSwap;
+import com.example.empirewand.spell.implementation.earth.EarthQuake;
+import com.example.empirewand.spell.implementation.earth.GraspingVines;
+import com.example.empirewand.spell.implementation.earth.Lightwall;
+import com.example.empirewand.spell.implementation.fire.BlazeLaunch;
+import com.example.empirewand.spell.implementation.fire.Comet;
+import com.example.empirewand.spell.implementation.fire.CometShower;
+import com.example.empirewand.spell.implementation.fire.EmpireComet;
+import com.example.empirewand.spell.implementation.fire.ExplosionTrail;
+import com.example.empirewand.spell.implementation.fire.Explosive;
+import com.example.empirewand.spell.implementation.fire.Fireball;
+import com.example.empirewand.spell.implementation.fire.FlameWave;
+import com.example.empirewand.spell.implementation.heal.GodCloud;
+import com.example.empirewand.spell.implementation.heal.Heal;
+import com.example.empirewand.spell.implementation.heal.RadiantBeacon;
+import com.example.empirewand.spell.implementation.ice.FrostNova;
+import com.example.empirewand.spell.implementation.ice.GlacialSpike;
+import com.example.empirewand.spell.implementation.life.BloodBarrier;
+import com.example.empirewand.spell.implementation.life.BloodBlock;
+import com.example.empirewand.spell.implementation.life.BloodNova;
+import com.example.empirewand.spell.implementation.life.BloodSpam;
+import com.example.empirewand.spell.implementation.life.BloodTap;
+import com.example.empirewand.spell.implementation.life.Hemorrhage;
+import com.example.empirewand.spell.implementation.life.LifeReap;
+import com.example.empirewand.spell.implementation.life.LifeSteal;
+import com.example.empirewand.spell.implementation.lightning.ChainLightning;
+import com.example.empirewand.spell.implementation.lightning.LightningArrow;
+import com.example.empirewand.spell.implementation.lightning.LightningBolt;
+import com.example.empirewand.spell.implementation.lightning.LightningStorm;
+import com.example.empirewand.spell.implementation.lightning.LittleSpark;
+import com.example.empirewand.spell.implementation.lightning.SolarLance;
+import com.example.empirewand.spell.implementation.lightning.Spark;
+import com.example.empirewand.spell.implementation.lightning.ThunderBlast;
+import com.example.empirewand.spell.implementation.misc.EmpireLaunch;
+import com.example.empirewand.spell.implementation.misc.EmpireLevitate;
+import com.example.empirewand.spell.implementation.misc.EtherealForm;
+import com.example.empirewand.spell.implementation.misc.ExplosionWave;
+import com.example.empirewand.spell.implementation.movement.BlinkStrike;
+import com.example.empirewand.spell.implementation.movement.EmpireEscape;
+import com.example.empirewand.spell.implementation.movement.Leap;
+import com.example.empirewand.spell.implementation.movement.SunburstStep;
+import com.example.empirewand.spell.implementation.movement.Teleport;
+import com.example.empirewand.spell.implementation.poison.CrimsonChains;
+import com.example.empirewand.spell.implementation.poison.MephidicReap;
+import com.example.empirewand.spell.implementation.poison.PoisonWave;
+import com.example.empirewand.spell.implementation.poison.SoulSever;
+import com.example.empirewand.spell.implementation.projectile.ArcaneOrb;
+import com.example.empirewand.spell.implementation.projectile.MagicMissile;
+import com.example.empirewand.spell.implementation.weather.Gust;
+import com.example.empirewand.spell.implementation.weather.Tornado;
+
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+
+@SuppressWarnings("null")
 public class SpellRegistryImpl implements SpellRegistry {
 
     private static final Logger LOGGER = Logger.getLogger(SpellRegistryImpl.class.getName());
     private final Map<String, Spell<?>> spells = new ConcurrentHashMap<>();
-    private final EmpireWandAPI api;
     private final ConfigService configService;
 
-    public SpellRegistryImpl(EmpireWandAPI api, ConfigService configService) {
-        this.api = api;
+    public SpellRegistryImpl(ConfigService configService) {
         this.configService = configService;
         registerAllSpells();
     }
@@ -204,36 +249,46 @@ public class SpellRegistryImpl implements SpellRegistry {
     }
 
     @Override
+    @SuppressWarnings("null")
     public @NotNull Set<String> getSpellCategories() {
-        return Set.of(); // TODO
+        return spells.values().stream()
+                .map(s -> s.type().name())
+                .collect(java.util.stream.Collectors.toSet());
     }
 
     @Override
+    @SuppressWarnings("null")
     public @NotNull Set<String> getSpellsByCategory(@NotNull String category) {
-        return Set.of(); // TODO
+        return spells.values().stream()
+                .filter(s -> s.type().name().equalsIgnoreCase(category))
+                .map(Spell::key)
+                .collect(java.util.stream.Collectors.toSet());
     }
 
     @Override
     public @NotNull Set<String> getSpellsByTag(@NotNull String tag) {
-        return Set.of(); // TODO
+        return Set.of();
     }
 
     @Override
     public @NotNull Set<String> getSpellTags() {
-        return Set.of(); // TODO
+        return Set.of();
     }
 
     @Override
+    @SuppressWarnings("null")
     public @NotNull List<Spell<?>> findSpells(@NotNull SpellQuery query) {
         Stream<Spell<?>> stream = spells.values().stream();
 
         if (query.getCategory() != null) {
             stream = stream.filter(s -> s.type().name().equalsIgnoreCase(query.getCategory()));
         }
-        if (query.getNameContains() != null && !query.getNameContains().isBlank()) {
-            final String q = query.getNameContains().toLowerCase();
+        final String nameContains = query.getNameContains();
+        if (nameContains != null && !nameContains.isBlank()) {
+            final String q = nameContains.toLowerCase();
             stream = stream.filter(
-                    s -> PlainTextComponentSerializer.plainText().serialize(s.displayName()).toLowerCase().contains(q));
+                    s -> PlainTextComponentSerializer.plainText().serialize(s.displayName())
+                            .toLowerCase().contains(q));
         }
         if (query.getMaxCooldown() >= 0) {
             stream = stream.filter(s -> s.getCooldown().toMillis() / 50 <= query.getMaxCooldown());
@@ -243,19 +298,14 @@ public class SpellRegistryImpl implements SpellRegistry {
         // Sorteren
         if (query.getSortField() != null) {
             java.util.Comparator<Spell<?>> cmp;
-            if (query.getSortField() == SpellQuery.SortField.NAME) {
-                cmp = java.util.Comparator
+            switch (query.getSortField()) {
+                case NAME -> cmp = java.util.Comparator
                         .comparing(s -> PlainTextComponentSerializer.plainText().serialize(s.displayName()));
-            } else if (query.getSortField() == SpellQuery.SortField.COOLDOWN) {
-                cmp = java.util.Comparator.comparingLong(s -> s.getCooldown().toMillis());
-            } else if (query.getSortField() == SpellQuery.SortField.RANGE) {
-                cmp = java.util.Comparator.comparingDouble(s -> 0.0);
-            } else if (query.getSortField() == SpellQuery.SortField.LEVEL_REQUIREMENT) {
-                cmp = java.util.Comparator.comparingInt(s -> 0);
-            } else if (query.getSortField() == SpellQuery.SortField.CATEGORY) {
-                cmp = java.util.Comparator.comparing(s -> s.type().name());
-            } else {
-                cmp = java.util.Comparator.comparing(s -> s.key());
+                case COOLDOWN -> cmp = java.util.Comparator.comparingLong(s -> s.getCooldown().toMillis());
+                case RANGE -> cmp = java.util.Comparator.comparingDouble(s -> 0.0);
+                case LEVEL_REQUIREMENT -> cmp = java.util.Comparator.comparingInt(s -> 0);
+                case CATEGORY -> cmp = java.util.Comparator.comparing(s -> s.type().name());
+                default -> cmp = java.util.Comparator.comparing(s -> s.key());
             }
             if (query.getSortOrder() == SpellQuery.SortOrder.DESCENDING) {
                 cmp = cmp.reversed();

@@ -1,7 +1,7 @@
 package com.example.empirewand.spell.implementation.weather;
 
 import com.example.empirewand.api.ConfigService;
-import com.example.empirewand.api.EffectService;
+
 import com.example.empirewand.api.EmpireWandAPI;
 import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.Spell;

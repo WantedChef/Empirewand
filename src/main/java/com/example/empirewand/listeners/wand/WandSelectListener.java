@@ -1,14 +1,14 @@
 package com.example.empirewand.listeners.wand;
 
-import com.example.empirewand.EmpireWandPlugin;
-import org.bukkit.entity.Player;
+import java.util.List;
+
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.List;
+import com.example.empirewand.EmpireWandPlugin;
 
 /**
  * Scrollen door spells via muiswiel.
@@ -22,7 +22,7 @@ public final class WandSelectListener implements Listener {
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
     public void onHotbarChange(PlayerItemHeldEvent event) {
-        Player p = event.getPlayer();
+        org.bukkit.entity.Player p = event.getPlayer();
 
         // Check if player is still online
         if (!p.isOnline()) {
@@ -34,7 +34,7 @@ public final class WandSelectListener implements Listener {
             return;
 
         List<String> spells = plugin.getWandService().getSpells(item);
-        if (spells == null || spells.isEmpty())
+        if (spells.isEmpty())
             return;
 
         int cur = plugin.getWandService().getActiveIndex(item);
@@ -45,19 +45,21 @@ public final class WandSelectListener implements Listener {
         }
 
         cur = Math.max(0, Math.min(cur, spells.size() - 1));
-        int dir = event.getNewSlot() > event.getPreviousSlot() ? 1 : -1;
-        int next = (cur + dir + spells.size()) % spells.size();
 
-        // Validate next index as well
-        if (next >= spells.size()) {
-            next = 0;
+        // Bepaal scrollrichting met wrap-around correctie voor de hotbar (9 slots)
+        final int hotbarSlots = 9;
+        int delta = (event.getNewSlot() - event.getPreviousSlot() + hotbarSlots) % hotbarSlots;
+        if (delta == 0) {
+            return; // Geen verandering
         }
+        int dir = (delta <= hotbarSlots / 2) ? 1 : -1; // dichterbij: vooruit, anders achteruit
+        int next = (cur + dir + spells.size()) % spells.size();
 
         String key = spells.get(next);
 
         // Validate spell exists
         if (plugin.getSpellRegistry().getSpell(key).isEmpty()) {
-            plugin.getLogger().warning("Invalid spell '" + key + "' in wand for player " + p.getName());
+            plugin.getLogger().warning(String.format("Invalid spell '%s' in wand for player %s", key, p.getName()));
             return;
         }
 
@@ -66,7 +68,7 @@ public final class WandSelectListener implements Listener {
 
         // Only show message if player is still online
         if (p.isOnline()) {
-            plugin.getFxService().actionBar(p, display != null ? display : key);
+            plugin.getFxService().actionBar(p, display);
         }
     }
 }

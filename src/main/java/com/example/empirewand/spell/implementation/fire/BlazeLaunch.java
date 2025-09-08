@@ -1,12 +1,11 @@
 package com.example.empirewand.spell.implementation.fire;
 
 import com.example.empirewand.api.EmpireWandAPI;
-import com.example.empirewand.api.EffectService;
+
 import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;

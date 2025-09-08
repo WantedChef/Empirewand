@@ -1,16 +1,14 @@
 package com.example.empirewand.spell.implementation.dark;
 
 import com.example.empirewand.api.EmpireWandAPI;
-import com.example.empirewand.api.EffectService;
+
 import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
@@ -20,7 +18,6 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
-import java.util.List;
 
 public class DarkCircle extends Spell<Void> {
 

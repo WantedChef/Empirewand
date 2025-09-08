@@ -1,17 +1,14 @@
 package com.example.empirewand.spell.implementation.movement;
 
 import com.example.empirewand.api.EmpireWandAPI;
-import com.example.empirewand.api.EffectService;
+
 import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
 import java.util.Collection;
-import java.util.List;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Color;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
@@ -113,8 +110,9 @@ public class SunburstStep extends Spell<Void> {
             if (entity instanceof Player) { // Simple ally check
                 if (!hitPlayers)
                     continue;
-                entity.setHealth(Math.min(entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue(),
-                        entity.getHealth() + allyHeal));
+                var maxAttr = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+                double max = maxAttr != null ? maxAttr.getValue() : entity.getHealth();
+                entity.setHealth(Math.min(max, entity.getHealth() + allyHeal));
             } else if (hitMobs) {
                 entity.damage(enemyDamage, player);
             }

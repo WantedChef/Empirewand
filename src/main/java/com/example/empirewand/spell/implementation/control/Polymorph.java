@@ -1,7 +1,7 @@
 package com.example.empirewand.spell.implementation.control;
 
 import com.example.empirewand.api.EmpireWandAPI;
-import com.example.empirewand.api.EffectService;
+
 import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
@@ -10,7 +10,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
+// removed async sleep usage; all Bukkit interactions happen on main thread via scheduler
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Particle;
@@ -20,7 +20,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Sheep;
-import org.bukkit.scheduler.BukkitRunnable;
+// no BukkitRunnable needed; using Bukkit scheduler directly
 import org.jetbrains.annotations.NotNull;
 
 public class Polymorph extends Spell<Void> {
@@ -65,7 +65,8 @@ public class Polymorph extends Spell<Void> {
         int durationTicks = spellConfig.getInt("values.duration-ticks", 100);
 
         Entity looked = player.getTargetEntity(12);
-        if (!(looked instanceof LivingEntity target) || target instanceof Player || !target.isValid() || target.isDead()) {
+        if (!(looked instanceof LivingEntity target) || target instanceof Player || !target.isValid()
+                || target.isDead()) {
             context.fx().fizzle(player);
             return null;
         }
@@ -84,31 +85,29 @@ public class Polymorph extends Spell<Void> {
 
         polymorphedEntities.put(sheep.getUniqueId(), target.getUniqueId());
 
-        CompletableFuture.runAsync(() -> {
-            try {
-                Thread.sleep(durationTicks * 50);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-
-            UUID originalId = polymorphedEntities.remove(sheep.getUniqueId());
+        final UUID sheepId = sheep.getUniqueId();
+        Bukkit.getScheduler().runTaskLater(context.plugin(), () -> {
+            UUID originalId = polymorphedEntities.remove(sheepId);
             if (originalId == null) {
                 return;
             }
 
-            if (sheep.isValid() && !sheep.isDead()) {
-                sheep.remove();
+            Entity sheepEntity = Bukkit.getEntity(sheepId);
+            if (sheepEntity instanceof Sheep s && s.isValid() && !s.isDead()) {
+                s.remove();
             }
 
             Entity originalEntity = Bukkit.getEntity(originalId);
-            if (originalEntity instanceof LivingEntity originalLivingEntity && originalLivingEntity.isValid() && !originalLivingEntity.isDead()) {
+            if (originalEntity instanceof LivingEntity originalLivingEntity && originalLivingEntity.isValid()
+                    && !originalLivingEntity.isDead()) {
                 originalLivingEntity.setAI(true);
                 originalLivingEntity.setInvulnerable(false);
                 originalLivingEntity.setInvisible(false);
                 originalLivingEntity.setCollidable(true);
-                context.fx().spawnParticles(originalLivingEntity.getLocation().add(0, 1.0, 0), Particle.CLOUD, 10, 0.3, 0.3, 0.3, 0.01);
+                context.fx().spawnParticles(originalLivingEntity.getLocation().add(0, 1.0, 0), Particle.CLOUD, 10, 0.3,
+                        0.3, 0.3, 0.01);
             }
-        });
+        }, Math.max(1L, durationTicks));
 
         return null;
     }
@@ -141,5 +140,54 @@ public class Polymorph extends Spell<Void> {
             }
         }
         polymorphedEntities.clear();
+    }
+
+    /**
+     * Revert a polymorph pair by sheep UUID if present. Removes the sheep and
+     * restores the original entity.
+     * Returns true if a mapping existed and was reverted.
+     */
+    public boolean revertBySheep(@NotNull UUID sheepId) {
+        UUID originalId = polymorphedEntities.remove(sheepId);
+        if (originalId == null)
+            return false;
+
+        Entity sheep = Bukkit.getEntity(sheepId);
+        if (sheep instanceof Sheep s && s.isValid() && !s.isDead()) {
+            s.remove();
+        }
+
+        Entity original = Bukkit.getEntity(originalId);
+        if (original instanceof LivingEntity living && living.isValid() && !living.isDead()) {
+            living.setAI(true);
+            living.setInvulnerable(false);
+            living.setInvisible(false);
+            living.setCollidable(true);
+        }
+        return true;
+    }
+
+    /**
+     * Revert by original UUID: remove the mapping and remove the sheep if present.
+     * Does not attempt to restore the original because it is being removed.
+     * Returns true if a mapping existed.
+     */
+    public boolean revertByOriginal(@NotNull UUID originalId) {
+        UUID sheepId = null;
+        for (Map.Entry<UUID, UUID> e : polymorphedEntities.entrySet()) {
+            if (e.getValue().equals(originalId)) {
+                sheepId = e.getKey();
+                break;
+            }
+        }
+        if (sheepId == null)
+            return false;
+        polymorphedEntities.remove(sheepId);
+
+        Entity sheep = Bukkit.getEntity(sheepId);
+        if (sheep instanceof Sheep s && s.isValid() && !s.isDead()) {
+            s.remove();
+        }
+        return true;
     }
 }

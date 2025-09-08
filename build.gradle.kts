@@ -11,7 +11,7 @@ version = "1.1.0"
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
@@ -47,10 +47,9 @@ tasks.test {
 }
 
 tasks.withType<JavaCompile>().configureEach {
-    options.release.set(17)
+    options.release.set(21)
     options.encoding = "UTF-8"
-    // Enable preview features to handle any potential unnamed class usage
-    options.compilerArgs.add("--enable-preview")
+    options.compilerArgs.addAll(listOf("-Xlint:all"))
 }
 
 checkstyle {
@@ -102,26 +101,8 @@ tasks.shadowJar {
     manifest {
         attributes["Main-Class"] = "com.example.empirewand.EmpireWandPlugin"
     }
-    // Relocate bStats to avoid conflicts
-    relocate("org.bstats", "com.example.empirewand.libs.bstats")
+    // NOTE: Relocation disabled temporarily due to ASM <-> Java 21 incompatibility in remapper
+    // relocate("org.bstats", "com.example.empirewand.libs.bstats")
 }
-
-// Create a fat JAR including runtime dependencies (fallback when Shadow plugin is unavailable)
-val fatJar = tasks.register<Jar>("fatJar") {
-    archiveClassifier.set("all")
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    from(sourceSets.main.get().output)
-    dependsOn(configurations.runtimeClasspath)
-    from({
-        configurations.runtimeClasspath.get()
-            .filter { it.name.endsWith(".jar") }
-            .map { zipTree(it) }
-    })
-    manifest {
-        attributes["Main-Class"] = "com.example.empirewand.EmpireWandPlugin"
-    }
-}
-
-artifacts { archives(tasks.shadowJar) }
 
 tasks.build { dependsOn(tasks.shadowJar) }

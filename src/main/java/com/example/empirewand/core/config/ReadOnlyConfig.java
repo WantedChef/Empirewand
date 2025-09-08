@@ -4,8 +4,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
-
 /**
  * Simple delegating wrapper that only exposes read methods we allow.
  */
@@ -21,7 +19,7 @@ public final class ReadOnlyConfig implements ReadableConfig {
 
     @Override
     public boolean getBoolean(@NotNull String path, boolean def) {
-        if (path == null || path.trim().isEmpty()) {
+        if (path.trim().isEmpty()) {
             return def;
         }
         try {
@@ -33,7 +31,7 @@ public final class ReadOnlyConfig implements ReadableConfig {
 
     @Override
     public int getInt(@NotNull String path, int def) {
-        if (path == null || path.trim().isEmpty()) {
+        if (path.trim().isEmpty()) {
             return def;
         }
         try {
@@ -45,7 +43,7 @@ public final class ReadOnlyConfig implements ReadableConfig {
 
     @Override
     public long getLong(@NotNull String path, long def) {
-        if (path == null || path.trim().isEmpty()) {
+        if (path.trim().isEmpty()) {
             return def;
         }
         try {
@@ -57,7 +55,7 @@ public final class ReadOnlyConfig implements ReadableConfig {
 
     @Override
     public double getDouble(@NotNull String path, double def) {
-        if (path == null || path.trim().isEmpty()) {
+        if (path.trim().isEmpty()) {
             return def;
         }
         try {
@@ -69,7 +67,7 @@ public final class ReadOnlyConfig implements ReadableConfig {
 
     @Override
     public @Nullable String getString(@NotNull String path, @Nullable String def) {
-        if (path == null || path.trim().isEmpty()) {
+        if (path.trim().isEmpty()) {
             return def;
         }
         try {

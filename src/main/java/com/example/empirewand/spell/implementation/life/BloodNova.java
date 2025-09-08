@@ -1,7 +1,7 @@
 package com.example.empirewand.spell.implementation.life;
 
 import com.example.empirewand.api.EmpireWandAPI;
-import com.example.empirewand.api.EffectService;
+
 import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;

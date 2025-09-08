@@ -2,14 +2,13 @@ package com.example.empirewand.spell.implementation.ice;
 
 import com.example.empirewand.api.EmpireWandAPI;
 import com.example.empirewand.api.ConfigService;
-import com.example.empirewand.api.EffectService;
+
 import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
 import com.example.empirewand.visual.RingRenderer;
 import com.example.empirewand.visual.SpiralEmitter;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -61,7 +60,8 @@ public class FrostNova extends Spell<Void> {
         double damage = spellConfig.getDouble("values.damage", 6.0);
         int slowDuration = spellConfig.getInt("values.slow-duration-ticks", 100);
         int slowAmplifier = spellConfig.getInt("values.slow-amplifier", 2);
-        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false);
+        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig()
+                .getBoolean("features.friendly-fire", false);
 
         for (var entity : player.getWorld().getNearbyEntities(player.getLocation(), radius, radius, radius)) {
             if (entity instanceof LivingEntity living) {
@@ -102,7 +102,6 @@ public class FrostNova extends Spell<Void> {
         private final int ringParticles;
         private final int swirlDensity;
         private final int burstCount;
-        private final SpellContext context;
         private double currentRadius = 0.4;
         private int ticks = 0;
 
@@ -114,7 +113,6 @@ public class FrostNova extends Spell<Void> {
             this.ringParticles = ringParticles;
             this.swirlDensity = swirlDensity;
             this.burstCount = burstCount;
-            this.context = context;
         }
 
         @Override

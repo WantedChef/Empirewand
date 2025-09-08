@@ -1,5 +1,13 @@
 package com.example.empirewand;
 
+import java.util.UUID;
+
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.event.HandlerList;
+import org.bukkit.plugin.java.JavaPlugin;
+
 import com.example.empirewand.api.EmpireWandAPI;
 import com.example.empirewand.api.PermissionService;
 import com.example.empirewand.api.SpellRegistry;
@@ -12,9 +20,12 @@ import com.example.empirewand.core.services.FxService;
 import com.example.empirewand.core.services.SpellRegistryImpl;
 import com.example.empirewand.core.services.metrics.DebugMetricsService;
 import com.example.empirewand.core.services.metrics.MetricsService;
+import com.example.empirewand.core.storage.Keys;
+import com.example.empirewand.core.task.TaskManager;
 import com.example.empirewand.core.text.TextService;
 import com.example.empirewand.core.util.PerformanceMonitor;
 import com.example.empirewand.listeners.combat.DeathSyncPolymorphListener;
+import com.example.empirewand.listeners.combat.PolymorphCleanupListener;
 import com.example.empirewand.listeners.combat.ExplosionControlListener;
 import com.example.empirewand.listeners.combat.FallDamageEtherealListener;
 import com.example.empirewand.listeners.player.PlayerJoinQuitListener;
@@ -23,15 +34,8 @@ import com.example.empirewand.listeners.wand.WandCastListener;
 import com.example.empirewand.listeners.wand.WandDropGuardListener;
 import com.example.empirewand.listeners.wand.WandSwapHandListener;
 import com.example.empirewand.visual.Afterimages;
-import com.example.empirewand.core.task.TaskManager;
-import com.example.empirewand.core.storage.Keys;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.event.HandlerList;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.LivingEntity;
-import java.util.UUID;
 
 @SuppressFBWarnings(value = { "EI_EXPOSE_REP",
         "EI_EXPOSE_REP2" }, justification = "Service getters intentionally expose internal singletons (Bukkit plugin architecture).")
@@ -67,8 +71,9 @@ public final class EmpireWandPlugin extends JavaPlugin {
             // Register API provider early so services depending on API can use it
             EmpireWandAPI.setProvider(new EmpireWandProviderImpl(this));
 
-            // Spell registry no longer requires an EmpireWandAPI instance; builders are constructed without it
-            this.spellRegistry = new SpellRegistryImpl(null, this.configService);
+            // Spell registry no longer requires an EmpireWandAPI instance; builders are
+            // constructed without it
+            this.spellRegistry = new SpellRegistryImpl(this.configService);
 
             // Metrics after spell registry exists
             this.metricsService = new MetricsService(this, this.configService, this.spellRegistry,
@@ -154,6 +159,11 @@ public final class EmpireWandPlugin extends JavaPlugin {
         // 6. Cleanup all active spells with ethereal forms, polymorphs, etc.
         try {
             cleanupActiveSpells();
+            var poly = this.spellRegistry.getSpell("polymorph");
+            if (poly.isPresent()
+                    && poly.get() instanceof com.example.empirewand.spell.implementation.control.Polymorph p) {
+                p.cleanup();
+            }
             getLogger().info("Active spells cleaned up");
         } catch (Exception e) {
             getLogger().warning(String.format("Error cleaning up active spells: %s", e.getMessage()));
@@ -193,6 +203,7 @@ public final class EmpireWandPlugin extends JavaPlugin {
         pm.registerEvents(new FallDamageEtherealListener(this), this);
         pm.registerEvents(new ExplosionControlListener(this), this);
         pm.registerEvents(new DeathSyncPolymorphListener(this), this);
+        pm.registerEvents(new PolymorphCleanupListener(this), this);
     }
 
     private void registerCommands() {

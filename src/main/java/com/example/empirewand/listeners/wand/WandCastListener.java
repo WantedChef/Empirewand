@@ -63,7 +63,8 @@ public final class WandCastListener implements Listener {
         Optional<Spell<?>> spellOpt = registry.getSpell(spellKey);
         if (spellOpt.isEmpty()) {
             plugin.getFxService().showError(player, "wand.unknown-spell");
-            plugin.getLogger().warning("Unknown spell '" + spellKey + "' on wand for player " + player.getName());
+            plugin.getLogger()
+                    .warning(String.format("Unknown spell '%s' on wand for player %s", spellKey, player.getName()));
             return;
         }
 
@@ -121,7 +122,7 @@ public final class WandCastListener implements Listener {
             if (player.isOnline()) {
                 fx.showError(player, "wand.cast-error");
             }
-            plugin.getLogger().warning("Spell cast error for '" + spellKey + "': " + t.getMessage());
+            plugin.getLogger().warning(String.format("Spell cast error for '%s': %s", spellKey, t.getMessage()));
             plugin.getMetricsService().recordFailedCast();
         }
     }
