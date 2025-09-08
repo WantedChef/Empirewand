@@ -2,6 +2,65 @@
 
 EmpireWand is a Minecraft Paper plugin for 1.20.6 providing magical wand mechanics with configurable spells.
 
+## Recent Refactor (v2.0-refactored)
+
+The spell system has been comprehensively refactored to improve maintainability, performance, and extensibility:
+
+### Key Changes
+
+- **Spell.java**: Converted to abstract class with generics for effects, builder pattern, async casting support, and enhanced error handling.
+- **CastResult.java**: Enhanced with enum result types, serialization for config persistence, particles/sounds integration, and custom SpellCastEvent.
+- **Prereq.java**: Implemented strategy pattern with subclasses (LevelPrereq, ItemPrereq), composite prerequisites with short-circuiting, and YAML config loading.
+- **ProjectileSpell.java**: Rewritten as abstract class extending Spell, with vector math for trajectory, homing capabilities, collision debouncing, and visual/audio feedback.
+- **Performance**: Added ConcurrentHashMap for cooldown caching, async projectile updates, and profiling for <1ms execution.
+- **Error Handling**: Custom SpellCastException, comprehensive logging with appropriate levels.
+- **Testing**: Unit tests with Mockito for edge cases, integration testing guidelines.
+
+### Spell Development Guidelines
+
+1. **Extend Spell<T>**: Create concrete spell classes extending `Spell<T>` where T is the effect type.
+2. **Use Builder Pattern**: Implement builder for complex spell configuration.
+3. **Prerequisites**: Use `PrereqInterface` subclasses or composite for requirements.
+4. **Async Casting**: Override `requiresAsyncExecution()` for heavy computations.
+5. **Projectile Spells**: Extend `ProjectileSpell` for projectile-based spells.
+6. **Error Handling**: Wrap Bukkit calls in try-catch, log appropriately.
+7. **Testing**: Write unit tests mocking Bukkit dependencies, cover edge cases.
+
+### Example Spell Implementation
+
+```java
+public class FireballSpell extends ProjectileSpell {
+
+    public FireballSpell() {
+        super(new Builder()
+            .name("Fireball")
+            .description("Launches a fiery projectile")
+            .manaCost(10)
+            .cooldown(Duration.ofSeconds(5))
+            .speed(1.5)
+            .isHoming(false)
+            .trailParticle(Particle.FLAME)
+            .hitSound(Sound.ENTITY_GENERIC_EXPLODE)
+            .build());
+    }
+
+    @Override
+    protected void handleHit(SpellContext context, Projectile projectile, ProjectileHitEvent event) {
+        // Handle impact logic
+        Location hitLocation = projectile.getLocation();
+        hitLocation.getWorld().createExplosion(hitLocation, 2.0f, false);
+    }
+}
+```
+
+## Recent Changes
+
+### Deprecation Fixes (September 2025)
+- Added compatibility `Prereq` class to resolve import errors for legacy spell implementations.
+- Updated `Polymorph.java` to use `PrereqInterface.NonePrereq()` for prerequisites.
+- Fixed compilation errors by ensuring all spell classes use correct APIs (`LegacySpell`, `PrereqInterface`).
+- Deprecated legacy `Prereq` usage in favor of `PrereqInterface` for better type safety and consistency.
+
 ## Setup
 
 1. Clone the repository.

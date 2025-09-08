@@ -1,7 +1,6 @@
 package com.example.empirewand.api.impl;
 
 import com.example.empirewand.api.ConfigService;
-import com.example.empirewand.api.EmpireWandService;
 import com.example.empirewand.api.ServiceHealth;
 import com.example.empirewand.api.Version;
 import org.jetbrains.annotations.NotNull;
@@ -45,6 +44,9 @@ public class ConfigServiceAdapter implements ConfigService {
      * @param core the core ConfigService to wrap
      */
     public ConfigServiceAdapter(com.example.empirewand.core.services.ConfigService core) {
+        if (core == null) {
+            throw new IllegalArgumentException("core ConfigService cannot be null");
+        }
         this.core = core;
     }
 
@@ -67,13 +69,34 @@ public class ConfigServiceAdapter implements ConfigService {
 
     @Override
     public @NotNull ServiceHealth getHealth() {
-        return ServiceHealth.HEALTHY; // Default healthy; can add core health check if implemented
+        try {
+            // Check if core service is available
+            if (core == null) {
+                return ServiceHealth.UNHEALTHY;
+            }
+            
+            // Check if configurations are loaded
+            if (core.getConfig() == null) {
+                return ServiceHealth.UNHEALTHY;
+            }
+            
+            return ServiceHealth.HEALTHY;
+        } catch (Exception e) {
+            return ServiceHealth.UNHEALTHY;
+        }
     }
 
     @Override
     public void reload() {
-        // Reload core config
-        core.loadConfigs();
+        try {
+            // Reload core configurations
+            if (core != null) {
+                core.loadConfigs();
+            }
+        } catch (Exception e) {
+            // Log error but don't propagate - graceful degradation
+            System.err.println("Failed to reload config service: " + e.getMessage());
+        }
     }
 
     // ConfigService implementations

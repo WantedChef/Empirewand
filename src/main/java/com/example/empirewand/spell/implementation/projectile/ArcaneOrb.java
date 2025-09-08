@@ -1,97 +1,126 @@
 package com.example.empirewand.spell.implementation.projectile;
 
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.api.EffectService;
+import com.example.empirewand.api.ConfigService;
+import com.example.empirewand.core.storage.Keys;
+import com.example.empirewand.spell.PrereqInterface;
+import com.example.empirewand.spell.ProjectileSpell;
+import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.SpellType;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Snowball;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 import org.bukkit.event.entity.ProjectileHitEvent;
-import org.bukkit.util.Vector;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
-import com.example.empirewand.core.storage.Keys;
-import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.SpellContext;
-import com.example.empirewand.spell.Prereq;
-import net.kyori.adventure.text.Component;
+import java.time.Duration;
 
-public class ArcaneOrb implements Spell {
-    @Override
-    public void execute(SpellContext context) {
-        Player player = context.caster();
+public class ArcaneOrb extends ProjectileSpell<Snowball> {
 
-        var spells = context.config().getSpellsConfig();
-        double speed = spells.getDouble("arcane-orb.values.speed", 0.6);
-        double radius = spells.getDouble("arcane-orb.values.radius", 3.5);
-        double damage = spells.getDouble("arcane-orb.values.damage", 8.0);
-        double knockback = spells.getDouble("arcane-orb.values.knockback", 0.6);
-        boolean friendlyFire = context.config().getConfig().getBoolean("features.friendly-fire", false);
+    public static class Builder extends ProjectileSpell.Builder<Snowball> {
+        public Builder(EmpireWandAPI api) {
+            super(api, Snowball.class);
+            this.name = "Arcane Orb";
+            this.description = "Launches an orb of arcane energy.";
+            this.manaCost = 12; // Example
+            this.cooldown = Duration.ofSeconds(8);
+            this.spellType = SpellType.PROJECTILE;
+            this.trailParticle = null; // Custom trail
+            this.hitSound = Sound.ENTITY_GENERIC_EXPLODE;
+        }
 
-        // Visual-only enhancement parameters
-        int trailLength = spells.getInt("arcane-orb.values.trail_length", 4);
-        int particleCount = spells.getInt("arcane-orb.values.particle_count", 3);
-        int blockLifetime = spells.getInt("arcane-orb.values.block_lifetime_ticks", 30);
-        int haloParticles = spells.getInt("arcane-orb.values.halo_particles", 8);
-        double haloSpeedDeg = spells.getDouble("arcane-orb.values.halo_rotation_speed", 12.0);
-
-        Location spawnLoc = player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(0.5));
-        Snowball orb = player.getWorld().spawn(spawnLoc, Snowball.class);
-        orb.setVelocity(player.getEyeLocation().getDirection().multiply(speed));
-        orb.setShooter(player);
-
-        // Tag projectile
-        orb.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL,
-                org.bukkit.persistence.PersistentDataType.STRING, "arcane-orb");
-
-        // Register hit listener for this cast
-        HitListener listener = new HitListener(context, radius, damage, knockback, friendlyFire);
-        context.plugin().getServer().getPluginManager().registerEvents(listener, context.plugin());
-
-        // Start orb visuals (halo + trailing temp blocks)
-        new OrbVisuals(context, orb, trailLength, particleCount, blockLifetime, haloParticles, haloSpeedDeg)
-                .runTaskTimer(context.plugin(), 0L, 1L);
-
-        // Launch FX
-        context.fx().playSound(player, Sound.ENTITY_EVOKER_CAST_SPELL, 0.8f, 1.2f);
-        context.fx().spawnParticles(player.getEyeLocation(), Particle.ENCHANT, 20, 0.3, 0.3, 0.3, 0.0);
+        @Override
+        @NotNull
+        public ProjectileSpell<Snowball> build() {
+            return new ArcaneOrb(this);
+        }
     }
 
-    /**
-     * Visual runnable providing rotating halo and trailing temporary SEA_LANTERN
-     * blocks that revert.
-     * Purely cosmetic; does not change gameplay.
-     */
-    private static final class OrbVisuals extends BukkitRunnable {
-        private final Snowball orb;
-        private final org.bukkit.World world;
-        private final int trailLength;
-        private final int particleCount;
-        private final int blockLifetime;
-        private final int haloParticles;
+    private ArcaneOrb(Builder builder) {
+        super(builder);
+    }
+
+    @Override
+    public String key() {
+        return "arcane-orb";
+    }
+
+    @Override
+    public PrereqInterface prereq() {
+        return new PrereqInterface.NonePrereq();
+    }
+
+    @Override
+    protected void launchProjectile(@NotNull SpellContext context) {
+        int trailLength = spellConfig.getInt("values.trail_length", 4);
+        int particleCount = spellConfig.getInt("values.particle_count", 3);
+        int blockLifetime = spellConfig.getInt("values.block_lifetime_ticks", 30);
+        int haloParticles = spellConfig.getInt("values.halo_particles", 8);
+        double haloSpeedDeg = spellConfig.getDouble("values.halo_rotation_speed", 12.0);
+
+        context.caster().launchProjectile(Snowball.class,
+                context.caster().getEyeLocation().getDirection().multiply(speed), projectile -> {
+                    projectile.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, PersistentDataType.STRING,
+                            key());
+                    projectile.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, PersistentDataType.STRING,
+                            context.caster().getUniqueId().toString());
+                    new OrbVisuals(projectile, trailLength, particleCount, blockLifetime, haloParticles, haloSpeedDeg)
+                            .runTaskTimer(context.plugin(), 0L, 1L);
+                });
+
+        context.fx().playSound(context.caster(), Sound.ENTITY_EVOKER_CAST_SPELL, 0.8f, 1.2f);
+    }
+
+    @Override
+    protected void handleHit(@NotNull SpellContext context, @NotNull Projectile projectile,
+            @NotNull ProjectileHitEvent event) {
+        double radius = spellConfig.getDouble("values.radius", 3.5);
+        double damage = spellConfig.getDouble("values.damage", 8.0);
+        double knockback = spellConfig.getDouble("values.knockback", 0.6);
+        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false);
+
+        context.fx().impact(projectile.getLocation(), Particle.EXPLOSION, 30, Sound.ENTITY_GENERIC_EXPLODE, 0.8f,
+                1.0f);
+
+        for (var e : projectile.getWorld().getNearbyLivingEntities(projectile.getLocation(), radius)) {
+            if (e.equals(context.caster()) && !friendlyFire)
+                continue;
+            e.damage(damage, context.caster());
+            Vector push = e.getLocation().toVector().subtract(projectile.getLocation().toVector()).normalize()
+                    .multiply(knockback).setY(0.2);
+            e.setVelocity(e.getVelocity().add(push));
+        }
+    }
+
+    private class OrbVisuals extends BukkitRunnable {
+        private final Projectile orb;
+        private final int trailLength, particleCount, blockLifetime, haloParticles;
         private final double haloSpeedRad;
-
-        private double angle = 0.0; // radians
+        private double angle = 0.0;
         private int tick = 0;
-
         private final java.util.Deque<TempBlock> queue = new java.util.ArrayDeque<>();
         private final java.util.Set<Block> ours = new java.util.HashSet<>();
 
-        OrbVisuals(SpellContext ctx, Snowball orb, int trailLength, int particleCount, int blockLifetime,
-                int haloParticles, double haloSpeedDeg) {
+        OrbVisuals(Projectile orb, int trailLength, int particleCount, int blockLifetime, int haloParticles,
+                double haloSpeedDeg) {
             this.orb = orb;
-            this.world = orb.getWorld();
-            this.trailLength = Math.max(1, trailLength);
-            this.particleCount = Math.max(1, particleCount);
-            this.blockLifetime = Math.max(5, blockLifetime);
-            this.haloParticles = Math.max(3, haloParticles);
-            this.haloSpeedRad = Math.toRadians(Math.max(1.0, haloSpeedDeg));
+            this.trailLength = trailLength;
+            this.particleCount = particleCount;
+            this.blockLifetime = blockLifetime;
+            this.haloParticles = haloParticles;
+            this.haloSpeedRad = Math.toRadians(haloSpeedDeg);
         }
 
         @Override
@@ -102,152 +131,50 @@ public class ArcaneOrb implements Spell {
                 return;
             }
 
-            // Halo rotation
-            Location center = orb.getLocation().clone();
-            double radius = 0.6; // fixed visual radius
+            Location center = orb.getLocation();
             for (int i = 0; i < haloParticles; i++) {
                 double theta = angle + (Math.PI * 2 * i / haloParticles);
-                double x = center.getX() + radius * Math.cos(theta);
-                double z = center.getZ() + radius * Math.sin(theta);
-                Location p = new Location(center.getWorld(), x, center.getY(), z);
-                world.spawnParticle(Particle.ENCHANT, p, 1, 0, 0, 0, 0);
-                if (i % 2 == 0) {
-                    world.spawnParticle(Particle.END_ROD, p, 1, 0, 0, 0, 0);
-                }
+                center.getWorld().spawnParticle(Particle.ENCHANT,
+                        center.clone().add(Math.cos(theta) * 0.6, 0, Math.sin(theta) * 0.6), 1, 0, 0, 0, 0);
             }
             angle += haloSpeedRad;
 
-            // Trail blocks & particles
-            Vector dir = orb.getVelocity().clone();
-            if (dir.lengthSquared() < 0.0001)
-                dir = orb.getLocation().getDirection();
-            dir.normalize();
-            Location base = orb.getLocation().clone().add(0, -0.1, 0);
+            Vector dir = orb.getVelocity().clone().normalize();
             for (int i = 0; i < trailLength; i++) {
-                Location l = base.clone().add(dir.clone().multiply(-i));
-                Block b = l.getBlock();
-                if (!ours.contains(b) && isReplaceable(b.getType())) {
-                    BlockData prev = b.getBlockData().clone();
-                    queue.addLast(new TempBlock(b, prev, tick + blockLifetime));
+                Block b = center.clone().add(dir.clone().multiply(-i)).getBlock();
+                if (!ours.contains(b) && b.getType().isAir()) {
+                    queue.addLast(new TempBlock(b, b.getBlockData(), tick + blockLifetime));
                     b.setType(Material.SEA_LANTERN, false);
                     ours.add(b);
-                    world.spawnParticle(Particle.BLOCK, l.clone().add(0.5, 0.5, 0.5), particleCount, 0.05, 0.05, 0.05,
-                            0,
-                            Material.SEA_LANTERN.createBlockData());
-                    world.spawnParticle(Particle.END_ROD, l, particleCount, 0.1, 0.1, 0.1, 0.01);
                 }
             }
 
-            // Expire old blocks
-            while (!queue.isEmpty() && queue.peekFirst().expireTick <= tick) {
-                TempBlock tb = queue.pollFirst();
-                if (tb.block.getType() == Material.SEA_LANTERN && ours.contains(tb.block)) {
-                    tb.block.setBlockData(tb.previous, false);
+            queue.removeIf(tb -> {
+                if (tb.expireTick <= tick) {
+                    tb.revert();
+                    ours.remove(tb.block());
+                    return true;
                 }
-                ours.remove(tb.block);
-            }
+                return false;
+            });
 
-            tick++;
-            if (tick > 20 * 12) { // safety stop at 12s
+            if (tick++ > 20 * 12) {
                 cleanup();
                 cancel();
             }
         }
 
         private void cleanup() {
-            while (!queue.isEmpty()) {
-                TempBlock tb = queue.pollFirst();
-                if (tb.block.getType() == Material.SEA_LANTERN && ours.contains(tb.block)) {
-                    tb.block.setBlockData(tb.previous, false);
-                }
-                ours.remove(tb.block);
+            queue.forEach(TempBlock::revert);
+            queue.clear();
+            ours.clear();
+        }
+
+        private record TempBlock(Block block, BlockData previous, int expireTick) {
+            void revert() {
+                if (block.getType() == Material.SEA_LANTERN)
+                    block.setBlockData(previous, false);
             }
         }
-
-        private boolean isReplaceable(Material m) {
-            return m == Material.AIR || m == Material.CAVE_AIR || m == Material.VOID_AIR ||
-                    m == Material.SHORT_GRASS || m == Material.TALL_GRASS || m == Material.SNOW || m == Material.FIRE;
-        }
-
-        private static final class TempBlock {
-            final Block block;
-            final BlockData previous;
-            final int expireTick;
-
-            TempBlock(Block block, BlockData previous, int expireTick) {
-                this.block = block;
-                this.previous = previous;
-                this.expireTick = expireTick;
-            }
-        }
-    }
-
-    private static class HitListener implements Listener {
-        private final SpellContext context;
-        private final double radius;
-        private final double damage;
-        private final double knockback;
-        private final boolean friendlyFire;
-
-        HitListener(SpellContext context, double radius, double damage, double knockback, boolean friendlyFire) {
-            this.context = context;
-            this.radius = radius;
-            this.damage = damage;
-            this.knockback = knockback;
-            this.friendlyFire = friendlyFire;
-        }
-
-        @EventHandler
-        public void onProjectileHit(ProjectileHitEvent event) {
-            Projectile projectile = event.getEntity();
-            if (!(projectile instanceof Snowball))
-                return;
-            String key = projectile.getPersistentDataContainer().get(Keys.PROJECTILE_SPELL,
-                    org.bukkit.persistence.PersistentDataType.STRING);
-            if (!"arcane-orb".equals(key))
-                return;
-
-            Location hit = projectile.getLocation();
-
-            // Impact FX
-            context.fx().impact(hit, Particle.EXPLOSION, 30, Sound.ENTITY_GENERIC_EXPLODE, 0.8f, 1.0f);
-
-            // AoE damage/knockback
-            for (var e : hit.getWorld().getNearbyEntities(hit, radius, radius, radius)) {
-                if (!(e instanceof LivingEntity living))
-                    continue;
-                if (!friendlyFire && living.equals(projectile.getShooter()))
-                    continue;
-                if (living.isDead() || !living.isValid())
-                    continue;
-
-                living.damage(damage, context.caster());
-                Vector push = living.getLocation().toVector().subtract(hit.toVector()).normalize().multiply(knockback)
-                        .setY(0.2);
-                living.setVelocity(living.getVelocity().add(push));
-            }
-
-            projectile.remove();
-        }
-    }
-
-    @Override
-    public String getName() {
-        return "arcane-orb";
-    }
-
-    @Override
-    public String key() {
-        return "arcane-orb";
-    }
-
-    @Override
-    public Component displayName() {
-        return Component.text("Arcane Orb");
-    }
-
-    @Override
-    public Prereq prereq() {
-        return new Prereq(true, Component.text(""));
     }
 }

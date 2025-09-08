@@ -4,7 +4,6 @@ import com.example.empirewand.EmpireWandPlugin;
 import com.example.empirewand.core.storage.Keys;
 import com.example.empirewand.spell.ProjectileSpell;
 import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.SpellContext;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -34,7 +33,7 @@ public final class ProjectileHitListener implements Listener {
         if (spellKey == null || spellKey.isEmpty())
             return;
 
-        Optional<Spell> spellOpt = plugin.getSpellRegistry().getSpell(spellKey);
+        Optional<Spell<?>> spellOpt = plugin.getSpellRegistry().getSpell(spellKey);
         if (spellOpt.isEmpty() || !(spellOpt.get() instanceof ProjectileSpell pSpell))
             return;
 
@@ -47,11 +46,10 @@ public final class ProjectileHitListener implements Listener {
             }
         }
 
-        SpellContext ctx = new SpellContext(plugin, caster, plugin.getConfigService(), plugin.getFxService());
         try {
-            pSpell.onProjectileHit(ctx, projectile, event);
+            pSpell.onProjectileHit(event, caster);
         } catch (Throwable t) {
-            plugin.getLogger().warning("ProjectileSpell error for '" + spellKey + "': " + t.getMessage());
+            plugin.getLogger().log(java.util.logging.Level.WARNING, "ProjectileSpell error for '" + spellKey + "'", t);
         }
     }
 }

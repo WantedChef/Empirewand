@@ -29,7 +29,7 @@ public class SpellCastEvent extends Event {
     private static final HandlerList HANDLERS = new HandlerList();
 
     private final Player caster;
-    private final Spell spell;
+    private final Spell<?> spell;
     private final String spellKey;
 
     /**
@@ -39,7 +39,7 @@ public class SpellCastEvent extends Event {
      * @param spell    the spell that was cast
      * @param spellKey the registry key of the spell
      */
-    public SpellCastEvent(@NotNull Player caster, @NotNull Spell spell, @NotNull String spellKey) {
+    public SpellCastEvent(@NotNull Player caster, @NotNull Spell<?> spell, @NotNull String spellKey) {
         this.caster = caster;
         this.spell = spell;
         this.spellKey = spellKey;
@@ -61,7 +61,7 @@ public class SpellCastEvent extends Event {
      * @return the spell instance
      */
     @NotNull
-    public Spell getSpell() {
+    public Spell<?> getSpell() {
         return spell;
     }
 

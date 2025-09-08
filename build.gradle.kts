@@ -3,6 +3,7 @@ plugins {
     checkstyle
     id("com.github.spotbugs") version "6.0.18"
     jacoco
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 group = "com.example"
@@ -10,7 +11,7 @@ version = "1.1.0"
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 
@@ -46,8 +47,10 @@ tasks.test {
 }
 
 tasks.withType<JavaCompile>().configureEach {
-    options.release.set(21)
+    options.release.set(17)
     options.encoding = "UTF-8"
+    // Enable preview features to handle any potential unnamed class usage
+    options.compilerArgs.add("--enable-preview")
 }
 
 checkstyle {
@@ -92,6 +95,17 @@ tasks.processResources {
     }
 }
 
+// Configure Shadow plugin for creating fat JAR
+tasks.shadowJar {
+    archiveClassifier.set("all")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes["Main-Class"] = "com.example.empirewand.EmpireWandPlugin"
+    }
+    // Relocate bStats to avoid conflicts
+    relocate("org.bstats", "com.example.empirewand.libs.bstats")
+}
+
 // Create a fat JAR including runtime dependencies (fallback when Shadow plugin is unavailable)
 val fatJar = tasks.register<Jar>("fatJar") {
     archiveClassifier.set("all")
@@ -108,6 +122,6 @@ val fatJar = tasks.register<Jar>("fatJar") {
     }
 }
 
-artifacts { archives(fatJar) }
+artifacts { archives(tasks.shadowJar) }
 
-tasks.build { dependsOn(fatJar) }
+tasks.build { dependsOn(tasks.shadowJar) }

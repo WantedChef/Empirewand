@@ -14,7 +14,6 @@ import com.example.empirewand.core.services.metrics.DebugMetricsService;
 import com.example.empirewand.core.services.metrics.MetricsService;
 import com.example.empirewand.core.text.TextService;
 import com.example.empirewand.core.util.PerformanceMonitor;
-import com.example.empirewand.core.wand.WandServiceImpl;
 import com.example.empirewand.listeners.combat.DeathSyncPolymorphListener;
 import com.example.empirewand.listeners.combat.ExplosionControlListener;
 import com.example.empirewand.listeners.combat.FallDamageEtherealListener;
@@ -24,9 +23,15 @@ import com.example.empirewand.listeners.wand.WandCastListener;
 import com.example.empirewand.listeners.wand.WandDropGuardListener;
 import com.example.empirewand.listeners.wand.WandSwapHandListener;
 import com.example.empirewand.visual.Afterimages;
-// import com.example.empirewand.api.EffectService; // Removed: unused import
+import com.example.empirewand.core.task.TaskManager;
+import com.example.empirewand.core.storage.Keys;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.event.HandlerList;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
+import java.util.UUID;
 
 @SuppressFBWarnings(value = { "EI_EXPOSE_REP",
         "EI_EXPOSE_REP2" }, justification = "Service getters intentionally expose internal singletons (Bukkit plugin architecture).")
@@ -42,27 +47,35 @@ public final class EmpireWandPlugin extends JavaPlugin {
     FxService fxService;
     PermissionService permissionService;
     com.example.empirewand.core.services.metrics.MetricsService metricsService;
+    private TaskManager taskManager;
 
     @Override
     public void onEnable() {
         try {
-            // Initialize services
+            // Initialize task manager first
+            this.taskManager = new TaskManager(this);
+
+            // Initialize core services
             this.configService = new ConfigService(this);
             this.textService = new TextService();
             this.performanceMonitor = new PerformanceMonitor(getLogger());
             this.debugMetricsService = new DebugMetricsService(1000); // 1000 samples
-            this.spellRegistry = new SpellRegistryImpl();
             this.cooldownService = new CooldownService();
-            this.wandService = new WandServiceImpl(this);
             this.fxService = new FxService(this.textService, this.performanceMonitor);
             this.permissionService = new com.example.empirewand.core.services.PermissionServiceImpl();
+
+            // Register API provider early so services depending on API can use it
+            EmpireWandAPI.setProvider(new EmpireWandProviderImpl(this));
+
+            // Spell registry no longer requires an EmpireWandAPI instance; builders are constructed without it
+            this.spellRegistry = new SpellRegistryImpl(null, this.configService);
+
+            // Metrics after spell registry exists
             this.metricsService = new MetricsService(this, this.configService, this.spellRegistry,
                     this.debugMetricsService);
 
-            // Register listeners
+            // Register listeners & commands
             registerListeners();
-
-            // Register commands
             registerCommands();
 
             getLogger().info(String.format("EmpireWand enabled on %s", getServer().getVersion()));
@@ -75,27 +88,96 @@ public final class EmpireWandPlugin extends JavaPlugin {
                 this.metricsService.initialize();
             }
 
-            // Register API provider
-            EmpireWandAPI.setProvider(new EmpireWandProviderImpl(this));
         } catch (Exception e) {
             getLogger().severe(String.format("Failed to enable EmpireWand: %s", e.getMessage()));
-            e.printStackTrace();
+            // Log full stack trace through logger to avoid direct stderr output
+            for (StackTraceElement ste : e.getStackTrace()) {
+                getLogger().severe(String.format("  at %s", ste.toString()));
+            }
             getServer().getPluginManager().disablePlugin(this);
         }
     }
 
     @Override
     public void onDisable() {
-        // Shutdown metrics
+        getLogger().info("Starting EmpireWand shutdown...");
+
+        // 1. Cancel all scheduled tasks first (use our task manager)
+        if (this.taskManager != null) {
+            try {
+                this.taskManager.cancelAllTasks();
+                getLogger().info(String.format("Cancelled all scheduled tasks (%d tasks)",
+                        this.taskManager.getActiveTaskCount()));
+            } catch (Exception e) {
+                getLogger().warning(String.format("Error cancelling scheduled tasks: %s", e.getMessage()));
+            }
+        }
+
+        // 2. Cleanup Afterimages system
+        try {
+            Afterimages.shutdown();
+            getLogger().info("Afterimages system shut down");
+        } catch (Exception e) {
+            getLogger().warning(String.format("Error shutting down afterimages: %s", e.getMessage()));
+        }
+
+        // 3. SpellRegistry – no explicit shutdown needed; ensure no hard references
+        // linger
+        if (this.spellRegistry != null) {
+            try {
+                getLogger().info("SpellRegistry ready for shutdown");
+            } catch (Exception e) {
+                getLogger().warning(String.format("Error handling spell registry during shutdown: %s", e.getMessage()));
+            }
+        }
+
+        // 4. Cleanup CooldownService
+        if (this.cooldownService != null) {
+            try {
+                this.cooldownService.shutdown();
+                getLogger().info("CooldownService shut down");
+            } catch (Exception e) {
+                getLogger().warning(String.format("Error shutting down cooldown service: %s", e.getMessage()));
+            }
+        }
+
+        // 5. Cleanup FxService
+        if (this.fxService != null) {
+            try {
+                this.fxService.shutdown();
+                getLogger().info("FxService shut down");
+            } catch (Exception e) {
+                getLogger().warning(String.format("Error shutting down FX service: %s", e.getMessage()));
+            }
+        }
+
+        // 6. Cleanup all active spells with ethereal forms, polymorphs, etc.
+        try {
+            cleanupActiveSpells();
+            getLogger().info("Active spells cleaned up");
+        } catch (Exception e) {
+            getLogger().warning(String.format("Error cleaning up active spells: %s", e.getMessage()));
+        }
+
+        // 7. Unregister all event listeners
+        try {
+            HandlerList.unregisterAll(this);
+            getLogger().info("Event listeners unregistered");
+        } catch (Exception e) {
+            getLogger().warning(String.format("Error unregistering event listeners: %s", e.getMessage()));
+        }
+
+        // 8. Shutdown metrics (existing code)
         if (this.metricsService != null) {
             try {
                 this.metricsService.shutdown();
+                getLogger().info("Metrics service shut down");
             } catch (Exception e) {
                 getLogger().warning(String.format("Error shutting down metrics: %s", e.getMessage()));
             }
         }
 
-        // Reset API provider to no-op
+        // 9. Reset API provider to no-op (existing code)
         EmpireWandAPI.clearProvider();
 
         getLogger().info("EmpireWand has been disabled");
@@ -182,16 +264,62 @@ public final class EmpireWandPlugin extends JavaPlugin {
     public TextService getTextService() {
         return textService;
     }
+
+    /**
+     * Get the task manager for centralized task tracking
+     */
+    public TaskManager getTaskManager() {
+        return taskManager;
+    }
+
+    /**
+     * Clean up all active spell effects when disabling
+     */
+    private void cleanupActiveSpells() {
+        // Clean up all players with active ethereal forms
+        for (Player player : getServer().getOnlinePlayers()) {
+            if (player.getPersistentDataContainer().has(Keys.ETHEREAL_ACTIVE)) {
+                player.setCollidable(true);
+                player.setInvulnerable(false);
+                player.getPersistentDataContainer().remove(Keys.ETHEREAL_ACTIVE);
+            }
+        }
+
+        // Clean up polymorph entities - get polymorph spell and clean its map
+        try {
+            var polymorph = this.spellRegistry.getSpell("polymorph");
+            if (polymorph.isPresent()
+                    && polymorph.get() instanceof com.example.empirewand.spell.implementation.control.Polymorph poly) {
+                var entities = poly.getPolymorphedEntities();
+                for (var entry : entities.entrySet()) {
+                    UUID sheepId = entry.getKey();
+                    UUID originalId = entry.getValue();
+
+                    // Remove sheep
+                    Entity sheep = getServer().getEntity(sheepId);
+                    if (sheep != null && sheep.isValid()) {
+                        sheep.remove();
+                    }
+
+                    // Restore original if possible
+                    Entity original = getServer().getEntity(originalId);
+                    if (original instanceof LivingEntity living && living.isValid() && !living.isDead()) {
+                        living.setAI(true);
+                        living.setInvulnerable(false);
+                        living.setInvisible(false);
+                        living.setCollidable(true);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            getLogger().warning(String.format("Error cleaning up polymorph entities: %s", e.getMessage()));
+        }
+    }
 }
 
 // ===== API PROVIDER IMPLEMENTATION =====
 
-class EmpireWandProviderImpl implements EmpireWandAPI.EmpireWandProvider {
-    private final EmpireWandPlugin plugin;
-
-    EmpireWandProviderImpl(EmpireWandPlugin plugin) {
-        this.plugin = plugin;
-    }
+record EmpireWandProviderImpl(EmpireWandPlugin plugin) implements EmpireWandAPI.EmpireWandProvider {
 
     @Override
     public SpellRegistry getSpellRegistry() {
@@ -239,4 +367,5 @@ class EmpireWandProviderImpl implements EmpireWandAPI.EmpireWandProvider {
     public boolean isCompatible(com.example.empirewand.api.Version version) {
         return version.getMajor() == 2 && version.getMinor() <= 0;
     }
+
 }

@@ -1,8 +1,10 @@
 package com.example.empirewand.spell.implementation.earth;
 
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
-import com.example.empirewand.spell.Prereq;
+import com.example.empirewand.spell.SpellType;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -11,39 +13,32 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.jetbrains.annotations.NotNull;
+import org.bukkit.configuration.ConfigurationSection;
 
-public class GraspingVines implements Spell {
-    @Override
-    public void execute(SpellContext context) {
-        Player player = context.caster();
-        Entity targetEntity = player.getTargetEntity(10);
-        if (!(targetEntity instanceof LivingEntity target)) {
-            // Fizzle feedback when no valid target in sight
-            context.fx().fizzle(player.getLocation());
-            return;
+import java.time.Duration;
+
+public class GraspingVines extends Spell<Void> {
+
+    public static class Builder extends Spell.Builder<Void> {
+        public Builder(EmpireWandAPI api) {
+            super(api);
+            this.name = "Grasping Vines";
+            this.description = "Roots a target briefly with conjured vines.";
+            this.manaCost = 6;
+            this.cooldown = Duration.ofSeconds(12);
+            this.spellType = SpellType.EARTH;
         }
 
-        var spells = context.config().getSpellsConfig();
-        boolean hitPlayers = spells.getBoolean("grasping-vines.flags.hit-players", true);
-        boolean hitMobs = spells.getBoolean("grasping-vines.flags.hit-mobs", true);
-        boolean isPlayer = target instanceof Player;
-        if ((isPlayer && !hitPlayers) || (!isPlayer && !hitMobs)) {
-            context.fx().fizzle(player.getLocation());
-            return;
+        @Override
+        @NotNull
+        public Spell<Void> build() {
+            return new GraspingVines(this);
         }
-
-        // Root/slow the target sharply for a short time (configurable)
-        int duration = spells.getInt("grasping-vines.values.duration-ticks", 60);
-        int amplifier = spells.getInt("grasping-vines.values.slow-amplifier", 250);
-        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, duration, amplifier));
-        // Vines grasp FX
-        context.fx().spawnParticles(target.getLocation().add(0, 0.2, 0), Particle.SPORE_BLOSSOM_AIR, 18, 0.6, 0.4, 0.6, 0.0);
-        context.fx().playSound(target.getLocation(), Sound.BLOCK_VINE_STEP, 0.8f, 0.9f);
     }
 
-    @Override
-    public String getName() {
-        return "grasping-vines";
+    private GraspingVines(Builder builder) {
+        super(builder);
     }
 
     @Override
@@ -52,12 +47,37 @@ public class GraspingVines implements Spell {
     }
 
     @Override
-    public Component displayName() {
-        return Component.text("Grasping Vines");
+    public PrereqInterface prereq() {
+        return new PrereqInterface.NonePrereq();
     }
 
     @Override
-    public Prereq prereq() {
-        return new Prereq(true, Component.text(""));
+    protected Void executeSpell(SpellContext context) {
+        Player player = context.caster();
+        Entity targetEntity = player.getTargetEntity(10);
+        if (!(targetEntity instanceof LivingEntity target)) {
+            EmpireWandAPI.getService(com.example.empirewand.api.EffectService.class).fizzle(player.getLocation());
+            return null;
+        }
+
+        boolean hitPlayers = this.spellConfig.getBoolean("flags.hit-players", true);
+        boolean hitMobs = this.spellConfig.getBoolean("flags.hit-mobs", true);
+        if ((target instanceof Player && !hitPlayers) || (!(target instanceof Player) && !hitMobs)) {
+            EmpireWandAPI.getService(com.example.empirewand.api.EffectService.class).fizzle(player.getLocation());
+            return null;
+        }
+
+        int duration = this.spellConfig.getInt("values.duration-ticks", 60);
+        int amplifier = this.spellConfig.getInt("values.slow-amplifier", 250);
+        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, duration, amplifier));
+
+        EmpireWandAPI.getService(com.example.empirewand.api.EffectService.class).spawnParticles(target.getLocation().add(0, 0.2, 0), Particle.SPORE_BLOSSOM_AIR, 18, 0.6, 0.4, 0.6, 0.0);
+        EmpireWandAPI.getService(com.example.empirewand.api.EffectService.class).playSound(target.getLocation(), Sound.BLOCK_VINE_STEP, 0.8f, 0.9f);
+        return null;
+    }
+
+    @Override
+    protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
+        // Instant effect.
     }
 }

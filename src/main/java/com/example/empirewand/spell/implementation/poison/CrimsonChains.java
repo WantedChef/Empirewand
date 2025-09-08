@@ -1,163 +1,52 @@
 package com.example.empirewand.spell.implementation.poison;
 
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.api.EffectService;
+import com.example.empirewand.spell.PrereqInterface;
+import com.example.empirewand.spell.ProjectileSpell;
+import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.SpellType;
+import net.kyori.adventure.text.Component;
+import org.bukkit.Color;
+import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Snowball;
+import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.util.Vector;
-import org.bukkit.Location;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
-import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.SpellContext;
-import com.example.empirewand.spell.Prereq;
-import net.kyori.adventure.text.Component;
+public class CrimsonChains extends ProjectileSpell<Snowball> {
 
-@edu.umd.cs.findbugs.annotations.SuppressFBWarnings(value = {
-        "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE" }, justification = "Projectile/caster references validated via Bukkit API; additional guards retained for defensive clarity.")
-public class CrimsonChains implements Spell {
-    @Override
-    public void execute(SpellContext context) {
-        Player player = context.caster();
-        if (player == null || !player.isValid()) {
-            return; // Defensive: context should always supply caster
-        }
-
-        // Config values
-        var spells = context.config().getSpellsConfig();
-        double pullStrength = spells.getDouble("crimson-chains.values.pull-strength", 0.5);
-        int slownessDuration = spells.getInt("crimson-chains.values.slowness-duration-ticks", 40);
-        int slownessAmplifier = spells.getInt("crimson-chains.values.slowness-amplifier", 1);
-        double projectileSpeed = spells.getDouble("crimson-chains.values.projectile-speed", 1.5);
-        boolean hitPlayers = spells.getBoolean("crimson-chains.flags.hit-players", true);
-        boolean hitMobs = spells.getBoolean("crimson-chains.flags.hit-mobs", true);
-
-        // Launch snowball projectile
-        Snowball projectile = player.launchProjectile(Snowball.class);
-        if (projectile == null) {
-            return; // Could not spawn
-        }
-        projectile.setVelocity(player.getLocation().getDirection().multiply(projectileSpeed));
-
-        // Track the projectile
-        new ProjectileTracker(projectile, player, pullStrength, slownessDuration, slownessAmplifier, hitPlayers,
-                hitMobs, context).runTaskTimer(context.plugin(), 0L, 1L);
-
-        // Visuals
-        spawnChainTrail(projectile.getLocation(), context);
-    }
-
-    private static class ProjectileTracker extends BukkitRunnable {
-        private final Snowball projectile;
-        private final Player caster;
-        private final double pullStrength;
-        private final int slownessDuration;
-        private final int slownessAmplifier;
-        private final boolean hitPlayers;
-        private final boolean hitMobs;
-        private final SpellContext context;
-        private Location lastLocation;
-
-        public ProjectileTracker(Snowball projectile, Player caster, double pullStrength, int slownessDuration,
-                int slownessAmplifier, boolean hitPlayers, boolean hitMobs, SpellContext context) {
-            this.projectile = projectile;
-            this.caster = caster;
-            this.pullStrength = pullStrength;
-            this.slownessDuration = slownessDuration;
-            this.slownessAmplifier = slownessAmplifier;
-            this.hitPlayers = hitPlayers;
-            this.hitMobs = hitMobs;
-            this.context = context;
-            this.lastLocation = projectile.getLocation().clone();
+    public static class Builder extends ProjectileSpell.Builder<Snowball> {
+        public Builder(EmpireWandAPI api) {
+            super(api, Snowball.class);
+            this.name = "Crimson Chains";
+            this.description = "Launches a chain that pulls an enemy towards you and slows them.";
+            this.manaCost = 8; // Example
+            this.cooldown = java.time.Duration.ofSeconds(12);
+            this.spellType = SpellType.POISON;
+            this.trailParticle = null; // Custom trail
+            this.hitSound = Sound.BLOCK_CHAIN_BREAK;
         }
 
         @Override
-        public void run() {
-            if (projectile.isDead() || !projectile.isValid()) {
-                this.cancel();
-                return;
-            }
-
-            // Check for hits (projectile world guaranteed non-null)
-            var world = projectile.getWorld();
-            for (LivingEntity entity : world.getLivingEntities()) {
-                if (entity.getLocation().distance(projectile.getLocation()) <= 1.5 && !entity.equals(caster)) {
-                    if (entity instanceof Player && !hitPlayers)
-                        continue;
-                    if (!(entity instanceof Player) && !hitMobs)
-                        continue;
-
-                    // Apply effects
-                    applyChainEffects(entity, caster, pullStrength, slownessDuration, slownessAmplifier);
-
-                    // Remove projectile
-                    projectile.remove();
-                    this.cancel();
-                    return;
-                }
-            }
-
-            // Spawn trail particles
-            spawnChainTrail(projectile.getLocation(), lastLocation);
-            lastLocation = projectile.getLocation().clone();
-        }
-
-        private void applyChainEffects(LivingEntity target, Player caster, double pullStrength, int slownessDuration,
-                int slownessAmplifier) {
-            // Apply slowness
-            target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, slownessDuration, slownessAmplifier));
-
-            // Apply pull (unless it's a boss - simplified check)
-            if (!isBoss(target)) {
-                Vector pullVector = caster.getLocation().toVector().subtract(target.getLocation().toVector())
-                        .normalize();
-                pullVector.multiply(pullStrength);
-                target.setVelocity(target.getVelocity().add(pullVector));
-            }
-
-            // SFX
-            context.fx().playSound(target.getLocation(), Sound.BLOCK_CHAIN_BREAK, 1.0f, 0.8f);
-        }
-
-        private boolean isBoss(LivingEntity entity) {
-            // Simplified boss check - in practice you'd check for specific boss entities
-            var attr = entity.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH);
-            double maxHealth = attr != null ? attr.getValue() : 0.0;
-            return maxHealth > 100;
-        }
-
-        private void spawnChainTrail(Location current, Location last) {
-            if (current == null || last == null || current.getWorld() == null) {
-                return;
-            }
-            Vector direction = current.toVector().subtract(last.toVector());
-            double distance = direction.length();
-            if (distance == 0) {
-                return;
-            }
-            direction.normalize();
-
-            for (double d = 0; d <= distance; d += 0.2) {
-                Location particleLoc = last.clone().add(direction.clone().multiply(d));
-                particleLoc.getWorld().spawnParticle(Particle.DUST, particleLoc, 1,
-                        new Particle.DustOptions(org.bukkit.Color.fromRGB(128, 0, 0), 1.0f));
-            }
+        @NotNull
+        public ProjectileSpell<Snowball> build() {
+            return new CrimsonChains(this);
         }
     }
 
-    private void spawnChainTrail(Location location, SpellContext context) {
-        // Initial trail
-        // Location/world from projectile spawn are guaranteed non-null
-        location.getWorld().spawnParticle(Particle.DUST, location, 3,
-                new Particle.DustOptions(org.bukkit.Color.fromRGB(128, 0, 0), 1.0f));
-    }
-
-    @Override
-    public String getName() {
-        return "crimson-chains";
+    private CrimsonChains(Builder builder) {
+        super(builder);
     }
 
     @Override
@@ -166,12 +55,65 @@ public class CrimsonChains implements Spell {
     }
 
     @Override
-    public Component displayName() {
-        return Component.text("Crimson Chains");
+    public PrereqInterface prereq() {
+        return new PrereqInterface.NonePrereq();
     }
 
     @Override
-    public Prereq prereq() {
-        return new Prereq(true, Component.text(""));
+    protected void launchProjectile(@NotNull SpellContext context) {
+        super.launchProjectile(context);
+        // The base class handles launching. We could add a custom sound here.
+    }
+
+    @Override
+    protected void handleHit(@NotNull SpellContext context, @NotNull Projectile projectile, @NotNull ProjectileHitEvent event) {
+        if (!(event.getHitEntity() instanceof LivingEntity target)) return;
+
+        boolean hitPlayers = spellConfig.getBoolean("flags.hit-players", true);
+        boolean hitMobs = spellConfig.getBoolean("flags.hit-mobs", true);
+        if ((target instanceof Player && !hitPlayers) || (!(target instanceof Player) && !hitMobs)) return;
+
+        double pullStrength = spellConfig.getDouble("values.pull-strength", 0.5);
+        int slownessDuration = spellConfig.getInt("values.slowness-duration-ticks", 40);
+        int slownessAmplifier = spellConfig.getInt("values.slowness-amplifier", 1);
+
+        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, slownessDuration, slownessAmplifier));
+
+        AttributeInstance maxHealthAttr = target.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        boolean isBoss = maxHealthAttr != null && maxHealthAttr.getBaseValue() > 100;
+
+        if (!isBoss) {
+            Vector pullVector = context.caster().getLocation().toVector().subtract(target.getLocation().toVector()).normalize();
+            target.setVelocity(target.getVelocity().add(pullVector.multiply(pullStrength)));
+        }
+
+        new ChainVisual(context, context.caster().getEyeLocation(), target).runTaskTimer(context.plugin(), 0L, 1L);
+    }
+
+    private class ChainVisual extends BukkitRunnable {
+        private final SpellContext context;
+        private final Location start;
+        private final LivingEntity target;
+        private int ticks = 0;
+
+        public ChainVisual(SpellContext context, Location start, LivingEntity target) {
+            this.context = context;
+            this.start = start;
+            this.target = target;
+        }
+
+        @Override
+        public void run() {
+            if (ticks++ > 20 || !target.isValid()) {
+                this.cancel();
+                return;
+            }
+            Location end = target.getEyeLocation();
+            Vector vector = end.toVector().subtract(start.toVector());
+            for (double i = 0; i < vector.length(); i += 0.2) {
+                Location point = start.clone().add(vector.clone().normalize().multiply(i));
+                context.fx().spawnParticles(point, Particle.DUST, 1, 0, 0, 0, 0, new Particle.DustOptions(Color.fromRGB(128, 0, 0), 1.0f));
+            }
+        }
     }
 }

@@ -1,98 +1,107 @@
 package com.example.empirewand.spell.implementation.fire;
 
-import org.bukkit.Location;
-import org.bukkit.Particle;
-import org.bukkit.Sound;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
-import org.bukkit.util.Vector;
+    import com.example.empirewand.api.EmpireWandAPI;
+    import com.example.empirewand.api.ConfigService;
+    import com.example.empirewand.api.EffectService;
+    import com.example.empirewand.spell.PrereqInterface;
+    import com.example.empirewand.spell.Spell;
+    import com.example.empirewand.spell.SpellContext;
+    import com.example.empirewand.spell.SpellType;
+    import java.util.ArrayList;
+    import java.util.List;
+    import net.kyori.adventure.text.Component;
+    import org.bukkit.Location;
+    import org.bukkit.Particle;
+    import org.bukkit.Sound;
+    import org.bukkit.entity.LivingEntity;
+    import org.bukkit.entity.Player;
+    import org.bukkit.util.Vector;
+    import org.jetbrains.annotations.NotNull;
 
-import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.SpellContext;
-import com.example.empirewand.spell.Prereq;
-import net.kyori.adventure.text.Component;
+    public class FlameWave extends Spell<Void> {
 
-import java.util.ArrayList;
-import java.util.List;
+        public static class Builder extends Spell.Builder<Void> {
+            public Builder(EmpireWandAPI api) {
+                super(api);
+                this.name = "Flame Wave";
+                this.description = "Unleashes a wave of fire in a cone.";
+                this.manaCost = 7; // Example
+                this.cooldown = java.time.Duration.ofSeconds(6);
+                this.spellType = SpellType.FIRE;
+            }
 
-public class FlameWave implements Spell {
-    @Override
-    public void execute(SpellContext context) {
-        Player player = context.caster();
-
-        // Config values
-        var spells = context.config().getSpellsConfig();
-        double range = spells.getDouble("flame-wave.values.range", 6.0);
-        double coneAngle = spells.getDouble("flame-wave.values.cone-angle-degrees", 60.0);
-        double damage = spells.getDouble("flame-wave.values.damage", 4.0); // 2 hearts
-        int fireTicks = spells.getInt("flame-wave.values.fire-ticks", 80); // 4 seconds
-        boolean friendlyFire = context.config().getConfig().getBoolean("features.friendly-fire", false);
-
-        // Find entities in cone
-        List<LivingEntity> targets = getEntitiesInCone(player, range, coneAngle);
-
-        // Apply fire damage and burn to targets
-        for (LivingEntity target : targets) {
-            if (target.equals(player) && !friendlyFire) continue;
-            if (target.isDead() || !target.isValid()) continue;
-
-            // Apply damage
-            target.damage(damage, player);
-
-            // Set target on fire
-            target.setFireTicks(fireTicks);
-
-            // Effects
-            context.fx().spawnParticles(target.getLocation(), Particle.FLAME, 10, 0.2, 0.2, 0.2, 0.05);
-            context.fx().spawnParticles(target.getLocation(), Particle.SMOKE, 5, 0.2, 0.2, 0.2, 0.1);
-        }
-
-        // Cast sound
-        context.fx().playSound(player, Sound.ENTITY_BLAZE_SHOOT, 0.8f, 0.8f);
-    }
-
-    private List<LivingEntity> getEntitiesInCone(Player player, double range, double coneAngle) {
-        List<LivingEntity> targets = new ArrayList<>();
-        Location playerLoc = player.getEyeLocation();
-        Vector playerDir = playerLoc.getDirection().normalize();
-
-        for (var entity : player.getWorld().getNearbyEntities(playerLoc, range, range, range)) {
-            if (!(entity instanceof LivingEntity living)) continue;
-
-            Vector toEntity = living.getEyeLocation().toVector().subtract(playerLoc.toVector());
-            double distance = toEntity.length();
-
-            if (distance > range) continue;
-
-            // Check if entity is within cone angle
-            Vector toEntityNormalized = toEntity.normalize();
-            double angle = Math.toDegrees(playerDir.angle(toEntityNormalized));
-
-            if (angle <= coneAngle / 2) {
-                targets.add(living);
+            @Override
+            @NotNull
+            public Spell<Void> build() {
+                return new FlameWave(this);
             }
         }
 
-        return targets;
-    }
+        private FlameWave(Builder builder) {
+            super(builder);
+        }
 
-    @Override
-    public String getName() {
-        return "flame-wave";
-    }
+        @Override
+        public String key() {
+            return "flame-wave";
+        }
 
-    @Override
-    public String key() {
-        return "flame-wave";
-    }
+        @Override
+        public PrereqInterface prereq() {
+            return new PrereqInterface.NonePrereq();
+        }
 
-    @Override
-    public Component displayName() {
-        return Component.text("Flame Wave");
-    }
+        @Override
+        protected Void executeSpell(SpellContext context) {
+            Player player = context.caster();
 
-    @Override
-    public Prereq prereq() {
-        return new Prereq(true, Component.text(""));
+            double range = spellConfig.getDouble("values.range", 6.0);
+            double coneAngle = spellConfig.getDouble("values.cone-angle-degrees", 60.0);
+            double damage = spellConfig.getDouble("values.damage", 4.0);
+            int fireTicks = spellConfig.getInt("values.fire-ticks", 80);
+            boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false);
+
+            List<LivingEntity> targets = getEntitiesInCone(player, range, coneAngle);
+
+            for (LivingEntity target : targets) {
+                if (target.equals(player) && !friendlyFire)
+                    continue;
+                if (target.isDead() || !target.isValid())
+                    continue;
+
+                target.damage(damage, player);
+                target.setFireTicks(fireTicks);
+
+                context.fx().spawnParticles(target.getLocation(), Particle.FLAME, 10, 0.2, 0.2, 0.2, 0.05);
+                context.fx().spawnParticles(target.getLocation(), Particle.FLAME, 10, 0.2, 0.2, 0.2, 0.05);
+                context.fx().spawnParticles(target.getLocation(), Particle.SMOKE, 5, 0.2, 0.2, 0.2, 0.1);
+            }
+
+            context.fx().playSound(player, Sound.ENTITY_BLAZE_SHOOT, 0.8f, 0.8f);
+            return null;
+        }
+
+        @Override
+        protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
+            // Instant effect.
+        }
+
+        private List<LivingEntity> getEntitiesInCone(Player player, double range, double coneAngle) {
+            List<LivingEntity> targets = new ArrayList<>();
+            Location playerLoc = player.getEyeLocation();
+            Vector playerDir = playerLoc.getDirection().normalize();
+
+            for (var entity : player.getWorld().getNearbyEntities(playerLoc, range, range, range)) {
+                if (entity instanceof LivingEntity living) {
+                    Vector toEntity = living.getEyeLocation().toVector().subtract(playerLoc.toVector());
+                    if (toEntity.lengthSquared() > range * range)
+                        continue;
+
+                    if (playerDir.angle(toEntity.normalize()) < Math.toRadians(coneAngle / 2.0)) {
+                        targets.add(living);
+                    }
+                }
+            }
+            return targets;
+        }
     }
-}

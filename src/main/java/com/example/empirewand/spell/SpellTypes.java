@@ -1,79 +1,116 @@
 package com.example.empirewand.spell;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 /**
- * Centralized helper for resolving a SpellType from a spell key.
- * Keeps us from having to touch every spell implementation.
+ * Utility class for working with SpellType enums.
+ * Provides methods to resolve spell types from keys and get valid type names.
  */
 public final class SpellTypes {
-    private static final List<String> LIGHTNING_PREFIXES = List.of("lightning-", "thunder-", "spark", "little-spark",
-            "solar-lance", "chain-lightning", "lightning-");
-    private static final List<String> POISON_PREFIXES = List.of("poison-", "mephidic-", "crimson-chains", "soul-sever");
-    private static final List<String> LIFE_PREFIXES = List.of("blood-", "life-", "hemorrhage");
-    private static final List<String> HEAL_PREFIXES = List.of("heal", "radiant-beacon", "god-cloud", "blood-barrier");
-    private static final List<String> DARK_PREFIXES = List.of("dark-", "shadow-");
-    private static final List<String> FIRE_PREFIXES = List.of("fireball", "flame-", "blaze-", "explosive",
-            "explosion-", "comet", "empire-comet", "comet-shower");
-    private static final List<String> ICE_PREFIXES = List.of("frost-", "glacial-", "ice-");
-    private static final List<String> EARTH_PREFIXES = List.of("sandstorm", "grasping-", "earth-", "lightwall");
-    private static final List<String> WEATHER_PREFIXES = List.of("gust", "tornado");
-    private static final List<String> MOVEMENT_PREFIXES = List.of("teleport", "blink-", "sunburst-", "leap",
-            "empire-escape");
-    private static final List<String> PROJECTILE_PREFIXES = List.of("magic-missile", "arcane-orb");
-    private static final List<String> AURA_PREFIXES = List.of("empire-aura", "aura");
-    private static final List<String> CONTROL_PREFIXES = List.of("polymorph", "confuse", "stasis-");
 
     private SpellTypes() {
+        // Utility class
     }
 
-    public static SpellType resolveTypeFromKey(String key) {
-        if (key == null)
-            return SpellType.MISC;
-        String k = key.toLowerCase(Locale.ROOT);
-        if (startsWithAny(k, LIGHTNING_PREFIXES))
+    /**
+     * Resolves a SpellType from a spell key.
+     * Uses common naming patterns to determine the type.
+     *
+     * @param spellKey the spell key to resolve
+     * @return the resolved SpellType, or null if not found
+     */
+    public static SpellType resolveTypeFromKey(String spellKey) {
+        if (spellKey == null || spellKey.trim().isEmpty()) {
+            return null;
+        }
+
+        String key = spellKey.toLowerCase(Locale.ENGLISH);
+
+        // Check for exact matches first
+        for (SpellType type : SpellType.values()) {
+            if (key.contains(type.name().toLowerCase(Locale.ENGLISH))) {
+                return type;
+            }
+        }
+
+        // Check for common patterns
+        if (key.contains("lightning") || key.contains("spark") || key.contains("bolt") ||
+                key.contains("thunder") || key.contains("chain") || key.contains("solar")) {
             return SpellType.LIGHTNING;
-        if (startsWithAny(k, POISON_PREFIXES))
+        }
+
+        if (key.contains("poison") || key.contains("toxic") || key.contains("venom") ||
+                key.contains("mephidic") || key.contains("crimson")) {
             return SpellType.POISON;
-        if (startsWithAny(k, LIFE_PREFIXES))
+        }
+
+        if (key.contains("life") || key.contains("blood") || key.contains("vampir") ||
+                key.contains("drain") || key.contains("steal") || key.contains("reap")) {
             return SpellType.LIFE;
-        if (startsWithAny(k, HEAL_PREFIXES))
+        }
+
+        if (key.contains("heal") || key.contains("god") || key.contains("radiant") ||
+                key.contains("beacon")) {
             return SpellType.HEAL;
-        if (startsWithAny(k, DARK_PREFIXES))
+        }
+
+        if (key.contains("dark") || key.contains("shadow") || key.contains("void") ||
+                key.contains("ritual") || key.contains("unmaking")) {
             return SpellType.DARK;
-        if (startsWithAny(k, FIRE_PREFIXES))
+        }
+
+        if (key.contains("fire") || key.contains("flame") || key.contains("blaze") ||
+                key.contains("explosive") || key.contains("comet") || key.contains("fireball")) {
             return SpellType.FIRE;
-        if (startsWithAny(k, PROJECTILE_PREFIXES))
-            return SpellType.PROJECTILE;
-        if (startsWithAny(k, ICE_PREFIXES))
+        }
+
+        if (key.contains("ice") || key.contains("frost") || key.contains("glacial") ||
+                key.contains("nova")) {
             return SpellType.ICE;
-        if (startsWithAny(k, EARTH_PREFIXES))
+        }
+
+        if (key.contains("earth") || key.contains("quake") || key.contains("grasp") ||
+                key.contains("lightwall")) {
             return SpellType.EARTH;
-        if (startsWithAny(k, WEATHER_PREFIXES))
+        }
+
+        if (key.contains("weather") || key.contains("gust") || key.contains("tornado")) {
             return SpellType.WEATHER;
-        if (startsWithAny(k, MOVEMENT_PREFIXES))
+        }
+
+        if (key.contains("movement") || key.contains("teleport") || key.contains("blink") ||
+                key.contains("escape") || key.contains("leap") || key.contains("sunburst")) {
             return SpellType.MOVEMENT;
-        if (startsWithAny(k, AURA_PREFIXES))
+        }
+
+        if (key.contains("projectile") || key.contains("orb") || key.contains("missile")) {
+            return SpellType.PROJECTILE;
+        }
+
+        if (key.contains("aura") || key.contains("empire")) {
             return SpellType.AURA;
-        if (startsWithAny(k, CONTROL_PREFIXES))
+        }
+
+        if (key.contains("control") || key.contains("polymorph") || key.contains("confuse") ||
+                key.contains("stasis")) {
             return SpellType.CONTROL;
+        }
+
+        // Default to MISC for unrecognized patterns
         return SpellType.MISC;
     }
 
+    /**
+     * Returns a list of all valid spell type names.
+     *
+     * @return list of valid type names in lowercase
+     */
     public static List<String> validTypeNames() {
-        return Collections.unmodifiableList(Arrays.asList(
-                "lightning", "poison", "life", "heal", "dark", "fire", "ice", "earth", "weather", "movement",
-                "projectile", "aura", "control"));
-    }
-
-    private static boolean startsWithAny(String key, List<String> prefixes) {
-        for (String p : prefixes) {
-            if (key.startsWith(p))
-                return true;
-        }
-        return false;
+        return Arrays.stream(SpellType.values())
+                .map(type -> type.name().toLowerCase(Locale.ENGLISH))
+                .collect(Collectors.toList());
     }
 }

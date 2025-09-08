@@ -1,9 +1,17 @@
 package com.example.empirewand.spell.implementation.dark;
 
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.api.ConfigService;
+import com.example.empirewand.api.EffectService;
+import com.example.empirewand.core.storage.Keys;
+import com.example.empirewand.spell.PrereqInterface;
+import com.example.empirewand.spell.Spell;
+import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.SpellType;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -14,74 +22,110 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
-import com.example.empirewand.core.storage.Keys;
-import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.SpellContext;
-import com.example.empirewand.spell.Prereq;
-import net.kyori.adventure.text.Component;
+public class DarkPulse extends Spell<Void> {
 
-public class DarkPulse implements Spell {
-    @Override
-    public void execute(SpellContext context) {
-        Player player = context.caster();
+    public record Config(
+            double range,
+            int witherDuration,
+            int witherAmplifier,
+            int blindDuration,
+            double speed,
+            double radius,
+            double damage,
+            double knockback,
+            boolean friendlyFire,
+            int ringParticleCount,
+            double ringRadiusStep,
+            int ringEveryTicks
+    ) {
+    }
 
-        // Config values
-        var spells = context.config().getSpellsConfig();
-        double range = spells.getDouble("dark-pulse.values.range", 24.0);
-        int witherDuration = spells.getInt("dark-pulse.values.wither-duration-ticks", 120);
-        int witherAmplifier = spells.getInt("dark-pulse.values.wither-amplifier", 1);
-        int blindDuration = spells.getInt("dark-pulse.values.blind-duration-ticks", 60);
-        double speed = spells.getDouble("dark-pulse.values.speed", 1.8);
-        double radius = spells.getDouble("dark-pulse.values.explosion-radius", 4.0);
-        double damage = spells.getDouble("dark-pulse.values.damage", 6.0);
-        double knockback = spells.getDouble("dark-pulse.values.knockback", 0.6);
-        boolean friendlyFire = context.config().getConfig().getBoolean("features.friendly-fire", false);
-
-        // Get target
-        var targetEntity = player.getTargetEntity((int) range);
-        if (!(targetEntity instanceof LivingEntity target) || target.isDead() || !target.isValid()) {
-            context.fx().fizzle(player);
-            return;
+    public static class Builder extends Spell.Builder<Void> {
+        public Builder(EmpireWandAPI api) {
+            super(api);
+            this.name = "Dark Pulse";
+            this.description = "Launches a pulsing void skull.";
+            this.manaCost = 10;
+            this.cooldown = java.time.Duration.ofSeconds(8);
+            this.spellType = SpellType.DARK;
         }
 
-        // Launch projectile
+        @Override
+        @NotNull
+        public Spell<Void> build() {
+            return new DarkPulse(this);
+        }
+    }
+
+    private final Config config;
+
+    private DarkPulse(Builder builder) {
+        super(builder);
+        this.config = new Config(
+                spellConfig.getDouble("values.range", 24.0),
+                spellConfig.getInt("values.wither-duration-ticks", 120),
+                spellConfig.getInt("values.wither-amplifier", 1),
+                spellConfig.getInt("values.blind-duration-ticks", 60),
+                spellConfig.getDouble("values.speed", 1.8),
+                spellConfig.getDouble("values.explosion-radius", 4.0),
+                spellConfig.getDouble("values.damage", 6.0),
+                spellConfig.getDouble("values.knockback", 0.6),
+                EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false),
+                spellConfig.getInt("values.ring-particle-count", 14),
+                spellConfig.getDouble("values.ring-radius-step", 0.25),
+                spellConfig.getInt("values.ring-interval-ticks", 2)
+        );
+    }
+
+    @Override
+    public String key() {
+        return "dark-pulse";
+    }
+
+    @Override
+    public PrereqInterface prereq() {
+        return new PrereqInterface.NonePrereq();
+    }
+
+    @Override
+    protected Void executeSpell(SpellContext context) {
+        Player player = context.caster();
+
+        var targetEntity = player.getTargetEntity((int) config.range);
+        if (!(targetEntity instanceof LivingEntity target) || target.isDead() || !target.isValid()) {
+            context.fx().fizzle(player);
+            return null;
+        }
+
         Vector direction = target.getLocation().toVector().subtract(player.getEyeLocation().toVector()).normalize();
         Location spawnLoc = player.getEyeLocation().add(direction.clone().multiply(0.5));
 
         WitherSkull skull = player.getWorld().spawn(spawnLoc, WitherSkull.class);
         skull.setCharged(true);
-        skull.setVelocity(direction.multiply(speed));
+        skull.setVelocity(direction.multiply(config.speed));
         skull.setShooter(player);
+        skull.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, Keys.STRING_TYPE.getType(), key());
 
-        // Tag projectile
-        skull.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL,
-                Keys.STRING_TYPE.getType(), "dark-pulse");
-
-        // Visual flight config
-        int ringParticleCount = spells.getInt("dark-pulse.values.ring-particle-count", 14);
-        double ringRadiusStep = spells.getDouble("dark-pulse.values.ring-radius-step", 0.25);
-        int ringEveryTicks = spells.getInt("dark-pulse.values.ring-interval-ticks", 2);
-
-        // Attach ring pulse runnable (purely cosmetic)
-        new RingPulse(context, skull, ringParticleCount, ringRadiusStep, ringEveryTicks).runTaskTimer(context.plugin(),
-                0L, 1L);
-
-        // Cast sound
+        new RingPulse(context, skull, config.ringParticleCount, config.ringRadiusStep, config.ringEveryTicks)
+                .runTaskTimer(context.plugin(), 0L, 1L);
         context.fx().playSound(player, Sound.ENTITY_WITHER_SHOOT, 1.0f, 1.0f);
 
-        // Register listener
         context.plugin().getServer().getPluginManager().registerEvents(
-                new PulseListener(context, witherDuration, witherAmplifier, blindDuration, radius, damage, knockback,
-                        friendlyFire),
+                new PulseListener(context, config.witherDuration, config.witherAmplifier, config.blindDuration,
+                        config.radius, config.damage, config.knockback, config.friendlyFire),
                 context.plugin());
+        return null;
     }
 
-    /**
-     * Emits concentric shrinking dark rings behind the wither skull to give a
-     * pulsing void ripple effect.
-     */
+    @Override
+    protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
+        // Effects are handled by the listener.
+    }
+
     private static class RingPulse extends BukkitRunnable {
         private final SpellContext context;
         private final WitherSkull projectile;
@@ -106,7 +150,7 @@ public class DarkPulse implements Spell {
                 cancel();
                 return;
             }
-            if (ticks++ > 20 * 6) { // 6s safety
+            if (ticks++ > 20 * 6) {
                 cancel();
                 return;
             }
@@ -114,23 +158,19 @@ public class DarkPulse implements Spell {
             if (ticks % interval != 0)
                 return;
 
-            // Increase radius accumulation then draw ring
             accumRadius += radiusStep;
-            double radius = accumRadius;
             Location center = projectile.getLocation();
 
             for (int i = 0; i < ringParticleCount; i++) {
                 double angle = (Math.PI * 2 * i) / ringParticleCount;
-                double x = center.getX() + radius * Math.cos(angle);
-                double z = center.getZ() + radius * Math.sin(angle);
+                double x = center.getX() + accumRadius * Math.cos(angle);
+                double z = center.getZ() + accumRadius * Math.sin(angle);
                 Location p = new Location(center.getWorld(), x, center.getY() + 0.15, z);
                 context.fx().spawnParticles(p, Particle.SMOKE, 1, 0, 0, 0, 0);
                 if (i % 3 == 0) {
                     context.fx().spawnParticles(p, Particle.SOUL_FIRE_FLAME, 1, 0, 0, 0, 0.0);
                 }
             }
-
-            // Gentle inner void spark
             context.fx().spawnParticles(center, Particle.REVERSE_PORTAL, 1, 0.1, 0.1, 0.1, 0.0);
         }
     }
@@ -163,68 +203,38 @@ public class DarkPulse implements Spell {
             if (!(projectile instanceof WitherSkull))
                 return;
 
-            var pdc = projectile.getPersistentDataContainer();
-            String spellType = pdc.get(Keys.PROJECTILE_SPELL, Keys.STRING_TYPE.getType());
+            String spellType = projectile.getPersistentDataContainer().get(Keys.PROJECTILE_SPELL,
+                    Keys.STRING_TYPE.getType());
             if (!"dark-pulse".equals(spellType))
                 return;
 
             Location hitLoc = projectile.getLocation();
-
-            // Impact FX (batched)
             context.fx().impact(hitLoc, Particle.SOUL_FIRE_FLAME, 50, Sound.ENTITY_WITHER_BREAK_BLOCK, 1.0f, 0.7f);
-            context.fx().spawnParticles(hitLoc, Particle.SMOKE, 30, 0.6, 0.6, 0.6, 0.02);
 
-            // Apply effects to nearby entities
             for (var entity : hitLoc.getWorld().getNearbyEntities(hitLoc, radius, radius, radius)) {
-                if (!(entity instanceof LivingEntity living))
-                    continue;
-                if (living.equals(projectile.getShooter()) && !friendlyFire)
-                    continue;
-                if (living.isDead() || !living.isValid())
-                    continue;
+                if (entity instanceof LivingEntity living) {
+                    if (living.equals(projectile.getShooter()) && !friendlyFire)
+                        continue;
+                    if (living.isDead() || !living.isValid())
+                        continue;
 
-                // Damage and debuffs
-                if (damage > 0) {
-                    living.damage(damage, (projectile.getShooter() instanceof Player p) ? p : null);
-                }
-                living.addPotionEffect(
-                        new PotionEffect(PotionEffectType.WITHER, witherDuration, witherAmplifier, false, true));
-                if (blindDuration > 0) {
-                    living.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, blindDuration, 0, false, true));
-                }
-
-                // Knockback away from center
-                if (knockback > 0) {
-                    Vector kb = living.getLocation().toVector().subtract(hitLoc.toVector()).normalize()
-                            .multiply(knockback).setY(0.2);
-                    living.setVelocity(kb);
+                    if (damage > 0)
+                        living.damage(damage, (projectile.getShooter() instanceof Player p) ? p : null);
+                    living.addPotionEffect(
+                            new PotionEffect(PotionEffectType.WITHER, witherDuration, witherAmplifier, false, true));
+                    if (blindDuration > 0)
+                        living.addPotionEffect(
+                                new PotionEffect(PotionEffectType.BLINDNESS, blindDuration, 0, false, true));
+                    if (knockback > 0) {
+                        Vector kb = living.getLocation().toVector().subtract(hitLoc.toVector()).normalize()
+                                .multiply(knockback).setY(0.2);
+                        living.setVelocity(kb);
+                    }
                 }
             }
 
             projectile.remove();
-
-            // Clean up listener to avoid leaks
             HandlerList.unregisterAll(this);
         }
-    }
-
-    @Override
-    public String getName() {
-        return "dark-pulse";
-    }
-
-    @Override
-    public String key() {
-        return "dark-pulse";
-    }
-
-    @Override
-    public Component displayName() {
-        return Component.text("Dark Pulse");
-    }
-
-    @Override
-    public Prereq prereq() {
-        return new Prereq(true, Component.text(""));
     }
 }

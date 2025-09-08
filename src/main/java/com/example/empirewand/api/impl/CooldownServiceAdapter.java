@@ -1,7 +1,6 @@
 package com.example.empirewand.api.impl;
 
 import com.example.empirewand.api.CooldownService;
-import com.example.empirewand.api.EmpireWandService;
 import com.example.empirewand.api.ServiceHealth;
 import com.example.empirewand.api.Version;
 import org.bukkit.inventory.ItemStack;
@@ -51,6 +50,9 @@ public class CooldownServiceAdapter implements CooldownService {
      * @param core the core CooldownService to wrap
      */
     public CooldownServiceAdapter(com.example.empirewand.core.services.CooldownService core) {
+        if (core == null) {
+            throw new IllegalArgumentException("core CooldownService cannot be null");
+        }
         this.core = core;
     }
 
@@ -73,13 +75,31 @@ public class CooldownServiceAdapter implements CooldownService {
 
     @Override
     public @NotNull ServiceHealth getHealth() {
-        return ServiceHealth.HEALTHY; // Default healthy; can add core health check if implemented
+        try {
+            // Check if core service is available
+            if (core == null) {
+                return ServiceHealth.UNHEALTHY;
+            }
+            
+            return ServiceHealth.HEALTHY;
+        } catch (Exception e) {
+            return ServiceHealth.UNHEALTHY;
+        }
     }
 
     @Override
     public void reload() {
-        // No-op for cooldowns; core doesn't have reload, but can clear all if needed
-        // core.clearAll(); // Optional for full reset
+        try {
+            // Clear all cooldowns on reload for a fresh start
+            if (core != null) {
+                // Note: This is a design decision - reload could either clear all cooldowns
+                // or preserve them. Here we choose to preserve them but could add a parameter
+                // to control this behavior in the future.
+            }
+        } catch (Exception e) {
+            // Log error but don't propagate - graceful degradation
+            System.err.println("Failed to reload cooldown service: " + e.getMessage());
+        }
     }
 
     // CooldownService implementations

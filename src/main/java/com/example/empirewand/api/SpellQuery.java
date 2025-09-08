@@ -19,7 +19,7 @@ public interface SpellQuery {
      * @return a list of matching spells
      */
     @NotNull
-    List<Spell> execute();
+    List<Spell<?>> execute();
 
     /**
      * Builder for creating SpellQuery instances.

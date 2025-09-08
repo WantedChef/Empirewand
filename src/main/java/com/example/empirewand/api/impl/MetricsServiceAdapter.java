@@ -1,9 +1,9 @@
 package com.example.empirewand.api.impl;
 
-import com.example.empirewand.api.EmpireWandService;
 import com.example.empirewand.api.MetricsService;
 import com.example.empirewand.api.ServiceHealth;
 import com.example.empirewand.api.Version;
+import com.example.empirewand.api.common.AnyThread;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -53,6 +53,12 @@ public class MetricsServiceAdapter implements MetricsService {
     public MetricsServiceAdapter(
             com.example.empirewand.core.services.metrics.MetricsService coreMetrics,
             com.example.empirewand.core.services.metrics.DebugMetricsService debugMetrics) {
+        if (coreMetrics == null) {
+            throw new IllegalArgumentException("coreMetrics cannot be null");
+        }
+        if (debugMetrics == null) {
+            throw new IllegalArgumentException("debugMetrics cannot be null");
+        }
         this.coreMetrics = coreMetrics;
         this.debugMetrics = debugMetrics;
     }
@@ -76,74 +82,108 @@ public class MetricsServiceAdapter implements MetricsService {
 
     @Override
     public @NotNull ServiceHealth getHealth() {
-        return ServiceHealth.HEALTHY; // Default healthy; can add core health check if implemented
+        try {
+            // Check if core services are available and functioning
+            if (coreMetrics == null || debugMetrics == null) {
+                return ServiceHealth.UNHEALTHY;
+            }
+            
+            // Check if metrics collection is enabled
+            if (!coreMetrics.isEnabled()) {
+                return ServiceHealth.DEGRADED;
+            }
+            
+            // Additional health checks can be added here
+            // For example, check if metrics are being collected properly
+            return ServiceHealth.HEALTHY;
+        } catch (Exception e) {
+            return ServiceHealth.UNHEALTHY;
+        }
     }
 
     @Override
     public void reload() {
-        // No-op for metrics; core doesn't have reload, but can clear debug metrics if
-        // needed
-        // debugMetrics.clear(); // Optional
+        try {
+            // Clear debug metrics data on reload
+            if (debugMetrics != null) {
+                debugMetrics.clear();
+            }
+        } catch (Exception e) {
+            // Log error but don't propagate - graceful degradation
+            System.err.println("Failed to reload metrics service: " + e.getMessage());
+        }
     }
 
     // MetricsService implementations
 
     @Override
+    @AnyThread
     public void recordSpellCast(@NotNull String spellKey) {
         coreMetrics.recordSpellCast(spellKey);
     }
 
     @Override
+    @AnyThread
     public void recordSpellCast(@NotNull String spellKey, long durationMs) {
         coreMetrics.recordSpellCast(spellKey, durationMs);
     }
 
     @Override
+    @AnyThread
     public void recordFailedCast() {
         coreMetrics.recordFailedCast();
     }
 
     @Override
+    @AnyThread
     public void recordEventProcessing(long durationMs) {
         coreMetrics.recordEventProcessing(durationMs);
     }
 
     @Override
+    @AnyThread
     public void recordWandCreated() {
         coreMetrics.recordWandCreated();
     }
 
     @Override
+    @AnyThread
     public @NotNull String getDebugInfo() {
         return coreMetrics.getDebugInfo();
     }
 
     @Override
+    @AnyThread
     public long getSpellCastP95() {
         return debugMetrics.getSpellCastP95();
     }
 
     @Override
+    @AnyThread
     public long getEventProcessingP95() {
         return debugMetrics.getEventProcessingP95();
     }
 
     @Override
+    @AnyThread
     public long getTotalSpellCasts() {
         return debugMetrics.getTotalSpellCasts();
     }
 
     @Override
+    @AnyThread
     public long getTotalFailedCasts() {
         return debugMetrics.getTotalFailedCasts();
     }
 
     @Override
+    @AnyThread
     public double getSpellCastSuccessRate() {
         return debugMetrics.getSpellCastSuccessRate();
     }
 
     @Override
+    @AnyThread
     public void clear() {
         debugMetrics.clear();
     }

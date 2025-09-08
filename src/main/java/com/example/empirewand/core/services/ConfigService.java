@@ -24,6 +24,9 @@ public class ConfigService {
     private ReadableConfig readOnlySpellsConfig; // cached read-only view
 
     public ConfigService(Plugin plugin) {
+        if (plugin == null) {
+            throw new IllegalArgumentException("Plugin cannot be null");
+        }
         this.plugin = plugin;
         this.validator = new ConfigValidator();
         this.migrationService = new ConfigMigrationService(plugin, validator);
@@ -31,24 +34,35 @@ public class ConfigService {
     }
 
     public final void loadConfigs() {
-        // Load config.yml
-        plugin.saveDefaultConfig();
-        plugin.reloadConfig();
-        this.config = plugin.getConfig();
+        try {
+            // Load config.yml
+            plugin.saveDefaultConfig();
+            plugin.reloadConfig();
+            this.config = plugin.getConfig();
 
-        // Load spells.yml
-        File spellsFile = new File(plugin.getDataFolder(), "spells.yml");
-        if (!spellsFile.exists()) {
-            plugin.saveResource("spells.yml", false);
+            // Load spells.yml
+            File spellsFile = new File(plugin.getDataFolder(), "spells.yml");
+            if (!spellsFile.exists()) {
+                plugin.saveResource("spells.yml", false);
+            }
+            this.spellsConfig = YamlConfiguration.loadConfiguration(spellsFile);
+
+            // (Re)create read-only wrappers
+            this.readOnlyConfig = new ReadOnlyConfig(this.config);
+            this.readOnlySpellsConfig = new ReadOnlyConfig(this.spellsConfig);
+
+            // Validate and migrate configs
+            validateAndMigrateConfigs(spellsFile);
+            
+            plugin.getLogger().info("Configuration loaded successfully");
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to load configurations", e);
+            // Initialize with empty configs to prevent NPE
+            this.config = new YamlConfiguration();
+            this.spellsConfig = new YamlConfiguration();
+            this.readOnlyConfig = new ReadOnlyConfig(this.config);
+            this.readOnlySpellsConfig = new ReadOnlyConfig(this.spellsConfig);
         }
-        this.spellsConfig = YamlConfiguration.loadConfiguration(spellsFile);
-
-        // (Re)create read-only wrappers
-        this.readOnlyConfig = new ReadOnlyConfig(this.config);
-        this.readOnlySpellsConfig = new ReadOnlyConfig(this.spellsConfig);
-
-        // Validate and migrate configs
-        validateAndMigrateConfigs(spellsFile);
     }
 
     /**
@@ -57,44 +71,48 @@ public class ConfigService {
      * @param spellsFile the spells.yml file
      */
     private void validateAndMigrateConfigs(File spellsFile) {
-        // Validate main config
-        List<String> mainConfigErrors = validator.validateMainConfig(config);
-        if (!mainConfigErrors.isEmpty()) {
-            plugin.getLogger().severe("Main config validation errors:");
-            for (String error : mainConfigErrors) {
-                plugin.getLogger().log(Level.SEVERE, "  - {0}", error);
+        try {
+            // Validate main config
+            List<String> mainConfigErrors = validator.validateMainConfig(config);
+            if (!mainConfigErrors.isEmpty()) {
+                plugin.getLogger().severe("Main config validation errors:");
+                for (String error : mainConfigErrors) {
+                    plugin.getLogger().log(Level.SEVERE, "  - {0}", error);
+                }
+                plugin.getLogger().severe("Please fix the configuration errors and restart the server.");
+                return;
             }
-            plugin.getLogger().severe("Please fix the configuration errors and restart the server.");
-            return;
-        }
 
-        // Validate spells config
-        List<String> spellsConfigErrors = validator.validateSpellsConfig(spellsConfig);
-        if (!spellsConfigErrors.isEmpty()) {
-            plugin.getLogger().severe("Spells config validation errors:");
-            for (String error : spellsConfigErrors) {
-                plugin.getLogger().log(Level.SEVERE, "  - {0}", error);
+            // Validate spells config
+            List<String> spellsConfigErrors = validator.validateSpellsConfig(spellsConfig);
+            if (!spellsConfigErrors.isEmpty()) {
+                plugin.getLogger().severe("Spells config validation errors:");
+                for (String error : spellsConfigErrors) {
+                    plugin.getLogger().log(Level.SEVERE, "  - {0}", error);
+                }
+                plugin.getLogger().severe("Please fix the configuration errors and restart the server.");
+                return;
             }
-            plugin.getLogger().severe("Please fix the configuration errors and restart the server.");
-            return;
+
+            // Attempt migrations if needed
+            File configFile = new File(plugin.getDataFolder(), "config.yml");
+            boolean mainConfigMigrated = migrationService.migrateMainConfig(config, configFile);
+            boolean spellsConfigMigrated = migrationService.migrateSpellsConfig(spellsConfig, spellsFile);
+
+            if (mainConfigMigrated || spellsConfigMigrated) {
+                plugin.getLogger().info("Configuration migration completed. Reloading configs...");
+                // Reload configs after migration
+                plugin.reloadConfig();
+                this.config = plugin.getConfig();
+                this.spellsConfig = YamlConfiguration.loadConfiguration(spellsFile);
+                this.readOnlyConfig = new ReadOnlyConfig(this.config);
+                this.readOnlySpellsConfig = new ReadOnlyConfig(this.spellsConfig);
+            }
+
+            plugin.getLogger().info("Configuration validation and migration completed successfully.");
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.SEVERE, "Error during configuration validation and migration", e);
         }
-
-        // Attempt migrations if needed
-        File configFile = new File(plugin.getDataFolder(), "config.yml");
-        boolean mainConfigMigrated = migrationService.migrateMainConfig(config, configFile);
-        boolean spellsConfigMigrated = migrationService.migrateSpellsConfig(spellsConfig, spellsFile);
-
-        if (mainConfigMigrated || spellsConfigMigrated) {
-            plugin.getLogger().info("Configuration migration completed. Reloading configs...");
-            // Reload configs after migration
-            plugin.reloadConfig();
-            this.config = plugin.getConfig();
-            this.spellsConfig = YamlConfiguration.loadConfiguration(spellsFile);
-            this.readOnlyConfig = new ReadOnlyConfig(this.config);
-            this.readOnlySpellsConfig = new ReadOnlyConfig(this.spellsConfig);
-        }
-
-        plugin.getLogger().info("Configuration validation and migration completed successfully.");
     }
 
     /**
@@ -112,11 +130,27 @@ public class ConfigService {
     }
 
     public String getMessage(String key) {
-        return config.getString("messages." + key, "");
+        if (key == null) {
+            return "";
+        }
+        try {
+            return config.getString("messages." + key, "");
+        } catch (Exception e) {
+            plugin.getLogger().warning("Error getting message for key: " + key);
+            return "";
+        }
     }
 
     public boolean getFeatureFlag(String key) {
-        return config.getBoolean("features." + key, false);
+        if (key == null) {
+            return false;
+        }
+        try {
+            return config.getBoolean("features." + key, false);
+        } catch (Exception e) {
+            plugin.getLogger().warning("Error getting feature flag for key: " + key);
+            return false;
+        }
     }
 
     public ConfigMigrationService getMigrationService() {
@@ -124,7 +158,12 @@ public class ConfigService {
     }
 
     public long getDefaultCooldown() {
-        return config.getLong("cooldowns.default", 500);
+        try {
+            return config.getLong("cooldowns.default", 500);
+        } catch (Exception e) {
+            plugin.getLogger().warning("Error getting default cooldown, using fallback");
+            return 500;
+        }
     }
 
     /**
@@ -132,16 +171,29 @@ public class ConfigService {
      * under categories.<name>.spells. Returns an empty list if missing.
      */
     public java.util.List<String> getCategorySpells(String name) {
-        java.util.List<String> list = config.getStringList("categories." + name + ".spells");
-        return list == null ? java.util.List.of() : list;
+        if (name == null) {
+            return java.util.List.of();
+        }
+        try {
+            java.util.List<String> list = config.getStringList("categories." + name + ".spells");
+            return list == null ? java.util.List.of() : list;
+        } catch (Exception e) {
+            plugin.getLogger().warning("Error getting category spells for: " + name);
+            return java.util.List.of();
+        }
     }
 
     /**
      * Returns available category names under categories.* in config.yml.
      */
     public java.util.Set<String> getCategoryNames() {
-        var section = config.getConfigurationSection("categories");
-        if (section == null) return java.util.Set.of();
-        return section.getKeys(false);
+        try {
+            var section = config.getConfigurationSection("categories");
+            if (section == null) return java.util.Set.of();
+            return section.getKeys(false);
+        } catch (Exception e) {
+            plugin.getLogger().warning("Error getting category names");
+            return java.util.Set.of();
+        }
     }
 }

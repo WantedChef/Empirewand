@@ -1,82 +1,41 @@
 package com.example.empirewand.spell.implementation.dark;
 
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.api.EffectService;
+import com.example.empirewand.spell.PrereqInterface;
+import com.example.empirewand.spell.Spell;
+import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.SpellType;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
-import com.example.empirewand.spell.Prereq;
-import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.SpellContext;
+public class VoidSwap extends Spell<Void> {
 
-import net.kyori.adventure.text.Component;
-
-public class VoidSwap implements Spell {
-    @Override
-    public void execute(SpellContext context) {
-        Player player = context.caster();
-        if (player == null) {
-            return; // Safety check
+    public static class Builder extends Spell.Builder<Void> {
+        public Builder(EmpireWandAPI api) {
+            super(api);
+            this.name = "Void Swap";
+            this.description = "Swap positions with a target.";
+            this.manaCost = 14;
+            this.cooldown = java.time.Duration.ofSeconds(25);
+            this.spellType = SpellType.DARK;
         }
 
-        var spells = context.config().getSpellsConfig();
-        double range = spells.getDouble("void-swap.values.range", 15.0);
-        // Read for future behavior; not currently used
-        spells.getBoolean("void-swap.flags.requires-los", true);
-
-        var looked = player.getTargetEntity((int) range);
-        if (looked == null) {
-            context.fx().fizzle(player);
-            return;
-        }
-
-        if (!(looked instanceof LivingEntity target) || target.isDead() || !target.isValid()) {
-            context.fx().fizzle(player);
-            return;
-        }
-
-        // Check if either entity is in a vehicle or has passengers
-        if (player.isInsideVehicle() || target.isInsideVehicle() ||
-                !player.getPassengers().isEmpty() || !target.getPassengers().isEmpty()) {
-            context.fx().fizzle(player);
-            return;
-        }
-
-        Location a = player.getLocation();
-        Location b = target.getLocation();
-        if (!isLocationSafe(a) || !isLocationSafe(b)) {
-            context.fx().fizzle(player);
-            return;
-        }
-
-        // FX
-        context.fx().spawnParticles(a, Particle.PORTAL, 25, 0.4, 0.8, 0.4, 0.05);
-        context.fx().spawnParticles(b, Particle.PORTAL, 25, 0.4, 0.8, 0.4, 0.05);
-        context.fx().playSound(player, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.0f);
-
-        // Swap
-        try {
-            player.teleport(b);
-            target.teleport(a);
-        } catch (Exception e) {
-            context.fx().fizzle(player);
+        @Override
+        @NotNull
+        public Spell<Void> build() {
+            return new VoidSwap(this);
         }
     }
 
-    private boolean isLocationSafe(Location location) {
-        Block feet = location.getBlock();
-        Block head = location.clone().add(0, 1, 0).getBlock();
-        Block ground = location.clone().add(0, -1, 0).getBlock();
-        if (feet.getType().isSolid() || head.getType().isSolid())
-            return false;
-        return ground.getType().isSolid();
-    }
-
-    @Override
-    public String getName() {
-        return "void-swap";
+    private VoidSwap(Builder builder) {
+        super(builder);
     }
 
     @Override
@@ -85,12 +44,52 @@ public class VoidSwap implements Spell {
     }
 
     @Override
-    public Component displayName() {
-        return Component.text("Void Swap");
+    public PrereqInterface prereq() {
+        return new PrereqInterface.NonePrereq();
     }
 
     @Override
-    public Prereq prereq() {
-        return new Prereq(true, Component.text(""));
+    protected Void executeSpell(SpellContext context) {
+        Player player = context.caster();
+
+        double range = spellConfig.getDouble("values.range", 15.0);
+
+        var looked = player.getTargetEntity((int) range);
+        if (!(looked instanceof LivingEntity target) || target.isDead() || !target.isValid()) {
+            context.fx().fizzle(player);
+            return null;
+        }
+
+        if (player.isInsideVehicle() || target.isInsideVehicle() || !player.getPassengers().isEmpty() || !target.getPassengers().isEmpty()) {
+            context.fx().fizzle(player);
+            return null;
+        }
+
+        Location a = player.getLocation();
+        Location b = target.getLocation();
+        if (!isLocationSafe(a) || !isLocationSafe(b)) {
+            context.fx().fizzle(player);
+            return null;
+        }
+
+        context.fx().spawnParticles(a, Particle.PORTAL, 25, 0.4, 0.8, 0.4, 0.05);
+        context.fx().spawnParticles(b, Particle.PORTAL, 25, 0.4, 0.8, 0.4, 0.05);
+        context.fx().playSound(player, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.0f);
+
+        player.teleport(b);
+        target.teleport(a);
+        return null;
+    }
+
+    @Override
+    protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
+        // Instant effect.
+    }
+
+    private boolean isLocationSafe(Location location) {
+        Block feet = location.getBlock();
+        Block head = location.clone().add(0, 1, 0).getBlock();
+        Block ground = location.clone().add(0, -1, 0).getBlock();
+        return !feet.getType().isSolid() && !head.getType().isSolid() && ground.getType().isSolid();
     }
 }

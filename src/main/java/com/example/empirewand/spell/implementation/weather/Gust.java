@@ -1,73 +1,103 @@
 package com.example.empirewand.spell.implementation.weather;
 
-import org.bukkit.Location;
+import com.example.empirewand.api.ConfigService;
+import com.example.empirewand.api.EffectService;
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.spell.PrereqInterface;
+import com.example.empirewand.spell.Spell;
+import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.SpellType;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
-import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.SpellContext;
-import com.example.empirewand.spell.Prereq;
-import net.kyori.adventure.text.Component;
-
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Gust implements Spell {
+public class Gust extends Spell<Void> {
+
+    public static class Builder extends Spell.Builder<Void> {
+        public Builder(EmpireWandAPI api) {
+            super(api);
+            this.name = "Gust";
+            this.description = "Creates a powerful gust of wind that knocks back enemies.";
+            this.manaCost = 10;
+            this.cooldown = Duration.ofMillis(2000);
+            this.spellType = SpellType.WEATHER;
+        }
+
+        @Override
+        @NotNull
+        public Spell<Void> build() {
+            return new Gust(this);
+        }
+    }
+
+    private Gust(Builder builder) {
+        super(builder);
+    }
+
     @Override
-    public void execute(SpellContext context) {
+    public String key() {
+        return "gust";
+    }
+
+    @Override
+    public PrereqInterface prereq() {
+        return new PrereqInterface.NonePrereq();
+    }
+
+    @Override
+    protected Void executeSpell(SpellContext context) {
         Player player = context.caster();
 
-        var spells = context.config().getSpellsConfig();
-        double range = spells.getDouble("gust.values.range", 10.0);
-        double angle = spells.getDouble("gust.values.angle", 70.0);
-        double knockback = spells.getDouble("gust.values.knockback", 1.0);
-        double damage = spells.getDouble("gust.values.damage", 0.0);
-        boolean friendlyFire = context.config().getConfig().getBoolean("features.friendly-fire", false);
+        double range = spellConfig.getDouble("values.range", 10.0);
+        double angle = spellConfig.getDouble("values.angle", 70.0);
+        double knockback = spellConfig.getDouble("values.knockback", 1.0);
+        double damage = spellConfig.getDouble("values.damage", 0.0);
+        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false);
 
         List<LivingEntity> targets = getEntitiesInCone(player, range, angle);
         for (LivingEntity target : targets) {
-            if (target.equals(player) && !friendlyFire) continue;
-            if (target.isDead() || !target.isValid()) continue;
+            if (target.equals(player) && !friendlyFire)
+                continue;
 
-            if (damage > 0) target.damage(damage, player);
-
-            Vector dir = target.getLocation().toVector().subtract(player.getLocation().toVector()).normalize();
-            Vector push = dir.multiply(knockback).setY(0.25);
+            if (damage > 0)
+                target.damage(damage, player);
+            Vector push = target.getLocation().toVector().subtract(player.getLocation().toVector()).normalize()
+                    .multiply(knockback).setY(0.25);
             target.setVelocity(push);
-
             context.fx().spawnParticles(target.getLocation(), Particle.SWEEP_ATTACK, 5, 0.2, 0.2, 0.2, 0.0);
-            context.fx().spawnParticles(target.getLocation(), Particle.CLOUD, 15, 0.3, 0.3, 0.3, 0.01);
         }
-
         context.fx().playSound(player, Sound.ENTITY_PHANTOM_FLAP, 0.8f, 1.2f);
+
+        return null;
+    }
+
+    @Override
+    protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
+        // Instant effect.
     }
 
     private List<LivingEntity> getEntitiesInCone(Player player, double range, double coneAngle) {
         List<LivingEntity> targets = new ArrayList<>();
-        Location playerLoc = player.getEyeLocation();
-        Vector playerDir = playerLoc.getDirection().normalize();
-        for (var entity : player.getWorld().getNearbyEntities(playerLoc, range, range, range)) {
-            if (!(entity instanceof LivingEntity living)) continue;
-            Vector toEntity = living.getEyeLocation().toVector().subtract(playerLoc.toVector());
-            double distance = toEntity.length();
-            if (distance > range) continue;
-            Vector toEntityNormalized = toEntity.normalize();
-            double angle = Math.toDegrees(playerDir.angle(toEntityNormalized));
-            if (angle <= coneAngle / 2) targets.add(living);
+        Vector playerDir = player.getEyeLocation().getDirection().normalize();
+        double angleRadians = Math.toRadians(coneAngle / 2.0);
+
+        for (LivingEntity entity : player.getWorld().getLivingEntities()) {
+            if (entity.equals(player) || entity.getLocation().distanceSquared(player.getLocation()) > range * range)
+                continue;
+
+            Vector toEntity = entity.getEyeLocation().toVector().subtract(player.getEyeLocation().toVector())
+                    .normalize();
+            if (playerDir.angle(toEntity) <= angleRadians) {
+                targets.add(entity);
+            }
         }
         return targets;
     }
-
-    @Override
-    public String getName() { return "gust"; }
-    @Override
-    public String key() { return "gust"; }
-    @Override
-    public Component displayName() { return Component.text("Gust"); }
-    @Override
-    public Prereq prereq() { return new Prereq(true, Component.text("")); }
 }
-

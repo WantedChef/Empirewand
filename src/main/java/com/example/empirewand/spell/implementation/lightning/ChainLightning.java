@@ -1,149 +1,127 @@
 package com.example.empirewand.spell.implementation.lightning;
 
+import com.example.empirewand.api.ConfigService;
+import com.example.empirewand.api.EffectService;
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.spell.PrereqInterface;
+import com.example.empirewand.spell.Spell;
+import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.SpellType;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
-import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.SpellContext;
-import com.example.empirewand.spell.Prereq;
-import net.kyori.adventure.text.Component;
-
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
-public class ChainLightning implements Spell {
+public class ChainLightning extends Spell<Void> {
+
+    public static class Builder extends Spell.Builder<Void> {
+        public Builder(EmpireWandAPI api) {
+            super(api);
+            this.name = "Chain Lightning";
+            this.description = "Unleashes a bolt of lightning that jumps between targets.";
+            this.manaCost = 15; // Example
+            this.cooldown = java.time.Duration.ofSeconds(12);
+            this.spellType = SpellType.LIGHTNING;
+        }
+
+        @Override
+        @NotNull
+        public Spell<Void> build() {
+            return new ChainLightning(this);
+        }
+    }
+
+    private ChainLightning(Builder builder) {
+        super(builder);
+    }
+
     @Override
-    public void execute(SpellContext context) {
+    public @NotNull String key() {
+        return "chain-lightning";
+    }
+
+    @Override
+    public @NotNull PrereqInterface prereq() {
+        return new PrereqInterface.NonePrereq();
+    }
+
+    @Override
+    protected @NotNull Void executeSpell(SpellContext context) {
         Player player = context.caster();
 
-        var spells = context.config().getSpellsConfig();
-        double range = spells.getDouble("chain-lightning.values.range", 20.0);
-        double jumpRadius = spells.getDouble("chain-lightning.values.jump-radius", 8.0);
-        int jumps = spells.getInt("chain-lightning.values.jumps", 4);
-        double damage = spells.getDouble("chain-lightning.values.damage", 8.0);
-        boolean friendlyFire = context.config().getConfig().getBoolean("features.friendly-fire", false);
-
-        // Visual-only enhancement parameters (purely cosmetic)
-        int arcParticleCount = spells.getInt("chain-lightning.values.arc_particle_count", 8); // per segment burst
-        int arcSteps = spells.getInt("chain-lightning.values.arc_steps", 12); // interpolation steps along arc
-        double maxArcLength = spells.getDouble("chain-lightning.values.max_arc_length", 15.0); // clamp for safety
+        double range = spellConfig.getDouble("values.range", 20.0);
+        double jumpRadius = spellConfig.getDouble("values.jump-radius", 8.0);
+        int jumps = spellConfig.getInt("values.jumps", 4);
+        double damage = spellConfig.getDouble("values.damage", 8.0);
+        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false);
+        int arcParticleCount = spellConfig.getInt("values.arc_particle_count", 8);
+        int arcSteps = spellConfig.getInt("values.arc_steps", 12);
+        double maxArcLength = spellConfig.getDouble("values.max_arc_length", 15.0);
 
         var first = player.getTargetEntity((int) range);
         if (!(first instanceof LivingEntity current) || current.isDead() || !current.isValid()) {
             context.fx().fizzle(player);
-            return;
+            return null; // Fixed: Added missing return statement
         }
 
         Set<LivingEntity> hit = new HashSet<>();
-        List<LivingEntity> chain = new ArrayList<>();
+        hit.add(current); // Fixed: Add first target to hit set immediately
 
-        for (int i = 0; i < Math.max(1, jumps); i++) {
-            if (current == null || !current.isValid() || current.isDead())
+        for (int i = 0; i < jumps && current != null; i++) { // Fixed: Added null check in loop condition
+            if (!current.isValid() || current.isDead() || (current.equals(player) && !friendlyFire)) {
                 break;
-            if (current.equals(player) && !friendlyFire)
-                break;
-            hit.add(current);
-            chain.add(current);
+            }
 
-            // Damage and FX on current
             current.damage(damage, player);
             context.fx().spawnParticles(current.getLocation(), Particle.ELECTRIC_SPARK, 20, 0.3, 0.6, 0.3, 0.1);
             context.fx().playSound(current.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.6f, 1.2f);
 
-            // Find next candidate within jumpRadius
             final Location currentLoc = current.getLocation();
-            LivingEntity next = current.getWorld().getNearbyEntities(currentLoc, jumpRadius, jumpRadius, jumpRadius)
-                    .stream()
-                    .filter(e -> e instanceof LivingEntity)
-                    .map(e -> (LivingEntity) e)
-                    .filter(l -> !hit.contains(l))
-                    .filter(l -> !(l.equals(player) && !friendlyFire))
-                    .filter(l -> l.isValid() && !l.isDead())
+            LivingEntity next = current.getWorld().getNearbyLivingEntities(currentLoc, jumpRadius).stream()
+                    .filter(e -> !hit.contains(e) && !(e.equals(player) && !friendlyFire) && e.isValid() && !e.isDead())
                     .min(Comparator.comparingDouble(l -> l.getLocation().distanceSquared(currentLoc)))
                     .orElse(null);
 
-            // Enhanced arc visuals between strikes
             if (next != null) {
-                renderArc(context, current.getEyeLocation(), next.getEyeLocation(), arcParticleCount, arcSteps,
-                        maxArcLength);
+                renderArc(current.getEyeLocation(), next.getEyeLocation(), arcParticleCount, arcSteps, maxArcLength);
+                hit.add(next); // Add to hit set before next iteration
             }
-
             current = next;
         }
-
-        // Small push-back on the last struck entity for feel
-        if (!chain.isEmpty()) {
-            LivingEntity last = chain.get(chain.size() - 1);
-            Vector away = last.getLocation().toVector().subtract(player.getLocation().toVector()).normalize()
-                    .multiply(0.2).setY(0.1);
-            last.setVelocity(last.getVelocity().add(away));
-        }
+        return null;
     }
 
-    /**
-     * Renders an electric arc between two points using linear interpolation with
-     * slight random jitter
-     * to create a jagged lightning feel. Purely visual; does not affect gameplay.
-     */
-    private void renderArc(SpellContext context, Location from, Location to, int particleCount, int steps,
-            double maxLen) {
-        if (from == null || to == null || from.getWorld() == null || to.getWorld() == null)
-            return;
-        if (!from.getWorld().equals(to.getWorld()))
-            return;
-        // Normalize input points with slight vertical offset
-        Location start = from.clone().add(0, 0.25, 0);
-        Vector full = to.clone().add(0, 0.25, 0).toVector().subtract(start.toVector());
-        double length = full.length();
-        if (length < 0.001)
-            return;
-        if (length > maxLen) {
-            full.normalize().multiply(maxLen);
-            length = maxLen;
-        }
+    @Override
+    protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
+        // Instant effect.
+    }
 
-        Vector step = full.clone().multiply(1.0 / Math.max(1, steps));
+    private void renderArc(Location from, Location to, int particleCount, int steps, double maxLen) {
+        Vector full = to.toVector().subtract(from.toVector());
+        double length = full.length();
+        if (length < 0.01 || length > maxLen)
+            return;
+
+        Vector step = full.clone().multiply(1.0 / steps);
         double jitterScale = Math.min(0.6, Math.max(0.15, length * 0.08));
-        Location cursor = start.clone();
+        Location cursor = from.clone();
+
         for (int i = 0; i <= steps; i++) {
-            Location point = cursor.clone();
-            if (i != 0 && i != steps) {
-                point.add((Math.random() - 0.5) * jitterScale,
-                        (Math.random() - 0.5) * jitterScale,
-                        (Math.random() - 0.5) * jitterScale);
-            }
-            point.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, point, particleCount, 0.05, 0.05, 0.05, 0.02);
+            Location point = (i == 0 || i == steps) ? cursor.clone()
+                    : cursor.clone().add((Math.random() - 0.5) * jitterScale, (Math.random() - 0.5) * jitterScale,
+                    (Math.random() - 0.5) * jitterScale);
+            from.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, point, particleCount, 0.05, 0.05, 0.05, 0.02);
             if (i % Math.max(2, steps / 6) == 0) {
-                point.getWorld().spawnParticle(Particle.CRIT, point, 1, 0, 0, 0, 0);
+                from.getWorld().spawnParticle(Particle.CRIT, point, 1, 0, 0, 0, 0);
             }
             cursor.add(step);
         }
-    }
-
-    @Override
-    public String getName() {
-        return "chain-lightning";
-    }
-
-    @Override
-    public String key() {
-        return "chain-lightning";
-    }
-
-    @Override
-    public Component displayName() {
-        return Component.text("Chain Lightning");
-    }
-
-    @Override
-    public Prereq prereq() {
-        return new Prereq(true, Component.text(""));
     }
 }

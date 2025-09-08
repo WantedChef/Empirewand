@@ -1,132 +1,121 @@
 package com.example.empirewand.spell.implementation.life;
 
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.spell.PrereqInterface;
+import com.example.empirewand.spell.Spell;
+import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.SpellType;
+import net.kyori.adventure.text.Component;
+import org.bukkit.Color;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
-import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.SpellContext;
-import com.example.empirewand.spell.Prereq;
-import net.kyori.adventure.text.Component;
-
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
-public class LifeReap implements Spell {
+public class LifeReap extends Spell<Void> {
+
+    public static class Builder extends Spell.Builder<Void> {
+        public Builder(EmpireWandAPI api) {
+            super(api);
+            this.name = "Life Reap";
+            this.description = "Damages enemies in a cone and heals you for each enemy hit.";
+            this.manaCost = 12; // Example
+            this.cooldown = java.time.Duration.ofSeconds(10);
+            this.spellType = SpellType.LIFE;
+        }
+
+        @Override
+        @NotNull
+        public Spell<Void> build() {
+            return new LifeReap(this);
+        }
+    }
+
+    private LifeReap(Builder builder) {
+        super(builder);
+    }
+
     @Override
-    public void execute(SpellContext context) {
+    public @NotNull String key() {
+        return "life-reap";
+    }
+
+    @Override
+    public @NotNull Component displayName() {
+        return Component.text("Levenszuiger");
+    }
+
+    @Override
+    public @NotNull PrereqInterface prereq() {
+        return new PrereqInterface.NonePrereq();
+    }
+
+    @Override
+    protected @NotNull Void executeSpell(SpellContext context) {
         Player player = context.caster();
-        if (player == null)
-            return;
 
-        // Config values
-        var spells = context.config().getSpellsConfig();
-        double damage = spells.getDouble("life-reap.values.damage", 4.0);
-        double healPerTarget = spells.getDouble("life-reap.values.heal-per-target", 0.8);
-        double range = spells.getDouble("life-reap.values.range", 5.0);
-        double angleDegrees = spells.getDouble("life-reap.values.angle-degrees", 120.0);
-        boolean hitPlayers = spells.getBoolean("life-reap.flags.hit-players", true);
-        boolean hitMobs = spells.getBoolean("life-reap.flags.hit-mobs", true);
+        double damage = spellConfig.getDouble("values.damage", 4.0);
+        double healPerTarget = spellConfig.getDouble("values.heal-per-target", 0.8);
+        double range = spellConfig.getDouble("values.range", 5.0);
+        double angleDegrees = spellConfig.getDouble("values.angle-degrees", 120.0);
+        boolean hitPlayers = spellConfig.getBoolean("flags.hit-players", true);
+        boolean hitMobs = spellConfig.getBoolean("flags.hit-mobs", true);
 
-        // Find targets in cone
         List<LivingEntity> targets = getEntitiesInCone(player, range, angleDegrees);
-        targets.removeIf(
-                entity -> (entity instanceof Player && !hitPlayers) || (!(entity instanceof Player) && !hitMobs));
+        targets.removeIf(entity -> (entity instanceof Player && !hitPlayers) || (!(entity instanceof Player) && !hitMobs));
 
         if (targets.isEmpty()) {
             context.fx().fizzle(player);
-            return;
+            return null;
         }
 
-        // Apply damage and calculate heal
         double totalHeal = 0.0;
         for (LivingEntity target : targets) {
             target.damage(damage, player);
             totalHeal += healPerTarget;
         }
 
-        // Heal player
-        var maxAttr = player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH);
-        double maxHealth = maxAttr != null ? maxAttr.getValue() : 20.0;
-        double newHealth = Math.min(maxHealth, player.getHealth() + totalHeal);
-        player.setHealth(newHealth);
+        double maxHealth = player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
+        player.setHealth(Math.min(maxHealth, player.getHealth() + totalHeal));
 
-        // Visuals and SFX
         context.fx().playSound(player, Sound.ENTITY_WITHER_SPAWN, 0.5f, 0.8f);
         spawnSweepParticles(player);
+        return null;
+    }
+
+    @Override
+    protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
+        // Instant effect.
     }
 
     private List<LivingEntity> getEntitiesInCone(Player player, double range, double angleDegrees) {
         List<LivingEntity> targets = new ArrayList<>();
-        org.bukkit.World world = player.getWorld();
-        var originLoc = player.getLocation();
-        Vector playerDir = originLoc.getDirection();
-        if (playerDir == null) {
-            return targets; // No direction available
-        }
-        Vector playerDirection = playerDir.normalize();
+        Vector playerDir = player.getEyeLocation().getDirection().normalize();
         double angleRadians = Math.toRadians(angleDegrees / 2.0);
 
-        for (LivingEntity entity : world.getLivingEntities()) {
-            if (entity.equals(player) || entity.isDead() || !entity.isValid())
-                continue;
+        for (LivingEntity entity : player.getWorld().getLivingEntities()) {
+            if (entity.equals(player) || entity.isDead() || !entity.isValid()) continue;
+            if (entity.getLocation().distanceSquared(player.getLocation()) > range * range) continue;
 
-            var entLoc = entity.getLocation();
-            var playerLoc = player.getLocation();
-            Vector toEntity = entLoc.toVector().subtract(playerLoc.toVector());
-            double distance = toEntity.length();
-            if (distance > range)
-                continue;
-
-            toEntity = toEntity.normalize();
-            double dotProduct = playerDirection.dot(toEntity);
-            double entityAngle = Math.acos(dotProduct);
-
-            if (entityAngle <= angleRadians) {
+            Vector toEntity = entity.getEyeLocation().toVector().subtract(player.getEyeLocation().toVector()).normalize();
+            if (playerDir.angle(toEntity) <= angleRadians) {
                 targets.add(entity);
             }
         }
-
         return targets;
     }
 
     private void spawnSweepParticles(Player player) {
-        var loc = player.getLocation();
-        org.bukkit.World world = player.getWorld();
-        if (world == null) {
-            return; // Invalid world
-        }
-
-        // Sweep attack particles
-        world.spawnParticle(org.bukkit.Particle.SWEEP_ATTACK, loc.add(0, 1, 0), 1, 0, 0, 0, 0);
-
-        // Dark redstone dust trail
-        Vector direction = loc.getDirection().multiply(0.5);
+        player.getWorld().spawnParticle(Particle.SWEEP_ATTACK, player.getLocation().add(0, 1, 0), 1, 0, 0, 0, 0);
+        Vector direction = player.getLocation().getDirection().multiply(0.5);
         for (int i = 0; i < 10; i++) {
-            world.spawnParticle(Particle.DUST, loc.add(direction.clone().multiply(i)), 5,
-                    new Particle.DustOptions(org.bukkit.Color.fromRGB(64, 0, 0), 1.0f));
+            player.getWorld().spawnParticle(Particle.DUST, player.getLocation().add(direction.clone().multiply(i)), 5, new Particle.DustOptions(Color.fromRGB(64, 0, 0), 1.0f));
         }
-    }
-
-    @Override
-    public String getName() {
-        return "life-reap";
-    }
-
-    @Override
-    public String key() {
-        return "life-reap";
-    }
-
-    @Override
-    public Component displayName() {
-        return Component.text("Levenszuiger");
-    }
-
-    @Override
-    public Prereq prereq() {
-        return new Prereq(true, Component.text(""));
     }
 }

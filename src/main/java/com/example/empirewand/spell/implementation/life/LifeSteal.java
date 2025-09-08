@@ -1,62 +1,87 @@
 package com.example.empirewand.spell.implementation.life;
 
+import com.example.empirewand.api.ConfigService;
+import com.example.empirewand.api.EffectService;
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.spell.PrereqInterface;
+import com.example.empirewand.spell.ProjectileSpell;
+import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.SpellType;
 import org.bukkit.Color;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Snowball;
-import org.bukkit.util.Vector;
+import org.bukkit.event.entity.ProjectileHitEvent;
+import org.jetbrains.annotations.NotNull;
 
-import com.example.empirewand.core.storage.Keys;
-import com.example.empirewand.spell.Prereq;
-import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.SpellContext;
+import java.util.Objects;
 
-import net.kyori.adventure.text.Component;
+public class LifeSteal extends ProjectileSpell<Snowball> {
 
-public class LifeSteal implements Spell {
-    @Override
-    public void execute(SpellContext context) {
-        Player player = context.caster();
-        Snowball snowball = player.launchProjectile(Snowball.class);
-        snowball.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, Keys.STRING_TYPE.getType(), getName());
-        snowball.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, Keys.STRING_TYPE.getType(),
-                player.getUniqueId().toString());
-        // Give a crisp initial speed for better feel
-        Vector dir = player.getEyeLocation().getDirection().normalize().multiply(1.2);
-        snowball.setVelocity(dir);
+    public static class Builder extends ProjectileSpell.Builder<Snowball> {
+        public Builder(EmpireWandAPI api) {
+            super(api, Snowball.class);
+            this.name = "Life Steal";
+            this.description = "Steals health from the target.";
+            this.manaCost = 7; // Example
+            this.cooldown = java.time.Duration.ofSeconds(3);
+            this.spellType = SpellType.LIFE;
+            this.trailParticle = null; // Custom trail
+            this.hitSound = Sound.ENTITY_GENERIC_DRINK;
+        }
 
-        // Light cast SFX
-        context.fx().playSound(player, Sound.ENTITY_WITCH_THROW, 0.8f, 1.2f);
+        @Override
+        @NotNull
+        public ProjectileSpell<Snowball> build() {
+            return new LifeSteal(this);
+        }
+    }
 
-        context.fx().followParticles(
-                context.plugin(),
-                snowball,
-                Particle.DUST,
-                8,
-                0.08, 0.08, 0.08,
-                0,
-                new Particle.DustOptions(Color.fromRGB(170, 0, 0), 1.0f),
-                1L);
+    private LifeSteal(Builder builder) {
+        super(builder);
     }
 
     @Override
-    public String getName() {
+    public @NotNull String key() {
         return "lifesteal";
     }
 
     @Override
-    public String key() {
-        return "lifesteal";
+    public @NotNull PrereqInterface prereq() {
+        return new PrereqInterface.NonePrereq();
     }
 
     @Override
-    public Component displayName() {
-        return Component.text("Life Steal");
+    protected void launchProjectile(@NotNull SpellContext context) {
+        super.launchProjectile(context);
+        context.fx().playSound(context.caster(), Sound.ENTITY_WITCH_THROW, 0.8f, 1.2f);
+        context.fx().followParticles(context.plugin(), context.caster().launchProjectile(Snowball.class),
+                Particle.DUST, 8, 0.08, 0.08, 0.08, 0, new Particle.DustOptions(Color.fromRGB(170, 0, 0), 1.0f), 1L);
     }
 
     @Override
-    public Prereq prereq() {
-        return new Prereq(true, Component.text(""));
+    protected void handleHit(@NotNull SpellContext context, @NotNull Projectile projectile,
+            @NotNull ProjectileHitEvent event) {
+        if (!(event.getHitEntity() instanceof LivingEntity target))
+            return;
+
+        double damage = spellConfig.getDouble("values.damage", 4.0);
+        double stealModifier = spellConfig.getDouble("values.steal-modifier", 0.5);
+        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false);
+
+        Player caster = context.caster();
+        if (target.equals(caster) && !friendlyFire)
+            return;
+
+        target.damage(damage, caster);
+        double stolenHealth = damage * stealModifier;
+        double maxHealth = Objects.requireNonNull(caster.getAttribute(Attribute.GENERIC_MAX_HEALTH)).getValue();
+        caster.setHealth(Math.min(maxHealth, caster.getHealth() + stolenHealth));
+
+        context.fx().spawnParticles(caster.getLocation(), Particle.HEART, 5, 0.5, 1, 0.5, 0);
     }
 }

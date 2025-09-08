@@ -1,86 +1,40 @@
 package com.example.empirewand.spell.implementation.life;
 
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.api.EffectService;
+import com.example.empirewand.spell.PrereqInterface;
+import com.example.empirewand.spell.Spell;
+import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.SpellType;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
-import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.SpellContext;
-import com.example.empirewand.spell.Prereq;
-import net.kyori.adventure.text.Component;
+public class BloodNova extends Spell<Void> {
 
-public class BloodNova implements Spell {
-    @Override
-    public void execute(SpellContext context) {
-        Player player = context.caster();
-
-        // Config values
-        var spells = context.config().getSpellsConfig();
-        double baseDamage = spells.getDouble("blood-nova.values.base-damage", 4.0);
-        double damagePerCharge = spells.getDouble("blood-nova.values.damage-per-charge", 2.0);
-        double radius = spells.getDouble("blood-nova.values.radius", 4.0);
-        double knockbackStrength = spells.getDouble("blood-nova.values.knockback-strength", 1.0);
-        boolean hitPlayers = spells.getBoolean("blood-nova.flags.hit-players", true);
-        boolean hitMobs = spells.getBoolean("blood-nova.flags.hit-mobs", true);
-
-        // Get current charges
-        int charges = BloodTap.getCurrentBloodCharges(player);
-        if (charges == 0) {
-            context.fx().fizzle(player);
-            return;
+    public static class Builder extends Spell.Builder<Void> {
+        public Builder(EmpireWandAPI api) {
+            super(api);
+            this.name = "Blood Nova";
+            this.description = "Unleashes a nova of blood, damaging nearby enemies based on stored charges.";
+            this.manaCost = 10; // Example
+            this.cooldown = java.time.Duration.ofSeconds(1);
+            this.spellType = SpellType.LIFE;
         }
 
-        // Calculate total damage
-        double totalDamage = baseDamage + (charges * damagePerCharge);
-
-        // Find targets
-        for (LivingEntity entity : player.getWorld().getLivingEntities()) {
-            if (entity.getLocation().distance(player.getLocation()) <= radius && !entity.equals(player)) {
-                if (entity instanceof Player && !hitPlayers) continue;
-                if (!(entity instanceof Player) && !hitMobs) continue;
-
-                // Apply damage
-                entity.damage(totalDamage, player);
-
-                // Apply knockback
-                Vector knockback = entity.getLocation().toVector().subtract(player.getLocation().toVector()).normalize();
-                knockback.multiply(knockbackStrength);
-                knockback.setY(0.3); // Small upward component
-                entity.setVelocity(entity.getVelocity().add(knockback));
-            }
-        }
-
-        // Consume all charges
-        BloodTap.consumeBloodCharges(player, charges, context);
-
-        // Visuals and SFX
-        context.fx().playSound(player, Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 0.8f);
-        spawnNovaParticles(player, radius);
-    }
-
-    private void spawnNovaParticles(Player player, double radius) {
-        for (int i = 0; i < 100; i++) {
-            double angle = 2 * Math.PI * i / 100;
-            double x = radius * Math.cos(angle);
-            double z = radius * Math.sin(angle);
-            player.getWorld().spawnParticle(Particle.DUST, player.getLocation().add(x, 1, z), 1,
-                new Particle.DustOptions(org.bukkit.Color.fromRGB(128, 0, 0), 1.0f));
-            player.getWorld().spawnParticle(Particle.SMOKE, player.getLocation().add(x, 1, z), 1, 0, 0, 0, 0);
-        }
-
-        // Center explosion particles
-        for (int i = 0; i < 50; i++) {
-            double x = (Math.random() - 0.5) * radius * 2;
-            double z = (Math.random() - 0.5) * radius * 2;
-            player.getWorld().spawnParticle(Particle.EXPLOSION, player.getLocation().add(x, 1, z), 1, 0, 0, 0, 0);
+        @Override
+        @NotNull
+        public Spell<Void> build() {
+            return new BloodNova(this);
         }
     }
 
-    @Override
-    public String getName() {
-        return "blood-nova";
+    private BloodNova(Builder builder) {
+        super(builder);
     }
 
     @Override
@@ -89,12 +43,59 @@ public class BloodNova implements Spell {
     }
 
     @Override
-    public Component displayName() {
-        return Component.text("Blood Nova");
+    public PrereqInterface prereq() {
+        // Prereq could check for at least 1 blood charge
+        return new PrereqInterface.NonePrereq();
     }
 
     @Override
-    public Prereq prereq() {
-        return new Prereq(true, Component.text(""));
+    protected Void executeSpell(SpellContext context) {
+        Player player = context.caster();
+
+        int charges = BloodTap.getCurrentBloodCharges(player);
+        if (charges == 0) {
+            context.fx().fizzle(player);
+            return null;
+        }
+
+        double baseDamage = spellConfig.getDouble("values.base-damage", 4.0);
+        double damagePerCharge = spellConfig.getDouble("values.damage-per-charge", 2.0);
+        double radius = spellConfig.getDouble("values.radius", 4.0);
+        double knockbackStrength = spellConfig.getDouble("values.knockback-strength", 1.0);
+        boolean hitPlayers = spellConfig.getBoolean("flags.hit-players", true);
+        boolean hitMobs = spellConfig.getBoolean("flags.hit-mobs", true);
+
+        double totalDamage = baseDamage + (charges * damagePerCharge);
+
+        for (LivingEntity entity : player.getWorld().getLivingEntities()) {
+            if (entity.getLocation().distance(player.getLocation()) <= radius && !entity.equals(player)) {
+                if ((entity instanceof Player && !hitPlayers) || (!(entity instanceof Player) && !hitMobs)) continue;
+
+                entity.damage(totalDamage, player);
+                Vector knockback = entity.getLocation().toVector().subtract(player.getLocation().toVector()).normalize().multiply(knockbackStrength).setY(0.3);
+                entity.setVelocity(entity.getVelocity().add(knockback));
+            }
+        }
+
+        BloodTap.consumeBloodCharges(player, charges, context.plugin());
+
+        context.fx().playSound(player, Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 0.8f);
+        spawnNovaParticles(player, radius);
+        return null;
+    }
+
+    @Override
+    protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
+        // Instant effect.
+    }
+
+    private void spawnNovaParticles(Player player, double radius) {
+        for (int i = 0; i < 100; i++) {
+            double angle = 2 * Math.PI * i / 100;
+            double x = radius * Math.cos(angle);
+            double z = radius * Math.sin(angle);
+            player.getWorld().spawnParticle(Particle.DUST, player.getLocation().add(x, 1, z), 1, new Particle.DustOptions(org.bukkit.Color.fromRGB(128, 0, 0), 1.0f));
+        }
+        player.getWorld().spawnParticle(Particle.EXPLOSION, player.getLocation(), 1, 0, 0, 0, 0.1);
     }
 }

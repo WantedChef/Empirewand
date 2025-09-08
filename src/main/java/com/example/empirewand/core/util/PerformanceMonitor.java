@@ -14,6 +14,9 @@ public class PerformanceMonitor {
     private final Logger logger;
 
     public PerformanceMonitor(Logger logger) {
+        if (logger == null) {
+            throw new IllegalArgumentException("Logger cannot be null");
+        }
         this.logger = logger;
     }
 
@@ -26,15 +29,40 @@ public class PerformanceMonitor {
      * @param thresholdMs   threshold in milliseconds above which to log
      */
     public void recordExecutionTime(String operationName, long startTime, long thresholdMs) {
-        long endTime = System.nanoTime();
-        long durationNs = endTime - startTime;
-        long durationMs = durationNs / 1_000_000;
+        if (operationName == null || operationName.trim().isEmpty()) {
+            return;
+        }
+        if (startTime <= 0) {
+            return;
+        }
+        if (thresholdMs < 0) {
+            thresholdMs = 0; // Ensure threshold is non-negative
+        }
+        
+        try {
+            long endTime = System.nanoTime();
+            long durationNs = endTime - startTime;
+            
+            // Handle potential overflow
+            if (durationNs < 0) {
+                logger.warning(String.format(
+                        "[PERF] Operation timing overflow detected for: %s", operationName));
+                return;
+            }
+            
+            long durationMs = durationNs / 1_000_000;
 
-        if (durationMs >= thresholdMs) {
-            long operationId = operationCounter.incrementAndGet();
+            if (durationMs >= thresholdMs) {
+                long operationId = operationCounter.incrementAndGet();
+                logger.warning(String.format(
+                        "[PERF] Operation %d: %s took %d ms (threshold: %d ms)",
+                        operationId, operationName, durationMs, thresholdMs));
+            }
+        } catch (Exception e) {
+            // Log error but don't crash - performance monitoring should never break functionality
             logger.warning(String.format(
-                    "[PERF] Operation %d: %s took %d ms (threshold: %d ms)",
-                    operationId, operationName, durationMs, thresholdMs));
+                    "[PERF] Error recording execution time for operation: %s - %s",
+                    operationName, e.getMessage()));
         }
     }
 
@@ -45,6 +73,9 @@ public class PerformanceMonitor {
      * @return a TimingContext that can be used to record completion
      */
     public TimingContext startTiming(String operationName) {
+        if (operationName == null || operationName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Operation name cannot be null or empty");
+        }
         return new TimingContext(operationName, System.nanoTime());
     }
 
@@ -56,6 +87,12 @@ public class PerformanceMonitor {
         private final long startTime;
 
         private TimingContext(String operationName, long startTime) {
+            if (operationName == null || operationName.trim().isEmpty()) {
+                throw new IllegalArgumentException("Operation name cannot be null or empty");
+            }
+            if (startTime <= 0) {
+                throw new IllegalArgumentException("Start time must be positive");
+            }
             this.operationName = operationName;
             this.startTime = startTime;
         }
@@ -66,7 +103,17 @@ public class PerformanceMonitor {
          * @param thresholdMs threshold in milliseconds above which to log
          */
         public void complete(long thresholdMs) {
-            PerformanceMonitor.this.recordExecutionTime(operationName, startTime, thresholdMs);
+            if (thresholdMs < 0) {
+                thresholdMs = 0; // Ensure threshold is non-negative
+            }
+            try {
+                PerformanceMonitor.this.recordExecutionTime(operationName, startTime, thresholdMs);
+            } catch (Exception e) {
+                // Log error but don't crash - timing completion should never break functionality
+                logger.warning(String.format(
+                        "[PERF] Error completing timing for operation: %s - %s",
+                        operationName, e.getMessage()));
+            }
         }
 
         /**

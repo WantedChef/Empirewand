@@ -1,5 +1,13 @@
 package com.example.empirewand.spell.implementation.dark;
 
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.api.EffectService;
+import com.example.empirewand.spell.PrereqInterface;
+import com.example.empirewand.spell.Spell;
+import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.SpellType;
+import java.util.List;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
@@ -7,34 +15,63 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.NotNull;
 
-import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.SpellContext;
-import com.example.empirewand.spell.Prereq;
-import net.kyori.adventure.text.Component;
+public class RitualOfUnmaking extends Spell<Void> {
 
-import java.util.List;
+    public static class Builder extends Spell.Builder<Void> {
+        public Builder(EmpireWandAPI api) {
+            super(api);
+            this.name = "Ritual of Unmaking";
+            this.description = "Channels a destructive ritual that damages and weakens nearby enemies.";
+            this.manaCost = 20;
+            this.cooldown = java.time.Duration.ofSeconds(40);
+            this.spellType = SpellType.DARK;
+        }
 
-public class RitualOfUnmaking implements Spell {
-    @Override
-    public void execute(SpellContext context) {
-        Player player = context.caster();
-
-        // Config values
-        var spells = context.config().getSpellsConfig();
-        int channelTicks = spells.getInt("ritual-of-unmaking.values.channel-ticks", 40);
-        double radius = spells.getDouble("ritual-of-unmaking.values.radius", 6.0);
-        double damage = spells.getDouble("ritual-of-unmaking.values.damage", 8.0);
-        int weaknessDuration = spells.getInt("ritual-of-unmaking.values.weakness-duration-ticks", 120);
-        int weaknessAmplifier = spells.getInt("ritual-of-unmaking.values.weakness-amplifier", 0);
-        boolean hitPlayers = spells.getBoolean("ritual-of-unmaking.flags.hit-players", true);
-        boolean hitMobs = spells.getBoolean("ritual-of-unmaking.flags.hit-mobs", true);
-
-        // Start channeling
-        new ChannelTask(context, player, channelTicks, radius, damage, weaknessDuration, weaknessAmplifier, hitPlayers, hitMobs).runTaskTimer(context.plugin(), 0L, 1L);
+        @Override
+        @NotNull
+        public Spell<Void> build() {
+            return new RitualOfUnmaking(this);
+        }
     }
 
-    private static class ChannelTask extends BukkitRunnable {
+    private final Config config;
+
+    private RitualOfUnmaking(Builder builder) {
+        super(builder);
+        this.config = new Config(spellConfig);
+    }
+
+    @Override
+    public String key() {
+        return "ritual-of-unmaking";
+    }
+
+    @Override
+    public Component displayName() {
+        return Component.text("Ritueel van Ontering");
+    }
+
+    @Override
+    public PrereqInterface prereq() {
+        return new PrereqInterface.NonePrereq();
+    }
+
+    @Override
+    protected Void executeSpell(SpellContext context) {
+        Player player = context.caster();
+
+        new ChannelTask(context, player, config.channelTicks, config.radius, config.damage, config.weaknessDuration, config.weaknessAmplifier, config.hitPlayers, config.hitMobs).runTaskTimer(context.plugin(), 0L, 1L);
+        return null;
+    }
+
+    @Override
+    protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
+        // Effects are handled in the scheduler.
+    }
+
+    private class ChannelTask extends BukkitRunnable {
         private final SpellContext context;
         private final Player player;
         private final int channelTicks;
@@ -46,8 +83,7 @@ public class RitualOfUnmaking implements Spell {
         private final boolean hitMobs;
         private int ticksPassed = 0;
 
-        public ChannelTask(SpellContext context, Player player, int channelTicks, double radius, double damage,
-                          int weaknessDuration, int weaknessAmplifier, boolean hitPlayers, boolean hitMobs) {
+        public ChannelTask(SpellContext context, Player player, int channelTicks, double radius, double damage, int weaknessDuration, int weaknessAmplifier, boolean hitPlayers, boolean hitMobs) {
             this.context = context;
             this.player = player;
             this.channelTicks = channelTicks;
@@ -61,21 +97,13 @@ public class RitualOfUnmaking implements Spell {
 
         @Override
         public void run() {
-            if (!player.isValid() || player.isDead()) {
+            if (!player.isValid() || player.isDead() || (player.getLastDamage() > 0 && ticksPassed > 0)) {
                 this.cancel();
+                context.fx().fizzle(player);
                 return;
             }
 
-            // Check for interruption (damage taken)
-            if (player.getLastDamage() > 0 && ticksPassed > 0) {
-                this.cancel();
-                onInterrupt();
-                return;
-            }
-
-            // Spawn circle particles
             spawnCircleParticles(player, radius);
-
             ticksPassed++;
 
             if (ticksPassed >= channelTicks) {
@@ -84,28 +112,18 @@ public class RitualOfUnmaking implements Spell {
             }
         }
 
-        private void onInterrupt() {
-            // 50% cooldown reduction - handled by cooldown service
-            context.fx().fizzle(player);
-        }
-
         private void onFinish() {
-            // Apply burst
             List<LivingEntity> targets = player.getWorld().getLivingEntities().stream()
-                .filter(entity -> entity.getLocation().distance(player.getLocation()) <= radius)
-                .filter(entity -> {
-                    if (entity instanceof Player && !hitPlayers) return false;
-                    if (!(entity instanceof Player) && !hitMobs) return false;
-                    return !entity.equals(player);
-                })
-                .toList();
+                    .filter(entity -> entity.getLocation().distance(player.getLocation()) <= radius)
+                    .filter(entity -> !entity.equals(player))
+                    .filter(entity -> (entity instanceof Player && hitPlayers) || (!(entity instanceof Player) && hitMobs))
+                    .toList();
 
             for (LivingEntity target : targets) {
                 target.damage(damage, player);
                 target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, weaknessDuration, weaknessAmplifier));
             }
 
-            // SFX
             context.fx().playSound(player, Sound.ENTITY_WITHER_AMBIENT, 1.0f, 0.5f);
             spawnBurstParticles(player, radius);
         }
@@ -128,23 +146,23 @@ public class RitualOfUnmaking implements Spell {
         }
     }
 
-    @Override
-    public String getName() {
-        return "ritual-of-unmaking";
-    }
+    private static class Config {
+        private final int channelTicks;
+        private final double radius;
+        private final double damage;
+        private final int weaknessDuration;
+        private final int weaknessAmplifier;
+        private final boolean hitPlayers;
+        private final boolean hitMobs;
 
-    @Override
-    public String key() {
-        return "ritual-of-unmaking";
-    }
-
-    @Override
-    public Component displayName() {
-        return Component.text("Ritueel van Ontering");
-    }
-
-    @Override
-    public Prereq prereq() {
-        return new Prereq(true, Component.text(""));
+        public Config(org.bukkit.configuration.ConfigurationSection config) {
+            this.channelTicks = config.getInt("values.channel-ticks", 40);
+            this.radius = config.getDouble("values.radius", 6.0);
+            this.damage = config.getDouble("values.damage", 8.0);
+            this.weaknessDuration = config.getInt("values.weakness-duration-ticks", 120);
+            this.weaknessAmplifier = config.getInt("values.weakness-amplifier", 0);
+            this.hitPlayers = config.getBoolean("flags.hit-players", true);
+            this.hitMobs = config.getBoolean("flags.hit-mobs", true);
+        }
     }
 }

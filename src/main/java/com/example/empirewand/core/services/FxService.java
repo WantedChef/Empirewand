@@ -1,5 +1,6 @@
 package com.example.empirewand.core.services;
 
+import com.example.empirewand.api.EffectService;
 import com.example.empirewand.core.text.TextService;
 import com.example.empirewand.core.util.PerformanceMonitor;
 import net.kyori.adventure.text.Component;
@@ -12,6 +13,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,13 +26,14 @@ import java.util.Map;
  * Includes performance optimizations and batching for high-frequency
  * operations.
  */
-public class FxService {
+public class FxService implements EffectService {
     private final TextService textService;
     private final PerformanceMonitor performanceMonitor;
 
     // Performance optimization: batch particle operations
     private static final int MAX_BATCH_SIZE = 50;
     private final List<ParticleBatch> particleBatch = new ArrayList<>();
+    private final Object particleBatchLock = new Object(); // thread-safety
 
     /**
      * Internal class for batching particle operations.
@@ -69,36 +72,58 @@ public class FxService {
     }
 
     public FxService(TextService textService, PerformanceMonitor performanceMonitor) {
+        if (textService == null) {
+            throw new IllegalArgumentException("TextService cannot be null");
+        }
+        if (performanceMonitor == null) {
+            throw new IllegalArgumentException("PerformanceMonitor cannot be null");
+        }
         this.textService = textService;
         this.performanceMonitor = performanceMonitor;
     }
 
     // ---- Action bar helpers ----
 
-    public void actionBar(Player player, Component message) {
-        if (player != null && message != null) {
+    @Override
+    public void actionBar(@NotNull Player player, @NotNull Component message) {
+        if (player == null || message == null) {
+            return;
+        }
+        try {
             player.sendActionBar(message);
+        } catch (Exception e) {
+            // Log error but don't crash - FX operations should never break functionality
         }
     }
 
-    public void actionBar(Player player, String plainText) {
-        if (player != null && plainText != null && !plainText.isEmpty()) {
+    @Override
+    public void actionBar(@NotNull Player player, @NotNull String plainText) {
+        if (player == null || plainText == null || plainText.trim().isEmpty()) {
+            return;
+        }
+        try {
             player.sendActionBar(Component.text(plainText));
+        } catch (Exception e) {
+            // Log error but don't crash
         }
     }
 
-    public void actionBarKey(Player player, String messageKey) {
+    @Override
+    public void actionBarKey(@NotNull Player player, @NotNull String messageKey) {
         String raw = textService.getMessage(messageKey);
         actionBar(player, raw);
     }
 
-    public void actionBarKey(Player player, String messageKey, Map<String, String> placeholders) {
+    @Override
+    public void actionBarKey(@NotNull Player player, @NotNull String messageKey,
+            @NotNull Map<String, String> placeholders) {
         String raw = (placeholders == null || placeholders.isEmpty())
                 ? textService.getMessage(messageKey)
                 : textService.getMessage(messageKey, placeholders);
         actionBar(player, raw);
     }
 
+    // Convenience (not necessarily in interface)
     public void actionBarSound(Player player, Component message, Sound sound, float volume, float pitch) {
         actionBar(player, message);
         playSound(player, sound, volume, pitch);
@@ -117,12 +142,11 @@ public class FxService {
         actionBarSound(player, Component.text(raw), sound, volume, pitch);
     }
 
-    public void selectedSpell(Player player, String displayName) {
+    public void selectedSpell(@NotNull Player player, @NotNull String displayName) {
         actionBarKey(player, "spell-selected", Map.of("spell", textService.stripMiniTags(displayName)));
     }
 
-    public void onCooldown(Player player, String displayName, long msRemaining) {
-        // Convert milliseconds to seconds and format appropriately
+    public void onCooldown(@NotNull Player player, @NotNull String displayName, long msRemaining) {
         double secondsRemaining = Math.max(0.1, msRemaining / 1000.0);
         String formattedTime = String.format(java.util.Locale.US, "%.1f", secondsRemaining);
 
@@ -131,15 +155,15 @@ public class FxService {
                 "remaining", formattedTime));
     }
 
-    public void noSpells(Player player) {
+    public void noSpells(@NotNull Player player) {
         actionBarKey(player, "no-spells-bound");
     }
 
-    public void noPermission(Player player) {
+    public void noPermission(@NotNull Player player) {
         actionBarKey(player, "no-permission");
     }
 
-    public void fizzle(Player player) {
+    public void fizzle(@NotNull Player player) {
         actionBarKey(player, "fizzle");
         if (player != null) {
             fizzle(player.getLocation());
@@ -148,13 +172,16 @@ public class FxService {
 
     // ---- Title/Subtitle helpers ----
 
-    public void title(Player player, Component title, Component subtitle) {
+    @Override
+    public void title(@NotNull Player player, @NotNull Component title, @NotNull Component subtitle) {
         if (player != null) {
             player.showTitle(net.kyori.adventure.title.Title.title(title, subtitle));
         }
     }
 
-    public void title(Player player, Component title, Component subtitle, int fadeIn, int stay, int fadeOut) {
+    @Override
+    public void title(@NotNull Player player, @NotNull Component title, @NotNull Component subtitle,
+            int fadeIn, int stay, int fadeOut) {
         if (player != null) {
             var times = net.kyori.adventure.title.Title.Times.times(
                     java.time.Duration.ofMillis((long) fadeIn * 50),
@@ -164,15 +191,9 @@ public class FxService {
         }
     }
 
-    public void title(Player player, String titleKey, String subtitleKey) {
-        Component titleComp = textService.parseMiniMessage(textService.getMessage(titleKey));
-        Component subtitleComp = textService.parseMiniMessage(textService.getMessage(subtitleKey));
-        title(player, titleComp, subtitleComp);
-    }
-
     // ---- Sound profiles ----
 
-    public void playUISound(Player player, String profile) {
+    public void playUISound(@NotNull Player player, @NotNull String profile) {
         switch (profile.toLowerCase()) {
             case "success" -> playSound(player, Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.8f, 1.2f);
             case "error" -> playSound(player, Sound.ENTITY_VILLAGER_NO, 1.0f, 0.9f);
@@ -185,13 +206,14 @@ public class FxService {
         }
     }
 
-    // ---- Standardized error messages ----
+    // ---- Standardized messages ----
 
-    public void showError(Player player, String errorType) {
+    public void showError(@NotNull Player player, @NotNull String errorType) {
         showError(player, errorType, Map.of());
     }
 
-    public void showError(Player player, String errorType, Map<String, String> placeholders) {
+    public void showError(@NotNull Player player, @NotNull String errorType,
+            @NotNull Map<String, String> placeholders) {
         String messageKey = "error." + errorType;
         String soundProfile = switch (errorType) {
             case "no-permission" -> "error";
@@ -207,21 +229,22 @@ public class FxService {
         playUISound(player, soundProfile);
     }
 
-    public void showSuccess(Player player, String successType) {
+    public void showSuccess(@NotNull Player player, @NotNull String successType) {
         showSuccess(player, successType, Map.of());
     }
 
-    public void showSuccess(Player player, String successType, Map<String, String> placeholders) {
+    public void showSuccess(@NotNull Player player, @NotNull String successType,
+            @NotNull Map<String, String> placeholders) {
         String messageKey = "success." + successType;
         actionBarKey(player, messageKey, placeholders);
         playUISound(player, "success");
     }
 
-    public void showInfo(Player player, String infoType) {
+    public void showInfo(@NotNull Player player, @NotNull String infoType) {
         showInfo(player, infoType, Map.of());
     }
 
-    public void showInfo(Player player, String infoType, Map<String, String> placeholders) {
+    public void showInfo(@NotNull Player player, @NotNull String infoType, @NotNull Map<String, String> placeholders) {
         String messageKey = "info." + infoType;
         actionBarKey(player, messageKey, placeholders);
         playUISound(player, "info");
@@ -229,81 +252,94 @@ public class FxService {
 
     // ---- Sound helpers ----
 
-    public void playSound(Player player, Sound sound, float volume, float pitch) {
+    @Override
+    public void playSound(@NotNull Player player, @NotNull Sound sound, float volume, float pitch) {
+        if (player == null || sound == null) {
+            return;
+        }
         PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("playSoundPlayer");
-
-        if (player != null && sound != null) {
+        try {
             Location location = player.getLocation();
             if (location != null) {
                 player.playSound(location, sound, volume, pitch);
             }
+        } catch (Exception e) {
+            // Log error but don't crash
+        } finally {
+            timing.complete(2); // Log if sound playing takes > 2ms
         }
-
-        timing.complete(2); // Log if sound playing takes > 2ms
     }
 
-    public void playSound(Location location, Sound sound, float volume, float pitch) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("playSoundLocation");
-
+    @Override
+    public void playSound(@NotNull Location location, @NotNull Sound sound, float volume, float pitch) {
         if (location == null || sound == null) {
-            timing.complete(1);
             return;
         }
-
-        World world = location.getWorld();
-        if (world != null) {
-            world.playSound(location, sound, volume, pitch);
+        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("playSoundLocation");
+        try {
+            World world = location.getWorld();
+            if (world != null) {
+                world.playSound(location, sound, volume, pitch);
+            }
+        } catch (Exception e) {
+            // Log error but don't crash
+        } finally {
+            timing.complete(2);
         }
-
-        timing.complete(2);
     }
 
     // ---- Particle helpers ----
 
-    public void spawnParticles(Location location, Particle particle, int count,
+    @Override
+    public void spawnParticles(@NotNull Location location, @NotNull Particle particle, int count,
             double offsetX, double offsetY, double offsetZ, double speed) {
+        if (location == null || particle == null || count <= 0) {
+            return;
+        }
         PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("spawnParticles");
-
-        if (location == null || particle == null || count <= 0) {
-            timing.complete(1); // Very short threshold for validation failures
-            return;
+        try {
+            World world = location.getWorld();
+            if (world != null) {
+                world.spawnParticle(particle, location, count, offsetX, offsetY, offsetZ, speed);
+            }
+        } catch (Exception e) {
+            // Log error but don't crash
+        } finally {
+            timing.complete(5);
         }
-
-        World world = location.getWorld();
-        if (world != null) {
-            world.spawnParticle(particle, location, count, offsetX, offsetY, offsetZ, speed);
-        }
-
-        timing.complete(5); // Log if particle spawning takes > 5ms
     }
 
-    public void spawnParticles(Location location, Particle particle, int count,
+    @Override
+    public void spawnParticles(@NotNull Location location, @NotNull Particle particle, int count,
             double offsetX, double offsetY, double offsetZ, double speed, Object data) {
+        if (location == null || particle == null || count <= 0) {
+            return;
+        }
         PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("spawnParticlesWithData");
-
-        if (location == null || particle == null || count <= 0) {
-            timing.complete(1);
-            return;
+        try {
+            World world = location.getWorld();
+            if (world != null) {
+                world.spawnParticle(particle, location, count, offsetX, offsetY, offsetZ, speed, data);
+            }
+        } catch (Exception e) {
+            // Log error but don't crash
+        } finally {
+            timing.complete(5);
         }
-
-        World world = location.getWorld();
-        if (world != null) {
-            world.spawnParticle(particle, location, count, offsetX, offsetY, offsetZ, speed, data);
-        }
-
-        timing.complete(5);
     }
 
     /**
      * Batches multiple particle operations for improved performance.
      * Automatically flushes when batch size reaches MAX_BATCH_SIZE.
      */
-    public void batchParticles(Location location, Particle particle, int count,
+    @Override
+    public void batchParticles(@NotNull Location location, @NotNull Particle particle, int count,
             double offsetX, double offsetY, double offsetZ, double speed, Object data) {
-        particleBatch.add(new ParticleBatch(location, particle, count, offsetX, offsetY, offsetZ, speed, data));
-
-        if (particleBatch.size() >= MAX_BATCH_SIZE) {
-            flushParticleBatch();
+        synchronized (particleBatchLock) {
+            particleBatch.add(new ParticleBatch(location, particle, count, offsetX, offsetY, offsetZ, speed, data));
+            if (particleBatch.size() >= MAX_BATCH_SIZE) {
+                flushParticleBatch();
+            }
         }
     }
 
@@ -311,7 +347,8 @@ public class FxService {
      * Batches multiple particle operations for improved performance.
      * Automatically flushes when batch size reaches MAX_BATCH_SIZE.
      */
-    public void batchParticles(Location location, Particle particle, int count,
+    @Override
+    public void batchParticles(@NotNull Location location, @NotNull Particle particle, int count,
             double offsetX, double offsetY, double offsetZ, double speed) {
         batchParticles(location, particle, count, offsetX, offsetY, offsetZ, speed, null);
     }
@@ -320,96 +357,94 @@ public class FxService {
      * Flushes all batched particle operations.
      * Should be called at the end of high-frequency operations.
      */
+    @Override
     public void flushParticleBatch() {
-        if (particleBatch.isEmpty())
-            return;
+        synchronized (particleBatchLock) {
+            if (particleBatch.isEmpty())
+                return;
 
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("flushParticleBatch");
+            PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("flushParticleBatch");
 
-        for (ParticleBatch batch : particleBatch) {
-            batch.execute();
+            // Copy to avoid concurrent modification
+            List<ParticleBatch> batchCopy = new ArrayList<>(particleBatch);
+            particleBatch.clear();
+
+            for (ParticleBatch batch : batchCopy) {
+                batch.execute();
+            }
+
+            timing.complete(10); // Log if batch flush takes > 10ms
         }
-
-        particleBatch.clear();
-
-        timing.complete(10); // Log if batch flush takes > 10ms
     }
 
-    public void trail(Location start, Location end, Particle particle, int perStep) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("trail");
-
+    @Override
+    public void trail(@NotNull Location start, @NotNull Location end, @NotNull Particle particle, int perStep) {
         if (start == null || end == null || particle == null || perStep <= 0) {
-            timing.complete(1);
             return;
         }
+        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("trail");
+        try {
+            Vector dir = end.toVector().subtract(start.toVector());
+            double length = dir.length();
+            if (length <= 0.001) {
+                return;
+            }
 
-        Vector dir = end.toVector().subtract(start.toVector());
-        double length = dir.length();
-        if (length <= 0.001) {
-            timing.complete(1);
-            return;
+            int steps = (int) Math.max(1, Math.round(length));
+            Vector step = dir.normalize().multiply(length / steps);
+            Location point = start.clone();
+
+            for (int i = 0; i < steps; i++) {
+                spawnParticles(point, particle, perStep, 0, 0, 0, 0);
+                point.add(step);
+            }
+        } catch (Exception e) {
+            // Log error but don't crash
+        } finally {
+            timing.complete(15); // Trail operations can be more expensive
         }
-
-        int steps = (int) Math.max(1, Math.round(length));
-        Vector step = dir.normalize().multiply(length / steps);
-        Location point = start.clone();
-
-        for (int i = 0; i < steps; i++) {
-            spawnParticles(point, particle, perStep, 0, 0, 0, 0);
-            point.add(step);
-        }
-
-        timing.complete(15); // Trail operations can be more expensive
     }
 
-    public void impact(Location location, Particle particle, int count, Sound sound, float volume, float pitch) {
-        impact(location, particle, count, 0.2, sound, volume, pitch);
-    }
-
-    public void impact(Location location, Particle particle, int count, double spread, Sound sound, float volume,
-            float pitch) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("impact");
-
-        if (location == null) {
-            timing.complete(1);
-            return;
-        }
-
-        spawnParticles(location, particle, count, spread, spread, spread, 0);
-        playSound(location, sound, volume, pitch);
-
-        timing.complete(5);
-    }
-
-    /**
-     * Subtle failure effect: short extinguish + smoke.
-     */
-    public void fizzle(Location location) {
-        playSound(location, Sound.BLOCK_FIRE_EXTINGUISH, 1.0f, 1.5f);
-        spawnParticles(location, Particle.SMOKE, 10, 0.1, 0.1, 0.1, 0.05);
-    }
-
-    /**
-     * Generic projectile trail effect.
-     */
-    public void trail(Location location) {
+    public void trail(@NotNull Location location) {
         spawnParticles(location, Particle.SOUL_FIRE_FLAME, 10, 0.1, 0.1, 0.1, 0.05);
     }
 
-    /**
-     * Generic projectile impact effect.
-     */
-    public void impact(Location location) {
+    @Override
+    public void impact(@NotNull Location location, @NotNull Particle particle, int count,
+            @NotNull Sound sound, float volume, float pitch) {
+        impact(location, particle, count, 0.2, sound, volume, pitch);
+    }
+
+    // Removed @Override: not declared in EffectService
+    public void impact(@NotNull Location location, @NotNull Particle particle, int count, double spread,
+            @NotNull Sound sound, float volume, float pitch) {
+        if (location == null) {
+            return;
+        }
+        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("impact");
+        try {
+            spawnParticles(location, particle, count, spread, spread, spread, 0);
+            playSound(location, sound, volume, pitch);
+        } catch (Exception e) {
+            // Log error but don't crash
+        } finally {
+            timing.complete(5);
+        }
+    }
+
+    public void impact(@NotNull Location location) {
         spawnParticles(location, Particle.EXPLOSION, 30, 0.5, 0.5, 0.5, 0.1);
         playSound(location, Sound.ENTITY_BLAZE_SHOOT, 1.0f, 1.0f);
     }
 
-    /**
-     * Follows an entity with a particle effect on a fixed period until it becomes
-     * invalid or dead.
-     * Lightweight helper to reduce boilerplate runnables in spells.
-     */
-    public void followParticles(Plugin plugin, Entity entity, Particle particle, int count,
+    @Override
+    public void fizzle(@NotNull Location location) {
+        playSound(location, Sound.BLOCK_FIRE_EXTINGUISH, 1.0f, 1.5f);
+        spawnParticles(location, Particle.SMOKE, 10, 0.1, 0.1, 0.1, 0.05);
+    }
+
+    @Override
+    public void followParticles(@NotNull Plugin plugin, @NotNull Entity entity, @NotNull Particle particle, int count,
             double offsetX, double offsetY, double offsetZ, double speed, Object data,
             long periodTicks) {
         if (plugin == null || entity == null || particle == null || periodTicks <= 0)
@@ -421,6 +456,11 @@ public class FxService {
                     cancel();
                     return;
                 }
+                if (entity instanceof Player player && !player.isOnline()) {
+                    cancel();
+                    return;
+                }
+
                 if (data != null) {
                     spawnParticles(entity.getLocation(), particle, count, offsetX, offsetY, offsetZ, speed, data);
                 } else {
@@ -430,10 +470,8 @@ public class FxService {
         }.runTaskTimer(plugin, 0L, Math.max(1L, periodTicks));
     }
 
-    /**
-     * Follows an entity with the generic trail effect.
-     */
-    public void followTrail(Plugin plugin, Entity entity, long periodTicks) {
+    // Removed @Override: not declared in EffectService
+    public void followTrail(@NotNull Plugin plugin, @NotNull Entity entity, long periodTicks) {
         if (plugin == null || entity == null || periodTicks <= 0)
             return;
         new BukkitRunnable() {
@@ -443,8 +481,50 @@ public class FxService {
                     cancel();
                     return;
                 }
+                if (entity instanceof Player player && !player.isOnline()) {
+                    cancel();
+                    return;
+                }
                 trail(entity.getLocation());
             }
         }.runTaskTimer(plugin, 0L, Math.max(1L, periodTicks));
+    }
+
+    // ---- Lifecycle ----
+
+    public void shutdown() {
+        synchronized (particleBatchLock) {
+            flushParticleBatch();
+            particleBatch.clear();
+        }
+    }
+
+    // ===== EmpireWandService Implementation =====
+
+    @Override
+    public String getServiceName() {
+        return "FxService";
+    }
+
+    @Override
+    public com.example.empirewand.api.Version getServiceVersion() {
+        return com.example.empirewand.api.Version.of(2, 0, 0);
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true; // FxService is always enabled
+    }
+
+    @Override
+    public com.example.empirewand.api.ServiceHealth getHealth() {
+        return com.example.empirewand.api.ServiceHealth.HEALTHY;
+    }
+
+    @Override
+    public void reload() {
+        // FxService doesn't have configuration to reload
+        // Flush any pending particle batches
+        flushParticleBatch();
     }
 }

@@ -1,138 +1,50 @@
 package com.example.empirewand.spell.implementation.fire;
 
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.api.EffectService;
+import com.example.empirewand.spell.PrereqInterface;
+import com.example.empirewand.spell.Spell;
+import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.SpellType;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.NotNull;
 
-import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.SpellContext;
-import com.example.empirewand.spell.Prereq;
-import net.kyori.adventure.text.Component;
+import java.util.Deque;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
-public class ExplosionTrail implements Spell {
-    // Helper holder for temporary block reversion
-    private static final class TempBlock {
-        final Block block;
-        final Material original;
-        final long revertTick;
+public class ExplosionTrail extends Spell<Void> {
 
-        TempBlock(Block block, Material original, long revertTick) {
-            this.block = block;
-            this.original = original;
-            this.revertTick = revertTick;
+    public static class Builder extends Spell.Builder<Void> {
+        public Builder(EmpireWandAPI api) {
+            super(api);
+            this.name = "Explosion Trail";
+            this.description = "You become a walking explosion, damaging nearby entities.";
+            this.manaCost = 15; // Example value
+            this.cooldown = java.time.Duration.ofSeconds(25);
+            this.spellType = SpellType.FIRE;
+        }
+
+        @Override
+        @NotNull
+        public Spell<Void> build() {
+            return new ExplosionTrail(this);
         }
     }
 
-    @Override
-    public void execute(SpellContext context) {
-        Player player = context.caster();
+    private final Config config;
 
-        // Config values
-        var spells = context.config().getSpellsConfig();
-        int duration = spells.getInt("explosion-trail.values.duration-ticks", 100); // 5 seconds
-        double damage = spells.getDouble("explosion-trail.values.damage", 8.0); // 4 hearts
-        int tickInterval = spells.getInt("explosion-trail.values.tick-interval", 10); // 0.5 seconds
-        // Visual config
-        int trailLength = spells.getInt("explosion-trail.values.trail-length", 12);
-        int particleCount = spells.getInt("explosion-trail.values.particle-count", 10);
-        int blockLifetime = spells.getInt("explosion-trail.values.block-lifetime-ticks", 40);
-        boolean placeBlocks = spells.getBoolean("explosion-trail.values.place-temp-blocks", true);
-        boolean friendlyFire = context.config().getConfig().getBoolean("features.friendly-fire", false);
-
-        // Start trail effect
-        startTrailScheduler(player, duration, damage, tickInterval, friendlyFire, context,
-                trailLength, particleCount, blockLifetime, placeBlocks);
-
-        // Cast sound
-        context.fx().playSound(player, Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 0.5f);
-    }
-
-    private void startTrailScheduler(Player caster, int duration, double damage, int tickInterval,
-            boolean friendlyFire, SpellContext context,
-            int trailLength, int particleCount, int blockLifetime, boolean placeBlocks) {
-        new BukkitRunnable() {
-            private int ticks = 0;
-            private final java.util.Deque<TempBlock> tempBlocks = new java.util.ArrayDeque<>();
-
-            @Override
-            public void run() {
-                if (ticks >= duration || !caster.isValid() || caster.isDead()) {
-                    // Revert leftover temp blocks
-                    while (!tempBlocks.isEmpty()) {
-                        TempBlock tb = tempBlocks.removeFirst();
-                        tb.block.setType(tb.original, false);
-                    }
-                    this.cancel();
-                    return;
-                }
-
-                Location playerLoc = caster.getLocation();
-
-                // Create explosion at player location
-                for (var entity : playerLoc.getWorld().getNearbyEntities(playerLoc, 3.0, 3.0, 3.0)) {
-                    if (!(entity instanceof LivingEntity living))
-                        continue;
-                    if (living.equals(caster) && !friendlyFire)
-                        continue;
-                    if (living.isDead() || !living.isValid())
-                        continue;
-
-                    living.damage(damage, caster);
-                }
-
-                // Core explosion pulse
-                context.fx().spawnParticles(playerLoc, Particle.EXPLOSION, 8, 0.2, 0.2, 0.2, 0.05);
-                context.fx().playSound(playerLoc, Sound.ENTITY_GENERIC_EXPLODE, 0.6f, 1.1f);
-
-                // Trail: lingering smoke + lava embers along vertical column
-                context.fx().spawnParticles(playerLoc, Particle.SMOKE, particleCount, 0.6, 0.4, 0.6, 0.02);
-                context.fx().spawnParticles(playerLoc, Particle.LAVA, Math.max(1, particleCount / 3), 0.4, 0.2, 0.4,
-                        0.0);
-
-                // Optional temporary netherrack blocks below player path to simulate scorched
-                // ground
-                if (placeBlocks) {
-                    Block below = playerLoc.clone().subtract(0, 1, 0).getBlock();
-                    if (isReplaceable(below.getType())) {
-                        Material original = below.getType();
-                        below.setType(Material.NETHERRACK, false);
-                        tempBlocks.addLast(
-                                new TempBlock(below, original, playerLoc.getWorld().getFullTime() + blockLifetime));
-                        while (tempBlocks.size() > trailLength) {
-                            TempBlock old = tempBlocks.removeFirst();
-                            old.block.setType(old.original, false);
-                        }
-                    }
-                }
-
-                // Revert expired blocks
-                long now = playerLoc.getWorld().getFullTime();
-                while (!tempBlocks.isEmpty() && tempBlocks.peekFirst().revertTick <= now) {
-                    TempBlock old = tempBlocks.removeFirst();
-                    old.block.setType(old.original, false);
-                }
-
-                ticks += tickInterval;
-            }
-        }.runTaskTimer(context.plugin(), 0L, tickInterval);
-    }
-
-    private boolean isReplaceable(Material m) {
-        return switch (m) {
-            case AIR, CAVE_AIR, VOID_AIR, TALL_GRASS, FERN, LARGE_FERN, DEAD_BUSH, SNOW -> true;
-            default -> false;
-        };
-    }
-
-    @Override
-    public String getName() {
-        return "explosion-trail";
+    private ExplosionTrail(Builder builder) {
+        super(builder);
+        this.config = new Config(spellConfig);
     }
 
     @Override
@@ -141,12 +53,182 @@ public class ExplosionTrail implements Spell {
     }
 
     @Override
-    public Component displayName() {
-        return Component.text("Explosion Trail");
+    public PrereqInterface prereq() {
+        return new PrereqInterface.NonePrereq();
     }
 
     @Override
-    public Prereq prereq() {
-        return new Prereq(true, Component.text(""));
+    protected Void executeSpell(SpellContext context) {
+        Player player = context.caster();
+
+        startTrailScheduler(player, context);
+        context.fx().playSound(player, Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 0.5f);
+        return null;
+    }
+
+    @Override
+    protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
+        // Effects are handled in the scheduler.
+    }
+
+    private void startTrailScheduler(Player caster, SpellContext context) {
+        new TrailScheduler(caster, context, config).runTaskTimer(context.plugin(), 0L, config.tickInterval());
+    }
+
+    private static class TrailScheduler extends BukkitRunnable {
+
+        private final Player caster;
+        private final SpellContext context;
+        private final Config config;
+        private final Deque<TempBlock> tempBlocks;
+        private int ticks;
+
+        public TrailScheduler(Player caster, SpellContext context, Config config) {
+            this.caster = caster;
+            this.context = context;
+            this.config = config;
+            this.tempBlocks = new ConcurrentLinkedDeque<>();
+        }
+
+        @Override
+        public void run() {
+            if (ticks >= config.duration() || !caster.isValid() || caster.isDead()) {
+                cleanup();
+                this.cancel();
+                return;
+            }
+
+            Location playerLoc = caster.getLocation();
+            var world = playerLoc.getWorld();
+            if (world == null) {
+                cleanup();
+                this.cancel();
+                return;
+            }
+
+            damageNearbyEntities(playerLoc, world);
+            spawnParticles(playerLoc);
+            playSound(playerLoc);
+
+            if (config.placeBlocks()) {
+                placeBlock(playerLoc, world);
+            }
+
+            removeExpiredBlocks(world);
+            ticks += config.tickInterval();
+        }
+
+        private void damageNearbyEntities(Location playerLoc, org.bukkit.World world) {
+            for (var entity : world.getNearbyEntities(playerLoc, 3.0, 3.0, 3.0)) {
+                if (entity instanceof LivingEntity living && !living.equals(caster) && !living.isDead()
+                        && living.isValid()) {
+                    living.damage(config.damage(), caster);
+                }
+            }
+        }
+
+        private void spawnParticles(Location playerLoc) {
+            context.fx().spawnParticles(playerLoc, Particle.EXPLOSION, config.particleCount(), 0.2, 0.2, 0.2, 0.05);
+        }
+
+        private void playSound(Location playerLoc) {
+            context.fx().playSound(playerLoc, Sound.ENTITY_GENERIC_EXPLODE, 0.6f, 1.1f);
+        }
+
+        private void placeBlock(Location playerLoc, org.bukkit.World world) {
+            Block below = playerLoc.clone().subtract(0, 1, 0).getBlock();
+            if (below.getType().isAir()) {
+                tempBlocks.addLast(new TempBlock(below, below.getType(), world.getFullTime() + config.blockLifetime()));
+                below.setType(Material.NETHERRACK, false);
+                while (tempBlocks.size() > config.trailLength()) {
+                    tempBlocks.removeFirst().revert();
+                }
+            }
+        }
+
+        private void removeExpiredBlocks(org.bukkit.World world) {
+            long now = world.getFullTime();
+            tempBlocks.removeIf(tb -> {
+                if (tb.revertTick <= now) {
+                    tb.revert();
+                    return true;
+                }
+                return false;
+            });
+        }
+
+        private void cleanup() {
+            while (!tempBlocks.isEmpty()) {
+                tempBlocks.removeFirst().revert();
+            }
+        }
+    }
+
+    private static class Config {
+
+        private final int duration;
+        private final double damage;
+        private final int tickInterval;
+        private final int trailLength;
+        private final int particleCount;
+        private final int blockLifetime;
+        private final boolean placeBlocks;
+
+        public Config(org.bukkit.configuration.ConfigurationSection config) {
+            this.duration = config.getInt("values.duration-ticks", 100);
+            this.damage = config.getDouble("values.damage", 8.0);
+            this.tickInterval = config.getInt("values.tick-interval", 10);
+            this.trailLength = config.getInt("values.trail-length", 12);
+            this.particleCount = config.getInt("values.particle-count", 10);
+            this.blockLifetime = config.getInt("values.block-lifetime-ticks", 40);
+            this.placeBlocks = config.getBoolean("values.place-temp-blocks", true);
+        }
+
+        public int duration() {
+            return duration;
+        }
+
+        public double damage() {
+            return damage;
+        }
+
+        public int tickInterval() {
+            return tickInterval;
+        }
+
+        public int trailLength() {
+            return trailLength;
+        }
+
+        public int particleCount() {
+            return particleCount;
+        }
+
+        public int blockLifetime() {
+            return blockLifetime;
+        }
+
+        public boolean placeBlocks() {
+            return placeBlocks;
+        }
+    }
+
+    private static class TempBlock {
+
+        private final Block block;
+        private final Material original;
+        private final long revertTick;
+
+        public TempBlock(Block block, Material original, long revertTick) {
+            this.block = block;
+            this.original = original;
+            this.revertTick = revertTick;
+        }
+
+        public void revert() {
+            if (block.getType() == Material.NETHERRACK) {
+                block.setType(original, false);
+            }
+        }
     }
 }

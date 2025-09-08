@@ -1,5 +1,15 @@
 package com.example.empirewand.spell.implementation.earth;
 
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.api.EffectService;
+import com.example.empirewand.spell.PrereqInterface;
+import com.example.empirewand.spell.Spell;
+import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.SpellType;
+import java.util.ArrayList;
+import java.util.List;
+import net.kyori.adventure.text.Component;
+import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.ArmorStand;
@@ -9,155 +19,44 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
-import org.bukkit.Location;
+import org.jetbrains.annotations.NotNull;
 
-import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.SpellContext;
-import com.example.empirewand.spell.Prereq;
-import net.kyori.adventure.text.Component;
+public class Lightwall extends Spell<Void> {
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class Lightwall implements Spell {
-    @Override
-    public void execute(SpellContext context) {
-        Player player = context.caster();
-        if (player == null)
-            return;
-
-        // Config values
-        var spells = context.config().getSpellsConfig();
-        double width = spells.getDouble("lightwall.values.width", 6.0);
-        double height = spells.getDouble("lightwall.values.height", 3.0);
-        int duration = spells.getInt("lightwall.values.duration-ticks", 100);
-        double knockbackStrength = spells.getDouble("lightwall.values.knockback-strength", 0.5);
-        int blindnessDuration = spells.getInt("lightwall.values.blindness-duration-ticks", 30);
-        boolean hitPlayers = spells.getBoolean("lightwall.flags.hit-players", true);
-        boolean hitMobs = spells.getBoolean("lightwall.flags.hit-mobs", true);
-
-        var baseLoc = player.getLocation();
-        var dir = baseLoc.getDirection();
-        if (dir == null) {
-            return; // No direction available
-        }
-        Location center = baseLoc.clone().add(dir.multiply(3));
-
-        // Create wall of invisible armor stands
-        List<ArmorStand> wallStands = new ArrayList<>();
-        Vector direction = baseLoc.getDirection().normalize();
-        Vector right = direction.clone().crossProduct(new Vector(0, 1, 0)).normalize();
-
-        for (int w = 0; w < width; w++) {
-            for (int h = 0; h < height; h++) {
-                Vector offset = right.clone().multiply(w - width / 2).add(new Vector(0, h, 0));
-                Location standLocation = center.clone().add(offset);
-
-                ArmorStand stand = player.getWorld().spawn(standLocation, ArmorStand.class);
-                stand.setInvisible(true);
-                stand.setMarker(true);
-                stand.setGravity(false);
-                stand.setInvulnerable(true);
-                wallStands.add(stand);
-            }
-        }
-
-        // Start wall task
-        new WallTask(wallStands, center, width, height, knockbackStrength, blindnessDuration, hitPlayers, hitMobs)
-                .runTaskTimer(context.plugin(), 0L, 1L);
-
-        // Auto-cleanup after duration
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                for (ArmorStand stand : wallStands) {
-                    if (stand.isValid()) {
-                        stand.remove();
-                    }
-                }
-            }
-        }.runTaskLater(context.plugin(), duration);
-
-        // Initial visuals
-        spawnWallParticles(center, width, height);
-        context.fx().playSound(center, Sound.BLOCK_GLASS_BREAK, 1.0f, 1.2f);
-    }
-
-    private static class WallTask extends BukkitRunnable {
-        private final List<ArmorStand> wallStands;
-        private final Location center;
-        private final double width;
-        private final double height;
-        private final double knockbackStrength;
-        private final int blindnessDuration;
-        private final boolean hitPlayers;
-        private final boolean hitMobs;
-
-        public WallTask(List<ArmorStand> wallStands, Location center, double width, double height,
-                double knockbackStrength, int blindnessDuration, boolean hitPlayers, boolean hitMobs) {
-            this.wallStands = wallStands;
-            this.center = center;
-            this.width = width;
-            this.height = height;
-            this.knockbackStrength = knockbackStrength;
-            this.blindnessDuration = blindnessDuration;
-            this.hitPlayers = hitPlayers;
-            this.hitMobs = hitMobs;
+    public static class Builder extends Spell.Builder<Void> {
+        public Builder(EmpireWandAPI api) {
+            super(api);
+            this.name = "Lightwall";
+            this.description = "Creates a temporary wall of light that knocks back entities.";
+            this.manaCost = 8;
+            this.cooldown = java.time.Duration.ofSeconds(18);
+            this.spellType = SpellType.EARTH;
         }
 
         @Override
-        public void run() {
-            // Check for entities near the wall
-            for (ArmorStand stand : wallStands) {
-                if (!stand.isValid())
-                    continue;
-
-                for (LivingEntity entity : stand.getWorld().getLivingEntities()) {
-                    if (entity.getLocation().distance(stand.getLocation()) <= 1.5) {
-                        boolean isPlayer = entity instanceof Player;
-                        if ((isPlayer && hitPlayers) || (!isPlayer && hitMobs)) {
-                            // Apply knockback away from wall
-                            Vector knockback = entity.getLocation().toVector().subtract(stand.getLocation().toVector())
-                                    .normalize();
-                            knockback.multiply(knockbackStrength);
-                            knockback.setY(0.2);
-                            entity.setVelocity(entity.getVelocity().add(knockback));
-
-                            // Apply blindness
-                            entity.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, blindnessDuration, 0));
-                        }
-                    }
-                }
-            }
-
-            // Periodic particles
-            if (System.currentTimeMillis() % 1000 < 50) { // Roughly every second
-                spawnWallParticles(center, width, height);
-            }
+        @NotNull
+        public Spell<Void> build() {
+            return new Lightwall(this);
         }
     }
 
-    private static void spawnWallParticles(Location center, double width, double height) {
-        Vector direction = center.getDirection();
-        Vector right = direction.clone().crossProduct(new Vector(0, 1, 0)).normalize();
+    private final double width;
+    private final double height;
+    private final int duration;
+    private final double knockbackStrength;
+    private final int blindnessDuration;
+    private final boolean hitPlayers;
+    private final boolean hitMobs;
 
-        for (int w = 0; w < width; w++) {
-            for (int h = 0; h < height; h++) {
-                Vector offset = right.clone().multiply(w - width / 2).add(new Vector(0, h, 0));
-                Location particleLoc = center.clone().add(offset);
-
-                // White ash particles
-                particleLoc.getWorld().spawnParticle(Particle.WHITE_ASH, particleLoc, 2, 0.1, 0.1, 0.1, 0);
-
-                // Glow particles
-                particleLoc.getWorld().spawnParticle(Particle.GLOW, particleLoc, 1, 0, 0, 0, 0);
-            }
-        }
-    }
-
-    @Override
-    public String getName() {
-        return "lightwall";
+    private Lightwall(Builder builder) {
+        super(builder);
+        this.width = spellConfig.getDouble("values.width", 6.0);
+        this.height = spellConfig.getDouble("values.height", 3.0);
+        this.duration = spellConfig.getInt("values.duration-ticks", 100);
+        this.knockbackStrength = spellConfig.getDouble("values.knockback-strength", 0.5);
+        this.blindnessDuration = spellConfig.getInt("values.blindness-duration-ticks", 30);
+        this.hitPlayers = spellConfig.getBoolean("flags.hit-players", true);
+        this.hitMobs = spellConfig.getBoolean("flags.hit-mobs", true);
     }
 
     @Override
@@ -171,7 +70,114 @@ public class Lightwall implements Spell {
     }
 
     @Override
-    public Prereq prereq() {
-        return new Prereq(true, Component.text(""));
+    public PrereqInterface prereq() {
+        return new PrereqInterface.NonePrereq();
+    }
+
+    @Override
+    protected Void executeSpell(SpellContext context) {
+        Player player = context.caster();
+        Location center = player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(3));
+        Vector right = player.getEyeLocation().getDirection().crossProduct(new Vector(0, 1, 0)).normalize();
+
+        List<ArmorStand> wallStands = createWallStands(center, right);
+        new WallTask(context, wallStands, knockbackStrength, blindnessDuration, hitPlayers, hitMobs).runTaskTimer(context.plugin(), 0L, 1L);
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                wallStands.forEach(stand -> {
+                    if (stand.isValid()) stand.remove();
+                });
+            }
+        }.runTaskLater(context.plugin(), duration);
+
+        spawnWallParticles(context, center, width, height, right);
+        context.fx().playSound(center, Sound.BLOCK_GLASS_BREAK, 1.0f, 1.2f);
+        return null;
+    }
+
+    @Override
+    protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
+        // Effects are handled in the scheduler.
+    }
+
+    private List<ArmorStand> createWallStands(Location center, Vector right) {
+        List<ArmorStand> wallStands = new ArrayList<>();
+        for (int w = 0; w < width; w++) {
+            for (int h = 0; h < height; h++) {
+                Vector offset = right.clone().multiply(w - width / 2).add(new Vector(0, h, 0));
+                Location standLocation = center.clone().add(offset);
+
+                ArmorStand stand = center.getWorld().spawn(standLocation, ArmorStand.class, s -> {
+                    s.setInvisible(true);
+                    s.setMarker(true);
+                    s.setGravity(false);
+                    s.setInvulnerable(true);
+                });
+                wallStands.add(stand);
+            }
+        }
+        return wallStands;
+    }
+
+    private class WallTask extends BukkitRunnable {
+        private final SpellContext context;
+        private final List<ArmorStand> wallStands;
+        private final double knockbackStrength;
+        private final int blindnessDuration;
+        private final boolean hitPlayers;
+        private final boolean hitMobs;
+
+        public WallTask(SpellContext context, List<ArmorStand> wallStands, double knockbackStrength, int blindnessDuration, boolean hitPlayers, boolean hitMobs) {
+            this.context = context;
+            this.wallStands = wallStands;
+            this.knockbackStrength = knockbackStrength;
+            this.blindnessDuration = blindnessDuration;
+            this.hitPlayers = hitPlayers;
+            this.hitMobs = hitMobs;
+        }
+
+        @Override
+        public void run() {
+            if (wallStands.isEmpty() || !wallStands.get(0).isValid()) {
+                this.cancel();
+                return;
+            }
+
+            wallStands.forEach(stand -> {
+                if (!stand.isValid()) return;
+
+                stand.getWorld().getNearbyEntities(stand.getLocation(), 1.5, 1.5, 1.5).forEach(entity -> {
+                    if (entity instanceof LivingEntity living) {
+                        if ((entity instanceof Player && !hitPlayers) || (!(entity instanceof Player) && !hitMobs)) return;
+
+                        Vector knockback = living.getLocation().toVector().subtract(stand.getLocation().toVector()).normalize();
+                        living.setVelocity(entity.getVelocity().add(knockback.multiply(knockbackStrength).setY(0.2)));
+                        living.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, blindnessDuration, 0));
+                    }
+                });
+            });
+
+            if (System.currentTimeMillis() % 1000 < 50) { // Roughly every second
+                ArmorStand firstStand = wallStands.get(0);
+                Location center = firstStand.getLocation(); // Approximate center
+                double width = 6; // Re-approximate for visuals
+                double height = 3;
+                Vector right = firstStand.getLocation().getDirection().crossProduct(new Vector(0, 1, 0)).normalize();
+                spawnWallParticles(context, center, width, height, right);
+            }
+        }
+    }
+
+    private void spawnWallParticles(SpellContext context, Location center, double width, double height, Vector right) {
+        for (int w = 0; w < width; w++) {
+            for (int h = 0; h < height; h++) {
+                Vector offset = right.clone().multiply(w - width / 2).add(new Vector(0, h, 0));
+                Location particleLoc = center.clone().add(offset);
+                context.fx().spawnParticles(particleLoc, Particle.WHITE_ASH, 2, 0.1, 0.1, 0.1, 0);
+                context.fx().spawnParticles(particleLoc, Particle.GLOW, 1, 0, 0, 0, 0);
+            }
+        }
     }
 }

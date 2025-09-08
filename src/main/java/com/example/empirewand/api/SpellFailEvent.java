@@ -31,7 +31,7 @@ public class SpellFailEvent extends Event {
     private static final HandlerList HANDLERS = new HandlerList();
 
     private final Player caster;
-    private final Spell spell;
+    private final Spell<?> spell;
     private final String spellKey;
     private final FailReason reason;
     private final String message;
@@ -45,7 +45,7 @@ public class SpellFailEvent extends Event {
      * @param reason   the reason for the failure
      * @param message  the user-facing failure message
      */
-    public SpellFailEvent(@NotNull Player caster, @Nullable Spell spell, @NotNull String spellKey,
+    public SpellFailEvent(@NotNull Player caster, @Nullable Spell<?> spell, @NotNull String spellKey,
             @NotNull FailReason reason, @NotNull String message) {
         this.caster = caster;
         this.spell = spell;
@@ -70,7 +70,7 @@ public class SpellFailEvent extends Event {
      * @return the spell instance, or null if spell lookup failed
      */
     @Nullable
-    public Spell getSpell() {
+    public Spell<?> getSpell() {
         return spell;
     }
 

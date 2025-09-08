@@ -1,59 +1,41 @@
 package com.example.empirewand.spell.implementation.control;
 
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.api.EffectService;
+import com.example.empirewand.spell.PrereqInterface;
+import com.example.empirewand.spell.Spell;
+import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.SpellType;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.jetbrains.annotations.NotNull;
 
-import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.SpellContext;
-import com.example.empirewand.spell.Prereq;
-import net.kyori.adventure.text.Component;
+public class Confuse extends Spell<Void> {
 
-public class Confuse implements Spell {
-    @Override
-    public void execute(SpellContext context) {
-        Player player = context.caster();
-
-        // Config values
-        var spells = context.config().getSpellsConfig();
-        double range = spells.getDouble("confuse.values.range", 15.0);
-        double damage = spells.getDouble("confuse.values.damage", 6.0); // 3 hearts
-        int duration = spells.getInt("confuse.values.duration-ticks", 80); // 4 seconds
-        int slowAmplifier = spells.getInt("confuse.values.slow-amplifier", 2); // Slowness III
-        boolean friendlyFire = context.config().getConfig().getBoolean("features.friendly-fire", false);
-
-        // Get target
-        var targetEntity = player.getTargetEntity((int) range);
-        if (!(targetEntity instanceof LivingEntity target) || target.isDead() || !target.isValid()) {
-            context.fx().fizzle(player);
-            return;
+    public static class Builder extends Spell.Builder<Void> {
+        public Builder(EmpireWandAPI api) {
+            super(api);
+            this.name = "Confuse";
+            this.description = "Confuses and slows a target entity.";
+            this.manaCost = 8;
+            this.cooldown = java.time.Duration.ofSeconds(15);
+            this.spellType = SpellType.CONTROL;
         }
 
-        // Apply nausea effect (confusion)
-        target.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, duration, 0, false, true));
-
-        // Apply slow effect
-        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, duration, slowAmplifier, false, true));
-
-        // Deal damage
-        if (!(target instanceof Player p && !friendlyFire && p.getUniqueId().equals(player.getUniqueId()))) {
-            target.damage(damage, player);
+        @Override
+        @NotNull
+        public Spell<Void> build() {
+            return new Confuse(this);
         }
-
-        // Effects
-        context.fx().playSound(target.getLocation(), Sound.ENTITY_PLAYER_ATTACK_NODAMAGE, 1.0f, 0.5f);
-        context.fx().spawnParticles(target.getLocation(), Particle.SMOKE, 20, 0.3, 0.3, 0.3, 0.1);
-
-        // Cast sound
-        context.fx().playSound(player, Sound.ENTITY_ILLUSIONER_CAST_SPELL, 1.0f, 1.0f);
     }
 
-    @Override
-    public String getName() {
-        return "confuse";
+    private Confuse(Builder builder) {
+        super(builder);
     }
 
     @Override
@@ -62,12 +44,37 @@ public class Confuse implements Spell {
     }
 
     @Override
-    public Component displayName() {
-        return Component.text("Confuse");
+    public PrereqInterface prereq() {
+        return new PrereqInterface.NonePrereq();
     }
 
     @Override
-    public Prereq prereq() {
-        return new Prereq(true, Component.text(""));
+    protected Void executeSpell(SpellContext context) {
+        Player player = context.caster();
+        double range = spellConfig.getDouble("values.range", 10.0);
+        int duration = spellConfig.getInt("values.duration-ticks", 100);
+        int slownessAmplifier = spellConfig.getInt("values.slowness-amplifier", 1);
+
+        LivingEntity target = null;
+        Entity rawTarget = player.getTargetEntity((int) range);
+        if (rawTarget instanceof LivingEntity le) {
+            target = le;
+        }
+        if (target == null || target.isDead() || !target.isValid()) {
+            context.fx().showError(player, "no-target");
+            return null;
+        }
+
+        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, duration, slownessAmplifier, false, true));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, duration, 0, false, true));
+
+        context.fx().playSound(player, Sound.ENTITY_EVOKER_CAST_SPELL, 1.0f, 1.0f);
+        context.fx().spawnParticles(target.getLocation(), Particle.ENCHANT, 20, 0.5, 0.5, 0.5, 0.0);
+        return null;
+    }
+
+    @Override
+    protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
+        // Effect is handled in executeSpell
     }
 }

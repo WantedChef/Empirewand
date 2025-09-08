@@ -2,6 +2,7 @@ package com.example.empirewand.visual;
 
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 /**
  * Global helper to manage a shared AfterimageManager instance with periodic
@@ -9,15 +10,18 @@ import org.bukkit.scheduler.BukkitRunnable;
  */
 public final class Afterimages {
     private static AfterimageManager manager;
+    private static BukkitTask renderTask;
 
     private Afterimages() {
     }
 
     public static void initialize(Plugin plugin, int maxSize, int lifetimeTicks, long periodTicks) {
-        if (manager != null)
-            return; // already
+        if (manager != null) {
+            return; // already initialized
+        }
+
         manager = new AfterimageManager(maxSize, lifetimeTicks);
-        new BukkitRunnable() {
+        renderTask = new BukkitRunnable() {
             @Override
             public void run() {
                 AfterimageManager m = manager; // local snapshot
@@ -30,5 +34,19 @@ public final class Afterimages {
 
     public static AfterimageManager get() {
         return manager;
+    }
+
+    /**
+     * Shuts down the afterimage system and cleans up resources
+     */
+    public static void shutdown() {
+        if (renderTask != null) {
+            renderTask.cancel();
+            renderTask = null;
+        }
+        if (manager != null) {
+            manager.clear();
+            manager = null;
+        }
     }
 }

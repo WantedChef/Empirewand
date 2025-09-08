@@ -72,6 +72,13 @@ public class AfterimageManager {
         w.spawnParticle(Particle.CRIT, l.getX(), l.getY() + 1.0, l.getZ(), count, 0.25, 0.4, 0.25, 0.01);
     }
 
+    /**
+     * Clears all afterimages and resets the manager
+     */
+    public void clear() {
+        queue.clear();
+    }
+
     private static final class Afterimage {
         final Location location;
         int ticksRemaining;

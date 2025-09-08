@@ -12,32 +12,75 @@ public class PermissionServiceImpl implements com.example.empirewand.api.Permiss
 
     @Override
     public boolean has(CommandSender sender, String node) {
-        return sender.hasPermission(node);
+        if (sender == null || node == null || node.trim().isEmpty()) {
+            return false;
+        }
+        try {
+            return sender.hasPermission(node);
+        } catch (Exception e) {
+            // Log error but don't crash - permission checks should never break functionality
+            return false;
+        }
     }
 
     @Override
     public boolean canUseSpell(Player player, String spellKey) {
-        return has(player, getSpellUsePermission(spellKey));
+        if (player == null || spellKey == null || spellKey.trim().isEmpty()) {
+            return false;
+        }
+        try {
+            return has(player, getSpellUsePermission(spellKey));
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @Override
     public boolean canBindSpell(Player player, String spellKey) {
-        return has(player, getSpellBindPermission(spellKey));
+        if (player == null || spellKey == null || spellKey.trim().isEmpty()) {
+            return false;
+        }
+        try {
+            return has(player, getSpellBindPermission(spellKey));
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @Override
     public String getSpellUsePermission(String spellKey) {
-        return "empirewand.spell.use." + spellKey;
+        if (spellKey == null || spellKey.trim().isEmpty()) {
+            return "empirewand.spell.use.unknown";
+        }
+        try {
+            return "empirewand.spell.use." + spellKey.toLowerCase();
+        } catch (Exception e) {
+            return "empirewand.spell.use.unknown";
+        }
     }
 
     @Override
     public String getSpellBindPermission(String spellKey) {
-        return "empirewand.spell.bind." + spellKey;
+        if (spellKey == null || spellKey.trim().isEmpty()) {
+            return "empirewand.spell.bind.unknown";
+        }
+        try {
+            return "empirewand.spell.bind." + spellKey.toLowerCase();
+        } catch (Exception e) {
+            return "empirewand.spell.bind.unknown";
+        }
     }
 
     @Override
     public String getCommandPermission(String command) {
-        return "empirewand.command." + command;
+        if (command == null || command.trim().isEmpty()) {
+            return "empirewand.command.unknown";
+        }
+        try {
+            return "empirewand.command." + command.toLowerCase();
+        } catch (Exception e) {
+            return "empirewand.command.unknown";
+        }
     }
 
     @Override
@@ -57,7 +100,16 @@ public class PermissionServiceImpl implements com.example.empirewand.api.Permiss
 
     @Override
     public ServiceHealth getHealth() {
-        return ServiceHealth.HEALTHY;
+        try {
+            // Basic health check - verify we can create permission strings
+            String testPermission = getSpellUsePermission("test");
+            if (testPermission == null || testPermission.isEmpty()) {
+                return ServiceHealth.UNHEALTHY;
+            }
+            return ServiceHealth.HEALTHY;
+        } catch (Exception e) {
+            return ServiceHealth.UNHEALTHY;
+        }
     }
 
     @Override

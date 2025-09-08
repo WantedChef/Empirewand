@@ -1,6 +1,12 @@
 package com.example.empirewand.spell.implementation.poison;
 
-import org.bukkit.Location;
+import com.example.empirewand.api.ConfigService;
+import com.example.empirewand.api.EffectService;
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.spell.PrereqInterface;
+import com.example.empirewand.spell.Spell;
+import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.SpellType;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
@@ -8,88 +14,96 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
-import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.SpellContext;
-import com.example.empirewand.spell.Prereq;
-import net.kyori.adventure.text.Component;
-
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PoisonWave implements Spell {
-    @Override
-    public void execute(SpellContext context) {
-        Player player = context.caster();
+public class PoisonWave extends Spell<Void> {
 
-        // Config values
-        var spells = context.config().getSpellsConfig();
-        double range = spells.getDouble("poison-wave.values.range", 6.0);
-        double coneAngle = spells.getDouble("poison-wave.values.cone-angle-degrees", 60.0);
-        int poisonDuration = spells.getInt("poison-wave.values.poison-duration-ticks", 140); // 7 seconds
-        int poisonAmplifier = spells.getInt("poison-wave.values.poison-amplifier", 0); // Poison I
-        boolean friendlyFire = context.config().getConfig().getBoolean("features.friendly-fire", false);
-
-        // Find entities in cone
-        List<LivingEntity> targets = getEntitiesInCone(player, range, coneAngle);
-
-        // Apply poison to targets
-        for (LivingEntity target : targets) {
-            if (target.equals(player) && !friendlyFire) continue;
-            if (target.isDead() || !target.isValid()) continue;
-
-            target.addPotionEffect(new PotionEffect(PotionEffectType.POISON, poisonDuration, poisonAmplifier, false, true));
-
-            // Effects
-            context.fx().spawnParticles(target.getLocation(), Particle.SMOKE, 10, 0.2, 0.2, 0.2, 0.1);
+    public static class Builder extends Spell.Builder<Void> {
+        public Builder(EmpireWandAPI api) {
+            super(api);
+            this.name = "Poison Wave";
+            this.description = "Releases a cone of poisonous gas that damages enemies.";
+            this.manaCost = 15;
+            this.cooldown = Duration.ofMillis(3000);
+            this.spellType = SpellType.POISON;
         }
 
-        // Cast sound
-        context.fx().playSound(player, Sound.AMBIENT_CAVE, 0.8f, 0.8f);
+        @Override
+        @NotNull
+        public Spell<Void> build() {
+            return new PoisonWave(this);
+        }
+    }
+
+    private PoisonWave(Builder builder) {
+        super(builder);
+    }
+
+    @Override
+    public @NotNull String key() {
+        return "poison-wave";
+    }
+
+    @Override
+    public PrereqInterface prereq() {
+        return new PrereqInterface.NonePrereq();
+    }
+
+    @Override
+    protected Void executeSpell(SpellContext context) {
+        Player player = context.caster();
+
+        double range = spellConfig.getDouble("values.range", 6.0);
+        double coneAngle = spellConfig.getDouble("values.cone-angle-degrees", 60.0);
+        int poisonDuration = spellConfig.getInt("values.poison-duration-ticks", 140);
+        int poisonAmplifier = spellConfig.getInt("values.poison-amplifier", 0);
+        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false);
+
+        List<LivingEntity> targets = getEntitiesInCone(player, range, coneAngle);
+
+        for (LivingEntity target : targets) {
+            if (target.equals(player) && !friendlyFire)
+                continue;
+            if (target.isDead() || !target.isValid())
+                continue;
+
+            // Fixed: Separated particle spawning and potion effect
+            context.fx().spawnParticles(target.getLocation(), Particle.SMOKE, 10, 0.2, 0.2, 0.2, 0.1);
+
+            // Fixed: Properly formatted potion effect application
+            target.addPotionEffect(new PotionEffect(PotionEffectType.POISON, poisonDuration, poisonAmplifier, false, true));
+        }
+
+        // Fixed: Using proper service accessor
+        context.fx().playSound(player.getLocation(), Sound.AMBIENT_CAVE, 0.8f, 0.8f);
+
+        return null;
+    }
+
+    @Override
+    protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
+        // Instant effect.
     }
 
     private List<LivingEntity> getEntitiesInCone(Player player, double range, double coneAngle) {
         List<LivingEntity> targets = new ArrayList<>();
-        Location playerLoc = player.getEyeLocation();
-        Vector playerDir = playerLoc.getDirection().normalize();
+        Vector playerDir = player.getEyeLocation().getDirection().normalize();
+        double angleRadians = Math.toRadians(coneAngle / 2.0);
 
-        for (var entity : player.getWorld().getNearbyEntities(playerLoc, range, range, range)) {
-            if (!(entity instanceof LivingEntity living)) continue;
+        for (LivingEntity entity : player.getWorld().getLivingEntities()) {
+            if (entity.equals(player) || entity.getLocation().distanceSquared(player.getLocation()) > range * range)
+                continue;
 
-            Vector toEntity = living.getEyeLocation().toVector().subtract(playerLoc.toVector());
-            double distance = toEntity.length();
-
-            if (distance > range) continue;
-
-            // Check if entity is within cone angle
-            Vector toEntityNormalized = toEntity.normalize();
-            double angle = Math.toDegrees(playerDir.angle(toEntityNormalized));
-
-            if (angle <= coneAngle / 2) {
-                targets.add(living);
+            Vector toEntity = entity.getEyeLocation().toVector().subtract(player.getEyeLocation().toVector())
+                    .normalize();
+            if (playerDir.angle(toEntity) <= angleRadians) {
+                targets.add(entity);
             }
         }
-
         return targets;
-    }
-
-    @Override
-    public String getName() {
-        return "poison-wave";
-    }
-
-    @Override
-    public String key() {
-        return "poison-wave";
-    }
-
-    @Override
-    public Component displayName() {
-        return Component.text("Poison Wave");
-    }
-
-    @Override
-    public Prereq prereq() {
-        return new Prereq(true, Component.text(""));
     }
 }

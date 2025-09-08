@@ -14,6 +14,7 @@ public final class Keys {
     public static final NamespacedKey PROJECTILE_OWNER = new NamespacedKey("empirewand", "projectile.owner");
     public static final NamespacedKey ETHEREAL_ACTIVE = new NamespacedKey("empirewand", "ethereal.active");
     public static final NamespacedKey ETHEREAL_EXPIRES_TICK = new NamespacedKey("empirewand", "ethereal.expires_tick");
+    public static final NamespacedKey DAMAGE = new NamespacedKey("empirewand", "projectile.damage");
 
     // Reusable PersistentDataType wrappers
     public static final PersistentDataTypeWrapper<String> STRING_TYPE = new PersistentDataTypeWrapper<>(
@@ -36,11 +37,28 @@ public final class Keys {
     // namespace
 
     public static NamespacedKey createKey(String key) {
-        return new NamespacedKey("empirewand", key);
+        if (key == null || key.trim().isEmpty()) {
+            throw new IllegalArgumentException("Key cannot be null or empty");
+        }
+        try {
+            return new NamespacedKey("empirewand", key);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid key format: " + key, e);
+        }
     }
 
     public static NamespacedKey createKey(String namespace, String key) {
-        return new NamespacedKey(namespace, key);
+        if (namespace == null || namespace.trim().isEmpty()) {
+            throw new IllegalArgumentException("Namespace cannot be null or empty");
+        }
+        if (key == null || key.trim().isEmpty()) {
+            throw new IllegalArgumentException("Key cannot be null or empty");
+        }
+        try {
+            return new NamespacedKey(namespace, key);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid namespace/key format: " + namespace + ":" + key, e);
+        }
     }
 
     /**
@@ -52,10 +70,16 @@ public final class Keys {
         private final PersistentDataType<T, T> type;
 
         private PersistentDataTypeWrapper(PersistentDataType<T, T> type) {
+            if (type == null) {
+                throw new IllegalArgumentException("PersistentDataType cannot be null");
+            }
             this.type = type;
         }
 
         public PersistentDataType<T, T> getType() {
+            if (type == null) {
+                throw new IllegalStateException("PersistentDataType is null - wrapper not properly initialized");
+            }
             return type;
         }
     }

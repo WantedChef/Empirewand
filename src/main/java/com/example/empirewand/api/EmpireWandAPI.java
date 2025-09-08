@@ -298,4 +298,58 @@ public final class EmpireWandAPI {
          */
         boolean isCompatible(@NotNull Version version);
     }
+
+    // Legacy instance-based API support
+    private static EmpireWandAPI singleton = null;
+
+    /**
+     * Gets the singleton instance of EmpireWandAPI.
+     * 
+     * @return EmpireWandAPI instance
+     * @deprecated Use static service methods instead
+     */
+    @Deprecated(forRemoval = true)
+    @NotNull
+    public static EmpireWandAPI get() {
+        if (singleton == null) {
+            singleton = new EmpireWandAPI();
+        }
+        return singleton;
+    }
+
+    /**
+     * Legacy instance method for getting config service.
+     * 
+     * @return ConfigService instance
+     * @deprecated Use static getService(ConfigService.class) instead
+     */
+    @Deprecated(forRemoval = true)
+    @NotNull
+    public ConfigService getConfigService() {
+        return getService(ConfigService.class);
+    }
+
+    /**
+     * Legacy instance method for getting main config.
+     * 
+     * @return ReadableConfig instance for main config
+     * @deprecated Use getConfigService().getMainConfig() instead
+     */
+    @Deprecated(forRemoval = true)
+    @NotNull
+    public ConfigService.ReadableConfig getConfig() {
+        return getConfigService().getMainConfig();
+    }
+
+    /**
+     * Legacy instance method for getting FX service.
+     * 
+     * @return EffectService instance
+     * @deprecated Use static getService(EffectService.class) instead
+     */
+    @Deprecated(forRemoval = true)
+    @NotNull
+    public EffectService getFxService() {
+        return getService(EffectService.class);
+    }
 }

@@ -1,72 +1,108 @@
 package com.example.empirewand.spell.implementation.dark;
 
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.api.EffectService;
+import com.example.empirewand.spell.PrereqInterface;
+import com.example.empirewand.spell.Spell;
+import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.SpellType;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
-import com.example.empirewand.spell.Prereq;
-import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.SpellContext;
+import java.time.Duration;
+import java.util.List;
 
-import net.kyori.adventure.text.Component;
+public class DarkCircle extends Spell<Void> {
 
-public class DarkCircle implements Spell {
+    public static class Builder extends Spell.Builder<Void> {
+        public Builder(EmpireWandAPI api) {
+            super(api);
+            this.name = "Dark Circle";
+            this.description = "Creates a pulling void circle that launches enemies into the air.";
+            this.manaCost = 12;
+            this.cooldown = Duration.ofSeconds(10);
+            this.spellType = SpellType.DARK;
+        }
+
+        @Override
+        @NotNull
+        public Spell<Void> build() {
+            return new DarkCircle(this);
+        }
+    }
+
+    private DarkCircle(Builder builder) {
+        super(builder);
+    }
+
     @Override
-    public void execute(SpellContext context) {
+    public String key() {
+        return "dark-circle";
+    }
+
+    @Override
+    public PrereqInterface prereq() {
+        return new PrereqInterface.NonePrereq();
+    }
+
+    @Override
+    protected Void executeSpell(SpellContext context) {
         Player player = context.caster();
-        if (player == null) {
-            return; // Defensive: should not happen
-        }
         Location center = player.getLocation();
-        if (center.getWorld() == null) {
-            return; // Defensive: invalid location
-        }
         var world = center.getWorld();
-
-        // Config values with defaults
-        var spells = context.config().getSpellsConfig();
-        double radius = spells.getDouble("dark-circle.values.radius", 10.0);
-        double pullStrength = spells.getDouble("dark-circle.values.pull-strength", 0.4); // Reduced for better control
-        double launchPower = spells.getDouble("dark-circle.values.launch-power", 2.2);
-        int pullDuration = spells.getInt("dark-circle.values.pull-duration-ticks", 30);
-        int launchDelay = spells.getInt("dark-circle.values.launch-delay-ticks", 10); // offset after pull ends
-        double detonationDamage = spells.getDouble("dark-circle.values.detonation-damage", 4.0);
-        double radialKnockback = spells.getDouble("dark-circle.values.radial-knockback", 1.0); // Increased for better
-                                                                                               // CC
-        int slowAmplifier = spells.getInt("dark-circle.values.slow-amplifier", 0);
-        int witherDuration = spells.getInt("dark-circle.values.wither-duration-ticks", 60);
-        boolean friendlyFire = context.config().getConfig().getBoolean("features.friendly-fire", false);
-
-        // Get nearby entities
-        for (Entity entity : world.getNearbyEntities(center, radius, radius, radius)) {
-            if (!(entity instanceof LivingEntity living))
-                continue;
-            if (living.equals(player) && !friendlyFire)
-                continue; // Self-immunity unless friendly-fire enabled
-            if (living.isDead() || !living.isValid())
-                continue;
-
-            // Start pull effect
-            startPullEffect(living, center, pullStrength, pullDuration, launchPower, launchDelay,
-                    detonationDamage, radialKnockback, slowAmplifier, witherDuration, friendlyFire, player, context);
+        if (world == null) {
+            return null;
         }
 
-        // Visual circle effect
-        createCircleEffect(center, radius, context);
+        var config = spellConfig;
+        var radius = config.getDouble("values.radius", 10.0);
+        var pullStrength = config.getDouble("values.pull-strength", 0.4);
+        var launchPower = config.getDouble("values.launch-power", 2.2);
+        var pullDuration = config.getInt("values.pull-duration-ticks", 30);
+        var launchDelay = config.getInt("values.launch-delay-ticks", 10);
+        var detonationDamage = config.getDouble("values.detonation-damage", 4.0);
+        var radialKnockback = config.getDouble("values.radial-knockback", 1.0);
+        var witherDuration = config.getInt("values.wither-duration-ticks", 60);
+        var friendlyFire = config.getBoolean("values.friendly-fire", false);
 
-        // Cast sound
+        var entities = world.getNearbyEntities(center, radius, radius, radius);
+        for (var entity : entities) {
+            if (entity instanceof LivingEntity living) {
+                if (living.equals(player) && !friendlyFire) {
+                    continue;
+                }
+                if (living.isDead() || !living.isValid()) {
+                    continue;
+                }
+
+                startPullEffect(living, center, pullStrength, pullDuration, launchPower, launchDelay,
+                        detonationDamage, radialKnockback, witherDuration, player, context);
+            }
+        }
+
+        createCircleEffect(center, radius, context);
         context.fx().playSound(center, Sound.ENTITY_ENDER_DRAGON_FLAP, 1.0f, 0.5f);
+        return null;
+    }
+
+    @Override
+    protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
+        // Effects are handled in the scheduler
     }
 
     private void startPullEffect(LivingEntity target, Location center, double pullStrength, int pullDuration,
             double launchPower, int launchDelay, double detonationDamage, double radialKnockback,
-            int slowAmplifier, int witherDuration, boolean friendlyFire, Player caster,
-            SpellContext context) {
+            int witherDuration, Player caster, SpellContext context) {
         new BukkitRunnable() {
             private int ticks = 0;
             private final int launchTick = pullDuration + Math.max(0, launchDelay);
@@ -79,99 +115,59 @@ public class DarkCircle implements Spell {
                 }
 
                 if (ticks < pullDuration) {
-                    // Pull towards center
-                    Vector direction = center.toVector().subtract(target.getLocation().toVector()).normalize();
+                    var direction = center.toVector().subtract(target.getLocation().toVector()).normalize();
                     target.setVelocity(direction.multiply(pullStrength));
-
-                    // Pull particles
                     context.fx().spawnParticles(target.getLocation(), Particle.SMOKE, 3, 0.1, 0.1, 0.1, 0.05);
-                    context.fx().spawnParticles(target.getLocation(), Particle.SOUL_FIRE_FLAME, 2, 0.2, 0.2, 0.2, 0.02);
-                } else if (ticks == pullDuration - 5) { // Warning 5 ticks before launch
-                    // Warning effect
+                    context.fx().spawnParticles(target.getLocation(), Particle.SOUL_FIRE_FLAME, 2, 0.2, 0.2, 0.2,
+                            0.02);
+                } else if (ticks == pullDuration - 5) {
                     context.fx().playSound(target.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 0.8f, 0.3f);
                     context.fx().spawnParticles(target.getLocation(), Particle.FLASH, 5, 0.5, 0.5, 0.5, 0.1);
                 } else if (ticks == launchTick) {
-                    // Launch up
                     target.setVelocity(new Vector(0, launchPower, 0));
-
-                    // Enhanced launch effects
                     context.fx().playSound(target.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1.2f, 0.8f);
                     context.fx().spawnParticles(target.getLocation(), Particle.EXPLOSION, 15, 0.5, 0.5, 0.5, 0.1);
-                    context.fx().spawnParticles(target.getLocation(), Particle.FLASH, 10, 0.3, 0.3, 0.3, 0.05);
 
-                    // Detonation follow-up: small radial knock + optional damage/debuffs
-                    if (!(target.equals(caster) && !friendlyFire)) {
-                        if (detonationDamage > 0) {
-                            target.damage(detonationDamage, caster);
-                        }
-                        if (radialKnockback > 0) {
-                            Vector away = target.getLocation().toVector().subtract(center.toVector()).normalize()
-                                    .multiply(radialKnockback).setY(0.15);
-                            target.setVelocity(target.getVelocity().add(away));
-                        }
-                        if (witherDuration > 0) {
-                            target.addPotionEffect(new org.bukkit.potion.PotionEffect(
-                                    org.bukkit.potion.PotionEffectType.WITHER, witherDuration, 0, false, true));
-                        }
-                        if (slowAmplifier >= 0) {
-                            target.addPotionEffect(new org.bukkit.potion.PotionEffect(
-                                    org.bukkit.potion.PotionEffectType.SLOWNESS, 40, slowAmplifier, false, true));
-                        }
+                    if (detonationDamage > 0) {
+                        target.damage(detonationDamage, caster);
+                    }
+                    if (radialKnockback > 0) {
+                        var away = target.getLocation().toVector().subtract(center.toVector()).normalize()
+                                .multiply(radialKnockback).setY(0.15);
+                        target.setVelocity(target.getVelocity().add(away));
+                    }
+                    if (witherDuration > 0) {
+                        target.addPotionEffect(
+                                new PotionEffect(PotionEffectType.WITHER, witherDuration, 0, false, true));
                     }
                 }
-
                 ticks++;
             }
         }.runTaskTimer(context.plugin(), 0L, 1L);
     }
 
     private void createCircleEffect(Location center, double radius, SpellContext context) {
-        int duration = 40; // 2 seconds - local variable instead of field
         new BukkitRunnable() {
             private int ticks = 0;
 
             @Override
             public void run() {
-                if (ticks >= duration) {
+                if (ticks >= 40) {
                     this.cancel();
                     return;
                 }
-
-                // Create circle particles
-                for (int i = 0; i < 360; i += 6) { // More frequent for smoother circle
+                for (int i = 0; i < 360; i += 6) {
                     double angle = Math.toRadians(i);
                     double x = center.getX() + radius * Math.cos(angle);
                     double z = center.getZ() + radius * Math.sin(angle);
                     Location particleLoc = new Location(center.getWorld(), x, center.getY(), z);
-
                     context.fx().spawnParticles(particleLoc, Particle.SOUL_FIRE_FLAME, 1, 0, 0, 0, 0);
-                    if (ticks % 4 == 0) { // Add smoke every few ticks for depth
+                    if (ticks % 4 == 0) {
                         context.fx().spawnParticles(particleLoc, Particle.SMOKE, 1, 0, 0, 0, 0.02);
                     }
                 }
-
                 ticks++;
             }
         }.runTaskTimer(context.plugin(), 0L, 2L);
-    }
-
-    @Override
-    public String getName() {
-        return "dark-circle";
-    }
-
-    @Override
-    public String key() {
-        return "dark-circle";
-    }
-
-    @Override
-    public Component displayName() {
-        return Component.text("Dark Circle");
-    }
-
-    @Override
-    public Prereq prereq() {
-        return new Prereq(true, Component.text(""));
     }
 }

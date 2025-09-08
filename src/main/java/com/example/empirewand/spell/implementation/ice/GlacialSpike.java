@@ -1,10 +1,16 @@
 package com.example.empirewand.spell.implementation.ice;
 
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.core.storage.Keys;
+import com.example.empirewand.spell.PrereqInterface;
+import com.example.empirewand.spell.ProjectileSpell;
+import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.SpellType;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
-
+import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -14,44 +20,35 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
+import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
-import com.example.empirewand.core.storage.Keys;
-import com.example.empirewand.spell.Prereq;
-import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.SpellContext;
+public class GlacialSpike extends ProjectileSpell<Arrow> {
 
-import net.kyori.adventure.text.Component;
+    public static class Builder extends ProjectileSpell.Builder<Arrow> {
+        public Builder(EmpireWandAPI api) {
+            super(api, Arrow.class);
+            this.name = "Glacial Spike";
+            this.description = "Fires a spike of ice.";
+            this.manaCost = 6; // Example
+            this.cooldown = java.time.Duration.ofSeconds(4);
+            this.spellType = SpellType.ICE;
+            this.trailParticle = null; // Custom trail
+        }
 
-public class GlacialSpike implements Spell {
-
-    @Override
-    public void execute(SpellContext context) {
-        Player player = context.caster();
-        Arrow arrow = player.launchProjectile(Arrow.class);
-
-        double damage = context.config().getSpellsConfig()
-                .getDouble("glacial-spike.values.damage", 8.0);
-        int spikeLen = context.config().getSpellsConfig()
-                .getInt("glacial-spike.values.spike_length", 4);
-        int lifeTicks = context.config().getSpellsConfig()
-                .getInt("glacial-spike.values.block_lifetime_ticks", 40);
-
-        arrow.setDamage(damage);
-        arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
-        arrow.setCritical(true);
-        arrow.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, Keys.STRING_TYPE.getType(), getName());
-        arrow.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, Keys.STRING_TYPE.getType(),
-                player.getUniqueId().toString());
-
-        // IJsspike-effect die de pijl volgt en blokken later terugzet
-        new IceSpikeTrail(context, arrow, spikeLen, lifeTicks).runTaskTimer(context.plugin(), 0L, 1L);
+        @Override
+        @NotNull
+        public ProjectileSpell<Arrow> build() {
+            return new GlacialSpike(this);
+        }
     }
 
-    @Override
-    public String getName() {
-        return "glacial-spike";
+    private GlacialSpike(Builder builder) {
+        super(builder);
     }
 
     @Override
@@ -60,35 +57,47 @@ public class GlacialSpike implements Spell {
     }
 
     @Override
-    public Component displayName() {
-        return Component.text("Glacial Spike");
+    public PrereqInterface prereq() {
+        return new PrereqInterface.NonePrereq();
     }
 
     @Override
-    public Prereq prereq() {
-        return new Prereq(true, Component.text(""));
+    protected void launchProjectile(@NotNull SpellContext context) {
+        Player caster = context.caster();
+        double damage = spellConfig.getDouble("values.damage", 8.0);
+        int spikeLen = spellConfig.getInt("values.spike_length", 4);
+        int lifeTicks = spellConfig.getInt("values.block_lifetime_ticks", 40);
+
+        caster.launchProjectile(Arrow.class, caster.getEyeLocation().getDirection(), arrow -> {
+            arrow.setDamage(damage);
+            arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+            arrow.setCritical(true);
+            arrow.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, PersistentDataType.STRING, key());
+            arrow.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, PersistentDataType.STRING, caster.getUniqueId().toString());
+            new IceSpikeTrail(arrow, spikeLen, lifeTicks).runTaskTimer(context.plugin(), 0L, 1L);
+        });
     }
 
-    /**
-     * Volgt de pijl en plaatst een korte keten van BLUE_ICE blokken achter de pijl,
-     * die automatisch teruggezet worden naar de originele blockdata na lifeTicks.
-     */
+    @Override
+    protected void handleHit(@NotNull SpellContext context, @NotNull Projectile projectile, @NotNull ProjectileHitEvent event) {
+        // Vanilla arrow damage is handled by the projectile itself.
+        // Additional effects on hit could be added here.
+    }
+
     private static final class IceSpikeTrail extends BukkitRunnable {
         private final Arrow arrow;
         private final World world;
         private final int spikeLen;
         private final int lifeTicks;
-
-        // Houd bij welke blocks we veranderd hebben en wanneer ze terug moeten
         private int tick = 0;
         private final Deque<TempBlock> queue = new ArrayDeque<>();
         private final Set<Block> ours = new HashSet<>();
 
-        IceSpikeTrail(SpellContext ctx, Arrow arrow, int spikeLen, int lifeTicks) {
+        IceSpikeTrail(Arrow arrow, int spikeLen, int lifeTicks) {
             this.arrow = arrow;
             this.world = arrow.getWorld();
-            this.spikeLen = Math.max(1, spikeLen);
-            this.lifeTicks = Math.max(5, lifeTicks);
+            this.spikeLen = spikeLen;
+            this.lifeTicks = lifeTicks;
         }
 
         @Override
@@ -99,44 +108,24 @@ public class GlacialSpike implements Spell {
                 return;
             }
 
-            // Richting van de pijl (val terug op kijkrichting als hij bijna stilstaat)
-            Vector dir = arrow.getVelocity().clone();
-            if (dir.lengthSquared() < 0.0001) {
-                dir = arrow.getLocation().getDirection();
-            }
-            dir.normalize();
-
-            // Basislocatie net achter de pijl (ietsje omlaag voor “ijsspegel”-look)
+            Vector dir = arrow.getVelocity().clone().normalize();
             Location base = arrow.getLocation().clone().add(0, -0.25, 0);
 
-            // Plaats een korte “spike”-ketting achter de pijl
             for (int i = 0; i < spikeLen; i++) {
                 Location l = base.clone().add(dir.clone().multiply(-i));
                 Block b = l.getBlock();
-
-                if (!ours.contains(b) && isReplaceable(b.getType())) {
-                    BlockData prev = b.getBlockData().clone();
-                    queue.addLast(new TempBlock(b, prev, tick + lifeTicks));
-                    // Gebruik BLUE_ICE voor harde “spike” look (kan je aanpassen)
+                if (!ours.contains(b) && b.getType().isAir()) {
+                    queue.addLast(new TempBlock(b, b.getBlockData(), tick + lifeTicks));
                     b.setType(Material.BLUE_ICE, false);
                     ours.add(b);
-
-                    // Klein beetje visuele flair zonder kosten
-                    world.spawnParticle(Particle.BLOCK, l.add(0.5, 0.5, 0.5), 2, 0.05, 0.05, 0.05, 0,
-                            Material.BLUE_ICE.createBlockData());
+                    world.spawnParticle(Particle.BLOCK, l.add(0.5, 0.5, 0.5), 2, 0.05, 0.05, 0.05, 0, Material.BLUE_ICE.createBlockData());
                 }
             }
 
-            // Zet verlopen blokken terug
             while (!queue.isEmpty() && queue.peekFirst().expireTick <= tick) {
-                TempBlock tb = queue.pollFirst();
-                if (tb.block.getType() == Material.BLUE_ICE && ours.contains(tb.block)) {
-                    tb.block.setBlockData(tb.previous, false);
-                }
-                ours.remove(tb.block);
+                queue.pollFirst().revert();
             }
 
-            // Veiligheidsstop (max 15s)
             tick++;
             if (tick > 20 * 15) {
                 cleanup();
@@ -145,39 +134,16 @@ public class GlacialSpike implements Spell {
         }
 
         private void cleanup() {
-            // Alles terugzetten wat nog van ons is
             while (!queue.isEmpty()) {
-                TempBlock tb = queue.pollFirst();
-                if (tb.block.getType() == Material.BLUE_ICE && ours.contains(tb.block)) {
-                    tb.block.setBlockData(tb.previous, false);
-                }
-                ours.remove(tb.block);
+                queue.pollFirst().revert();
             }
         }
 
-        private boolean isReplaceable(Material m) {
-            // Voorkom grief: alleen “zachte”/vervangbare blokken.
-            // Pas dit lijstje gerust aan op je server.
-            return m == Material.AIR
-                    || m == Material.CAVE_AIR
-                    || m == Material.VOID_AIR
-                    || m == Material.SHORT_GRASS
-                    || m == Material.TALL_GRASS
-                    || m == Material.FERN
-                    || m == Material.LARGE_FERN
-                    || m == Material.SNOW
-                    || m == Material.FIRE;
-        }
-
-        private static final class TempBlock {
-            final Block block;
-            final BlockData previous;
-            final int expireTick;
-
-            TempBlock(Block block, BlockData previous, int expireTick) {
-                this.block = block;
-                this.previous = previous;
-                this.expireTick = expireTick;
+        private record TempBlock(Block block, BlockData previous, int expireTick) {
+            void revert() {
+                if (block.getType() == Material.BLUE_ICE) {
+                    block.setBlockData(previous, false);
+                }
             }
         }
     }

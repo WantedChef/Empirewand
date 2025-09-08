@@ -40,6 +40,12 @@ public final class WandCastListener implements Listener {
             return;
 
         Player player = event.getPlayer();
+
+        // Check if player is still online and valid
+        if (!player.isOnline() || !player.isValid()) {
+            return;
+        }
+
         ItemStack item = player.getInventory().getItemInMainHand();
         if (!plugin.getWandService().isWand(item))
             return;
@@ -54,15 +60,18 @@ public final class WandCastListener implements Listener {
         String spellKey = spells.get(index);
 
         SpellRegistry registry = plugin.getSpellRegistry();
-        Optional<Spell> spellOpt = registry.getSpell(spellKey);
+        Optional<Spell<?>> spellOpt = registry.getSpell(spellKey);
         if (spellOpt.isEmpty()) {
             plugin.getFxService().showError(player, "wand.unknown-spell");
+            plugin.getLogger().warning("Unknown spell '" + spellKey + "' on wand for player " + player.getName());
             return;
         }
 
-        Spell spell = spellOpt.get();
+        Spell<?> spell = spellOpt.get();
 
         var perms = plugin.getPermissionService();
+
+        // Re-check permissions in case they changed dynamically
         if (!perms.has(player, perms.getSpellUsePermission(spellKey))) {
             plugin.getFxService().showError(player, "wand.no-permission");
             return;
@@ -85,22 +94,35 @@ public final class WandCastListener implements Listener {
 
         long start = System.nanoTime();
         try {
+            // Final online check before casting
+            if (!player.isOnline()) {
+                return;
+            }
+
             if (!spell.canCast(ctx)) {
                 fx.showError(player, "wand.cannot-cast");
                 return;
             }
-            spell.applyCost(ctx);
-            spell.execute(ctx);
+
+            // Use new cast API
+            spell.cast(ctx);
             cds.set(player.getUniqueId(), spellKey, nowTicks + cdTicks);
 
-            var params = new HashMap<String, String>();
-            params.put("spell", registry.getSpellDisplayName(spellKey));
-            fx.showSuccess(player, "spell-cast", params);
+            // Only show success message if player is still online
+            if (player.isOnline()) {
+                var params = new HashMap<String, String>();
+                params.put("spell", registry.getSpellDisplayName(spellKey));
+                fx.showSuccess(player, "spell-cast", params);
+            }
 
             plugin.getMetricsService().recordSpellCast(spellKey, (System.nanoTime() - start) / 1_000_000);
         } catch (Throwable t) {
-            fx.showError(player, "wand.cast-error");
+            // Only show error if player is still online
+            if (player.isOnline()) {
+                fx.showError(player, "wand.cast-error");
+            }
             plugin.getLogger().warning("Spell cast error for '" + spellKey + "': " + t.getMessage());
+            plugin.getMetricsService().recordFailedCast();
         }
     }
 }

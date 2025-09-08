@@ -1,89 +1,121 @@
 package com.example.empirewand.spell.implementation.aura;
 
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.api.ConfigService;
+import com.example.empirewand.api.EffectService;
+import com.example.empirewand.spell.PrereqInterface;
+import com.example.empirewand.spell.Spell;
+import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.SpellType;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.NotNull;
 
-import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.SpellContext;
-import com.example.empirewand.spell.Prereq;
-import net.kyori.adventure.text.Component;
+public class Aura extends Spell<Void> {
 
-public class Aura implements Spell {
-    @Override
-    public void execute(SpellContext context) {
-        Player player = context.caster();
+    public record Config(double radius, double damage, int duration, int tickInterval, int ringParticleCount, double ringMaxRadius, double ringExpandStep) {}
 
-        // Config values
-        var spells = context.config().getSpellsConfig();
-        double radius = spells.getDouble("aura.values.radius", 5.0);
-        double damage = spells.getDouble("aura.values.damage-per-tick", 2.0);
-        int duration = spells.getInt("aura.values.duration-ticks", 200); // 10 seconds
-        int tickInterval = spells.getInt("aura.values.tick-interval", 20); // 1 second
-        // Visual ring config
-        int ringParticleCount = spells.getInt("aura.values.ring-particle-count", 40);
-        double ringMaxRadius = spells.getDouble("aura.values.ring-max-radius", radius);
-        double ringExpandStep = spells.getDouble("aura.values.ring-expand-step", 0.6);
-        boolean friendlyFire = context.config().getConfig().getBoolean("features.friendly-fire", false);
+    public static class Builder extends Spell.Builder<Void> {
+        public Builder(EmpireWandAPI api) {
+            super(api);
+            this.name = "Aura";
+            this.description = "Creates a damaging aura around the caster.";
+            this.manaCost = 10;
+            this.cooldown = java.time.Duration.ofSeconds(30);
+            this.spellType = SpellType.AURA;
+        }
 
-        // Start aura effect
-        startAuraScheduler(player, radius, damage, duration, tickInterval, friendlyFire, context,
-                ringParticleCount, ringMaxRadius, ringExpandStep);
-
-        // Cast sound
-        context.fx().playSound(player, Sound.BLOCK_BEACON_AMBIENT, 1.0f, 0.5f);
+        @Override
+        @NotNull
+        public Spell<Void> build() {
+            return new Aura(this);
+        }
     }
 
-    private void startAuraScheduler(Player caster, double radius, double damage, int duration,
-            int tickInterval, boolean friendlyFire, SpellContext context,
-            int ringParticleCount, double ringMaxRadius, double ringExpandStep) {
+    private Aura(Builder builder) {
+        super(builder);
+    }
+
+    @Override
+    public String key() {
+        return "aura";
+    }
+
+    @Override
+    public PrereqInterface prereq() {
+        return new PrereqInterface.NonePrereq();
+    }
+
+    @Override
+    protected Void executeSpell(SpellContext context) {
+        Player player = context.caster();
+
+        Config config = loadConfig();
+        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false);
+
+        startAuraScheduler(player, config, friendlyFire, context);
+
+        context.fx().playSound(player, Sound.BLOCK_BEACON_AMBIENT, 1.0f, 0.5f);
+        return null;
+    }
+
+    @Override
+    protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
+        // Effect is handled in the scheduler
+    }
+
+    private Config loadConfig() {
+        double radius = spellConfig.getDouble("values.radius", 5.0);
+        double damage = spellConfig.getDouble("values.damage-per-tick", 2.0);
+        int duration = spellConfig.getInt("values.duration-ticks", 200);
+        int tickInterval = spellConfig.getInt("values.tick-interval", 20);
+        int ringParticleCount = spellConfig.getInt("values.ring-particle-count", 40);
+        double ringMaxRadius = spellConfig.getDouble("values.ring-max-radius", radius);
+        double ringExpandStep = spellConfig.getDouble("values.ring-expand-step", 0.6);
+
+        return new Config(radius, damage, duration, tickInterval, ringParticleCount, ringMaxRadius, ringExpandStep);
+    }
+
+    private void startAuraScheduler(Player caster, Config config, boolean friendlyFire, SpellContext context) {
         new BukkitRunnable() {
             private int ticks = 0;
             private double currentRingRadius = 0;
 
             @Override
             public void run() {
-                if (ticks >= duration || !caster.isValid() || caster.isDead()) {
+                if (ticks >= config.duration() || !caster.isValid() || caster.isDead()) {
                     this.cancel();
                     return;
                 }
 
-                // Damage nearby entities
                 Location center = caster.getLocation();
                 var world = center.getWorld();
-                if (world == null) {
-                    return; // Defensive - player world should exist
-                }
-                for (var entity : world.getNearbyEntities(center, radius, radius, radius)) {
-                    if (!(entity instanceof LivingEntity living))
-                        continue;
-                    if (living.equals(caster) && !friendlyFire)
-                        continue;
-                    if (living.isDead() || !living.isValid())
-                        continue;
+                if (world == null)
+                    return;
 
-                    // Apply damage
-                    living.damage(damage, caster);
-
-                    // Damage particles
-                    context.fx().spawnParticles(living.getLocation(), Particle.PORTAL, 5, 0.2, 0.2, 0.2, 0.1);
+                for (var entity : world.getNearbyEntities(center, config.radius(), config.radius(), config.radius())) {
+                    if (entity instanceof LivingEntity living && !living.equals(caster) && !living.isDead()
+                            && living.isValid()) {
+                        living.damage(config.damage(), caster);
+                        context.fx().spawnParticles(living.getLocation(), Particle.PORTAL, 5, 0.2, 0.2, 0.2, 0.1);
+                    }
                 }
 
-                // Expanding ring visual (purely cosmetic)
-                currentRingRadius += ringExpandStep;
-                if (currentRingRadius > ringMaxRadius)
-                    currentRingRadius = ringExpandStep; // reset cycle
-                createRingParticles(center, currentRingRadius, ringParticleCount, context);
+                currentRingRadius += config.ringExpandStep();
+                if (currentRingRadius > config.ringMaxRadius())
+                    currentRingRadius = config.ringExpandStep();
+                createRingParticles(context, center, currentRingRadius, config.ringParticleCount());
 
-                ticks += tickInterval;
+                ticks += config.tickInterval();
             }
-        }.runTaskTimer(context.plugin(), 0L, tickInterval);
+        }.runTaskTimer(context.plugin(), 0L, config.tickInterval());
     }
 
-    private void createRingParticles(Location center, double radius, int count, SpellContext context) {
+    private void createRingParticles(SpellContext context, Location center, double radius, int count) {
         if (count <= 0)
             return;
         for (int i = 0; i < count; i++) {
@@ -96,25 +128,5 @@ public class Aura implements Spell {
                 context.fx().spawnParticles(particleLoc, Particle.ENCHANT, 1, 0, 0, 0, 0);
             }
         }
-    }
-
-    @Override
-    public String getName() {
-        return "aura";
-    }
-
-    @Override
-    public String key() {
-        return "aura";
-    }
-
-    @Override
-    public Component displayName() {
-        return Component.text("Aura");
-    }
-
-    @Override
-    public Prereq prereq() {
-        return new Prereq(true, Component.text(""));
     }
 }

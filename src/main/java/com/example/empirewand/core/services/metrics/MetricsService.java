@@ -34,6 +34,18 @@ public class MetricsService {
 
     public MetricsService(Plugin plugin, ConfigService config, SpellRegistry spellRegistry,
             DebugMetricsService debugMetrics) {
+        if (plugin == null) {
+            throw new IllegalArgumentException("Plugin cannot be null");
+        }
+        if (config == null) {
+            throw new IllegalArgumentException("ConfigService cannot be null");
+        }
+        if (spellRegistry == null) {
+            throw new IllegalArgumentException("SpellRegistry cannot be null");
+        }
+        if (debugMetrics == null) {
+            throw new IllegalArgumentException("DebugMetricsService cannot be null");
+        }
         this.plugin = plugin;
         this.config = config;
         this.spellRegistry = spellRegistry;
@@ -90,13 +102,23 @@ public class MetricsService {
      * Records a spell cast event for metrics.
      */
     public void recordSpellCast(String spellKey) {
-        if (metrics != null && config.getConfig().getBoolean("metrics.enabled", true)) {
-            Optional<Spell> spellOpt = spellRegistry.getSpell(spellKey);
-            if (spellOpt.isPresent()) {
-                SpellType type = SpellTypes.resolveTypeFromKey(spellKey);
-                metrics.addCustomChart(new SimplePie("spell_type_casts", () -> type.name().toLowerCase()));
+        if (spellKey == null) {
+            return;
+        }
+        try {
+            if (metrics != null && config.getConfig().getBoolean("metrics.enabled", true)) {
+                Optional<Spell<?>> spellOpt = spellRegistry.getSpell(spellKey);
+                if (spellOpt.isPresent()) {
+                    SpellType type = SpellTypes.resolveTypeFromKey(spellKey);
+                    if (type != null) {
+                        metrics.addCustomChart(new SimplePie("spell_type_casts", () -> type.name().toLowerCase()));
+                    }
+                }
+                metrics.addCustomChart(new SimplePie("spell_casts", () -> spellKey));
             }
-            metrics.addCustomChart(new SimplePie("spell_casts", () -> spellKey));
+        } catch (Exception e) {
+            // Log error but don't crash - metrics should never break the main functionality
+            Logger.getLogger("EmpireWand").warning("Error recording spell cast metrics: " + e.getMessage());
         }
     }
 
@@ -104,9 +126,16 @@ public class MetricsService {
      * Records a spell cast with timing for debug metrics.
      */
     public void recordSpellCast(String spellKey, long durationMs) {
-        recordSpellCast(spellKey);
-        if (config.getConfig().getBoolean("metrics.debug", false)) {
-            debugMetrics.recordSpellCast(durationMs);
+        if (spellKey == null || durationMs < 0) {
+            return;
+        }
+        try {
+            recordSpellCast(spellKey);
+            if (config.getConfig().getBoolean("metrics.debug", false)) {
+                debugMetrics.recordSpellCast(durationMs);
+            }
+        } catch (Exception e) {
+            Logger.getLogger("EmpireWand").warning("Error recording spell cast with duration: " + e.getMessage());
         }
     }
 
@@ -114,8 +143,12 @@ public class MetricsService {
      * Records a failed spell cast.
      */
     public void recordFailedCast() {
-        if (config.getConfig().getBoolean("metrics.debug", false)) {
-            debugMetrics.recordFailedCast();
+        try {
+            if (config.getConfig().getBoolean("metrics.debug", false)) {
+                debugMetrics.recordFailedCast();
+            }
+        } catch (Exception e) {
+            Logger.getLogger("EmpireWand").warning("Error recording failed cast: " + e.getMessage());
         }
     }
 
@@ -123,8 +156,15 @@ public class MetricsService {
      * Records event processing timing.
      */
     public void recordEventProcessing(long durationMs) {
-        if (config.getConfig().getBoolean("metrics.debug", false)) {
-            debugMetrics.recordEventProcessing(durationMs);
+        if (durationMs < 0) {
+            return;
+        }
+        try {
+            if (config.getConfig().getBoolean("metrics.debug", false)) {
+                debugMetrics.recordEventProcessing(durationMs);
+            }
+        } catch (Exception e) {
+            Logger.getLogger("EmpireWand").warning("Error recording event processing: " + e.getMessage());
         }
     }
 
@@ -142,8 +182,12 @@ public class MetricsService {
      * Records a wand creation event for metrics.
      */
     public void recordWandCreated() {
-        if (metrics != null) {
-            wandsCreated.incrementAndGet();
+        try {
+            if (metrics != null) {
+                wandsCreated.incrementAndGet();
+            }
+        } catch (Exception e) {
+            Logger.getLogger("EmpireWand").warning("Error recording wand creation: " + e.getMessage());
         }
     }
 

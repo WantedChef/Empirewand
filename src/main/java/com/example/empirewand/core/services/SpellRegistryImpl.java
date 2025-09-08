@@ -1,5 +1,6 @@
 package com.example.empirewand.core.services;
 
+import com.example.empirewand.api.EmpireWandAPI;
 import com.example.empirewand.api.ServiceHealth;
 import com.example.empirewand.api.SpellMetadata;
 import com.example.empirewand.api.SpellQuery;
@@ -20,268 +21,276 @@ import com.example.empirewand.spell.implementation.movement.*;
 import com.example.empirewand.spell.implementation.poison.*;
 import com.example.empirewand.spell.implementation.projectile.*;
 import com.example.empirewand.spell.implementation.weather.*;
-
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+import java.util.logging.Logger;
+import java.util.stream.Stream;
+
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.configuration.ConfigurationSection;
+import org.jetbrains.annotations.NotNull;
 
 public class SpellRegistryImpl implements SpellRegistry {
-    private final Map<String, Spell> spells = new HashMap<>();
-    private final Map<String, SpellMetadata> spellMetadata = new HashMap<>();
-    private final Map<String, Set<String>> spellCategories = new HashMap<>();
-    private final Map<String, Set<String>> spellTags = new HashMap<>();
-    private boolean enabled = true;
 
-    public SpellRegistryImpl() {
+    private static final Logger LOGGER = Logger.getLogger(SpellRegistryImpl.class.getName());
+    private final Map<String, Spell<?>> spells = new ConcurrentHashMap<>();
+    private final EmpireWandAPI api;
+    private final ConfigService configService;
+
+    public SpellRegistryImpl(EmpireWandAPI api, ConfigService configService) {
+        this.api = api;
+        this.configService = configService;
         registerAllSpells();
-        initializeMetadata();
     }
 
     private void registerAllSpells() {
-        registerAuraSpells();
-        registerControlSpells();
-        registerDarkSpells();
-        registerEarthSpells();
-        registerFireSpells();
-        registerHealSpells();
-        registerIceSpells();
-        registerLifeSpells();
-        registerLightningSpells();
-        registerMiscSpells();
-        registerMovementSpells();
-        registerPoisonSpells();
-        registerProjectileSpells();
-        registerWeatherSpells();
+        // Je ReadableConfig kan niet direct subsecties geven zoals Bukkit
+        // ConfigurationSection.
+        // We proberen defensief te casten; zo niet, dan slaan we het laden van
+        // per-spell config over.
+        final var readable = configService.getSpellsConfig();
+        final ConfigurationSection bukkitSpells = (readable instanceof ConfigurationSection cs) ? cs : null;
+
+        Stream.<Supplier<Spell.Builder<?>>>of(
+                // Aura
+                () -> new Aura.Builder(null),
+                () -> new EmpireAura.Builder(null),
+                // Control
+                () -> new Confuse.Builder(null),
+                () -> new Polymorph.Builder(null),
+                () -> new StasisField.Builder(null),
+                // Dark
+                () -> new DarkCircle.Builder(null),
+                () -> new DarkPulse.Builder(null),
+                () -> new RitualOfUnmaking.Builder(null),
+                () -> new ShadowCloak.Builder(null),
+                () -> new ShadowStep.Builder(null),
+                () -> new VoidSwap.Builder(null),
+                // Earth
+                () -> new EarthQuake.Builder(null),
+                () -> new GraspingVines.Builder(null),
+                () -> new Lightwall.Builder(null),
+                // Fire
+                () -> new BlazeLaunch.Builder(null),
+                () -> new Comet.Builder(null),
+                () -> new CometShower.Builder(null),
+                () -> new EmpireComet.Builder(null),
+                () -> new Explosive.Builder(null),
+                () -> new ExplosionTrail.Builder(null),
+                () -> new Fireball.Builder(null),
+                () -> new FlameWave.Builder(null),
+                // Heal
+                () -> new GodCloud.Builder(null),
+                () -> new Heal.Builder(null),
+                () -> new RadiantBeacon.Builder(null),
+                // Ice
+                () -> new FrostNova.Builder(null),
+                () -> new GlacialSpike.Builder(null),
+                // Life
+                () -> new BloodBarrier.Builder(null),
+                () -> new BloodBlock.Builder(null),
+                () -> new BloodNova.Builder(null),
+                () -> new BloodSpam.Builder(null),
+                () -> new BloodTap.Builder(null),
+                () -> new Hemorrhage.Builder(null),
+                () -> new LifeReap.Builder(null),
+                () -> new LifeSteal.Builder(null),
+                // Lightning
+                () -> new ChainLightning.Builder(null),
+                () -> new LightningArrow.Builder(null),
+                () -> new LightningBolt.Builder(null),
+                () -> new LightningStorm.Builder(null),
+                () -> new LittleSpark.Builder(null),
+                () -> new SolarLance.Builder(null),
+                () -> new Spark.Builder(null),
+                () -> new ThunderBlast.Builder(null),
+                // Misc
+                () -> new EmpireLaunch.Builder(null),
+                () -> new EmpireLevitate.Builder(null),
+                () -> new EtherealForm.Builder(null),
+                () -> new ExplosionWave.Builder(null),
+                // Movement
+                () -> new BlinkStrike.Builder(null),
+                () -> new EmpireEscape.Builder(null),
+                () -> new Leap.Builder(null),
+                () -> new SunburstStep.Builder(null),
+                () -> new Teleport.Builder(null),
+                // Poison
+                () -> new CrimsonChains.Builder(null),
+                () -> new MephidicReap.Builder(null),
+                () -> new PoisonWave.Builder(null),
+                () -> new SoulSever.Builder(null),
+                // Projectile
+                () -> new ArcaneOrb.Builder(null),
+                () -> new MagicMissile.Builder(null),
+                // Weather
+                () -> new Gust.Builder(null),
+                () -> new Tornado.Builder(null)).forEach(builderSupplier -> {
+                    Spell<?> spell = builderSupplier.get().build();
+
+                    if (bukkitSpells != null) {
+                        ConfigurationSection spellCfg = bukkitSpells.getConfigurationSection(spell.key());
+                        if (spellCfg != null) {
+                            spell.loadConfig(spellCfg);
+                        }
+                    } else {
+                        // Geen Bukkit-sectie beschikbaar – netjes melden en doorgaan.
+                        LOGGER.fine(() -> "Skipping config load for spell '" + spell.key()
+                                + "': spells config is not a Bukkit ConfigurationSection");
+                    }
+
+                    spells.put(spell.key(), spell);
+                });
     }
 
-    private void initializeMetadata() {
-        // Initialize basic metadata for all registered spells
-        for (Spell spell : spells.values()) {
-            String key = spell.key();
-            if (!spellMetadata.containsKey(key)) {
-                // Create basic metadata - in a real implementation, this would load from config
-                SpellMetadata metadata = createBasicMetadata(spell);
-                spellMetadata.put(key, metadata);
-
-                // Add to categories and tags
-                String category = metadata.getCategory();
-                spellCategories.computeIfAbsent(category, k -> new HashSet<>()).add(key);
-
-                for (String tag : metadata.getTags()) {
-                    spellTags.computeIfAbsent(tag, k -> new HashSet<>()).add(key);
-                }
-            }
-        }
-    }
-
-    private SpellMetadata createBasicMetadata(Spell spell) {
-        // This is a simplified implementation - in practice, you'd load this from
-        // config files
-        return new SpellMetadata() {
-            @Override
-            public String getKey() {
-                return spell.key();
-            }
-
-            @Override
-            public net.kyori.adventure.text.Component getDisplayName() {
-                return spell.displayName();
-            }
-
-            @Override
-            public net.kyori.adventure.text.Component getDescription() {
-                return net.kyori.adventure.text.Component.text("A magical spell");
-            }
-
-            @Override
-            public String getCategory() {
-                return spell.type() != null ? spell.type().name().toLowerCase() : "misc";
-            }
-
-            @Override
-            public Set<String> getTags() {
-                return Set.of("magic");
-            }
-
-            @Override
-            public long getCooldownTicks() {
-                return 100; // Default cooldown
-            }
-
-            @Override
-            public double getRange() {
-                return 20.0; // Default range
-            }
-
-            @Override
-            public int getLevelRequirement() {
-                return 1; // Default level requirement
-            }
-
-            @Override
-            public boolean isEnabled() {
-                return true;
-            }
-
-            @Override
-            public String getIconMaterial() {
-                return "DIAMOND";
-            }
-
-            @Override
-            public Object getProperty(String key) {
-                return null;
-            }
-        };
-    }
-
-    private void register(Spell spell) {
-        spells.put(spell.getName(), spell);
-    }
+    // ===== SpellRegistry API =====
 
     @Override
-    public Optional<Spell> getSpell(String key) {
+    public @NotNull Optional<Spell<?>> getSpell(@NotNull String key) {
         return Optional.ofNullable(spells.get(key));
     }
 
     @Override
-    @Deprecated(forRemoval = true)
-    public Spell getSpellNullable(String key) {
-        return spells.get(key);
-    }
-
-    @Override
-    public Map<String, Spell> getAllSpells() {
+    public @NotNull Map<String, Spell<?>> getAllSpells() {
         return Collections.unmodifiableMap(spells);
     }
 
     @Override
-    public Set<String> getSpellKeys() {
+    public @NotNull Set<String> getSpellKeys() {
         return Collections.unmodifiableSet(spells.keySet());
     }
 
     @Override
-    public boolean isSpellRegistered(String key) {
+    public boolean isSpellRegistered(@NotNull String key) {
         return spells.containsKey(key);
     }
 
     @Override
-    public String getSpellDisplayName(String key) {
+    public @NotNull String getSpellDisplayName(@NotNull String key) {
         return getSpell(key)
-                .map(spell -> spell.displayName() != null ? spell.displayName().toString() : key)
+                .map(s -> PlainTextComponentSerializer.plainText().serialize(s.displayName()))
                 .orElse(key);
     }
 
-    // Grouped registration methods for better organization
-    private void registerAuraSpells() {
-        register(new Aura());
-        register(new EmpireAura());
+    @Override
+    public @NotNull SpellBuilder createSpell(@NotNull String key) {
+        throw new UnsupportedOperationException("Custom spell creation is not supported.");
     }
 
-    private void registerControlSpells() {
-        register(new Confuse());
-        register(new Polymorph());
-        register(new StasisField());
+    @Override
+    public boolean registerSpell(@NotNull Spell<?> spell) {
+        return spells.putIfAbsent(spell.key(), spell) == null;
     }
 
-    private void registerDarkSpells() {
-        register(new DarkCircle());
-        register(new DarkPulse());
-        register(new RitualOfUnmaking());
-        register(new ShadowCloak());
-        register(new ShadowStep());
-        register(new VoidSwap());
+    @Override
+    public boolean unregisterSpell(@NotNull String key) {
+        return spells.remove(key) != null;
     }
 
-    private void registerEarthSpells() {
-        register(new EarthQuake());
-        register(new GraspingVines());
-        register(new Lightwall());
-        register(new Sandstorm());
+    @Override
+    public @NotNull Optional<SpellMetadata> getSpellMetadata(@NotNull String key) {
+        return getSpell(key).map(BasicSpellMetadata::new);
     }
 
-    private void registerFireSpells() {
-        register(new BlazeLaunch());
-        register(new Comet());
-        register(new CometShower());
-        register(new EmpireComet());
-        register(new Explosive());
-        register(new ExplosionTrail());
-        register(new Fireball());
-        register(new FlameWave());
+    @Override
+    public boolean updateSpellMetadata(@NotNull String key, @NotNull SpellMetadata metadata) {
+        return false; // Not supported
     }
 
-    private void registerHealSpells() {
-        register(new GodCloud());
-        register(new Heal());
-        register(new RadiantBeacon());
+    @Override
+    public @NotNull Set<String> getSpellCategories() {
+        return Set.of(); // TODO
     }
 
-    private void registerIceSpells() {
-        register(new FrostNova());
-        register(new GlacialSpike());
+    @Override
+    public @NotNull Set<String> getSpellsByCategory(@NotNull String category) {
+        return Set.of(); // TODO
     }
 
-    private void registerLifeSpells() {
-        register(new BloodBarrier());
-        register(new BloodBlock());
-        register(new BloodNova());
-        register(new BloodSpam());
-        register(new BloodTap());
-        register(new Hemorrhage());
-        register(new LifeReap());
-        register(new LifeSteal());
+    @Override
+    public @NotNull Set<String> getSpellsByTag(@NotNull String tag) {
+        return Set.of(); // TODO
     }
 
-    private void registerLightningSpells() {
-        register(new ChainLightning());
-        register(new LightningArrow());
-        register(new LightningBolt());
-        register(new LightningStorm());
-        register(new LittleSpark());
-        register(new SolarLance());
-        register(new Spark());
-        register(new ThunderBlast());
+    @Override
+    public @NotNull Set<String> getSpellTags() {
+        return Set.of(); // TODO
     }
 
-    private void registerMiscSpells() {
-        register(new EmpireLaunch());
-        register(new EmpireLevitate());
-        register(new EtherealForm());
-        register(new ExplosionWave());
+    @Override
+    public @NotNull List<Spell<?>> findSpells(@NotNull SpellQuery query) {
+        Stream<Spell<?>> stream = spells.values().stream();
+
+        if (query.getCategory() != null) {
+            stream = stream.filter(s -> s.type().name().equalsIgnoreCase(query.getCategory()));
+        }
+        if (query.getNameContains() != null && !query.getNameContains().isBlank()) {
+            final String q = query.getNameContains().toLowerCase();
+            stream = stream.filter(
+                    s -> PlainTextComponentSerializer.plainText().serialize(s.displayName()).toLowerCase().contains(q));
+        }
+        if (query.getMaxCooldown() >= 0) {
+            stream = stream.filter(s -> s.getCooldown().toMillis() / 50 <= query.getMaxCooldown());
+        }
+        // (Tags/range/level/enabled/filtering kun je hier later toevoegen)
+
+        // Sorteren
+        if (query.getSortField() != null) {
+            java.util.Comparator<Spell<?>> cmp;
+            if (query.getSortField() == SpellQuery.SortField.NAME) {
+                cmp = java.util.Comparator
+                        .comparing(s -> PlainTextComponentSerializer.plainText().serialize(s.displayName()));
+            } else if (query.getSortField() == SpellQuery.SortField.COOLDOWN) {
+                cmp = java.util.Comparator.comparingLong(s -> s.getCooldown().toMillis());
+            } else if (query.getSortField() == SpellQuery.SortField.RANGE) {
+                cmp = java.util.Comparator.comparingDouble(s -> 0.0);
+            } else if (query.getSortField() == SpellQuery.SortField.LEVEL_REQUIREMENT) {
+                cmp = java.util.Comparator.comparingInt(s -> 0);
+            } else if (query.getSortField() == SpellQuery.SortField.CATEGORY) {
+                cmp = java.util.Comparator.comparing(s -> s.type().name());
+            } else {
+                cmp = java.util.Comparator.comparing(s -> s.key());
+            }
+            if (query.getSortOrder() == SpellQuery.SortOrder.DESCENDING) {
+                cmp = cmp.reversed();
+            }
+            stream = stream.sorted(cmp);
+        }
+
+        var list = stream.toList();
+        if (query.getLimit() > 0 && query.getLimit() < list.size()) {
+            return list.subList(0, query.getLimit());
+        }
+        return list;
     }
 
-    private void registerMovementSpells() {
-        register(new BlinkStrike());
-        register(new EmpireEscape());
-        register(new Leap());
-        register(new SunburstStep());
-        register(new Teleport());
+    @Override
+    public @NotNull SpellQuery.Builder createQuery() {
+        return new SpellQueryBuilderImpl();
     }
 
-    private void registerPoisonSpells() {
-        register(new CrimsonChains());
-        register(new MephidicReap());
-        register(new PoisonWave());
-        register(new SoulSever());
+    @Override
+    public int getSpellCount() {
+        return spells.size();
     }
 
-    private void registerProjectileSpells() {
-        register(new ArcaneOrb());
-        register(new MagicMissile());
+    @Override
+    public int getSpellCountByCategory(@NotNull String category) {
+        return (int) spells.values().stream()
+                .filter(s -> s.type().name().equalsIgnoreCase(category))
+                .count();
     }
 
-    private void registerWeatherSpells() {
-        register(new Gust());
-        register(new Tornado());
+    @Override
+    public int getEnabledSpellCount() {
+        return spells.size(); // Assuming all enabled
     }
-
-    // ===== IMPLEMENTATION OF NEW SPELLREGISTRY METHODS =====
 
     @Override
     public String getServiceName() {
@@ -295,294 +304,99 @@ public class SpellRegistryImpl implements SpellRegistry {
 
     @Override
     public boolean isEnabled() {
-        return enabled;
+        return true;
     }
 
     @Override
     public ServiceHealth getHealth() {
-        return enabled ? ServiceHealth.HEALTHY : ServiceHealth.UNHEALTHY;
+        return ServiceHealth.HEALTHY;
     }
 
     @Override
     public void reload() {
-        // Reload spell configurations and metadata
-        spellMetadata.clear();
-        spellCategories.clear();
-        spellTags.clear();
-        initializeMetadata();
+        spells.clear();
+        registerAllSpells();
     }
 
-    @Override
-    public SpellBuilder createSpell(String key) {
-        return new SpellBuilderImpl(key);
-    }
+    // ===== Metadata wrapper =====
 
-    @Override
-    public boolean registerSpell(Spell spell) {
-        if (spell == null || spells.containsKey(spell.key())) {
-            return false;
-        }
-        spells.put(spell.key(), spell);
+    private static class BasicSpellMetadata implements SpellMetadata {
+        private final Spell<?> spell;
 
-        // Create and store metadata
-        SpellMetadata metadata = createBasicMetadata(spell);
-        spellMetadata.put(spell.key(), metadata);
-
-        // Update categories and tags
-        String category = metadata.getCategory();
-        spellCategories.computeIfAbsent(category, k -> new HashSet<>()).add(spell.key());
-
-        for (String tag : metadata.getTags()) {
-            spellTags.computeIfAbsent(tag, k -> new HashSet<>()).add(spell.key());
-        }
-
-        return true;
-    }
-
-    @Override
-    public boolean unregisterSpell(String key) {
-        if (!spells.containsKey(key)) {
-            return false;
-        }
-
-        spells.remove(key);
-        SpellMetadata metadata = spellMetadata.remove(key);
-
-        if (metadata != null) {
-            // Remove from categories and tags
-            String category = metadata.getCategory();
-            Set<String> categorySpells = spellCategories.get(category);
-            if (categorySpells != null) {
-                categorySpells.remove(key);
-                if (categorySpells.isEmpty()) {
-                    spellCategories.remove(category);
-                }
-            }
-
-            for (String tag : metadata.getTags()) {
-                Set<String> tagSpells = spellTags.get(tag);
-                if (tagSpells != null) {
-                    tagSpells.remove(key);
-                    if (tagSpells.isEmpty()) {
-                        spellTags.remove(tag);
-                    }
-                }
-            }
-        }
-
-        return true;
-    }
-
-    @Override
-    public Optional<SpellMetadata> getSpellMetadata(String key) {
-        return Optional.ofNullable(spellMetadata.get(key));
-    }
-
-    @Override
-    public boolean updateSpellMetadata(String key, SpellMetadata metadata) {
-        if (!spells.containsKey(key) || metadata == null) {
-            return false;
-        }
-
-        // Remove old metadata from categories and tags
-        SpellMetadata oldMetadata = spellMetadata.get(key);
-        if (oldMetadata != null) {
-            String oldCategory = oldMetadata.getCategory();
-            Set<String> oldCategorySpells = spellCategories.get(oldCategory);
-            if (oldCategorySpells != null) {
-                oldCategorySpells.remove(key);
-                if (oldCategorySpells.isEmpty()) {
-                    spellCategories.remove(oldCategory);
-                }
-            }
-
-            for (String tag : oldMetadata.getTags()) {
-                Set<String> oldTagSpells = spellTags.get(tag);
-                if (oldTagSpells != null) {
-                    oldTagSpells.remove(key);
-                    if (oldTagSpells.isEmpty()) {
-                        spellTags.remove(tag);
-                    }
-                }
-            }
-        }
-
-        // Store new metadata
-        spellMetadata.put(key, metadata);
-
-        // Add to new categories and tags
-        String newCategory = metadata.getCategory();
-        spellCategories.computeIfAbsent(newCategory, k -> new HashSet<>()).add(key);
-
-        for (String tag : metadata.getTags()) {
-            spellTags.computeIfAbsent(tag, k -> new HashSet<>()).add(key);
-        }
-
-        return true;
-    }
-
-    @Override
-    public Set<String> getSpellCategories() {
-        return Collections.unmodifiableSet(spellCategories.keySet());
-    }
-
-    @Override
-    public Set<String> getSpellsByCategory(String category) {
-        Set<String> spellsInCategory = spellCategories.get(category);
-        return spellsInCategory != null ? Collections.unmodifiableSet(spellsInCategory) : Collections.emptySet();
-    }
-
-    @Override
-    public Set<String> getSpellsByTag(String tag) {
-        Set<String> spellsWithTag = spellTags.get(tag);
-        return spellsWithTag != null ? Collections.unmodifiableSet(spellsWithTag) : Collections.emptySet();
-    }
-
-    @Override
-    public Set<String> getSpellTags() {
-        return Collections.unmodifiableSet(spellTags.keySet());
-    }
-
-    @Override
-    public List<Spell> findSpells(SpellQuery query) {
-        return query.execute();
-    }
-
-    @Override
-    public SpellQuery.Builder createQuery() {
-        return new SpellQueryBuilderImpl();
-    }
-
-    @Override
-    public int getSpellCount() {
-        return spells.size();
-    }
-
-    @Override
-    public int getSpellCountByCategory(String category) {
-        Set<String> spellsInCategory = spellCategories.get(category);
-        return spellsInCategory != null ? spellsInCategory.size() : 0;
-    }
-
-    @Override
-    public int getEnabledSpellCount() {
-        return (int) spellMetadata.values().stream()
-                .filter(SpellMetadata::isEnabled)
-                .count();
-    }
-
-    // ===== INNER CLASSES FOR BUILDERS =====
-
-    private class SpellBuilderImpl implements SpellBuilder {
-        private final String key;
-        private String name;
-        private String description = "A magical spell";
-        private String category = "misc";
-        private Set<String> tags = new HashSet<>();
-        private long cooldownTicks = 100;
-        private double range = 20.0;
-        private int levelRequirement = 1;
-        private boolean enabled = true;
-        private String iconMaterial = "DIAMOND";
-
-        public SpellBuilderImpl(String key) {
-            this.key = key;
-            this.name = key;
+        public BasicSpellMetadata(Spell<?> spell) {
+            this.spell = spell;
         }
 
         @Override
-        public SpellBuilder name(String name) {
-            this.name = name;
-            return this;
+        public String getKey() {
+            return spell.key();
         }
 
         @Override
-        public SpellBuilder description(String description) {
-            this.description = description;
-            return this;
+        public Component getDisplayName() {
+            return spell.displayName();
         }
 
         @Override
-        public SpellBuilder category(String category) {
-            this.category = category;
-            return this;
+        public Component getDescription() {
+            return Component.text(spell.getDescription());
         }
 
         @Override
-        public SpellBuilder tags(String... tags) {
-            this.tags = Set.of(tags);
-            return this;
+        public String getCategory() {
+            return spell.type().name();
         }
 
         @Override
-        public SpellBuilder cooldown(long ticks) {
-            this.cooldownTicks = ticks;
-            return this;
+        public Set<String> getTags() {
+            return Set.of();
         }
 
         @Override
-        public SpellBuilder range(double range) {
-            this.range = range;
-            return this;
+        public long getCooldownTicks() {
+            return spell.getCooldown().toMillis() / 50;
         }
 
         @Override
-        public SpellBuilder levelRequirement(int level) {
-            this.levelRequirement = level;
-            return this;
+        public double getRange() {
+            return 0;
         }
 
         @Override
-        public SpellBuilder enabled(boolean enabled) {
-            this.enabled = enabled;
-            return this;
+        public int getLevelRequirement() {
+            return 0;
         }
 
         @Override
-        public SpellBuilder iconMaterial(String material) {
-            this.iconMaterial = material;
-            return this;
+        public boolean isEnabled() {
+            return true;
         }
 
         @Override
-        public SpellBuilder executor(SpellExecutor executor) {
-            // In a real implementation, you'd store this and use it to create the spell
-            return this;
+        public String getIconMaterial() {
+            return "DIAMOND";
         }
 
         @Override
-        public SpellBuilder validator(SpellValidator validator) {
-            // In a real implementation, you'd store this and use it to create the spell
-            return this;
-        }
-
-        @Override
-        public SpellBuilder property(String key, Object value) {
-            // In a real implementation, you'd store custom properties
-            return this;
-        }
-
-        @Override
-        public Spell build() {
-            // This is a simplified implementation - in practice, you'd create a proper
-            // Spell instance
-            // For now, return null as this would require a full spell implementation
-            throw new UnsupportedOperationException("Custom spell creation not yet implemented");
+        public Object getProperty(String key) {
+            return null;
         }
     }
+
+    // ===== Query builder & impl =====
 
     private class SpellQueryBuilderImpl implements SpellQuery.Builder {
         private String category;
         private String tag;
         private String nameContains;
-        private Long maxCooldown;
-        private Double minRange;
-        private Double maxRange;
-        private Integer maxLevelRequirement;
+        private long maxCooldown = -1;
+        private double minRange = -1;
+        private double maxRange = -1;
+        private int maxLevelRequirement = -1;
         private Boolean enabled;
-        private SpellQuery.SortField sortField = SpellQuery.SortField.NAME;
+        private SpellQuery.SortField sortField;
         private SpellQuery.SortOrder sortOrder = SpellQuery.SortOrder.ASCENDING;
-        private int limit = Integer.MAX_VALUE;
+        private int limit = -1;
 
         @Override
         public SpellQuery.Builder category(String category) {
@@ -647,121 +461,69 @@ public class SpellRegistryImpl implements SpellRegistry {
 
         @Override
         public SpellQuery build() {
-            return new SpellQueryImpl(this);
+            return new SpellQueryImpl(this, SpellRegistryImpl.this);
         }
     }
 
-    private class SpellQueryImpl implements SpellQuery {
-        private final SpellQueryBuilderImpl builder;
-
-        public SpellQueryImpl(SpellQueryBuilderImpl builder) {
-            this.builder = builder;
+    private record SpellQueryImpl(SpellQueryBuilderImpl builder, SpellRegistryImpl registry) implements SpellQuery {
+        @Override
+        public String getCategory() {
+            return builder.category;
         }
 
         @Override
-        public List<Spell> execute() {
-            List<Spell> results = new ArrayList<>();
-
-            for (Spell spell : spells.values()) {
-                if (matches(spell)) {
-                    results.add(spell);
-                }
-            }
-
-            // Apply sorting
-            results.sort((s1, s2) -> {
-                int comparison = 0;
-                switch (builder.sortField) {
-                    case NAME:
-                        comparison = s1.getName().compareTo(s2.getName());
-                        break;
-                    case COOLDOWN:
-                        SpellMetadata m1_cd = spellMetadata.get(s1.key());
-                        SpellMetadata m2_cd = spellMetadata.get(s2.key());
-                        if (m1_cd != null && m2_cd != null) {
-                            comparison = Long.compare(m1_cd.getCooldownTicks(), m2_cd.getCooldownTicks());
-                        }
-                        break;
-                    case RANGE:
-                        SpellMetadata m1_r = spellMetadata.get(s1.key());
-                        SpellMetadata m2_r = spellMetadata.get(s2.key());
-                        if (m1_r != null && m2_r != null) {
-                            comparison = Double.compare(m1_r.getRange(), m2_r.getRange());
-                        }
-                        break;
-                    case LEVEL_REQUIREMENT:
-                        SpellMetadata m1_lr = spellMetadata.get(s1.key());
-                        SpellMetadata m2_lr = spellMetadata.get(s2.key());
-                        if (m1_lr != null && m2_lr != null) {
-                            comparison = Integer.compare(m1_lr.getLevelRequirement(), m2_lr.getLevelRequirement());
-                        }
-                        break;
-                    case CATEGORY:
-                        SpellMetadata m1_c = spellMetadata.get(s1.key());
-                        SpellMetadata m2_c = spellMetadata.get(s2.key());
-                        if (m1_c != null && m2_c != null) {
-                            comparison = m1_c.getCategory().compareTo(m2_c.getCategory());
-                        }
-                        break;
-                }
-
-                return builder.sortOrder == SpellQuery.SortOrder.DESCENDING ? -comparison : comparison;
-            });
-
-            // Apply limit
-            if (results.size() > builder.limit) {
-                results = results.subList(0, builder.limit);
-            }
-
-            return results;
+        public String getTag() {
+            return builder.tag;
         }
 
-        private boolean matches(Spell spell) {
-            SpellMetadata metadata = spellMetadata.get(spell.key());
-            if (metadata == null)
-                return false;
+        @Override
+        public String getNameContains() {
+            return builder.nameContains;
+        }
 
-            // Category filter
-            if (builder.category != null && !builder.category.equals(metadata.getCategory())) {
-                return false;
-            }
+        @Override
+        public long getMaxCooldown() {
+            return builder.maxCooldown;
+        }
 
-            // Tag filter
-            if (builder.tag != null && !metadata.getTags().contains(builder.tag)) {
-                return false;
-            }
+        @Override
+        public double getMinRange() {
+            return builder.minRange;
+        }
 
-            // Name contains filter
-            if (builder.nameContains != null &&
-                    !spell.getName().toLowerCase().contains(builder.nameContains.toLowerCase())) {
-                return false;
-            }
+        @Override
+        public double getMaxRange() {
+            return builder.maxRange;
+        }
 
-            // Cooldown filter
-            if (builder.maxCooldown != null && metadata.getCooldownTicks() > builder.maxCooldown) {
-                return false;
-            }
+        @Override
+        public int getMaxLevelRequirement() {
+            return builder.maxLevelRequirement;
+        }
 
-            // Range filter
-            if (builder.minRange != null && metadata.getRange() < builder.minRange) {
-                return false;
-            }
-            if (builder.maxRange != null && metadata.getRange() > builder.maxRange) {
-                return false;
-            }
+        @Override
+        public Boolean isEnabled() {
+            return builder.enabled;
+        }
 
-            // Level requirement filter
-            if (builder.maxLevelRequirement != null &&
-                    metadata.getLevelRequirement() > builder.maxLevelRequirement) {
-                return false;
-            }
+        @Override
+        public SortField getSortField() {
+            return builder.sortField;
+        }
 
-            // Enabled filter
-            if (builder.enabled != null && metadata.isEnabled() != builder.enabled) {
-                return false;
-            }
+        @Override
+        public SortOrder getSortOrder() {
+            return builder.sortOrder;
+        }
 
-            return true;
+        @Override
+        public int getLimit() {
+            return builder.limit;
+        }
+
+        @Override
+        public List<Spell<?>> execute() {
+            return registry.findSpells(this);
         }
     }
 }

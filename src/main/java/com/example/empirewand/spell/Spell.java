@@ -1,44 +1,330 @@
 package com.example.empirewand.spell;
 
-import net.kyori.adventure.text.Component;
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.api.SpellCastEvent;
 import java.time.Duration;
+import java.util.logging.Level;
+import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Player;
+import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.NotNull;
 
-public interface Spell {
-    // Legacy method for backward compatibility
-    void execute(SpellContext context);
+/**
+ * Represents the abstract concept of a spell, providing a foundational
+ * structure for all spell implementations.
+ *
+ * <p>
+ * This class defines the core properties and behaviors of a spell, such as its
+ * name, mana cost,
+ * cooldown, and casting logic. It employs a generic type {@code <T>} to
+ * represent the result or
+ * "effect" produced by the spell's execution, allowing for flexible and
+ * type-safe communication
+ * between asynchronous execution and synchronous effect handling.
+ *
+ * <p>
+ * Spells are constructed using a {@link Builder}, promoting immutability and a
+ * clear, fluent API for
+ * defining spell properties.
+ *
+ * @param <T> The type of the effect object produced by
+ *            {@link #executeSpell(SpellContext)}. Use
+ *            {@link Void} if no effect object is needed.
+ */
+public abstract class Spell<T> {
 
-    // New harmonized spell framework methods
-    default boolean canCast(SpellContext context) {
-        return prereq().canCast();
+    protected final String name;
+    protected final String description;
+    protected final int manaCost;
+    protected final Duration cooldown;
+    protected final SpellType spellType;
+    protected final EmpireWandAPI api;
+
+    protected ConfigurationSection spellConfig;
+
+    protected Spell(Builder<T> builder) {
+        this.name = builder.name;
+        this.description = builder.description;
+        this.manaCost = builder.manaCost;
+        this.cooldown = builder.cooldown;
+        this.spellType = builder.spellType;
+        this.api = builder.api;
     }
 
-    default void applyCost(SpellContext context) {
-        // Default: no cost
+    /**
+     * Returns the unique, machine-readable key for this spell (e.g., "fireball").
+     *
+     * @return The spell's key.
+     */
+    @NotNull
+    public abstract String key();
+
+    /**
+     * Returns the human-readable display name for this spell.
+     *
+     * @return The spell's display name component.
+     */
+    @NotNull
+    public Component displayName() {
+        return Component.text(name);
     }
 
-    default Duration getCooldown(SpellContext context) {
-        return Duration.ofMillis(context.config().getSpellsConfig().getLong(key() + ".cooldown", 1000L));
+    /**
+     * Gets the prerequisites required to cast this spell.
+     *
+     * @return The prerequisite checker for this spell.
+     */
+    @NotNull
+    public abstract PrereqInterface prereq();
+
+    /**
+     * Gets the high-level classification of this spell.
+     *
+     * @return The {@link SpellType}.
+     */
+    @NotNull
+    public SpellType type() {
+        return spellType;
     }
 
-    default CastResult cast(SpellContext context) {
-        execute(context);
+    @NotNull
+    public String getName() {
+        return name;
+    }
+
+    @NotNull
+    public String getDescription() {
+        return description;
+    }
+
+    public int getManaCost() {
+        return manaCost;
+    }
+
+    @NotNull
+    public Duration getCooldown() {
+        return cooldown;
+    }
+
+    /**
+     * Loads the spell's specific configuration from the provided section. This is
+     * typically called once
+     * during spell registration.
+     *
+     * @param config The {@link ConfigurationSection} for this spell.
+     */
+    public void loadConfig(@NotNull ConfigurationSection config) {
+        this.spellConfig = config;
+    }
+
+    /**
+     * Checks if the spell can be cast in the given context.
+     *
+     * @param context The context of the spell cast.
+     * @return {@code true} if the spell can be cast, otherwise {@code false}.
+     */
+    public boolean canCast(@NotNull SpellContext context) {
+        return prereq().check(context).canCast();
+    }
+
+    /**
+     * Applies the cost of casting this spell (e.g., deducting mana).
+     *
+     * @param context The context of the spell cast.
+     */
+    public void applyCost(@NotNull SpellContext context) {
+        // Default implementation does nothing. Can be overridden for custom costs.
+    }
+
+    /**
+     * The core logic of the spell's execution. This method may be run
+     * asynchronously.
+     *
+     * @param context The context of the spell cast.
+     * @return The effect produced by the spell, or {@code null} if no effect object
+     *         is needed.
+     */
+    @NotNull
+    protected abstract T executeSpell(@NotNull SpellContext context);
+
+    /**
+     * Handles the effect produced by {@link #executeSpell(SpellContext)}. This
+     * method is always run on the
+     * main server thread.
+     *
+     * @param context The context of the spell cast.
+     * @param effect  The effect object to handle.
+     */
+    protected abstract void handleEffect(@NotNull SpellContext context, @NotNull T effect);
+
+    /**
+     * Handles the impact of a projectile associated with this spell. This is called
+     * by a global listener.
+     *
+     * @param event  The {@link ProjectileHitEvent}.
+     * @param caster The player who cast the spell.
+     */
+    public void onProjectileHit(@NotNull ProjectileHitEvent event, @NotNull Player caster) {
+        // To be implemented by projectile-based spells.
+    }
+
+    /**
+     * Initiates the spell cast, checking prerequisites, applying costs, and
+     * delegating to the
+     * appropriate synchronous or asynchronous execution handler.
+     *
+     * @param context The context of the spell cast.
+     * @return The result of the cast attempt.
+     */
+    @NotNull
+    public final CastResult cast(@NotNull SpellContext context) {
+        PrereqInterface.CheckResult prereqResult = prereq().check(context);
+        if (!prereqResult.canCast()) {
+            return CastResult.fail(prereqResult.reason());
+        }
+
+        // TODO: Check and apply cooldown
+        // TODO: Check and apply mana cost
+
+        applyCost(context);
+
+        if (requiresAsyncExecution()) {
+            return castAsync(context);
+        } else {
+            return castSync(context);
+        }
+    }
+
+    /**
+     * Determines if this spell's execution logic should be run off the main server
+     * thread.
+     *
+     * @return {@code true} if async execution is required, otherwise {@code false}.
+     */
+    protected boolean requiresAsyncExecution() {
+        return false; // Default to synchronous execution.
+    }
+
+    @NotNull
+    private CastResult castSync(@NotNull SpellContext context) {
+        try {
+            T effect = executeSpell(context);
+            if (effect != null) {
+                handleEffect(context, effect);
+            }
+            CastResult result = CastResult.SUCCESS;
+            fireSpellCastEvent(context, result);
+            return result;
+        } catch (Exception e) {
+            context.plugin().getLogger().log(Level.WARNING, "Error casting spell " + key(), e);
+            CastResult result = CastResult.fail(Component.text("Spell casting failed."));
+            fireSpellCastEvent(context, result);
+            return result;
+        }
+    }
+
+    @NotNull
+    private CastResult castAsync(@NotNull SpellContext context) {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                try {
+                    T effect = executeSpell(context);
+                    if (effect != null) {
+                        // Handle effect on main thread
+                        new BukkitRunnable() {
+                            @Override
+                            public void run() {
+                                handleEffect(context, effect);
+                                fireSpellCastEvent(context, CastResult.SUCCESS);
+                            }
+                        }.runTask(context.plugin());
+                    } else {
+                        // If there's no effect to handle, fire the event immediately.
+                        fireSpellCastEvent(context, CastResult.SUCCESS);
+                    }
+                } catch (Exception e) {
+                    context.plugin().getLogger().log(Level.WARNING, "Error casting spell " + key(), e);
+                    // Fire failure event on main thread
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            fireSpellCastEvent(context, CastResult.fail(Component.text("Spell casting failed.")));
+                        }
+                    }.runTask(context.plugin());
+                }
+            }
+        }.runTaskAsynchronously(context.plugin());
+
+        // Return immediately; the event will carry the final result.
         return CastResult.SUCCESS;
     }
 
-    // Existing methods
-    String getName();
-
-    String key();
-
-    Component displayName();
-
-    Prereq prereq();
+    private void fireSpellCastEvent(@NotNull SpellContext context, @NotNull CastResult result) {
+        Runnable task = () -> {
+            // The API's SpellCastEvent constructor expects (Player, Spell<?>, String).
+            // Convert the CastResult to a String for the event payload.
+            SpellCastEvent event = new SpellCastEvent(context.caster(), this, result.toString());
+            Bukkit.getPluginManager().callEvent(event);
+        };
+        if (Bukkit.isPrimaryThread()) {
+            task.run();
+        } else {
+            Bukkit.getScheduler().runTask(context.plugin(), task);
+        }
+    }
 
     /**
-     * Optional categorization of a spell. Defaults to automatic resolution from
-     * key.
+     * A fluent builder for constructing {@link Spell} instances.
+     *
+     * @param <T> The effect type of the spell being built.
      */
-    default SpellType type() {
-        return SpellTypes.resolveTypeFromKey(key());
+    public abstract static class Builder<T> {
+        protected final EmpireWandAPI api;
+        protected String name;
+        protected String description;
+        protected int manaCost = 0;
+        protected Duration cooldown = Duration.ofSeconds(1);
+        protected SpellType spellType = SpellType.MISC;
+
+        protected Builder(EmpireWandAPI api) {
+            this.api = api;
+        }
+
+        @NotNull
+        public Builder<T> name(@NotNull String name) {
+            this.name = name;
+            return this;
+        }
+
+        @NotNull
+        public Builder<T> description(@NotNull String description) {
+            this.description = description;
+            return this;
+        }
+
+        @NotNull
+        public Builder<T> manaCost(int manaCost) {
+            this.manaCost = manaCost;
+            return this;
+        }
+
+        @NotNull
+        public Builder<T> cooldown(@NotNull Duration cooldown) {
+            this.cooldown = cooldown;
+            return this;
+        }
+
+        @NotNull
+        public Builder<T> type(@NotNull SpellType spellType) {
+            this.spellType = spellType;
+            return this;
+        }
+
+        @NotNull
+        public abstract Spell<T> build();
     }
 }

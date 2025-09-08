@@ -1,5 +1,13 @@
 package com.example.empirewand.spell.implementation.life;
 
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.api.EffectService;
+import com.example.empirewand.core.storage.Keys;
+import com.example.empirewand.spell.PrereqInterface;
+import com.example.empirewand.spell.ProjectileSpell;
+import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.SpellType;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Color;
 import org.bukkit.Particle;
 import org.bukkit.entity.LivingEntity;
@@ -7,29 +15,51 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Snowball;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
-import com.example.empirewand.spell.ProjectileSpell;
-import com.example.empirewand.spell.SpellContext;
-import com.example.empirewand.spell.Prereq;
-import net.kyori.adventure.text.Component;
+public class BloodSpam extends ProjectileSpell<Snowball> {
 
-public class BloodSpam implements ProjectileSpell {
+    public static class Builder extends ProjectileSpell.Builder<Snowball> {
+        public Builder(EmpireWandAPI api) {
+            super(api, Snowball.class);
+            this.name = "Blood Spam";
+            this.description = "Launches a burst of blood projectiles.";
+            this.manaCost = 8;
+            this.cooldown = java.time.Duration.ofSeconds(6);
+            this.spellType = SpellType.LIFE;
+            this.trailParticle = null; // Custom trail
+        }
+
+        @Override
+        @NotNull
+        public ProjectileSpell<Snowball> build() {
+            return new BloodSpam(this);
+        }
+    }
+
+    private BloodSpam(Builder builder) {
+        super(builder);
+    }
+
     @Override
-    public void execute(SpellContext context) {
+    public String key() {
+        return "blood-spam";
+    }
+
+    @Override
+    public PrereqInterface prereq() {
+        return new PrereqInterface.NonePrereq();
+    }
+
+    @Override
+    protected Void executeSpell(SpellContext context) {
         Player caster = context.caster();
+        int projectileCount = spellConfig.getInt("values.projectile-count", 8);
+        int delayTicks = spellConfig.getInt("values.delay-ticks", 2);
 
-        // Config values
-        var spells = context.config().getSpellsConfig();
-        int projectileCount = spells.getInt("blood-spam.values.projectile-count", 8);
-        double damage = spells.getDouble("blood-spam.values.damage", 1.0);
-        int delayTicks = spells.getInt("blood-spam.values.delay-ticks", 2);
-        // Visual config
-        int trailSteps = spells.getInt("blood-spam.values.trail-steps", 6);
-        int redDustCount = spells.getInt("blood-spam.values.red-dust-count", 5);
-
-        // Launch projectiles in burst
         new BukkitRunnable() {
             private int launched = 0;
 
@@ -39,130 +69,67 @@ public class BloodSpam implements ProjectileSpell {
                     this.cancel();
                     return;
                 }
-
-                launchProjectile(caster, context, damage, trailSteps, redDustCount);
+                launchSingleProjectile(caster, context);
                 launched++;
             }
         }.runTaskTimer(context.plugin(), 0L, delayTicks);
+
+        return null;
     }
 
-    private void launchProjectile(Player caster, SpellContext context, double damage, int trailSteps,
-            int redDustCount) {
-        // Launch snowball as projectile
-        Snowball projectile = caster.launchProjectile(Snowball.class);
+    private void launchSingleProjectile(Player caster, SpellContext context) {
+        double damage = spellConfig.getDouble("values.damage", 1.0);
+        int trailSteps = spellConfig.getInt("values.trail-steps", 6);
+        int redDustCount = spellConfig.getInt("values.red-dust-count", 5);
 
-        // Register projectile with spell system
-        projectile.getPersistentDataContainer().set(
-                new org.bukkit.NamespacedKey("empirewand", "projectile.spell"),
-                org.bukkit.persistence.PersistentDataType.STRING,
-                getName());
-        projectile.getPersistentDataContainer().set(
-                new org.bukkit.NamespacedKey("empirewand", "projectile.owner"),
-                org.bukkit.persistence.PersistentDataType.STRING,
-                caster.getUniqueId().toString());
+        Vector spread = new Vector((Math.random() - 0.5) * 0.3, (Math.random() - 0.5) * 0.3, (Math.random() - 0.5) * 0.3);
+        Vector direction = caster.getEyeLocation().getDirection().add(spread).normalize();
 
-        // Add slight random spread
-        Vector direction = caster.getEyeLocation().getDirection();
-        direction = direction.add(new Vector(
-                (Math.random() - 0.5) * 0.3,
-                (Math.random() - 0.5) * 0.3,
-                (Math.random() - 0.5) * 0.3)).normalize();
-
-        projectile.setVelocity(direction.multiply(1.3));
-
-        // Store damage in projectile metadata
-        projectile.getPersistentDataContainer().set(
-                new org.bukkit.NamespacedKey("empirewand", "blood-spam-damage"),
-                org.bukkit.persistence.PersistentDataType.DOUBLE,
-                damage);
-
-        // Initial cast visual
-        context.fx().spawnParticles(
-                caster.getEyeLocation(),
-                Particle.DUST,
-                redDustCount,
-                0.1, 0.1, 0.1,
-                0,
-                new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f));
-
-        // Attach particle trail runnable (lightweight, stops when projectile removed)
-        new org.bukkit.scheduler.BukkitRunnable() {
-            private final java.util.Deque<org.bukkit.Location> history = new java.util.ArrayDeque<>();
-            private int ticks = 0;
-
-            @Override
-            public void run() {
-                if (!projectile.isValid() || projectile.isDead()) {
-                    cancel();
-                    return;
-                }
-                if (ticks++ > 20 * 4) { // safety 4s
-                    cancel();
-                    return;
-                }
-                org.bukkit.Location loc = projectile.getLocation().clone();
-                history.addFirst(loc);
-                while (history.size() > trailSteps)
-                    history.removeLast();
-                int idx = 0;
-                for (org.bukkit.Location h : history) {
-                    double scale = 1.0 - (idx / (double) trailSteps);
-                    int count = Math.max(1, (int) Math.round(redDustCount * scale));
-                    context.fx().spawnParticles(
-                            h,
-                            Particle.DUST,
-                            count,
-                            0.02, 0.02, 0.02,
-                            0,
-                            new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f));
-                    idx++;
-                }
-            }
-        }.runTaskTimer(context.plugin(), 0L, 1L);
+        caster.launchProjectile(Snowball.class, direction.multiply(1.3), projectile -> {
+            projectile.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, PersistentDataType.STRING, key());
+            projectile.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, PersistentDataType.STRING, caster.getUniqueId().toString());
+            projectile.getPersistentDataContainer().set(Keys.DAMAGE, PersistentDataType.DOUBLE, damage);
+            new BloodTrail(projectile, trailSteps, redDustCount, context).runTaskTimer(context.plugin(), 0L, 1L);
+        });
     }
 
     @Override
-    public void onProjectileHit(SpellContext context, Projectile projectile, ProjectileHitEvent event) {
-        // Get damage from projectile metadata
-        Double damage = projectile.getPersistentDataContainer().get(
-                new org.bukkit.NamespacedKey("empirewand", "blood-spam-damage"),
-                org.bukkit.persistence.PersistentDataType.DOUBLE);
-
-        if (damage == null || event.getHitEntity() == null) {
+    protected void handleHit(@NotNull SpellContext context, @NotNull Projectile projectile, @NotNull ProjectileHitEvent event) {
+        Double damage = projectile.getPersistentDataContainer().get(Keys.DAMAGE, PersistentDataType.DOUBLE);
+        if (damage == null || !(event.getHitEntity() instanceof LivingEntity living)) {
             return;
         }
 
-        if (event.getHitEntity() instanceof LivingEntity living) {
-            living.damage(damage);
+        living.damage(damage, context.caster());
+        context.fx().spawnParticles(living.getLocation(), Particle.DUST, 8, 0.2, 0.2, 0.2, 0, new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f));
+    }
 
-            // Visual effects on hit
-            context.fx().spawnParticles(
-                    living.getLocation(),
-                    Particle.DUST,
-                    8,
-                    0.2, 0.2, 0.2,
-                    0,
-                    new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f));
+    private class BloodTrail extends BukkitRunnable {
+        private final Projectile projectile;
+        private final int trailSteps;
+        private final int particleCount;
+        private final java.util.Deque<org.bukkit.Location> history = new java.util.ArrayDeque<>();
+        private final SpellContext context;
+
+        public BloodTrail(Projectile projectile, int trailSteps, int particleCount, SpellContext context) {
+            this.projectile = projectile;
+            this.trailSteps = trailSteps;
+            this.particleCount = particleCount;
+            this.context = context;
         }
-    }
 
-    @Override
-    public String getName() {
-        return "blood-spam";
-    }
+        @Override
+        public void run() {
+            if (!projectile.isValid() || projectile.isDead()) {
+                cancel();
+                return;
+            }
+            history.addFirst(projectile.getLocation().clone());
+            if (history.size() > trailSteps) history.removeLast();
 
-    @Override
-    public String key() {
-        return "blood-spam";
-    }
-
-    @Override
-    public Component displayName() {
-        return Component.text("Blood Spam");
-    }
-
-    @Override
-    public Prereq prereq() {
-        return new Prereq(true, Component.text(""));
+            for (org.bukkit.Location loc : history) {
+                context.fx().spawnParticles(loc, Particle.DUST, particleCount, 0.02, 0.02, 0.02, 0, new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f));
+            }
+        }
     }
 }

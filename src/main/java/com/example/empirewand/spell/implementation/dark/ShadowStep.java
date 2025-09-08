@@ -1,42 +1,66 @@
 package com.example.empirewand.spell.implementation.dark;
 
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.spell.PrereqInterface;
+import com.example.empirewand.spell.Spell;
+import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.SpellType;
+import com.example.empirewand.visual.Afterimages;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.util.BlockIterator;
+import org.jetbrains.annotations.NotNull;
 
-import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.SpellContext;
-import com.example.empirewand.spell.Prereq;
-import net.kyori.adventure.text.Component;
-import com.example.empirewand.visual.Afterimages;
+public class ShadowStep extends Spell<Void> {
 
-/**
- * ShadowStep: short-range blink that leaves fading shadow echoes along the
- * path.
- * Purely visual aside from standard teleport effect (range & safety checks
- * similar to Teleport).
- */
-public class ShadowStep implements Spell {
+    public static class Builder extends Spell.Builder<Void> {
+        public Builder(EmpireWandAPI api) {
+            super(api);
+            this.name = "Shadow Step";
+            this.description = "Short-range blink with afterimages.";
+            this.manaCost = 8;
+            this.cooldown = java.time.Duration.ofSeconds(12);
+            this.spellType = SpellType.DARK;
+        }
+
+        @Override
+        @NotNull
+        public Spell<Void> build() {
+            return new ShadowStep(this);
+        }
+    }
+
+    private ShadowStep(Builder builder) {
+        super(builder);
+    }
+
     @Override
-    public void execute(SpellContext context) {
+    public @NotNull String key() {
+        return "shadow-step";
+    }
+
+    @Override
+    public @NotNull PrereqInterface prereq() {
+        return new PrereqInterface.NonePrereq();
+    }
+
+    @Override
+    protected @NotNull Void executeSpell(SpellContext context) {
         Player player = context.caster();
-        var spells = context.config().getSpellsConfig();
-        double range = spells.getDouble("shadow-step.values.range", 10.0);
-        boolean requiresLOS = spells.getBoolean("shadow-step.flags.requires-los", true);
-        int echoSamples = spells.getInt("shadow-step.visual.echo-samples", 6);
+        double range = spellConfig.getDouble("values.range", 10.0);
+        boolean requiresLOS = spellConfig.getBoolean("flags.requires-los", true);
+        int echoSamples = spellConfig.getInt("visual.echo-samples", 6);
 
         Location target = getTargetLocation(player, range, requiresLOS);
-        if (target == null || !isLocationSafe(target)) {
+        if (!isLocationSafe(target)) {
             context.fx().fizzle(player);
-            return;
+            return null;
         }
 
         Location from = player.getLocation().clone();
-        // Generate intermediate sample points and record into global afterimages
-        // manager
         if (Afterimages.get() != null) {
             for (int i = 0; i < echoSamples; i++) {
                 double t = (i + 1) / (double) (echoSamples + 1);
@@ -45,17 +69,20 @@ public class ShadowStep implements Spell {
             Afterimages.get().record(from);
         }
 
-        // Departure shadow swirl
         context.fx().spawnParticles(from, Particle.CLOUD, 25, 0.4, 0.6, 0.4, 0.02);
         context.fx().playSound(player, Sound.ENTITY_ENDERMAN_TELEPORT, 0.6f, 0.4f);
 
         player.teleport(target);
 
-        // Arrival burst
         context.fx().spawnParticles(target, Particle.CLOUD, 30, 0.5, 0.8, 0.5, 0.05);
         context.fx().playSound(target, Sound.ENTITY_ENDERMAN_TELEPORT, 0.7f, 0.7f);
 
-        // Afterimages manager handles fade passively; no local runnable needed
+        return null;
+    }
+
+    @Override
+    protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
+        // Instant effect.
     }
 
     private Location lerp(Location a, Location b, double t) {
@@ -82,9 +109,7 @@ public class ShadowStep implements Spell {
             targetLoc = player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(range));
         }
         var world = player.getWorld();
-        if (world != null) {
-            targetLoc.setY(Math.max(world.getMinHeight(), Math.min(world.getMaxHeight(), targetLoc.getY())));
-        }
+        targetLoc.setY(Math.max(world.getMinHeight(), Math.min(world.getMaxHeight(), targetLoc.getY())));
         return targetLoc;
     }
 
@@ -92,28 +117,6 @@ public class ShadowStep implements Spell {
         var feet = location.getBlock();
         var head = location.clone().add(0, 1, 0).getBlock();
         var ground = location.clone().add(0, -1, 0).getBlock();
-        if (feet.getType().isSolid() || head.getType().isSolid())
-            return false;
-        return ground.getType().isSolid();
-    }
-
-    @Override
-    public String getName() {
-        return "shadow-step";
-    }
-
-    @Override
-    public String key() {
-        return "shadow-step";
-    }
-
-    @Override
-    public Component displayName() {
-        return Component.text("Shadow Step");
-    }
-
-    @Override
-    public Prereq prereq() {
-        return new Prereq(true, Component.text(""));
+        return !feet.getType().isSolid() && !head.getType().isSolid() && ground.getType().isSolid();
     }
 }

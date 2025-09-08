@@ -29,8 +29,8 @@ public class WandSelectEvent extends Event {
     private static final HandlerList HANDLERS = new HandlerList();
 
     private final Player player;
-    private final Spell previousSpell;
-    private final Spell newSpell;
+    private final Spell<?> previousSpell;
+    private final Spell<?> newSpell;
     private final String previousSpellKey;
     private final String newSpellKey;
     private final SelectionMethod method;
@@ -46,7 +46,7 @@ public class WandSelectEvent extends Event {
      * @param newSpellKey      the key of the newly selected spell
      * @param method           the method used for selection
      */
-    public WandSelectEvent(@NotNull Player player, @Nullable Spell previousSpell, @NotNull Spell newSpell,
+    public WandSelectEvent(@NotNull Player player, @Nullable Spell<?> previousSpell, @NotNull Spell<?> newSpell,
             @Nullable String previousSpellKey, @NotNull String newSpellKey, @NotNull SelectionMethod method) {
         this.player = player;
         this.previousSpell = previousSpell;
@@ -72,7 +72,7 @@ public class WandSelectEvent extends Event {
      * @return the previous spell, or null if this was the first selection
      */
     @Nullable
-    public Spell getPreviousSpell() {
+    public Spell<?> getPreviousSpell() {
         return previousSpell;
     }
 
@@ -82,7 +82,7 @@ public class WandSelectEvent extends Event {
      * @return the new spell
      */
     @NotNull
-    public Spell getNewSpell() {
+    public Spell<?> getNewSpell() {
         return newSpell;
     }
 
