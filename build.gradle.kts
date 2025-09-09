@@ -1,9 +1,11 @@
 plugins {
     java
     id("com.github.johnrengelman.shadow") version "8.1.1"
+    checkstyle
+    id("com.github.spotbugs") version "5.2.1"
 }
 
-group = "com.example.empirewand"
+group = "nl.wantedchef.empirewand"
 version = "1.1.1"
 
 java {
@@ -26,6 +28,11 @@ dependencies {
     compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.6")
     // bStats metrics (classes are referenced; provided at runtime by bundled libs or can be shaded if needed)
     compileOnly("org.bstats:bstats-bukkit:3.0.2")
+    
+    // Testing dependencies
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+    testImplementation("org.mockito:mockito-core:5.7.0")
+    testImplementation("io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT")
 }
 
 tasks.processResources {
@@ -57,10 +64,36 @@ tasks.build {
     dependsOn(tasks.shadowJar)
 }
 
-// Disable test compilation/execution unless explicitly enabled later
+checkstyle {
+    toolVersion = "10.12.0"
+    configFile = file("config/checkstyle/checkstyle.xml")
+    isIgnoreFailures = false
+    maxWarnings = 0
+}
+
+tasks.withType<Checkstyle>().configureEach {
+    reports {
+        xml.required.set(false)
+        html.required.set(true)
+    }
+}
+
+spotbugs {
+    excludeFilter.set(file("config/spotbugs/exclude.xml"))
+    reportLevel.set(com.github.spotbugs.snom.Confidence.HIGH)
+}
+
+tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().configureEach {
+    reports.create("html") {
+        required.set(true)
+    }
+}
+
+// Enable test compilation/execution
 tasks.compileTestJava {
-    enabled = false
+    enabled = true
 }
 tasks.test {
-    enabled = false
+    enabled = true
+    useJUnitPlatform()
 }
