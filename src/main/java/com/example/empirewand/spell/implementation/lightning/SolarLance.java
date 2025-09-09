@@ -26,7 +26,6 @@ public class SolarLance extends Spell<Void> {
             super(api);
             this.name = "Solar Lance";
             this.description = "Fires a piercing lance of solar energy.";
-            this.manaCost = 12; // Example
             this.cooldown = java.time.Duration.ofSeconds(10);
             this.spellType = SpellType.LIGHTNING;
         }
@@ -75,11 +74,14 @@ public class SolarLance extends Spell<Void> {
         for (double dist = 0; dist <= range && hitEntities.size() < maxPierce; dist += sampleStep) {
             Location current = player.getEyeLocation().add(direction.clone().multiply(dist));
             player.getWorld().spawnParticle(Particle.CRIT, current, 2, 0, 0, 0, 0);
-            player.getWorld().spawnParticle(Particle.DUST, current, 1, new Particle.DustOptions(org.bukkit.Color.fromRGB(255, 215, 0), 1.0f));
+            player.getWorld().spawnParticle(Particle.DUST, current, 1,
+                    new Particle.DustOptions(org.bukkit.Color.fromRGB(255, 215, 0), 1.0f));
 
             for (LivingEntity entity : player.getWorld().getNearbyLivingEntities(current, 1.0)) {
-                if (entity.equals(player) || hitEntities.contains(entity)) continue;
-                if ((entity instanceof Player && !hitPlayers) || (!(entity instanceof Player) && !hitMobs)) continue;
+                if (entity.equals(player) || hitEntities.contains(entity))
+                    continue;
+                if ((entity instanceof Player && !hitPlayers) || (!(entity instanceof Player) && !hitMobs))
+                    continue;
 
                 hitEntities.add(entity);
                 entity.damage(damage, player);

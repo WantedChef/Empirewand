@@ -10,6 +10,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -70,7 +71,7 @@ public class BindCategoryCommand implements SubCommand {
             throw new CommandException("Category '" + cat + "' has no spells");
         }
 
-        List<String> current = context.wandService().getSpells(item);
+        List<String> current = new ArrayList<>(context.wandService().getSpells(item));
         for (String k : toBind) {
             if (context.spellRegistry().isSpellRegistered(k) && !current.contains(k)) {
                 current.add(k);

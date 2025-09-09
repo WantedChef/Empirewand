@@ -102,6 +102,7 @@ public interface MetricsService extends EmpireWandService {
      * @return true if metrics are enabled, false otherwise
      */
     @AnyThread
+    @Override
     boolean isEnabled();
 
     /**

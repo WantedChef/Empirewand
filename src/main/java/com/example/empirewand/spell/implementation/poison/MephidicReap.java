@@ -1,6 +1,5 @@
 package com.example.empirewand.spell.implementation.poison;
 
-
 import com.example.empirewand.api.EmpireWandAPI;
 import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.Spell;
@@ -16,6 +15,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -27,7 +27,6 @@ public class MephidicReap extends Spell<Void> {
             super(api);
             this.name = "Mephidic Reap";
             this.description = "Throws a boomerang scythe that damages and slows enemies.";
-            this.manaCost = 12; // Example
             this.cooldown = java.time.Duration.ofSeconds(15);
             this.spellType = SpellType.POISON;
         }
@@ -54,11 +53,10 @@ public class MephidicReap extends Spell<Void> {
     }
 
     @Override
-    protected Void executeSpell(SpellContext context) {
+    protected @Nullable Void executeSpell(SpellContext context) {
         Player player = context.caster();
 
         double range = spellConfig.getDouble("values.range", 8.0);
-        int travelTicks = spellConfig.getInt("values.travel-ticks", 14);
 
         Vector direction = player.getEyeLocation().getDirection().normalize();
         Location start = player.getEyeLocation();
@@ -124,7 +122,8 @@ public class MephidicReap extends Spell<Void> {
             if (hitEntities.size() < maxPierce) {
                 for (LivingEntity entity : scythe.getWorld().getNearbyLivingEntities(scythe.getLocation(), 1.5)) {
                     if (!entity.equals(caster) && !hitEntities.contains(entity)) {
-                        if ((entity instanceof Player && !hitPlayers) || (!(entity instanceof Player) && !hitMobs)) continue;
+                        if ((entity instanceof Player && !hitPlayers) || (!(entity instanceof Player) && !hitMobs))
+                            continue;
                         entity.damage(damage, caster);
                         entity.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, slownessDuration, 0));
                         hitEntities.add(entity);

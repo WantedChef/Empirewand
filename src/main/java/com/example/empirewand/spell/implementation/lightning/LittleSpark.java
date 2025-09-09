@@ -7,16 +7,12 @@ import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.ProjectileSpell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
-import net.kyori.adventure.text.Component;
-import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Snowball;
 import org.bukkit.event.entity.ProjectileHitEvent;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,7 +23,6 @@ public class LittleSpark extends ProjectileSpell<Snowball> {
             super(api, Snowball.class);
             this.name = "Little Spark";
             this.description = "Fires a small, fast spark.";
-            this.manaCost = 2; // Example
             this.cooldown = java.time.Duration.ofMillis(500);
             this.spellType = SpellType.LIGHTNING;
             this.trailParticle = null; // Custom trail
@@ -67,7 +62,8 @@ public class LittleSpark extends ProjectileSpell<Snowball> {
         if (!(event.getHitEntity() instanceof LivingEntity living))
             return;
 
-        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false);
+        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig()
+                .getBoolean("features.friendly-fire", false);
         if (living.equals(context.caster()) && !friendlyFire)
             return;
 

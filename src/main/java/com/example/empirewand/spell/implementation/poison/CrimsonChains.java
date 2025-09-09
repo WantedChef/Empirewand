@@ -6,7 +6,6 @@ import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.ProjectileSpell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -31,7 +30,6 @@ public class CrimsonChains extends ProjectileSpell<Snowball> {
             super(api, Snowball.class);
             this.name = "Crimson Chains";
             this.description = "Launches a chain that pulls an enemy towards you and slows them.";
-            this.manaCost = 8; // Example
             this.cooldown = java.time.Duration.ofSeconds(12);
             this.spellType = SpellType.POISON;
             this.trailParticle = null; // Custom trail
@@ -66,12 +64,15 @@ public class CrimsonChains extends ProjectileSpell<Snowball> {
     }
 
     @Override
-    protected void handleHit(@NotNull SpellContext context, @NotNull Projectile projectile, @NotNull ProjectileHitEvent event) {
-        if (!(event.getHitEntity() instanceof LivingEntity target)) return;
+    protected void handleHit(@NotNull SpellContext context, @NotNull Projectile projectile,
+            @NotNull ProjectileHitEvent event) {
+        if (!(event.getHitEntity() instanceof LivingEntity target))
+            return;
 
         boolean hitPlayers = spellConfig.getBoolean("flags.hit-players", true);
         boolean hitMobs = spellConfig.getBoolean("flags.hit-mobs", true);
-        if ((target instanceof Player && !hitPlayers) || (!(target instanceof Player) && !hitMobs)) return;
+        if ((target instanceof Player && !hitPlayers) || (!(target instanceof Player) && !hitMobs))
+            return;
 
         double pullStrength = spellConfig.getDouble("values.pull-strength", 0.5);
         int slownessDuration = spellConfig.getInt("values.slowness-duration-ticks", 40);
@@ -83,7 +84,8 @@ public class CrimsonChains extends ProjectileSpell<Snowball> {
         boolean isBoss = maxHealthAttr != null && maxHealthAttr.getBaseValue() > 100;
 
         if (!isBoss) {
-            Vector pullVector = context.caster().getLocation().toVector().subtract(target.getLocation().toVector()).normalize();
+            Vector pullVector = context.caster().getLocation().toVector().subtract(target.getLocation().toVector())
+                    .normalize();
             target.setVelocity(target.getVelocity().add(pullVector.multiply(pullStrength)));
         }
 
@@ -112,7 +114,8 @@ public class CrimsonChains extends ProjectileSpell<Snowball> {
             Vector vector = end.toVector().subtract(start.toVector());
             for (double i = 0; i < vector.length(); i += 0.2) {
                 Location point = start.clone().add(vector.clone().normalize().multiply(i));
-                context.fx().spawnParticles(point, Particle.DUST, 1, 0, 0, 0, 0, new Particle.DustOptions(Color.fromRGB(128, 0, 0), 1.0f));
+                context.fx().spawnParticles(point, Particle.DUST, 1, 0, 0, 0, 0,
+                        new Particle.DustOptions(Color.fromRGB(128, 0, 0), 1.0f));
             }
         }
     }

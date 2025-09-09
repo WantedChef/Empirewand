@@ -53,6 +53,7 @@ public record SpellContext(
 
     // Defensive clone on accessor
     @Override
+    @SuppressFBWarnings(value = { "EI_EXPOSE_REP" }, justification = "Location is defensively cloned before returning")
     public Location targetLocation() {
         return targetLocation != null ? targetLocation.clone() : null;
     }

@@ -8,8 +8,9 @@ public final class Keys {
     // NamespacedKeys - using hardcoded values for static initialization
     public static final NamespacedKey WAND_KEY = new NamespacedKey("empirewand", "wand.key");
     public static final NamespacedKey MEPHIDANTES_ZEIST_KEY = new NamespacedKey("empirewand", "mephidantes_zeist.key");
+    public static final NamespacedKey WAND_TYPE = new NamespacedKey("empirewand", "wand.type");
     public static final NamespacedKey WAND_SPELLS = new NamespacedKey("empirewand", "wand.spells");
-    public static final NamespacedKey WAND_ACTIVE_INDEX = new NamespacedKey("empirewand", "wand.active_index");
+    public static final NamespacedKey WAND_ACTIVE_SPELL = new NamespacedKey("empirewand", "wand.active_spell");
     public static final NamespacedKey PROJECTILE_SPELL = new NamespacedKey("empirewand", "projectile.spell");
     public static final NamespacedKey PROJECTILE_OWNER = new NamespacedKey("empirewand", "projectile.owner");
     public static final NamespacedKey ETHEREAL_ACTIVE = new NamespacedKey("empirewand", "ethereal.active");

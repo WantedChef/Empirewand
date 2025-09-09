@@ -6,7 +6,6 @@ import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
@@ -21,7 +20,6 @@ public class BloodNova extends Spell<Void> {
             super(api);
             this.name = "Blood Nova";
             this.description = "Unleashes a nova of blood, damaging nearby enemies based on stored charges.";
-            this.manaCost = 10; // Example
             this.cooldown = java.time.Duration.ofSeconds(1);
             this.spellType = SpellType.LIFE;
         }
@@ -69,10 +67,12 @@ public class BloodNova extends Spell<Void> {
 
         for (LivingEntity entity : player.getWorld().getLivingEntities()) {
             if (entity.getLocation().distance(player.getLocation()) <= radius && !entity.equals(player)) {
-                if ((entity instanceof Player && !hitPlayers) || (!(entity instanceof Player) && !hitMobs)) continue;
+                if ((entity instanceof Player && !hitPlayers) || (!(entity instanceof Player) && !hitMobs))
+                    continue;
 
                 entity.damage(totalDamage, player);
-                Vector knockback = entity.getLocation().toVector().subtract(player.getLocation().toVector()).normalize().multiply(knockbackStrength).setY(0.3);
+                Vector knockback = entity.getLocation().toVector().subtract(player.getLocation().toVector()).normalize()
+                        .multiply(knockbackStrength).setY(0.3);
                 entity.setVelocity(entity.getVelocity().add(knockback));
             }
         }
@@ -94,7 +94,8 @@ public class BloodNova extends Spell<Void> {
             double angle = 2 * Math.PI * i / 100;
             double x = radius * Math.cos(angle);
             double z = radius * Math.sin(angle);
-            player.getWorld().spawnParticle(Particle.DUST, player.getLocation().add(x, 1, z), 1, new Particle.DustOptions(org.bukkit.Color.fromRGB(128, 0, 0), 1.0f));
+            player.getWorld().spawnParticle(Particle.DUST, player.getLocation().add(x, 1, z), 1,
+                    new Particle.DustOptions(org.bukkit.Color.fromRGB(128, 0, 0), 1.0f));
         }
         player.getWorld().spawnParticle(Particle.EXPLOSION, player.getLocation(), 1, 0, 0, 0, 0.1);
     }

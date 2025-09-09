@@ -8,10 +8,8 @@ import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
 import java.time.Duration;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -25,7 +23,6 @@ public class Tornado extends Spell<Void> {
             super(api);
             this.name = "Tornado";
             this.description = "Creates a powerful whirlwind that lifts and damages enemies.";
-            this.manaCost = 25;
             this.cooldown = Duration.ofMillis(8000);
             this.spellType = SpellType.WEATHER;
         }
@@ -60,7 +57,8 @@ public class Tornado extends Spell<Void> {
         int levitationDur = spellConfig.getInt("values.levitation-duration-ticks", 40);
         int levitationAmp = spellConfig.getInt("values.levitation-amplifier", 0);
         double damage = spellConfig.getDouble("values.damage", 4.0);
-        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false);
+        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig()
+                .getBoolean("features.friendly-fire", false);
 
         for (var e : player.getWorld().getNearbyLivingEntities(player.getLocation(), radius)) {
             if (e.equals(player) && !friendlyFire)

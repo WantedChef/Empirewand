@@ -2,6 +2,14 @@
 
 EmpireWand is a Minecraft Paper plugin for 1.20.6 providing magical wand mechanics with configurable spells.
 
+## What’s new in 1.1.1
+- Fixed startup crash related to `EmpireWandAPI` construction when the registry referenced the legacy singleton during enable.
+- Implemented `WandServiceImpl` backed by PDC and wired through the API provider.
+- Refactored `Spell.Builder` and `ProjectileSpell.Builder` to accept a nullable API; the registry no longer depends on `EmpireWandAPI.get()`.
+- Added `@kajcloud` marker annotation and applied it to KajCloud and GodCloud classes for discoverability.
+- Added spell authoring templates under `Docs/template/`:
+  - `normal-spell.md`, `toggle-spell.md`, `afterimage-spell.md`.
+
 ## Recent Refactor (v2.0-refactored)
 
 The spell system has been comprehensively refactored to improve maintainability, performance, and extensibility:
@@ -35,7 +43,6 @@ public class FireballSpell extends ProjectileSpell {
         super(new Builder()
             .name("Fireball")
             .description("Launches a fiery projectile")
-            .manaCost(10)
             .cooldown(Duration.ofSeconds(5))
             .speed(1.5)
             .isHoming(false)
@@ -69,7 +76,7 @@ public class FireballSpell extends ProjectileSpell {
 
 ## Build
 
-- `./gradlew clean build` - Builds the JAR in `build/libs/empirewand-1.1.0.jar`.
+- `./gradlew clean build` - Builds the JAR in `build/libs/empirewand-1.1.1.jar`.
 - `./gradlew test` - Runs JUnit tests.
 - `./gradlew spotbugsMain` - Static analysis.
 

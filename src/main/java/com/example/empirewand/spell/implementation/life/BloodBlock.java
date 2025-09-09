@@ -6,7 +6,6 @@ import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -30,7 +29,6 @@ public class BloodBlock extends Spell<Void> {
             super(api);
             this.name = "Blood Block";
             this.description = "Creates a block of blood that can be launched at enemies.";
-            this.manaCost = 10; // Example
             this.cooldown = java.time.Duration.ofSeconds(1);
             this.spellType = SpellType.LIFE;
         }
@@ -78,20 +76,30 @@ public class BloodBlock extends Spell<Void> {
     }
 
     private void placeBloodBlock(Player caster, SpellContext context) {
-        RayTraceResult rayTrace = caster.getWorld().rayTraceBlocks(caster.getEyeLocation(), caster.getEyeLocation().getDirection(), 20.0);
+        RayTraceResult rayTrace = caster.getWorld().rayTraceBlocks(caster.getEyeLocation(),
+                caster.getEyeLocation().getDirection(), 20.0);
         if (rayTrace == null || rayTrace.getHitBlock() == null || rayTrace.getHitBlockFace() == null) {
             return;
         }
 
-        Location placeLoc = rayTrace.getHitBlock().getRelative(rayTrace.getHitBlockFace()).getLocation();
+        // Explicit null checks to satisfy static analysis
+        var hitBlock = rayTrace.getHitBlock();
+        var hitBlockFace = rayTrace.getHitBlockFace();
+        if (hitBlock == null || hitBlockFace == null) {
+            return;
+        }
+
+        Location placeLoc = hitBlock.getRelative(hitBlockFace).getLocation();
         if (!placeLoc.getBlock().isEmpty()) {
             return;
         }
 
         placeLoc.getBlock().setType(Material.REDSTONE_BLOCK);
-        caster.getPersistentDataContainer().set(BLOOD_BLOCK_LOCATION, PersistentDataType.STRING, serializeLocation(placeLoc));
+        caster.getPersistentDataContainer().set(BLOOD_BLOCK_LOCATION, PersistentDataType.STRING,
+                serializeLocation(placeLoc));
 
-        context.fx().spawnParticles(placeLoc, Particle.DUST, 30, 0.5, 0.5, 0.5, 0, new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f));
+        context.fx().spawnParticles(placeLoc, Particle.DUST, 30, 0.5, 0.5, 0.5, 0,
+                new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f));
         context.fx().playSound(placeLoc, Sound.BLOCK_STONE_PLACE, 1.0f, 0.8f);
     }
 
@@ -104,8 +112,9 @@ public class BloodBlock extends Spell<Void> {
         blockLoc.getBlock().setType(Material.AIR);
         caster.getPersistentDataContainer().remove(BLOOD_BLOCK_LOCATION);
 
-        RayTraceResult rayTrace = caster.getWorld().rayTraceBlocks(caster.getEyeLocation(), caster.getEyeLocation().getDirection(), 20.0);
-        Location targetLoc = (rayTrace != null && rayTrace.getHitPosition() != null)
+        RayTraceResult rayTrace = caster.getWorld().rayTraceBlocks(caster.getEyeLocation(),
+                caster.getEyeLocation().getDirection(), 20.0);
+        Location targetLoc = (rayTrace != null)
                 ? rayTrace.getHitPosition().toLocation(caster.getWorld())
                 : caster.getEyeLocation().add(caster.getEyeLocation().getDirection().multiply(20));
 
@@ -114,7 +123,8 @@ public class BloodBlock extends Spell<Void> {
             fb.setDropItem(false);
         });
 
-        Vector direction = targetLoc.toVector().subtract(blockLoc.toVector()).normalize().multiply(1.5).setY(Math.max(0.6, targetLoc.toVector().subtract(blockLoc.toVector()).normalize().getY()));
+        Vector direction = targetLoc.toVector().subtract(blockLoc.toVector()).normalize().multiply(1.5)
+                .setY(Math.max(0.6, targetLoc.toVector().subtract(blockLoc.toVector()).normalize().getY()));
         fallingBlock.setVelocity(direction);
 
         addTrailEffect(fallingBlock, context);
@@ -129,7 +139,8 @@ public class BloodBlock extends Spell<Void> {
                     this.cancel();
                     return;
                 }
-                context.fx().spawnParticles(fallingBlock.getLocation(), Particle.DUST, 5, 0.1, 0.1, 0.1, 0, new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f));
+                context.fx().spawnParticles(fallingBlock.getLocation(), Particle.DUST, 5, 0.1, 0.1, 0.1, 0,
+                        new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f));
             }
         }.runTaskTimer(context.plugin(), 0L, 2L);
     }
@@ -142,8 +153,9 @@ public class BloodBlock extends Spell<Void> {
         try {
             String[] parts = str.split(",");
             org.bukkit.World world = (parts.length == 4) ? org.bukkit.Bukkit.getWorld(parts[0]) : defaultWorld;
-            return new Location(world, Double.parseDouble(parts[parts.length - 3]), Double.parseDouble(parts[parts.length - 2]), Double.parseDouble(parts[parts.length - 1]));
-        } catch (Exception e) {
+            return new Location(world, Double.parseDouble(parts[parts.length - 3]),
+                    Double.parseDouble(parts[parts.length - 2]), Double.parseDouble(parts[parts.length - 1]));
+        } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
             return null;
         }
     }

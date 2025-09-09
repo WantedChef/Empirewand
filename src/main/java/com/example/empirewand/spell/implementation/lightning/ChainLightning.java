@@ -14,6 +14,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Comparator;
 import java.util.HashSet;
@@ -26,7 +27,6 @@ public class ChainLightning extends Spell<Void> {
             super(api);
             this.name = "Chain Lightning";
             this.description = "Unleashes a bolt of lightning that jumps between targets.";
-            this.manaCost = 15; // Example
             this.cooldown = java.time.Duration.ofSeconds(12);
             this.spellType = SpellType.LIGHTNING;
         }
@@ -53,14 +53,15 @@ public class ChainLightning extends Spell<Void> {
     }
 
     @Override
-    protected @NotNull Void executeSpell(SpellContext context) {
+    protected @Nullable Void executeSpell(SpellContext context) {
         Player player = context.caster();
 
         double range = spellConfig.getDouble("values.range", 20.0);
         double jumpRadius = spellConfig.getDouble("values.jump-radius", 8.0);
         int jumps = spellConfig.getInt("values.jumps", 4);
         double damage = spellConfig.getDouble("values.damage", 8.0);
-        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false);
+        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig()
+                .getBoolean("features.friendly-fire", false);
         int arcParticleCount = spellConfig.getInt("values.arc_particle_count", 8);
         int arcSteps = spellConfig.getInt("values.arc_steps", 12);
         double maxArcLength = spellConfig.getDouble("values.max_arc_length", 15.0);
@@ -116,7 +117,7 @@ public class ChainLightning extends Spell<Void> {
         for (int i = 0; i <= steps; i++) {
             Location point = (i == 0 || i == steps) ? cursor.clone()
                     : cursor.clone().add((Math.random() - 0.5) * jitterScale, (Math.random() - 0.5) * jitterScale,
-                    (Math.random() - 0.5) * jitterScale);
+                            (Math.random() - 0.5) * jitterScale);
             from.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, point, particleCount, 0.05, 0.05, 0.05, 0.02);
             if (i % Math.max(2, steps / 6) == 0) {
                 from.getWorld().spawnParticle(Particle.CRIT, point, 1, 0, 0, 0, 0);

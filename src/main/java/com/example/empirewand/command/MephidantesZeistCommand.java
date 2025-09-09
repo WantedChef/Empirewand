@@ -13,6 +13,7 @@ import com.example.empirewand.command.subcommands.MigrateCommand;
 import com.example.empirewand.command.subcommands.ReloadCommand;
 import com.example.empirewand.command.subcommands.SetSpellCommand;
 import com.example.empirewand.command.subcommands.SpellsCommand;
+import com.example.empirewand.command.subcommands.ToggleCommand;
 import com.example.empirewand.command.subcommands.UnbindCommand;
 import org.bukkit.Material;
 
@@ -39,12 +40,13 @@ public class MephidantesZeistCommand extends BaseWandCommand {
     @Override
     protected void registerSubcommands() {
         // Core wand management commands
-        register(new GetCommand("mephidanteszeist", "Mephidantes Zeist Wand", Material.BLAZE_ROD));
+        register(new GetCommand("mephidanteszeist", "Mephidantes Zeist Wand", Material.NETHERITE_HOE));
         register(new BindCommand("mephidanteszeist"));
         register(new UnbindCommand("mephidanteszeist"));
         register(new BindAllCommand("mephidanteszeist"));
         register(new ListCommand("mephidanteszeist"));
         register(new SetSpellCommand("mephidanteszeist"));
+        register(new ToggleCommand("mephidanteszeist"));
 
         // Advanced binding commands
         register(new BindTypeCommand("mephidanteszeist"));

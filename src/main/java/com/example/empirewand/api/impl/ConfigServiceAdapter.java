@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
  * // Read configuration values
  * boolean debugEnabled = mainConfig.getBoolean("debug", false);
  * int defaultCooldown = mainConfig.getInt("cooldowns.default", 100);
- * long maxMana = mainConfig.getLong("mana.maximum", 1000L);
+ * // Note: cost system removed; no related config keys exist
  * double spellRange = mainConfig.getDouble("spells.range", 20.0);
  * String welcomeMessage = mainConfig.getString("messages.welcome", "Welcome!");
  *
@@ -74,12 +74,12 @@ public class ConfigServiceAdapter implements ConfigService {
             if (core == null) {
                 return ServiceHealth.UNHEALTHY;
             }
-            
+
             // Check if configurations are loaded
             if (core.getConfig() == null) {
                 return ServiceHealth.UNHEALTHY;
             }
-            
+
             return ServiceHealth.HEALTHY;
         } catch (Exception e) {
             return ServiceHealth.UNHEALTHY;

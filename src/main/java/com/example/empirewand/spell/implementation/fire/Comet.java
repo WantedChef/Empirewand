@@ -9,7 +9,6 @@ import com.example.empirewand.spell.ProjectileSpell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
 import java.util.UUID;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -34,7 +33,6 @@ public class Comet extends ProjectileSpell<Fireball> {
             super(api, Fireball.class);
             this.name = "Comet";
             this.description = "Launches a fiery projectile that explodes on impact.";
-            this.manaCost = 15;
             this.cooldown = java.time.Duration.ofSeconds(20);
             this.spellType = SpellType.FIRE;
             this.hitSound = null; // Explosion handles sound
@@ -96,7 +94,8 @@ public class Comet extends ProjectileSpell<Fireball> {
             String ownerUUID = projectile.getPersistentDataContainer().get(Keys.PROJECTILE_OWNER,
                     PersistentDataType.STRING);
             double damage = spellConfig.getDouble("values.damage", 7.0);
-            boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false);
+            boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig()
+                    .getBoolean("features.friendly-fire", false);
 
             if (ownerUUID != null) {
                 Player caster = Bukkit.getPlayer(UUID.fromString(ownerUUID));

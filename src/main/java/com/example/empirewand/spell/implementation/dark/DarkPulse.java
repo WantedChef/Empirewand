@@ -8,7 +8,6 @@ import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -40,8 +39,7 @@ public class DarkPulse extends Spell<Void> {
             boolean friendlyFire,
             int ringParticleCount,
             double ringRadiusStep,
-            int ringEveryTicks
-    ) {
+            int ringEveryTicks) {
     }
 
     public static class Builder extends Spell.Builder<Void> {
@@ -49,7 +47,6 @@ public class DarkPulse extends Spell<Void> {
             super(api);
             this.name = "Dark Pulse";
             this.description = "Launches a pulsing void skull.";
-            this.manaCost = 10;
             this.cooldown = java.time.Duration.ofSeconds(8);
             this.spellType = SpellType.DARK;
         }
@@ -61,24 +58,32 @@ public class DarkPulse extends Spell<Void> {
         }
     }
 
-    private final Config config;
+    private Config config;
 
     private DarkPulse(Builder builder) {
         super(builder);
-        this.config = new Config(
-                spellConfig.getDouble("values.range", 24.0),
-                spellConfig.getInt("values.wither-duration-ticks", 120),
-                spellConfig.getInt("values.wither-amplifier", 1),
-                spellConfig.getInt("values.blind-duration-ticks", 60),
-                spellConfig.getDouble("values.speed", 1.8),
-                spellConfig.getDouble("values.explosion-radius", 4.0),
-                spellConfig.getDouble("values.damage", 6.0),
-                spellConfig.getDouble("values.knockback", 0.6),
-                EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false),
-                spellConfig.getInt("values.ring-particle-count", 14),
-                spellConfig.getDouble("values.ring-radius-step", 0.25),
-                spellConfig.getInt("values.ring-interval-ticks", 2)
-        );
+        // Config will be initialized lazily when first accessed
+    }
+
+    private Config getConfig() {
+        if (config == null) {
+            // This will be called after loadConfig has been called
+            config = new Config(
+                    spellConfig.getDouble("values.range", 24.0),
+                    spellConfig.getInt("values.wither-duration-ticks", 120),
+                    spellConfig.getInt("values.wither-amplifier", 1),
+                    spellConfig.getInt("values.blind-duration-ticks", 60),
+                    spellConfig.getDouble("values.speed", 1.8),
+                    spellConfig.getDouble("values.explosion-radius", 4.0),
+                    spellConfig.getDouble("values.damage", 6.0),
+                    spellConfig.getDouble("values.knockback", 0.6),
+                    EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire",
+                            false),
+                    spellConfig.getInt("values.ring-particle-count", 14),
+                    spellConfig.getDouble("values.ring-radius-step", 0.25),
+                    spellConfig.getInt("values.ring-interval-ticks", 2));
+        }
+        return config;
     }
 
     @Override
@@ -95,7 +100,7 @@ public class DarkPulse extends Spell<Void> {
     protected Void executeSpell(SpellContext context) {
         Player player = context.caster();
 
-        var targetEntity = player.getTargetEntity((int) config.range);
+        var targetEntity = player.getTargetEntity((int) getConfig().range);
         if (!(targetEntity instanceof LivingEntity target) || target.isDead() || !target.isValid()) {
             context.fx().fizzle(player);
             return null;
@@ -106,17 +111,19 @@ public class DarkPulse extends Spell<Void> {
 
         WitherSkull skull = player.getWorld().spawn(spawnLoc, WitherSkull.class);
         skull.setCharged(true);
-        skull.setVelocity(direction.multiply(config.speed));
+        skull.setVelocity(direction.multiply(getConfig().speed));
         skull.setShooter(player);
         skull.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, Keys.STRING_TYPE.getType(), key());
 
-        new RingPulse(context, skull, config.ringParticleCount, config.ringRadiusStep, config.ringEveryTicks)
+        new RingPulse(context, skull, getConfig().ringParticleCount, getConfig().ringRadiusStep,
+                getConfig().ringEveryTicks)
                 .runTaskTimer(context.plugin(), 0L, 1L);
         context.fx().playSound(player, Sound.ENTITY_WITHER_SHOOT, 1.0f, 1.0f);
 
         context.plugin().getServer().getPluginManager().registerEvents(
-                new PulseListener(context, config.witherDuration, config.witherAmplifier, config.blindDuration,
-                        config.radius, config.damage, config.knockback, config.friendlyFire),
+                new PulseListener(context, getConfig().witherDuration, getConfig().witherAmplifier,
+                        getConfig().blindDuration,
+                        getConfig().radius, getConfig().damage, getConfig().knockback, getConfig().friendlyFire),
                 context.plugin());
         return null;
     }

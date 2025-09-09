@@ -22,7 +22,6 @@ public class EmpireComet extends Spell<Void> {
             super(api);
             this.name = "Empire Comet";
             this.description = "Launches a blazing comet with a lingering tail.";
-            this.manaCost = 12;
             this.cooldown = java.time.Duration.ofSeconds(18);
             this.spellType = SpellType.FIRE;
         }
@@ -68,7 +67,8 @@ public class EmpireComet extends Spell<Void> {
         context.fx().spawnParticles(caster.getEyeLocation(), Particle.FLAME, 25, 0.4, 0.4, 0.4, 0.12);
         context.fx().playSound(caster.getLocation(), Sound.ENTITY_BLAZE_SHOOT, 1.0f, 0.5f);
 
-        new EmpireCometTail(context, comet, trailLength, particleCount, blockLifetime, burstInterval).runTaskTimer(context.plugin(), 0L, 1L);
+        new EmpireCometTail(context, comet, trailLength, particleCount, blockLifetime, burstInterval)
+                .runTaskTimer(context.plugin(), 0L, 1L);
         return null;
     }
 
@@ -89,7 +89,8 @@ public class EmpireComet extends Spell<Void> {
         private final java.util.Deque<TempBlock> queue = new java.util.ArrayDeque<>();
         private final java.util.Set<Block> ours = new java.util.HashSet<>();
 
-        EmpireCometTail(SpellContext context, LargeFireball comet, int trailLength, int particleCount, int blockLifetime, int burstInterval) {
+        EmpireCometTail(SpellContext context, LargeFireball comet, int trailLength, int particleCount,
+                int blockLifetime, int burstInterval) {
             this.context = context;
             this.comet = comet;
             this.world = comet.getWorld();

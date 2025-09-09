@@ -26,7 +26,6 @@ public class SunburstStep extends Spell<Void> {
             super(api);
             this.name = "Sunburst Step";
             this.description = "Dash forward in a burst of light, healing allies and damaging enemies.";
-            this.manaCost = 15; // Example
             this.cooldown = java.time.Duration.ofSeconds(18);
             this.spellType = SpellType.MOVEMENT;
         }
@@ -129,7 +128,11 @@ public class SunburstStep extends Spell<Void> {
         double distance = direction.length();
         if (distance > 0) {
             direction.normalize();
-            for (double d = 0; d < distance; d += 0.3) {
+            int steps = (int) Math.ceil(distance / 0.3);
+            for (int i = 0; i <= steps; i++) {
+                double d = i * 0.3;
+                if (d > distance)
+                    break;
                 Location particleLoc = start.clone().add(direction.clone().multiply(d));
                 context.fx().spawnParticles(particleLoc, Particle.DUST, 1, 0, 0, 0, 0,
                         new Particle.DustOptions(Color.fromRGB(255, 215, 0), 1.0f));

@@ -1,23 +1,27 @@
 package com.example.empirewand.core.services;
 
-import com.example.empirewand.api.EffectService;
-import com.example.empirewand.core.text.TextService;
-import com.example.empirewand.core.util.PerformanceMonitor;
-import net.kyori.adventure.text.Component;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import com.example.empirewand.api.EffectService;
+import com.example.empirewand.core.text.TextService;
+import com.example.empirewand.core.util.PerformanceMonitor;
+
+import net.kyori.adventure.text.Component;
 
 /**
  * Centralized FX helper for sounds, particles, and action bar messages.
@@ -27,6 +31,8 @@ import java.util.Map;
  * operations.
  */
 public class FxService implements EffectService {
+    private static final Logger LOGGER = Logger.getLogger(FxService.class.getName());
+
     private final TextService textService;
     private final PerformanceMonitor performanceMonitor;
 
@@ -62,10 +68,14 @@ public class FxService implements EffectService {
                 return;
             World world = location.getWorld();
             if (world != null) {
-                if (data != null) {
-                    world.spawnParticle(particle, location, count, offsetX, offsetY, offsetZ, speed, data);
-                } else {
-                    world.spawnParticle(particle, location, count, offsetX, offsetY, offsetZ, speed);
+                try {
+                    if (data != null) {
+                        world.spawnParticle(particle, location, count, offsetX, offsetY, offsetZ, speed, data);
+                    } else {
+                        world.spawnParticle(particle, location, count, offsetX, offsetY, offsetZ, speed);
+                    }
+                } catch (Exception e) {
+                    LOGGER.log(Level.WARNING, "Failed to execute particle batch", e);
                 }
             }
         }
@@ -86,25 +96,22 @@ public class FxService implements EffectService {
 
     @Override
     public void actionBar(@NotNull Player player, @NotNull Component message) {
-        if (player == null || message == null) {
-            return;
-        }
         try {
             player.sendActionBar(message);
         } catch (Exception e) {
-            // Log error but don't crash - FX operations should never break functionality
+            LOGGER.log(Level.WARNING, "Failed to send action bar message", e);
         }
     }
 
     @Override
     public void actionBar(@NotNull Player player, @NotNull String plainText) {
-        if (player == null || plainText == null || plainText.trim().isEmpty()) {
+        if (plainText.trim().isEmpty()) {
             return;
         }
         try {
             player.sendActionBar(Component.text(plainText));
         } catch (Exception e) {
-            // Log error but don't crash
+            LOGGER.log(Level.WARNING, "Failed to send action bar message", e);
         }
     }
 
@@ -117,9 +124,7 @@ public class FxService implements EffectService {
     @Override
     public void actionBarKey(@NotNull Player player, @NotNull String messageKey,
             @NotNull Map<String, String> placeholders) {
-        String raw = (placeholders == null || placeholders.isEmpty())
-                ? textService.getMessage(messageKey)
-                : textService.getMessage(messageKey, placeholders);
+        String raw = textService.getMessage(messageKey, placeholders);
         actionBar(player, raw);
     }
 
@@ -163,31 +168,35 @@ public class FxService implements EffectService {
         actionBarKey(player, "no-permission");
     }
 
+    @Override
+    @SuppressWarnings({ "ConstantConditions", "DataFlowIssue" })
     public void fizzle(@NotNull Player player) {
         actionBarKey(player, "fizzle");
-        if (player != null) {
-            fizzle(player.getLocation());
-        }
+        fizzle(java.util.Objects.requireNonNull(player.getLocation(), "Player location was null"));
     }
 
     // ---- Title/Subtitle helpers ----
 
     @Override
     public void title(@NotNull Player player, @NotNull Component title, @NotNull Component subtitle) {
-        if (player != null) {
+        try {
             player.showTitle(net.kyori.adventure.title.Title.title(title, subtitle));
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Failed to show title", e);
         }
     }
 
     @Override
     public void title(@NotNull Player player, @NotNull Component title, @NotNull Component subtitle,
             int fadeIn, int stay, int fadeOut) {
-        if (player != null) {
+        try {
             var times = net.kyori.adventure.title.Title.Times.times(
                     java.time.Duration.ofMillis((long) fadeIn * 50),
                     java.time.Duration.ofMillis((long) stay * 50),
                     java.time.Duration.ofMillis((long) fadeOut * 50));
             player.showTitle(net.kyori.adventure.title.Title.title(title, subtitle, times));
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Failed to show title with timing", e);
         }
     }
 
@@ -208,6 +217,7 @@ public class FxService implements EffectService {
 
     // ---- Standardized messages ----
 
+    @Override
     public void showError(@NotNull Player player, @NotNull String errorType) {
         showError(player, errorType, Map.of());
     }
@@ -220,7 +230,6 @@ public class FxService implements EffectService {
             case "on-cooldown" -> "cooldown";
             case "invalid-target" -> "warning";
             case "out-of-range" -> "warning";
-            case "no-mana" -> "error";
             case "spell-disabled" -> "error";
             default -> "error";
         };
@@ -229,6 +238,7 @@ public class FxService implements EffectService {
         playUISound(player, soundProfile);
     }
 
+    @Override
     public void showSuccess(@NotNull Player player, @NotNull String successType) {
         showSuccess(player, successType, Map.of());
     }
@@ -240,6 +250,7 @@ public class FxService implements EffectService {
         playUISound(player, "success");
     }
 
+    @Override
     public void showInfo(@NotNull Player player, @NotNull String infoType) {
         showInfo(player, infoType, Map.of());
     }
@@ -254,9 +265,6 @@ public class FxService implements EffectService {
 
     @Override
     public void playSound(@NotNull Player player, @NotNull Sound sound, float volume, float pitch) {
-        if (player == null || sound == null) {
-            return;
-        }
         PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("playSoundPlayer");
         try {
             Location location = player.getLocation();
@@ -264,7 +272,7 @@ public class FxService implements EffectService {
                 player.playSound(location, sound, volume, pitch);
             }
         } catch (Exception e) {
-            // Log error but don't crash
+            LOGGER.log(Level.WARNING, "Failed to play sound for player", e);
         } finally {
             timing.complete(2); // Log if sound playing takes > 2ms
         }
@@ -272,9 +280,6 @@ public class FxService implements EffectService {
 
     @Override
     public void playSound(@NotNull Location location, @NotNull Sound sound, float volume, float pitch) {
-        if (location == null || sound == null) {
-            return;
-        }
         PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("playSoundLocation");
         try {
             World world = location.getWorld();
@@ -282,7 +287,7 @@ public class FxService implements EffectService {
                 world.playSound(location, sound, volume, pitch);
             }
         } catch (Exception e) {
-            // Log error but don't crash
+            LOGGER.log(Level.WARNING, "Failed to play sound at location", e);
         } finally {
             timing.complete(2);
         }
@@ -293,7 +298,7 @@ public class FxService implements EffectService {
     @Override
     public void spawnParticles(@NotNull Location location, @NotNull Particle particle, int count,
             double offsetX, double offsetY, double offsetZ, double speed) {
-        if (location == null || particle == null || count <= 0) {
+        if (count <= 0) {
             return;
         }
         PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("spawnParticles");
@@ -303,7 +308,7 @@ public class FxService implements EffectService {
                 world.spawnParticle(particle, location, count, offsetX, offsetY, offsetZ, speed);
             }
         } catch (Exception e) {
-            // Log error but don't crash
+            LOGGER.log(Level.WARNING, "Failed to spawn particles", e);
         } finally {
             timing.complete(5);
         }
@@ -312,7 +317,7 @@ public class FxService implements EffectService {
     @Override
     public void spawnParticles(@NotNull Location location, @NotNull Particle particle, int count,
             double offsetX, double offsetY, double offsetZ, double speed, Object data) {
-        if (location == null || particle == null || count <= 0) {
+        if (count <= 0) {
             return;
         }
         PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("spawnParticlesWithData");
@@ -322,7 +327,7 @@ public class FxService implements EffectService {
                 world.spawnParticle(particle, location, count, offsetX, offsetY, offsetZ, speed, data);
             }
         } catch (Exception e) {
-            // Log error but don't crash
+            LOGGER.log(Level.WARNING, "Failed to spawn particles with data", e);
         } finally {
             timing.complete(5);
         }
@@ -365,21 +370,25 @@ public class FxService implements EffectService {
 
             PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("flushParticleBatch");
 
-            // Copy to avoid concurrent modification
-            List<ParticleBatch> batchCopy = new ArrayList<>(particleBatch);
-            particleBatch.clear();
+            try {
+                // Copy to avoid concurrent modification
+                List<ParticleBatch> batchCopy = new ArrayList<>(particleBatch);
+                particleBatch.clear();
 
-            for (ParticleBatch batch : batchCopy) {
-                batch.execute();
+                for (ParticleBatch batch : batchCopy) {
+                    batch.execute();
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Failed to flush particle batch", e);
+            } finally {
+                timing.complete(10); // Log if batch flush takes > 10ms
             }
-
-            timing.complete(10); // Log if batch flush takes > 10ms
         }
     }
 
     @Override
     public void trail(@NotNull Location start, @NotNull Location end, @NotNull Particle particle, int perStep) {
-        if (start == null || end == null || particle == null || perStep <= 0) {
+        if (perStep <= 0) {
             return;
         }
         PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("trail");
@@ -399,12 +408,13 @@ public class FxService implements EffectService {
                 point.add(step);
             }
         } catch (Exception e) {
-            // Log error but don't crash
+            LOGGER.log(Level.WARNING, "Failed to create trail", e);
         } finally {
             timing.complete(15); // Trail operations can be more expensive
         }
     }
 
+    @Override
     public void trail(@NotNull Location location) {
         spawnParticles(location, Particle.SOUL_FIRE_FLAME, 10, 0.1, 0.1, 0.1, 0.05);
     }
@@ -415,23 +425,21 @@ public class FxService implements EffectService {
         impact(location, particle, count, 0.2, sound, volume, pitch);
     }
 
-    // Removed @Override: not declared in EffectService
+    @Override
     public void impact(@NotNull Location location, @NotNull Particle particle, int count, double spread,
             @NotNull Sound sound, float volume, float pitch) {
-        if (location == null) {
-            return;
-        }
         PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("impact");
         try {
             spawnParticles(location, particle, count, spread, spread, spread, 0);
             playSound(location, sound, volume, pitch);
         } catch (Exception e) {
-            // Log error but don't crash
+            LOGGER.log(Level.WARNING, "Failed to create impact effect", e);
         } finally {
             timing.complete(5);
         }
     }
 
+    @Override
     public void impact(@NotNull Location location) {
         spawnParticles(location, Particle.EXPLOSION, 30, 0.5, 0.5, 0.5, 0.1);
         playSound(location, Sound.ENTITY_BLAZE_SHOOT, 1.0f, 1.0f);
@@ -447,7 +455,7 @@ public class FxService implements EffectService {
     public void followParticles(@NotNull Plugin plugin, @NotNull Entity entity, @NotNull Particle particle, int count,
             double offsetX, double offsetY, double offsetZ, double speed, Object data,
             long periodTicks) {
-        if (plugin == null || entity == null || particle == null || periodTicks <= 0)
+        if (periodTicks <= 0)
             return;
         new BukkitRunnable() {
             @Override
@@ -470,9 +478,9 @@ public class FxService implements EffectService {
         }.runTaskTimer(plugin, 0L, Math.max(1L, periodTicks));
     }
 
-    // Removed @Override: not declared in EffectService
+    @Override
     public void followTrail(@NotNull Plugin plugin, @NotNull Entity entity, long periodTicks) {
-        if (plugin == null || entity == null || periodTicks <= 0)
+        if (periodTicks <= 0)
             return;
         new BukkitRunnable() {
             @Override

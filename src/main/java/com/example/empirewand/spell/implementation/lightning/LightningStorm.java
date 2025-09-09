@@ -7,11 +7,9 @@ import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +21,6 @@ public class LightningStorm extends Spell<Void> {
             super(api);
             this.name = "Lightning Storm";
             this.description = "Calls down a storm of lightning strikes around you.";
-            this.manaCost = 25; // Example
             this.cooldown = java.time.Duration.ofSeconds(45);
             this.spellType = SpellType.LIGHTNING;
         }
@@ -58,7 +55,8 @@ public class LightningStorm extends Spell<Void> {
         double radius = spellConfig.getDouble("values.radius", 10.0);
         double damage = spellConfig.getDouble("values.damage", 16.0);
         int delayBetweenStrikes = spellConfig.getInt("values.delay-ticks", 10);
-        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false);
+        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig()
+                .getBoolean("features.friendly-fire", false);
 
         new BukkitRunnable() {
             private int strikeCount = 0;

@@ -18,6 +18,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class FrostNova extends Spell<Void> {
 
@@ -26,7 +27,6 @@ public class FrostNova extends Spell<Void> {
             super(api);
             this.name = "Frost Nova";
             this.description = "Creates an expanding nova of frost, damaging and slowing enemies.";
-            this.manaCost = 12; // Example
             this.cooldown = java.time.Duration.ofSeconds(15);
             this.spellType = SpellType.ICE;
         }
@@ -53,7 +53,7 @@ public class FrostNova extends Spell<Void> {
     }
 
     @Override
-    protected @NotNull Void executeSpell(SpellContext context) {
+    protected @Nullable Void executeSpell(SpellContext context) {
         Player player = context.caster();
 
         double radius = spellConfig.getDouble("values.radius", 5.0);

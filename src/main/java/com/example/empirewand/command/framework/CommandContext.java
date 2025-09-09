@@ -8,6 +8,7 @@ import com.example.empirewand.core.services.ConfigService;
 import com.example.empirewand.core.services.CooldownService;
 import com.example.empirewand.core.services.FxService;
 import net.kyori.adventure.text.Component;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -17,6 +18,8 @@ import org.jetbrains.annotations.Nullable;
  * Immutable context object containing all dependencies for command execution.
  * Provides type-safe access to services and common validation methods.
  */
+@SuppressFBWarnings(value = { "EI_EXPOSE_REP",
+        "EI_EXPOSE_REP2" }, justification = "Record holds references to plugin/services by design; args() returns defensive copy.")
 public record CommandContext(
         @NotNull EmpireWandPlugin plugin,
         @NotNull CommandSender sender,

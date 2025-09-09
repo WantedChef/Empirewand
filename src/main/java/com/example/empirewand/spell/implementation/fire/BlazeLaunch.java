@@ -21,7 +21,6 @@ public class BlazeLaunch extends Spell<Void> {
             super(api);
             this.name = "Blaze Launch";
             this.description = "Launches you forward, leaving a trail of fire.";
-            this.manaCost = 5; // Example value
             this.cooldown = java.time.Duration.ofSeconds(10);
             this.spellType = SpellType.FIRE;
         }

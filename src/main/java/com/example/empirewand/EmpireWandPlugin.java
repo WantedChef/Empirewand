@@ -32,6 +32,8 @@ import com.example.empirewand.listeners.player.PlayerJoinQuitListener;
 import com.example.empirewand.listeners.projectile.ProjectileHitListener;
 import com.example.empirewand.listeners.wand.WandCastListener;
 import com.example.empirewand.listeners.wand.WandDropGuardListener;
+import com.example.empirewand.listeners.wand.WandSelectListener;
+import com.example.empirewand.listeners.wand.WandStatusListener;
 import com.example.empirewand.listeners.wand.WandSwapHandListener;
 import com.example.empirewand.visual.Afterimages;
 
@@ -74,6 +76,9 @@ public final class EmpireWandPlugin extends JavaPlugin {
             // Spell registry no longer requires an EmpireWandAPI instance; builders are
             // constructed without it
             this.spellRegistry = new SpellRegistryImpl(this.configService);
+
+            // Initialize wand service now that spell registry exists
+            this.wandService = new com.example.empirewand.core.services.WandServiceImpl(this, this.spellRegistry);
 
             // Metrics after spell registry exists
             this.metricsService = new MetricsService(this, this.configService, this.spellRegistry,
@@ -159,10 +164,13 @@ public final class EmpireWandPlugin extends JavaPlugin {
         // 6. Cleanup all active spells with ethereal forms, polymorphs, etc.
         try {
             cleanupActiveSpells();
-            var poly = this.spellRegistry.getSpell("polymorph");
-            if (poly.isPresent()
-                    && poly.get() instanceof com.example.empirewand.spell.implementation.control.Polymorph p) {
-                p.cleanup();
+            // Only attempt polymorph cleanup if spellRegistry is available
+            if (this.spellRegistry != null) {
+                var poly = this.spellRegistry.getSpell("polymorph");
+                if (poly.isPresent()
+                        && poly.get() instanceof com.example.empirewand.spell.implementation.control.Polymorph p) {
+                    p.cleanup();
+                }
             }
             getLogger().info("Active spells cleaned up");
         } catch (Exception e) {
@@ -197,6 +205,8 @@ public final class EmpireWandPlugin extends JavaPlugin {
         var pm = getServer().getPluginManager();
         pm.registerEvents(new PlayerJoinQuitListener(this), this);
         pm.registerEvents(new WandCastListener(this), this);
+        pm.registerEvents(new WandSelectListener(this), this);
+        pm.registerEvents(new WandStatusListener(this), this);
         pm.registerEvents(new WandSwapHandListener(this), this);
         pm.registerEvents(new WandDropGuardListener(this), this);
         pm.registerEvents(new ProjectileHitListener(this), this);

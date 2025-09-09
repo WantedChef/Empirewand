@@ -6,7 +6,6 @@ import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.entity.Entity;
@@ -22,7 +21,6 @@ public class Hemorrhage extends Spell<Void> {
             super(api);
             this.name = "Hemorrhage";
             this.description = "Causes the target to bleed, taking extra damage when they move.";
-            this.manaCost = 12; // Example
             this.cooldown = java.time.Duration.ofSeconds(18);
             this.spellType = SpellType.LIFE;
         }
@@ -68,7 +66,8 @@ public class Hemorrhage extends Spell<Void> {
         }
 
         target.damage(baseDamage, player);
-        new HemorrhageTask(target, player, context).runTaskTimer(context.plugin(), 0L, spellConfig.getInt("values.check-interval-ticks", 10));
+        new HemorrhageTask(target, player, context).runTaskTimer(context.plugin(), 0L,
+                spellConfig.getInt("values.check-interval-ticks", 10));
         return null;
     }
 
@@ -113,7 +112,8 @@ public class Hemorrhage extends Spell<Void> {
         }
 
         private void spawnBloodParticles(LivingEntity target) {
-            target.getWorld().spawnParticle(Particle.FALLING_LAVA, target.getLocation().add(0, 1, 0), 5, 0.3, 0.5, 0.3, 0);
+            target.getWorld().spawnParticle(Particle.FALLING_LAVA, target.getLocation().add(0, 1, 0), 5, 0.3, 0.5, 0.3,
+                    0);
         }
     }
 }

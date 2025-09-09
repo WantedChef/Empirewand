@@ -1,5 +1,6 @@
 package com.example.empirewand.listeners.wand;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.event.EventHandler;
@@ -33,7 +34,7 @@ public final class WandSelectListener implements Listener {
         if (!plugin.getWandService().isWand(item))
             return;
 
-        List<String> spells = plugin.getWandService().getSpells(item);
+        List<String> spells = new ArrayList<>(plugin.getWandService().getSpells(item));
         if (spells.isEmpty())
             return;
 

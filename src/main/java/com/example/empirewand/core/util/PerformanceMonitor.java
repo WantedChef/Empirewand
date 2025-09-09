@@ -6,7 +6,8 @@ import java.util.logging.Logger;
 /**
  * Performance monitoring utility for tracking execution times and metrics.
  * Provides lightweight timing and logging for performance-critical operations.
- * This is an instance-based service to allow for proper dependency injection and logging.
+ * This is an instance-based service to allow for proper dependency injection
+ * and logging.
  */
 public class PerformanceMonitor {
 
@@ -38,18 +39,18 @@ public class PerformanceMonitor {
         if (thresholdMs < 0) {
             thresholdMs = 0; // Ensure threshold is non-negative
         }
-        
+
         try {
             long endTime = System.nanoTime();
             long durationNs = endTime - startTime;
-            
+
             // Handle potential overflow
             if (durationNs < 0) {
                 logger.warning(String.format(
                         "[PERF] Operation timing overflow detected for: %s", operationName));
                 return;
             }
-            
+
             long durationMs = durationNs / 1_000_000;
 
             if (durationMs >= thresholdMs) {
@@ -59,7 +60,8 @@ public class PerformanceMonitor {
                         operationId, operationName, durationMs, thresholdMs));
             }
         } catch (Exception e) {
-            // Log error but don't crash - performance monitoring should never break functionality
+            // Log error but don't crash - performance monitoring should never break
+            // functionality
             logger.warning(String.format(
                     "[PERF] Error recording execution time for operation: %s - %s",
                     operationName, e.getMessage()));
@@ -87,12 +89,14 @@ public class PerformanceMonitor {
         private final long startTime;
 
         private TimingContext(String operationName, long startTime) {
+            // Validate parameters before setting any fields to avoid partial initialization
             if (operationName == null || operationName.trim().isEmpty()) {
                 throw new IllegalArgumentException("Operation name cannot be null or empty");
             }
             if (startTime <= 0) {
                 throw new IllegalArgumentException("Start time must be positive");
             }
+
             this.operationName = operationName;
             this.startTime = startTime;
         }
@@ -109,7 +113,8 @@ public class PerformanceMonitor {
             try {
                 PerformanceMonitor.this.recordExecutionTime(operationName, startTime, thresholdMs);
             } catch (Exception e) {
-                // Log error but don't crash - timing completion should never break functionality
+                // Log error but don't crash - timing completion should never break
+                // functionality
                 logger.warning(String.format(
                         "[PERF] Error completing timing for operation: %s - %s",
                         operationName, e.getMessage()));

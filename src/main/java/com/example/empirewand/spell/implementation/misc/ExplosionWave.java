@@ -9,11 +9,9 @@ import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
 import java.util.ArrayList;
 import java.util.List;
-import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
-import org.bukkit.Location;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Particle;
-import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
@@ -26,7 +24,6 @@ public class ExplosionWave extends Spell<Void> {
             super(api);
             this.name = "Explosion Wave";
             this.description = "Creates an explosive wave that damages and knocks back entities in a cone.";
-            this.manaCost = 15; // Example
             this.cooldown = java.time.Duration.ofSeconds(12);
             this.spellType = SpellType.MISC;
         }
@@ -65,7 +62,8 @@ public class ExplosionWave extends Spell<Void> {
         double coneAngle = spellConfig.getDouble("values.cone-angle-degrees", 70.0);
         double baseDamage = spellConfig.getDouble("values.damage", 6.0);
         double knockbackStrength = spellConfig.getDouble("values.knockback-strength", 0.9);
-        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false);
+        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig()
+                .getBoolean("features.friendly-fire", false);
         float explosionPower = (float) spellConfig.getDouble("values.explosion-power", 1.5f);
 
         List<LivingEntity> targets = getEntitiesInCone(player, range, coneAngle);

@@ -12,6 +12,7 @@ import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class BloodTap extends Spell<Void> {
 
@@ -23,7 +24,6 @@ public class BloodTap extends Spell<Void> {
             super(api);
             this.name = "Blood Tap";
             this.description = "Sacrifice health to gain blood charges for other spells.";
-            this.manaCost = 0;
             this.cooldown = java.time.Duration.ofMillis(500);
             this.spellType = SpellType.LIFE;
         }
@@ -50,7 +50,7 @@ public class BloodTap extends Spell<Void> {
     }
 
     @Override
-    protected @NotNull Void executeSpell(SpellContext context) {
+    protected @Nullable Void executeSpell(SpellContext context) {
         Player player = context.caster();
 
         double selfDamage = spellConfig.getDouble("values.self-damage", 1.0);
@@ -79,7 +79,8 @@ public class BloodTap extends Spell<Void> {
     private void startDecayTask(Player player, SpellContext context) {
         if (player.hasMetadata(DECAY_TASK_KEY)) {
             BukkitRunnable existingTask = (BukkitRunnable) player.getMetadata(DECAY_TASK_KEY).get(0).value();
-            if (existingTask != null) existingTask.cancel();
+            if (existingTask != null)
+                existingTask.cancel();
         }
         int decayDuration = spellConfig.getInt("values.decay-duration-ticks", 200);
         DecayTask decayTask = new DecayTask(player, context);
@@ -92,7 +93,8 @@ public class BloodTap extends Spell<Void> {
             double x = (Math.random() - 0.5) * 2;
             double y = Math.random() * 2;
             double z = (Math.random() - 0.5) * 2;
-            player.getWorld().spawnParticle(Particle.DUST, player.getLocation().add(x, y, z), 1, new Particle.DustOptions(org.bukkit.Color.fromRGB(128, 0, 0), 1.0f));
+            player.getWorld().spawnParticle(Particle.DUST, player.getLocation().add(x, y, z), 1,
+                    new Particle.DustOptions(org.bukkit.Color.fromRGB(128, 0, 0), 1.0f));
         }
     }
 
@@ -122,7 +124,8 @@ public class BloodTap extends Spell<Void> {
 
         @Override
         public void run() {
-            if (!player.isValid() || player.isDead()) return;
+            if (!player.isValid() || player.isDead())
+                return;
 
             int charges = getCurrentBloodCharges(player);
             if (charges > 0) {

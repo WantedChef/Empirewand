@@ -8,11 +8,9 @@ import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
 import com.example.empirewand.visual.RingRenderer;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
@@ -24,7 +22,6 @@ public class ThunderBlast extends Spell<Void> {
             super(api);
             this.name = "Thunder Blast";
             this.description = "Creates a powerful blast of lightning around you.";
-            this.manaCost = 20; // Example
             this.cooldown = java.time.Duration.ofSeconds(30);
             this.spellType = SpellType.LIGHTNING;
         }
@@ -58,7 +55,8 @@ public class ThunderBlast extends Spell<Void> {
         double radius = spellConfig.getDouble("values.radius", 6.0);
         double damage = spellConfig.getDouble("values.damage", 16.0);
         int strikes = spellConfig.getInt("values.strikes", 3);
-        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false);
+        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig()
+                .getBoolean("features.friendly-fire", false);
 
         for (int i = 0; i < strikes; i++) {
             double angle = Math.random() * 2 * Math.PI;

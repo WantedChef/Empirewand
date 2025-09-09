@@ -19,7 +19,6 @@ public class Heal extends Spell<Void> {
             super(api);
             this.name = "Heal";
             this.description = "Heals the caster.";
-            this.manaCost = 5; // Example
             this.cooldown = java.time.Duration.ofSeconds(5);
             this.spellType = SpellType.HEAL;
         }

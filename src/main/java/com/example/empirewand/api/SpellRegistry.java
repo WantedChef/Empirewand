@@ -1,5 +1,6 @@
 package com.example.empirewand.api;
 
+import com.example.empirewand.api.spell.toggle.ToggleableSpell;
 import com.example.empirewand.spell.Spell;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +61,49 @@ public interface SpellRegistry extends EmpireWandService {
 
     int getEnabledSpellCount();
 
+    // Toggleable spell methods
+
+    /**
+     * Gets a toggleable spell by its key.
+     * 
+     * @param key the spell key
+     * @return an Optional containing the ToggleableSpell if found and is
+     *         toggleable, empty otherwise
+     */
+    @NotNull
+    Optional<ToggleableSpell> getToggleableSpell(@NotNull String key);
+
+    /**
+     * Gets all toggleable spells registered in this registry.
+     * 
+     * @return a map of spell keys to ToggleableSpell instances
+     */
+    @NotNull
+    Map<String, ToggleableSpell> getAllToggleableSpells();
+
+    /**
+     * Gets the keys of all toggleable spells.
+     * 
+     * @return a set of toggleable spell keys
+     */
+    @NotNull
+    Set<String> getToggleableSpellKeys();
+
+    /**
+     * Checks if a spell is toggleable.
+     * 
+     * @param key the spell key
+     * @return true if the spell exists and is toggleable, false otherwise
+     */
+    boolean isToggleableSpell(@NotNull String key);
+
+    /**
+     * Gets the count of toggleable spells.
+     * 
+     * @return the number of toggleable spells
+     */
+    int getToggleableSpellCount();
+
     interface SpellBuilder {
         @NotNull
         SpellBuilder name(@NotNull String name);
@@ -116,17 +160,34 @@ public interface SpellRegistry extends EmpireWandService {
     }
 
     interface SpellQuery {
-        @Nullable String getCategory();
-        @Nullable String getTag();
-        @Nullable String getNameContains();
+        @Nullable
+        String getCategory();
+
+        @Nullable
+        String getTag();
+
+        @Nullable
+        String getNameContains();
+
         long getMaxCooldown();
+
         double getMinRange();
+
         double getMaxRange();
+
         int getMaxLevelRequirement();
-        @Nullable Boolean isEnabled();
-        @Nullable SortField getSortField();
-        @Nullable SortOrder getSortOrder();
+
+        @Nullable
+        Boolean isEnabled();
+
+        @Nullable
+        SortField getSortField();
+
+        @Nullable
+        SortOrder getSortOrder();
+
         int getLimit();
+
         List<Spell<?>> execute();
 
         enum SortField {
@@ -138,17 +199,38 @@ public interface SpellRegistry extends EmpireWandService {
         }
 
         interface Builder {
-            @NotNull Builder category(@NotNull String category);
-            @NotNull Builder tag(@NotNull String tag);
-            @NotNull Builder nameContains(@NotNull String text);
-            @NotNull Builder cooldown(long maxTicks);
-            @NotNull Builder range(double min, double max);
-            @NotNull Builder levelRequirement(int maxLevel);
-            @NotNull Builder enabled(boolean enabled);
-            @NotNull Builder sortBy(@NotNull SortField field);
-            @NotNull Builder sortOrder(@NotNull SortOrder order);
-            @NotNull Builder limit(int limit);
-            @NotNull SpellQuery build();
+            @NotNull
+            Builder category(@NotNull String category);
+
+            @NotNull
+            Builder tag(@NotNull String tag);
+
+            @NotNull
+            Builder nameContains(@NotNull String text);
+
+            @NotNull
+            Builder cooldown(long maxTicks);
+
+            @NotNull
+            Builder range(double min, double max);
+
+            @NotNull
+            Builder levelRequirement(int maxLevel);
+
+            @NotNull
+            Builder enabled(boolean enabled);
+
+            @NotNull
+            Builder sortBy(@NotNull SortField field);
+
+            @NotNull
+            Builder sortOrder(@NotNull SortOrder order);
+
+            @NotNull
+            Builder limit(int limit);
+
+            @NotNull
+            SpellQuery build();
         }
     }
 }

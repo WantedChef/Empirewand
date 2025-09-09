@@ -1,4 +1,5 @@
 package com.example.empirewand.spell.implementation.lightning;
+
 import com.example.empirewand.api.EmpireWandAPI;
 import com.example.empirewand.api.ConfigService;
 
@@ -6,13 +7,13 @@ import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class LightningBolt extends Spell<Void> {
 
@@ -21,7 +22,6 @@ public class LightningBolt extends Spell<Void> {
             super(api);
             this.name = "Lightning Bolt";
             this.description = "Calls down a powerful lightning bolt on your target.";
-            this.manaCost = 10; // Example
             this.cooldown = java.time.Duration.ofSeconds(10);
             this.spellType = SpellType.LIGHTNING;
         }
@@ -48,12 +48,13 @@ public class LightningBolt extends Spell<Void> {
     }
 
     @Override
-    protected @NotNull Void executeSpell(SpellContext context) {
+    protected @Nullable Void executeSpell(SpellContext context) {
         Player player = context.caster();
 
         double range = spellConfig.getDouble("values.range", 20.0);
         double damage = spellConfig.getDouble("values.damage", 24.0);
-        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false);
+        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig()
+                .getBoolean("features.friendly-fire", false);
 
         var targetEntity = player.getTargetEntity((int) range);
         if (!(targetEntity instanceof LivingEntity)) {

@@ -10,6 +10,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -58,7 +59,7 @@ public class UnbindCommand implements SubCommand {
         }
 
         String spellKey = context.getArg(1).toLowerCase();
-        List<String> spells = context.wandService().getSpells(item);
+        List<String> spells = new ArrayList<>(context.wandService().getSpells(item));
 
         if (!spells.contains(spellKey)) {
             throw new CommandException("That spell is not bound to your wand");

@@ -11,7 +11,6 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -34,7 +33,6 @@ public class Fireball extends ProjectileSpell<org.bukkit.entity.Fireball> {
             super(api, org.bukkit.entity.Fireball.class);
             this.name = "Fireball";
             this.description = "Launches a standard fireball.";
-            this.manaCost = 8; // Example
             this.cooldown = java.time.Duration.ofSeconds(5);
             this.spellType = SpellType.FIRE;
             this.trailParticle = null; // Custom trail
@@ -72,19 +70,23 @@ public class Fireball extends ProjectileSpell<org.bukkit.entity.Fireball> {
         int particleCount = spellConfig.getInt("values.particle_count", 2);
         int lifeTicks = spellConfig.getInt("values.block_lifetime_ticks", 40);
 
-        player.launchProjectile(org.bukkit.entity.Fireball.class, player.getEyeLocation().getDirection().multiply(speed), fireball -> {
-            fireball.setYield((float) explosionYield);
-            fireball.setIsIncendiary(incendiary);
-            fireball.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, PersistentDataType.STRING, key());
-            fireball.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, PersistentDataType.STRING, player.getUniqueId().toString());
-            new FireTrail(fireball, trailLength, particleCount, lifeTicks).runTaskTimer(context.plugin(), 0L, 1L);
-        });
+        player.launchProjectile(org.bukkit.entity.Fireball.class,
+                player.getEyeLocation().getDirection().multiply(speed), fireball -> {
+                    fireball.setYield((float) explosionYield);
+                    fireball.setIsIncendiary(incendiary);
+                    fireball.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, PersistentDataType.STRING, key());
+                    fireball.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, PersistentDataType.STRING,
+                            player.getUniqueId().toString());
+                    new FireTrail(fireball, trailLength, particleCount, lifeTicks).runTaskTimer(context.plugin(), 0L,
+                            1L);
+                });
 
         context.fx().playSound(player, Sound.ENTITY_BLAZE_SHOOT, 1.0f, 1.0f);
     }
 
     @Override
-    protected void handleHit(@NotNull SpellContext context, @NotNull Projectile projectile, @NotNull ProjectileHitEvent event) {
+    protected void handleHit(@NotNull SpellContext context, @NotNull Projectile projectile,
+            @NotNull ProjectileHitEvent event) {
         boolean blockDamage = spellConfig.getBoolean("flags.block-damage", true);
         if (!blockDamage) {
             // If block damage is disabled, create a visual-only explosion

@@ -20,6 +20,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class SoulSever extends Spell<Void> {
 
@@ -28,7 +29,6 @@ public class SoulSever extends Spell<Void> {
             super(api);
             this.name = "Soul Sever";
             this.description = "Dash through enemies, damaging them and causing nausea.";
-            this.manaCost = 10; // Example
             this.cooldown = java.time.Duration.ofSeconds(15);
             this.spellType = SpellType.POISON;
         }
@@ -60,7 +60,7 @@ public class SoulSever extends Spell<Void> {
     }
 
     @Override
-    protected @NotNull Void executeSpell(SpellContext context) {
+    protected @Nullable Void executeSpell(SpellContext context) {
         Player player = context.caster();
 
         double dashDistance = spellConfig.getDouble("values.dash-distance", 8.0);
@@ -86,8 +86,10 @@ public class SoulSever extends Spell<Void> {
         for (double dist = 0; dist <= dashDistance; dist += sampleStep) {
             Location current = start.clone().add(direction.clone().multiply(dist));
             for (LivingEntity entity : player.getWorld().getNearbyLivingEntities(current, 1.0)) {
-                if (entity.equals(player) || hitEntities.contains(entity)) continue;
-                if ((entity instanceof Player && !hitPlayers) || (!(entity instanceof Player) && !hitMobs)) continue;
+                if (entity.equals(player) || hitEntities.contains(entity))
+                    continue;
+                if ((entity instanceof Player && !hitPlayers) || (!(entity instanceof Player) && !hitMobs))
+                    continue;
 
                 hitEntities.add(entity);
                 entity.damage(damage, player);
@@ -115,7 +117,8 @@ public class SoulSever extends Spell<Void> {
     private void spawnDashTrail(Location start, Location end, Player player) {
         Vector direction = end.toVector().subtract(start.toVector()).normalize();
         for (double d = 0; d <= start.distance(end); d += 0.5) {
-            player.getWorld().spawnParticle(Particle.SMOKE, start.clone().add(direction.clone().multiply(d)), 3, 0, 0, 0, 0);
+            player.getWorld().spawnParticle(Particle.SMOKE, start.clone().add(direction.clone().multiply(d)), 3, 0, 0,
+                    0, 0);
         }
     }
 }

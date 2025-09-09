@@ -1,15 +1,16 @@
 package com.example.empirewand.core.config;
 
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
+
 /**
- * Validates configuration files for structure, types, value ranges, and kebab-case spell keys.
+ * Validates configuration files for structure, types, value ranges, and
+ * kebab-case spell keys.
  */
 public class ConfigValidator {
 
@@ -23,7 +24,7 @@ public class ConfigValidator {
      */
     public List<String> validateMainConfig(FileConfiguration config) {
         List<String> errors = new ArrayList<>();
-        
+
         if (config == null) {
             errors.add("Configuration cannot be null");
             return errors;
@@ -44,16 +45,7 @@ public class ConfigValidator {
             if (config.contains("messages")) {
                 ConfigurationSection messages = config.getConfigurationSection("messages");
                 if (messages != null) {
-                    for (String key : messages.getKeys(false)) {
-                        if (key == null || key.trim().isEmpty()) {
-                            errors.add("messages section contains invalid key");
-                            continue;
-                        }
-                        Object value = messages.get(key);
-                        if (!(value instanceof String)) {
-                            errors.add("messages." + key + " must be a string");
-                        }
-                    }
+                    validateMessageSection(messages, "messages", errors);
                 }
             }
 
@@ -103,6 +95,29 @@ public class ConfigValidator {
     }
 
     /**
+     * Recursively validates a message section.
+     *
+     * @param section the section to validate
+     * @param path    the current path for error messages
+     * @param errors  the list to add errors to
+     */
+    private void validateMessageSection(ConfigurationSection section, String path, List<String> errors) {
+        for (String key : section.getKeys(false)) {
+            if (key == null || key.trim().isEmpty()) {
+                errors.add(path + " section contains invalid key");
+                continue;
+            }
+            Object value = section.get(key);
+            if (value instanceof ConfigurationSection nestedSection) {
+                // Recursively validate nested sections
+                validateMessageSection(nestedSection, path + "." + key, errors);
+            } else if (!(value instanceof String)) {
+                errors.add(path + "." + key + " must be a string");
+            }
+        }
+    }
+
+    /**
      * Validates the spells.yml file.
      *
      * @param spellsConfig the spells configuration to validate
@@ -136,7 +151,7 @@ public class ConfigValidator {
                     errors.add("Invalid spell key found");
                     continue;
                 }
-                
+
                 if (!isKebabCase(key)) {
                     errors.add("Spell key '" + key + "' must be in kebab-case (lowercase with hyphens)");
                 }
@@ -159,7 +174,7 @@ public class ConfigValidator {
     /**
      * Validates a single spell configuration section.
      *
-     * @param spellKey the spell key
+     * @param spellKey     the spell key
      * @param spellSection the spell configuration section
      * @return list of validation errors for this spell
      */
@@ -170,7 +185,7 @@ public class ConfigValidator {
             errors.add("Spell key cannot be null or empty");
             return errors;
         }
-        
+
         if (spellSection == null) {
             errors.add("Spell section cannot be null for key: " + spellKey);
             return errors;
@@ -209,7 +224,8 @@ public class ConfigValidator {
                         }
                         Object value = values.get(valueKey);
                         if (!(value instanceof Number || value instanceof String || value instanceof Boolean)) {
-                            errors.add("Spell '" + spellKey + "'.values." + valueKey + " must be a number, string, or boolean");
+                            errors.add("Spell '" + spellKey + "'.values." + valueKey
+                                    + " must be a number, string, or boolean");
                         }
                         // Additional range validation could be added here for specific values
                     }
@@ -246,17 +262,7 @@ public class ConfigValidator {
                 }
             }
 
-            if (spellSection.contains("mana-cost")) {
-                Object manaCost = spellSection.get("mana-cost");
-                if (!(manaCost instanceof Number)) {
-                    errors.add("Spell '" + spellKey + "'.mana-cost must be a number");
-                } else {
-                    double manaCostValue = ((Number) manaCost).doubleValue();
-                    if (manaCostValue < 0) {
-                        errors.add("Spell '" + spellKey + "'.mana-cost must be non-negative");
-                    }
-                }
-            }
+            // Cost field removed from project; ignore if present.
 
             // Validate fx section if present
             if (spellSection.contains("fx")) {

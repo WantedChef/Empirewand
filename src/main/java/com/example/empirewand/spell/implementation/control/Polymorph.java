@@ -32,7 +32,6 @@ public class Polymorph extends Spell<Void> {
             super(api);
             this.name = "Polymorph";
             this.description = "Transforms a target entity into a sheep.";
-            this.manaCost = 12;
             this.cooldown = java.time.Duration.ofSeconds(25);
             this.spellType = SpellType.CONTROL;
         }

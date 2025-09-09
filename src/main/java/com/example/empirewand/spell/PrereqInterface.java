@@ -109,6 +109,9 @@ public interface PrereqInterface {
         @NotNull
         public static ItemPrereq fromConfig(@NotNull ConfigurationSection config) {
             String materialName = config.getString("material", "AIR");
+            if (materialName == null) {
+                materialName = "AIR";
+            }
             org.bukkit.Material material = org.bukkit.Material.valueOf(materialName.toUpperCase());
             int amount = config.getInt("amount", 1);
             return new ItemPrereq(material, amount);
@@ -166,6 +169,9 @@ public interface PrereqInterface {
     @NotNull
     static PrereqInterface loadFromConfig(@NotNull ConfigurationSection config) {
         String type = config.getString("type", "none");
+        if (type == null) {
+            type = "none";
+        }
         return switch (type.toLowerCase()) {
             case "level" -> LevelPrereq.fromConfig(config);
             case "item" -> ItemPrereq.fromConfig(config);

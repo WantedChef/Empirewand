@@ -6,7 +6,6 @@ import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -14,7 +13,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.RayTraceResult;
-import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 public class EmpireEscape extends Spell<Void> {
@@ -24,7 +22,6 @@ public class EmpireEscape extends Spell<Void> {
             super(api);
             this.name = "Empire Escape";
             this.description = "Teleports you a short distance and grants a speed boost.";
-            this.manaCost = 8; // Example
             this.cooldown = java.time.Duration.ofSeconds(15);
             this.spellType = SpellType.MOVEMENT;
         }
@@ -57,9 +54,11 @@ public class EmpireEscape extends Spell<Void> {
         double maxRange = spellConfig.getDouble("values.max-range", 16.0);
         int speedDuration = spellConfig.getInt("values.speed-duration", 40);
 
-        RayTraceResult rayTrace = caster.getWorld().rayTraceBlocks(caster.getEyeLocation(), caster.getEyeLocation().getDirection(), maxRange);
+        RayTraceResult rayTrace = caster.getWorld().rayTraceBlocks(caster.getEyeLocation(),
+                caster.getEyeLocation().getDirection(), maxRange);
         Location destination = (rayTrace != null && rayTrace.getHitPosition() != null)
-                ? rayTrace.getHitPosition().toLocation(caster.getWorld()).subtract(caster.getEyeLocation().getDirection().multiply(0.5))
+                ? rayTrace.getHitPosition().toLocation(caster.getWorld())
+                        .subtract(caster.getEyeLocation().getDirection().multiply(0.5))
                 : caster.getLocation().add(caster.getEyeLocation().getDirection().multiply(6.0));
 
         caster.teleport(findSafeLocation(destination));

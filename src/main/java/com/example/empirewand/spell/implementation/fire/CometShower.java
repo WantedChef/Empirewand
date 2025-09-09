@@ -1,12 +1,5 @@
 package com.example.empirewand.spell.implementation.fire;
 
-import com.example.empirewand.api.EmpireWandAPI;
-
-import com.example.empirewand.spell.PrereqInterface;
-import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.SpellContext;
-import com.example.empirewand.spell.SpellType;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.entity.LargeFireball;
@@ -16,16 +9,22 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.spell.PrereqInterface;
+import com.example.empirewand.spell.Spell;
+import com.example.empirewand.spell.SpellContext;
+import com.example.empirewand.spell.SpellType;
+
 public class CometShower extends Spell<Void> {
 
-    public record Config(int cometCount, double radius, double explosionYield, int delayTicks) {}
+    public record Config(int cometCount, double radius, double explosionYield, int delayTicks) {
+    }
 
     public static class Builder extends Spell.Builder<Void> {
         public Builder(EmpireWandAPI api) {
             super(api);
             this.name = "Comet Shower";
             this.description = "Rains down comets on a target area.";
-            this.manaCost = 25; // Example value
             this.cooldown = java.time.Duration.ofSeconds(30);
             this.spellType = SpellType.FIRE;
         }
@@ -37,16 +36,22 @@ public class CometShower extends Spell<Void> {
         }
     }
 
-    private final Config config;
+    private Config config;
 
     private CometShower(Builder builder) {
         super(builder);
+        // Config will be initialized in loadConfig method
+        this.config = new Config(5, 8.0, 2.6, 6); // Default values
+    }
+
+    @Override
+    public void loadConfig(@NotNull com.example.empirewand.core.config.ReadableConfig spellConfig) {
+        super.loadConfig(spellConfig);
         this.config = new Config(
                 spellConfig.getInt("values.comet-count", 5),
                 spellConfig.getDouble("values.radius", 8.0),
                 spellConfig.getDouble("values.yield", 2.6),
-                spellConfig.getInt("values.delay-ticks", 6)
-        );
+                spellConfig.getInt("values.delay-ticks", 6));
     }
 
     @Override
@@ -86,21 +91,23 @@ public class CometShower extends Spell<Void> {
     }
 
     private Location findTargetLocation(Player caster) {
-        RayTraceResult rayTrace = caster.getWorld().rayTraceBlocks(caster.getEyeLocation(), caster.getEyeLocation().getDirection(), 25.0);
+        RayTraceResult rayTrace = caster.getWorld().rayTraceBlocks(caster.getEyeLocation(),
+                caster.getEyeLocation().getDirection(), 25.0);
         if (rayTrace != null && rayTrace.getHitPosition() != null) {
             return rayTrace.getHitPosition().toLocation(caster.getWorld());
         }
         return caster.getEyeLocation().add(caster.getEyeLocation().getDirection().multiply(20));
     }
 
-    private void launchComet(Player caster, Location center, double radius, double explosionYield, SpellContext context) {
+    private void launchComet(Player caster, Location center, double radius, double explosionYield,
+            SpellContext context) {
         double angle = Math.random() * 2 * Math.PI;
         double distance = Math.random() * radius;
         double x = center.getX() + distance * Math.cos(angle);
         double z = center.getZ() + distance * Math.sin(angle);
         Location spawnLoc = new Location(center.getWorld(), x, center.getY() + 12, z);
 
-        LargeFireball comet = caster.getWorld().spawn(spawnLoc, LargeFireball.class, c -> {
+        caster.getWorld().spawn(spawnLoc, LargeFireball.class, c -> {
             c.setYield((float) explosionYield);
             c.setIsIncendiary(false);
             c.setDirection(new Vector(0, -1, 0));

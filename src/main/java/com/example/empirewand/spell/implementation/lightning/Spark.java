@@ -25,7 +25,6 @@ public class Spark extends ProjectileSpell<SmallFireball> {
             super(api, SmallFireball.class);
             this.name = "Spark";
             this.description = "Fires a fast spark of energy.";
-            this.manaCost = 5; // Example
             this.cooldown = java.time.Duration.ofSeconds(2);
             this.spellType = SpellType.LIGHTNING;
             this.trailParticle = null; // Custom trail
@@ -81,7 +80,8 @@ public class Spark extends ProjectileSpell<SmallFireball> {
         if (!(event.getHitEntity() instanceof LivingEntity living))
             return;
 
-        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false);
+        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig()
+                .getBoolean("features.friendly-fire", false);
         if (living.equals(context.caster()) && !friendlyFire)
             return;
 

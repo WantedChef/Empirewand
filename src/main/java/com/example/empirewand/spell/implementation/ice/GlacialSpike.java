@@ -10,7 +10,6 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -34,7 +33,6 @@ public class GlacialSpike extends ProjectileSpell<Arrow> {
             super(api, Arrow.class);
             this.name = "Glacial Spike";
             this.description = "Fires a spike of ice.";
-            this.manaCost = 6; // Example
             this.cooldown = java.time.Duration.ofSeconds(4);
             this.spellType = SpellType.ICE;
             this.trailParticle = null; // Custom trail
@@ -73,13 +71,15 @@ public class GlacialSpike extends ProjectileSpell<Arrow> {
             arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
             arrow.setCritical(true);
             arrow.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, PersistentDataType.STRING, key());
-            arrow.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, PersistentDataType.STRING, caster.getUniqueId().toString());
+            arrow.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, PersistentDataType.STRING,
+                    caster.getUniqueId().toString());
             new IceSpikeTrail(arrow, spikeLen, lifeTicks).runTaskTimer(context.plugin(), 0L, 1L);
         });
     }
 
     @Override
-    protected void handleHit(@NotNull SpellContext context, @NotNull Projectile projectile, @NotNull ProjectileHitEvent event) {
+    protected void handleHit(@NotNull SpellContext context, @NotNull Projectile projectile,
+            @NotNull ProjectileHitEvent event) {
         // Vanilla arrow damage is handled by the projectile itself.
         // Additional effects on hit could be added here.
     }
@@ -118,7 +118,8 @@ public class GlacialSpike extends ProjectileSpell<Arrow> {
                     queue.addLast(new TempBlock(b, b.getBlockData(), tick + lifeTicks));
                     b.setType(Material.BLUE_ICE, false);
                     ours.add(b);
-                    world.spawnParticle(Particle.BLOCK, l.add(0.5, 0.5, 0.5), 2, 0.05, 0.05, 0.05, 0, Material.BLUE_ICE.createBlockData());
+                    world.spawnParticle(Particle.BLOCK, l.add(0.5, 0.5, 0.5), 2, 0.05, 0.05, 0.05, 0,
+                            Material.BLUE_ICE.createBlockData());
                 }
             }
 

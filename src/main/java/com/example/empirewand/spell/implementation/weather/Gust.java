@@ -25,7 +25,6 @@ public class Gust extends Spell<Void> {
             super(api);
             this.name = "Gust";
             this.description = "Creates a powerful gust of wind that knocks back enemies.";
-            this.manaCost = 10;
             this.cooldown = Duration.ofMillis(2000);
             this.spellType = SpellType.WEATHER;
         }
@@ -59,7 +58,8 @@ public class Gust extends Spell<Void> {
         double angle = spellConfig.getDouble("values.angle", 70.0);
         double knockback = spellConfig.getDouble("values.knockback", 1.0);
         double damage = spellConfig.getDouble("values.damage", 0.0);
-        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false);
+        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig()
+                .getBoolean("features.friendly-fire", false);
 
         List<LivingEntity> targets = getEntitiesInCone(player, range, angle);
         for (LivingEntity target : targets) {

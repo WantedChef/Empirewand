@@ -8,15 +8,12 @@ import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.ProjectileSpell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Snowball;
 import org.bukkit.event.entity.ProjectileHitEvent;
@@ -34,7 +31,6 @@ public class ArcaneOrb extends ProjectileSpell<Snowball> {
             super(api, Snowball.class);
             this.name = "Arcane Orb";
             this.description = "Launches an orb of arcane energy.";
-            this.manaCost = 12; // Example
             this.cooldown = Duration.ofSeconds(8);
             this.spellType = SpellType.PROJECTILE;
             this.trailParticle = null; // Custom trail
@@ -89,7 +85,8 @@ public class ArcaneOrb extends ProjectileSpell<Snowball> {
         double radius = spellConfig.getDouble("values.radius", 3.5);
         double damage = spellConfig.getDouble("values.damage", 8.0);
         double knockback = spellConfig.getDouble("values.knockback", 0.6);
-        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false);
+        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig()
+                .getBoolean("features.friendly-fire", false);
 
         context.fx().impact(projectile.getLocation(), Particle.EXPLOSION, 30, Sound.ENTITY_GENERIC_EXPLODE, 0.8f,
                 1.0f);

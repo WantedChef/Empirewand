@@ -1,5 +1,7 @@
 package com.example.empirewand.visual;
 
+import org.bukkit.Location;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -32,9 +34,28 @@ public final class Afterimages {
         }.runTaskTimer(plugin, periodTicks, periodTicks);
     }
 
-    public static AfterimageManager get() {
-        return manager;
+    public static void record(Player player) {
+        if (manager != null) {
+            manager.record(player);
+        }
     }
+
+    public static void record(Location location) {
+        if (manager != null) {
+            manager.record(location);
+        }
+    }
+
+    public static void clear() {
+        if (manager != null) {
+            manager.clear();
+        }
+    }
+
+    // Remove the get() method that exposes the manager
+    // public static AfterimageManager get() {
+    //     return manager;
+    // }
 
     /**
      * Shuts down the afterimage system and cleans up resources

@@ -7,7 +7,6 @@ import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.ProjectileSpell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Color;
 import org.bukkit.Particle;
 import org.bukkit.entity.LivingEntity;
@@ -19,6 +18,7 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class BloodSpam extends ProjectileSpell<Snowball> {
 
@@ -27,7 +27,6 @@ public class BloodSpam extends ProjectileSpell<Snowball> {
             super(api, Snowball.class);
             this.name = "Blood Spam";
             this.description = "Launches a burst of blood projectiles.";
-            this.manaCost = 8;
             this.cooldown = java.time.Duration.ofSeconds(6);
             this.spellType = SpellType.LIFE;
             this.trailParticle = null; // Custom trail
@@ -55,7 +54,7 @@ public class BloodSpam extends ProjectileSpell<Snowball> {
     }
 
     @Override
-    protected Void executeSpell(SpellContext context) {
+    protected @Nullable Void executeSpell(SpellContext context) {
         Player caster = context.caster();
         int projectileCount = spellConfig.getInt("values.projectile-count", 8);
         int delayTicks = spellConfig.getInt("values.delay-ticks", 2);
@@ -82,26 +81,30 @@ public class BloodSpam extends ProjectileSpell<Snowball> {
         int trailSteps = spellConfig.getInt("values.trail-steps", 6);
         int redDustCount = spellConfig.getInt("values.red-dust-count", 5);
 
-        Vector spread = new Vector((Math.random() - 0.5) * 0.3, (Math.random() - 0.5) * 0.3, (Math.random() - 0.5) * 0.3);
+        Vector spread = new Vector((Math.random() - 0.5) * 0.3, (Math.random() - 0.5) * 0.3,
+                (Math.random() - 0.5) * 0.3);
         Vector direction = caster.getEyeLocation().getDirection().add(spread).normalize();
 
         caster.launchProjectile(Snowball.class, direction.multiply(1.3), projectile -> {
             projectile.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, PersistentDataType.STRING, key());
-            projectile.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, PersistentDataType.STRING, caster.getUniqueId().toString());
+            projectile.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, PersistentDataType.STRING,
+                    caster.getUniqueId().toString());
             projectile.getPersistentDataContainer().set(Keys.DAMAGE, PersistentDataType.DOUBLE, damage);
             new BloodTrail(projectile, trailSteps, redDustCount, context).runTaskTimer(context.plugin(), 0L, 1L);
         });
     }
 
     @Override
-    protected void handleHit(@NotNull SpellContext context, @NotNull Projectile projectile, @NotNull ProjectileHitEvent event) {
+    protected void handleHit(@NotNull SpellContext context, @NotNull Projectile projectile,
+            @NotNull ProjectileHitEvent event) {
         Double damage = projectile.getPersistentDataContainer().get(Keys.DAMAGE, PersistentDataType.DOUBLE);
         if (damage == null || !(event.getHitEntity() instanceof LivingEntity living)) {
             return;
         }
 
         living.damage(damage, context.caster());
-        context.fx().spawnParticles(living.getLocation(), Particle.DUST, 8, 0.2, 0.2, 0.2, 0, new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f));
+        context.fx().spawnParticles(living.getLocation(), Particle.DUST, 8, 0.2, 0.2, 0.2, 0,
+                new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f));
     }
 
     private class BloodTrail extends BukkitRunnable {
@@ -125,10 +128,12 @@ public class BloodSpam extends ProjectileSpell<Snowball> {
                 return;
             }
             history.addFirst(projectile.getLocation().clone());
-            if (history.size() > trailSteps) history.removeLast();
+            if (history.size() > trailSteps)
+                history.removeLast();
 
             for (org.bukkit.Location loc : history) {
-                context.fx().spawnParticles(loc, Particle.DUST, particleCount, 0.02, 0.02, 0.02, 0, new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f));
+                context.fx().spawnParticles(loc, Particle.DUST, particleCount, 0.02, 0.02, 0.02, 0,
+                        new Particle.DustOptions(Color.fromRGB(139, 0, 0), 1.0f));
             }
         }
     }

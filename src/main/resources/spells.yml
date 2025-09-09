@@ -1,131 +1,6 @@
 # Spell configuration for EmpireWand
 
 config-version: 1.0
-comet:
-  display-name: "<#FF8C00>Comet"
-  cooldown: 2500 # ms
-  values:
-    damage: 7.0 # 3.5 hearts
-    yield: 2.5
-    # Visual trail (purely cosmetic)
-    trail_length: 5
-    particle_count: 3
-  flags:
-    hit-players: true
-    hit-mobs: true
-chain-lightning:
-  display-name: "<#87CEEB>Chain Lightning"
-  cooldown: 7000
-  values:
-    range: 20.0
-    jump-radius: 8.0
-  jumps: 4
-  damage: 8.0
-  # Visual arc (purely cosmetic)
-  arc_particle_count: 8
-  arc_steps: 12
-  max_arc_length: 15.0
-arcane-orb:
-  display-name: "<#7FFFD4>Arcane Orb"
-  cooldown: 6000
-  values:
-    speed: 0.6
-    radius: 3.5
-    damage: 8.0
-  knockback: 0.6
-  # Visual halo + trail (purely cosmetic)
-  trail_length: 4
-  particle_count: 3
-  block_lifetime_ticks: 30
-  halo_particles: 8
-  halo_rotation_speed: 12.0
-empire-comet:
-  display-name: "<#FF4500>Empire Comet"
-  cooldown: 9000
-  values:
-    yield: 3.5
-    speed: 0.8
-    # Visual flaming tail (purely cosmetic)
-    trail_length: 7
-    particle_count: 4
-    block_lifetime_ticks: 40
-    burst_interval_ticks: 6
-little-spark:
-  display-name: "<#FFFF00>Little Spark"
-  cooldown: 1500
-  values:
-    range: 20.0
-    damage: 4.0
-    knockback: 0.5
-    speed: 2.0
-    # Visual lightweight electric trail (purely cosmetic)
-    trail-steps: 6
-    particle-count: 4
-spark:
-  display-name: "<#FFD700>Spark"
-  cooldown: 2000
-  values:
-    range: 25.0
-    damage: 6.0
-    knockback: 0.7
-    speed: 2.2
-    # Visual trail + bursts (purely cosmetic)
-    trail-steps: 8
-    particle-count: 6
-    burst-interval-ticks: 10
-dark-pulse:
-  display-name: "<#4B0082>Dark Pulse"
-  cooldown: 4000
-  values:
-    range: 24.0                # Targeting range for initial shot
-    speed: 1.8                 # Wither skull speed multiplier
-    explosion-radius: 4.0      # AoE radius on impact (blocks)
-    damage: 6.0                # Direct damage at impact
-    knockback: 0.6             # Outward knockback strength
-    wither-duration-ticks: 120 # Wither duration on hit
-    wither-amplifier: 1        # Wither level (0-based)
-    blind-duration-ticks: 60   # Blindness duration on hit
-    # Visual ring pulse (purely cosmetic)
-    ring-particle-count: 14
-    ring-radius-step: 0.25
-    ring-interval-ticks: 2
-explosion-trail:
-  display-name: "<#DC143C>Explosion Trail"
-  cooldown: 8000
-  values:
-    duration-ticks: 100
-    damage: 8.0
-    tick-interval: 10
-    # Visual scorch trail (purely cosmetic)
-    trail-length: 12
-    particle-count: 10
-    block-lifetime-ticks: 40
-    place-temp-blocks: true
-blood-spam:
-  display-name: "<#8B0000>Blood Spam"
-  cooldown: 6000
-  values:
-    projectile-count: 8
-    damage: 1.0
-    delay-ticks: 2
-    # Visual projectile trail (purely cosmetic)
-    trail-steps: 6
-    red-dust-count: 5
-aura:
-  display-name: "<#9932CC>Aura"
-  cooldown: 10000
-  values:
-    radius: 5.0
-    damage-per-tick: 2.0
-    duration-ticks: 200
-    tick-interval: 20
-    # Visual expanding ring (purely cosmetic)
-    ring-particle-count: 40
-    ring-max-radius: 5.0
-    ring-expand-step: 0.6
-# Spell configuration for EmpireWand
-
-config-version: 1.0
 
 comet:
   display-name: "<#FF8C00>Comet"
@@ -472,6 +347,16 @@ god-cloud:
     particle-interval: 2
     particle-count: 6
 
+mephi-cloud:
+  display-name: "<#8B0000>Mephi Cloud"
+  cooldown: 45000
+  values:
+    duration-ticks: 600
+    particle-interval: 2
+    particle-density-modifier: 3
+    spread-xz: 0.28
+    y-offset: 0.10
+
 # New spells from NEXT_level_spells.md
 
 # Zeis van Mephidantes
@@ -677,10 +562,63 @@ blink-strike:
 
 shadow-cloak:
   display-name: "<#2F4F4F>Shadow Cloak"
-  cooldown: 10000
-  values:
-    duration-ticks: 120
-    speed-amplifier: 1
+  cooldown: 8000
+  # Balans
+  max-duration-ticks: 1800          # 90 s
+  energy-tick-cost: 0.5             # per tick
+  cooldown-seconds: 8
+  cancel-on-damage: true
+  cancel-on-attack: true
+
+  # Stealth
+  invisibility-duration-ticks: 100
+  slowness-amplifier: -1            # -1 = speed 0
+  night-vision: true
+  jump-boost: 1
+  water-breathing: true
+
+  # Shadow Step
+  shadow-step:
+    chance-per-second: 0.15
+    max-distance: 6.0
+    cooldown-ticks: 40
+    sound: ENTITY_ENDERMAN_TELEPORT
+    volume: 0.6f
+    pitch: 1.3f
+
+  # Darkness Aura
+  darkness-aura:
+    interval-ticks: 30
+    radius: 4.0
+    particles: 32
+    sound: ENTITY_WITHER_AMBIENT
+    volume: 0.25f
+    pitch: 0.7f
+
+  # Particles
+  particles:
+    idle:
+      type: DUST
+      color: 0x000000
+      size: 1.2f
+      amount: 2
+      offset: 0.3
+    shadow-step:
+      type: PORTAL
+      amount: 25
+    activate:
+      type: LARGE_SMOKE
+      amount: 40
+
+  # Light-level
+  max-light-level: 4
+
+  # Messages
+  messages:
+    activate: "&8👤 &7You merged with the shadows."
+    deactivate: "&8👤 &7You emerged from the shadows."
+    force-remove: "&c&lYour cloak was ripped away!"
+    no-energy: "&cNot enough energy to maintain the cloak."
 
 stasis-field:
   display-name: "<#9400D3>Stasis Field"
@@ -724,6 +662,14 @@ void-swap:
     range: 15.0
   flags:
     requires-los: true
+
+shadow-step:
+  display-name: "<#2F4F4F>Shadow Step"
+  cooldown: 12000
+  values:
+    range: 10.0
+  visual:
+    echo-samples: 6
 
 sandstorm:
   display-name: "<#DAA520>Sandstorm"

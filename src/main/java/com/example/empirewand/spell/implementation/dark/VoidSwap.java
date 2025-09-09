@@ -6,7 +6,6 @@ import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -22,7 +21,6 @@ public class VoidSwap extends Spell<Void> {
             super(api);
             this.name = "Void Swap";
             this.description = "Swap positions with a target.";
-            this.manaCost = 14;
             this.cooldown = java.time.Duration.ofSeconds(25);
             this.spellType = SpellType.DARK;
         }
@@ -60,7 +58,8 @@ public class VoidSwap extends Spell<Void> {
             return null;
         }
 
-        if (player.isInsideVehicle() || target.isInsideVehicle() || !player.getPassengers().isEmpty() || !target.getPassengers().isEmpty()) {
+        if (player.isInsideVehicle() || target.isInsideVehicle() || !player.getPassengers().isEmpty()
+                || !target.getPassengers().isEmpty()) {
             context.fx().fizzle(player);
             return null;
         }

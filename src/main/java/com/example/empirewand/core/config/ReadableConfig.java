@@ -18,4 +18,7 @@ public interface ReadableConfig {
 
     @Nullable
     String getString(@NotNull String path, @Nullable String def);
+
+    @Nullable
+    ReadableConfig getConfigurationSection(@NotNull String path);
 }

@@ -27,7 +27,6 @@ public class EmpireLevitate extends Spell<Void> {
             super(api);
             this.name = "Empire Levitate";
             this.description = "Levitates a target entity.";
-            this.manaCost = 10; // Example
             this.cooldown = java.time.Duration.ofSeconds(20);
             this.spellType = SpellType.MISC;
         }

@@ -30,15 +30,22 @@ public final class FallDamageEtherealListener implements Listener {
             return;
 
         PersistentDataContainer pdc = player.getPersistentDataContainer();
-        boolean active = (pdc.get(Keys.ETHEREAL_ACTIVE, Keys.BOOLEAN_TYPE.getType()) != null
-                && pdc.get(Keys.ETHEREAL_ACTIVE, Keys.BOOLEAN_TYPE.getType()) == (byte) 1);
-        Long expires = pdc.get(Keys.ETHEREAL_EXPIRES_TICK, Keys.LONG_TYPE.getType());
+        var booleanType = Keys.BOOLEAN_TYPE.getType();
+        var longType = Keys.LONG_TYPE.getType();
+        if (booleanType == null || longType == null) {
+            return; // Types not available, skip processing
+        }
+        boolean active = (pdc.get(Keys.ETHEREAL_ACTIVE, booleanType) != null
+                && pdc.get(Keys.ETHEREAL_ACTIVE, booleanType) == (byte) 1);
+        Long expires = pdc.get(Keys.ETHEREAL_EXPIRES_TICK, longType);
         long now = player.getWorld().getFullTime();
 
         if (active && (expires == null || now <= expires)) {
             event.setCancelled(true);
             FxService fx = plugin.getFxService();
-            fx.spawnParticles(player.getLocation(), Particle.END_ROD, 10, 0.3, 0.1, 0.3, 0.0);
+            if (player.getLocation() != null) {
+                fx.spawnParticles(player.getLocation(), Particle.END_ROD, 10, 0.3, 0.1, 0.3, 0.0);
+            }
             fx.playSound(player, Sound.BLOCK_AMETHYST_BLOCK_FALL, 0.6f, 1.6f);
         }
 

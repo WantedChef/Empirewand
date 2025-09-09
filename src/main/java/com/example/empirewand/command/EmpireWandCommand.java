@@ -1,5 +1,7 @@
 package com.example.empirewand.command;
 
+import org.bukkit.Material;
+
 import com.example.empirewand.EmpireWandPlugin;
 import com.example.empirewand.command.framework.BaseWandCommand;
 import com.example.empirewand.command.subcommands.BindAllCommand;
@@ -13,8 +15,8 @@ import com.example.empirewand.command.subcommands.MigrateCommand;
 import com.example.empirewand.command.subcommands.ReloadCommand;
 import com.example.empirewand.command.subcommands.SetSpellCommand;
 import com.example.empirewand.command.subcommands.SpellsCommand;
+import com.example.empirewand.command.subcommands.ToggleCommand;
 import com.example.empirewand.command.subcommands.UnbindCommand;
-import org.bukkit.Material;
 
 /**
  * Main command handler for Empire Wands (/ew).
@@ -39,12 +41,13 @@ public class EmpireWandCommand extends BaseWandCommand {
     @Override
     protected void registerSubcommands() {
         // Core wand management commands
-        register(new GetCommand("empirewand", "Empire Wand", Material.STICK));
+        register(new GetCommand("empirewand", "Empire Wand", Material.BLAZE_ROD));
         register(new BindCommand("empirewand"));
         register(new UnbindCommand("empirewand"));
         register(new BindAllCommand("empirewand"));
         register(new ListCommand("empirewand"));
         register(new SetSpellCommand("empirewand"));
+        register(new ToggleCommand("empirewand"));
 
         // Advanced binding commands
         register(new BindTypeCommand("empirewand"));

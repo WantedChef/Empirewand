@@ -7,13 +7,11 @@ import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.ProjectileSpell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Arrow;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.ProjectileHitEvent;
@@ -28,7 +26,6 @@ public class LightningArrow extends ProjectileSpell<Arrow> {
             super(api, Arrow.class);
             this.name = "Lightning Arrow";
             this.description = "Fires an arrow that calls down a lightning strike on impact.";
-            this.manaCost = 10; // Example
             this.cooldown = java.time.Duration.ofSeconds(8);
             this.spellType = SpellType.LIGHTNING;
             this.trailParticle = Particle.ELECTRIC_SPARK;
@@ -92,7 +89,8 @@ public class LightningArrow extends ProjectileSpell<Arrow> {
             int glowTicks = spellConfig.getInt("values.glowing-duration-ticks", 60);
 
             for (var e : hitLoc.getWorld().getNearbyLivingEntities(hitLoc, radius)) {
-                if (e.equals(context.caster()) && !EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false))
+                if (e.equals(context.caster()) && !EmpireWandAPI.getService(ConfigService.class).getMainConfig()
+                        .getBoolean("features.friendly-fire", false))
                     continue;
 
                 e.damage(damage, context.caster());

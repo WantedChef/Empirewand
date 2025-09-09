@@ -34,7 +34,7 @@ public final class ProjectileHitListener implements Listener {
             return;
 
         Optional<Spell<?>> spellOpt = plugin.getSpellRegistry().getSpell(spellKey);
-        if (spellOpt.isEmpty() || !(spellOpt.get() instanceof ProjectileSpell pSpell))
+        if (spellOpt.isEmpty() || !(spellOpt.get() instanceof ProjectileSpell<?> pSpell))
             return;
 
         Player caster = null;
@@ -47,7 +47,9 @@ public final class ProjectileHitListener implements Listener {
         }
 
         try {
-            pSpell.onProjectileHit(event, caster);
+            if (caster != null) {
+                pSpell.onProjectileHit(event, caster);
+            }
         } catch (Throwable t) {
             plugin.getLogger().log(java.util.logging.Level.WARNING, "ProjectileSpell error for '" + spellKey + "'", t);
         }

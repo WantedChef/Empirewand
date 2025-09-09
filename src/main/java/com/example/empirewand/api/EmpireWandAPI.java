@@ -89,10 +89,16 @@ public final class EmpireWandAPI {
     private static final Version API_VERSION = Version.of(2, 0, 0);
 
     /**
-     * Private constructor to prevent instantiation.
+     * Private constructor for legacy instance-based API support.
+     *
+     * <p>
+     * Instances created via {@link #get()} act as a thin wrapper around the
+     * static API methods. Do not instantiate directly outside this class.
+     * </p>
      */
     private EmpireWandAPI() {
-        throw new UnsupportedOperationException("EmpireWandAPI cannot be instantiated");
+        // Intentionally no-op to support legacy {@code EmpireWandAPI.get()} usage
+        // which delegates to static service accessors.
     }
 
     /**
@@ -300,7 +306,9 @@ public final class EmpireWandAPI {
     }
 
     // Legacy instance-based API support
-    private static EmpireWandAPI singleton = null;
+    private static class Holder {
+        static final EmpireWandAPI INSTANCE = new EmpireWandAPI();
+    }
 
     /**
      * Gets the singleton instance of EmpireWandAPI.
@@ -311,10 +319,7 @@ public final class EmpireWandAPI {
     @Deprecated(forRemoval = true)
     @NotNull
     public static EmpireWandAPI get() {
-        if (singleton == null) {
-            singleton = new EmpireWandAPI();
-        }
-        return singleton;
+        return Holder.INSTANCE;
     }
 
     /**

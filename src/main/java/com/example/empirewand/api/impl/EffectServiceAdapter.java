@@ -14,7 +14,6 @@ import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 import net.kyori.adventure.text.Component;
-import java.util.Map;
 
 /**
  * Adapter for EffectService that wraps FxService core implementation.
@@ -97,7 +96,7 @@ public class EffectServiceAdapter implements EffectService {
             if (core == null) {
                 return ServiceHealth.UNHEALTHY;
             }
-            
+
             // Additional health checks can be added here
             // For example, check if the service can perform basic operations
             return ServiceHealth.HEALTHY;

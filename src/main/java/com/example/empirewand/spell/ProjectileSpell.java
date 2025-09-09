@@ -1,10 +1,5 @@
 package com.example.empirewand.spell;
 
-import com.example.empirewand.EmpireWandPlugin;
-import com.example.empirewand.api.EmpireWandAPI;
-
-import com.example.empirewand.api.ConfigService;
-import com.example.empirewand.core.storage.Keys;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
@@ -19,6 +14,10 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import com.example.empirewand.EmpireWandPlugin;
+import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.core.storage.Keys;
 
 public abstract class ProjectileSpell<P extends Projectile> extends Spell<Void> {
 
@@ -36,6 +35,9 @@ public abstract class ProjectileSpell<P extends Projectile> extends Spell<Void> 
 
     protected ProjectileSpell(Builder<P> builder) {
         super(builder);
+        if (builder.projectileClass == null) {
+            throw new IllegalArgumentException("Projectile class cannot be null");
+        }
         this.speed = builder.speed;
         this.homingStrength = builder.homingStrength;
         this.isHoming = builder.isHoming;
@@ -47,7 +49,7 @@ public abstract class ProjectileSpell<P extends Projectile> extends Spell<Void> 
     }
 
     @Override
-    @NotNull
+    @Nullable
     protected Void executeSpell(@NotNull SpellContext context) {
         launchProjectile(context);
         return null;
@@ -67,7 +69,8 @@ public abstract class ProjectileSpell<P extends Projectile> extends Spell<Void> 
             proj.setShooter(caster);
             proj.setVelocity(direction);
             proj.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, PersistentDataType.STRING, key());
-            proj.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, PersistentDataType.STRING, caster.getUniqueId().toString());
+            proj.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, PersistentDataType.STRING,
+                    caster.getUniqueId().toString());
         });
 
         if (trailParticle != null) {
@@ -102,8 +105,10 @@ public abstract class ProjectileSpell<P extends Projectile> extends Spell<Void> 
                 }
                 Entity target = findNearestTarget(projectile, context);
                 if (target != null) {
-                    Vector toTarget = target.getLocation().toVector().subtract(projectile.getLocation().toVector()).normalize();
-                    Vector newVelocity = projectile.getVelocity().normalize().add(toTarget.multiply(homingStrength)).normalize().multiply(speed);
+                    Vector toTarget = target.getLocation().toVector().subtract(projectile.getLocation().toVector())
+                            .normalize();
+                    Vector newVelocity = projectile.getVelocity().normalize().add(toTarget.multiply(homingStrength))
+                            .normalize().multiply(speed);
                     projectile.setVelocity(newVelocity);
                 }
             }
@@ -123,34 +128,44 @@ public abstract class ProjectileSpell<P extends Projectile> extends Spell<Void> 
     @Override
     public void onProjectileHit(@NotNull ProjectileHitEvent event, @NotNull Player caster) {
         Projectile projectile = event.getEntity();
-        if (!projectileClass.isInstance(projectile)) return;
+        if (projectile == null || !projectileClass.isInstance(projectile))
+            return;
 
         if (projectile.getPersistentDataContainer().has(PROJECTILE_PROCESSED)) {
             return;
         }
         projectile.getPersistentDataContainer().set(PROJECTILE_PROCESSED, PersistentDataType.BYTE, (byte) 1);
 
-        if (hitSound != null) {
+        if (hitSound != null && projectile.getWorld() != null) {
             projectile.getWorld().playSound(projectile.getLocation(), hitSound, hitVolume, hitPitch);
         }
 
-        if (trailParticle != null) {
+        if (trailParticle != null && projectile.getWorld() != null) {
             projectile.getWorld().spawnParticle(trailParticle, projectile.getLocation(), 10, 0.5, 0.5, 0.5, 0.1);
         }
 
         // Build SpellContext using plugin services; derive hit info from the event
-        LivingEntity hitEntity = event.getHitEntity() instanceof LivingEntity ? (LivingEntity) event.getHitEntity() : null;
+        LivingEntity hitEntity = event.getHitEntity() instanceof LivingEntity ? (LivingEntity) event.getHitEntity()
+                : null;
         org.bukkit.Location hitLocation = hitEntity != null
                 ? hitEntity.getLocation()
-                : (event.getHitBlock() != null ? event.getHitBlock().getLocation() : projectile.getLocation());
-        EmpireWandPlugin plugin = (EmpireWandPlugin) org.bukkit.plugin.java.JavaPlugin.getProvidingPlugin(EmpireWandPlugin.class);
-        SpellContext context = new SpellContext(plugin, caster, plugin.getConfigService(), plugin.getFxService(), hitEntity, hitLocation, key());
+                : (event.getHitBlock() != null ? event.getHitBlock().getLocation()
+                        : (projectile.getLocation() != null ? projectile.getLocation() : caster.getLocation()));
+        org.bukkit.plugin.Plugin rawPlugin = org.bukkit.plugin.java.JavaPlugin
+                .getProvidingPlugin(EmpireWandPlugin.class);
+        if (!(rawPlugin instanceof EmpireWandPlugin)) {
+            return; // Plugin not available, cannot handle hit
+        }
+        EmpireWandPlugin plugin = (EmpireWandPlugin) rawPlugin;
+        SpellContext context = new SpellContext(plugin, caster, plugin.getConfigService(), plugin.getFxService(),
+                hitEntity, hitLocation, key());
         handleHit(context, projectile, event);
 
         projectile.remove();
     }
 
-    protected abstract void handleHit(@NotNull SpellContext context, @NotNull Projectile projectile, @NotNull ProjectileHitEvent event);
+    protected abstract void handleHit(@NotNull SpellContext context, @NotNull Projectile projectile,
+            @NotNull ProjectileHitEvent event);
 
     public abstract static class Builder<P extends Projectile> extends Spell.Builder<Void> {
         private double speed = 1.5;
@@ -162,8 +177,11 @@ public abstract class ProjectileSpell<P extends Projectile> extends Spell<Void> 
         private float hitPitch = 1.0f;
         private Class<P> projectileClass;
 
-        protected Builder(@NotNull EmpireWandAPI api, Class<P> projectileClass) {
+        protected Builder(@Nullable EmpireWandAPI api, Class<P> projectileClass) {
             super(api);
+            if (projectileClass == null) {
+                throw new IllegalArgumentException("Projectile class cannot be null");
+            }
             this.projectileClass = projectileClass;
         }
 

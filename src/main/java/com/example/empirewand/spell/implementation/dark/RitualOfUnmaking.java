@@ -1,6 +1,7 @@
 package com.example.empirewand.spell.implementation.dark;
 
 import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.core.config.ReadableConfig;
 
 import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.Spell;
@@ -24,7 +25,6 @@ public class RitualOfUnmaking extends Spell<Void> {
             super(api);
             this.name = "Ritual of Unmaking";
             this.description = "Channels a destructive ritual that damages and weakens nearby enemies.";
-            this.manaCost = 20;
             this.cooldown = java.time.Duration.ofSeconds(40);
             this.spellType = SpellType.DARK;
         }
@@ -36,11 +36,19 @@ public class RitualOfUnmaking extends Spell<Void> {
         }
     }
 
-    private final Config config;
+    private Config config;
 
     private RitualOfUnmaking(Builder builder) {
         super(builder);
-        this.config = new Config(spellConfig);
+        // Config will be initialized lazily when first accessed
+    }
+
+    private Config getConfig() {
+        if (config == null) {
+            // This will be called after loadConfig has been called
+            config = new Config(spellConfig);
+        }
+        return config;
     }
 
     @Override
@@ -62,7 +70,10 @@ public class RitualOfUnmaking extends Spell<Void> {
     protected Void executeSpell(SpellContext context) {
         Player player = context.caster();
 
-        new ChannelTask(context, player, config.channelTicks, config.radius, config.damage, config.weaknessDuration, config.weaknessAmplifier, config.hitPlayers, config.hitMobs).runTaskTimer(context.plugin(), 0L, 1L);
+        new ChannelTask(context, player, getConfig().channelTicks, getConfig().radius, getConfig().damage,
+                getConfig().weaknessDuration,
+                getConfig().weaknessAmplifier, getConfig().hitPlayers, getConfig().hitMobs)
+                .runTaskTimer(context.plugin(), 0L, 1L);
         return null;
     }
 
@@ -83,7 +94,8 @@ public class RitualOfUnmaking extends Spell<Void> {
         private final boolean hitMobs;
         private int ticksPassed = 0;
 
-        public ChannelTask(SpellContext context, Player player, int channelTicks, double radius, double damage, int weaknessDuration, int weaknessAmplifier, boolean hitPlayers, boolean hitMobs) {
+        public ChannelTask(SpellContext context, Player player, int channelTicks, double radius, double damage,
+                int weaknessDuration, int weaknessAmplifier, boolean hitPlayers, boolean hitMobs) {
             this.context = context;
             this.player = player;
             this.channelTicks = channelTicks;
@@ -114,14 +126,16 @@ public class RitualOfUnmaking extends Spell<Void> {
 
         private void onFinish() {
             List<LivingEntity> targets = player.getWorld().getLivingEntities().stream()
-                    .filter(entity -> entity.getLocation().distance(player.getLocation()) <= radius)
+                    .filter(entity -> entity.getLocation() != null && entity.getLocation().distance(player.getLocation()) <= radius)
                     .filter(entity -> !entity.equals(player))
-                    .filter(entity -> (entity instanceof Player && hitPlayers) || (!(entity instanceof Player) && hitMobs))
+                    .filter(entity -> (entity instanceof Player && hitPlayers)
+                            || (!(entity instanceof Player) && hitMobs))
                     .toList();
 
             for (LivingEntity target : targets) {
                 target.damage(damage, player);
-                target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, weaknessDuration, weaknessAmplifier));
+                target.addPotionEffect(
+                        new PotionEffect(PotionEffectType.WEAKNESS, weaknessDuration, weaknessAmplifier));
             }
 
             context.fx().playSound(player, Sound.ENTITY_WITHER_AMBIENT, 1.0f, 0.5f);
@@ -155,7 +169,7 @@ public class RitualOfUnmaking extends Spell<Void> {
         private final boolean hitPlayers;
         private final boolean hitMobs;
 
-        public Config(org.bukkit.configuration.ConfigurationSection config) {
+        public Config(ReadableConfig config) {
             this.channelTicks = config.getInt("values.channel-ticks", 40);
             this.radius = config.getDouble("values.radius", 6.0);
             this.damage = config.getDouble("values.damage", 8.0);

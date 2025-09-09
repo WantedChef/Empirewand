@@ -1,32 +1,30 @@
 package com.example.empirewand.core.services;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
-import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 
 import com.example.empirewand.api.ServiceHealth;
 import com.example.empirewand.api.SpellMetadata;
 import com.example.empirewand.api.SpellRegistry;
 import com.example.empirewand.api.Version;
+import com.example.empirewand.api.spell.toggle.ToggleableSpell;
+import com.example.empirewand.core.config.ReadableConfig;
 import com.example.empirewand.spell.Spell;
-import com.example.empirewand.spell.implementation.aura.Aura;
-import com.example.empirewand.spell.implementation.aura.EmpireAura;
 import com.example.empirewand.spell.implementation.control.Confuse;
 import com.example.empirewand.spell.implementation.control.Polymorph;
-import com.example.empirewand.spell.implementation.control.StasisField;
 import com.example.empirewand.spell.implementation.dark.DarkCircle;
 import com.example.empirewand.spell.implementation.dark.DarkPulse;
 import com.example.empirewand.spell.implementation.dark.RitualOfUnmaking;
-import com.example.empirewand.spell.implementation.dark.ShadowCloak;
 import com.example.empirewand.spell.implementation.dark.ShadowStep;
 import com.example.empirewand.spell.implementation.dark.VoidSwap;
 import com.example.empirewand.spell.implementation.earth.EarthQuake;
@@ -40,7 +38,6 @@ import com.example.empirewand.spell.implementation.fire.ExplosionTrail;
 import com.example.empirewand.spell.implementation.fire.Explosive;
 import com.example.empirewand.spell.implementation.fire.Fireball;
 import com.example.empirewand.spell.implementation.fire.FlameWave;
-import com.example.empirewand.spell.implementation.heal.GodCloud;
 import com.example.empirewand.spell.implementation.heal.Heal;
 import com.example.empirewand.spell.implementation.heal.RadiantBeacon;
 import com.example.empirewand.spell.implementation.ice.FrostNova;
@@ -76,16 +73,19 @@ import com.example.empirewand.spell.implementation.poison.PoisonWave;
 import com.example.empirewand.spell.implementation.poison.SoulSever;
 import com.example.empirewand.spell.implementation.projectile.ArcaneOrb;
 import com.example.empirewand.spell.implementation.projectile.MagicMissile;
+import com.example.empirewand.spell.implementation.toggle.aura.Aura;
+import com.example.empirewand.spell.implementation.toggle.aura.EmpireAura;
+import com.example.empirewand.spell.implementation.toggle.movement.GodCloud;
+import com.example.empirewand.spell.implementation.toggle.movement.MephiCloud;
+import com.example.empirewand.spell.implementation.toggle.movement.ShadowCloak;
 import com.example.empirewand.spell.implementation.weather.Gust;
 import com.example.empirewand.spell.implementation.weather.Tornado;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
-@SuppressWarnings("null")
 public class SpellRegistryImpl implements SpellRegistry {
 
-    private static final Logger LOGGER = Logger.getLogger(SpellRegistryImpl.class.getName());
     private final Map<String, Spell<?>> spells = new ConcurrentHashMap<>();
     private final ConfigService configService;
 
@@ -95,99 +95,97 @@ public class SpellRegistryImpl implements SpellRegistry {
     }
 
     private void registerAllSpells() {
+        // During migration, builders no longer require a non-null API instance.
+        final com.example.empirewand.api.EmpireWandAPI api = null;
+
         // Je ReadableConfig kan niet direct subsecties geven zoals Bukkit
         // ConfigurationSection.
         // We proberen defensief te casten; zo niet, dan slaan we het laden van
         // per-spell config over.
         final var readable = configService.getSpellsConfig();
-        final ConfigurationSection bukkitSpells = (readable instanceof ConfigurationSection cs) ? cs : null;
+        final ReadableConfig bukkitSpells = readable;
 
         Stream.<Supplier<Spell.Builder<?>>>of(
                 // Aura
-                () -> new Aura.Builder(null),
-                () -> new EmpireAura.Builder(null),
+                () -> new Aura.Builder(api),
+                () -> new EmpireAura.Builder(api),
                 // Control
-                () -> new Confuse.Builder(null),
-                () -> new Polymorph.Builder(null),
-                () -> new StasisField.Builder(null),
+                () -> new Confuse.Builder(api),
+                () -> new Polymorph.Builder(api),
                 // Dark
-                () -> new DarkCircle.Builder(null),
-                () -> new DarkPulse.Builder(null),
-                () -> new RitualOfUnmaking.Builder(null),
-                () -> new ShadowCloak.Builder(null),
-                () -> new ShadowStep.Builder(null),
-                () -> new VoidSwap.Builder(null),
+                () -> new DarkCircle.Builder(api),
+                () -> new DarkPulse.Builder(api),
+                () -> new RitualOfUnmaking.Builder(api),
+                () -> new ShadowCloak.Builder(api),
+                () -> new ShadowStep.Builder(api),
+                () -> new VoidSwap.Builder(api),
                 // Earth
-                () -> new EarthQuake.Builder(null),
-                () -> new GraspingVines.Builder(null),
-                () -> new Lightwall.Builder(null),
+                () -> new EarthQuake.Builder(api),
+                () -> new GraspingVines.Builder(api),
+                () -> new Lightwall.Builder(api),
                 // Fire
-                () -> new BlazeLaunch.Builder(null),
-                () -> new Comet.Builder(null),
-                () -> new CometShower.Builder(null),
-                () -> new EmpireComet.Builder(null),
-                () -> new Explosive.Builder(null),
-                () -> new ExplosionTrail.Builder(null),
-                () -> new Fireball.Builder(null),
-                () -> new FlameWave.Builder(null),
+                () -> new BlazeLaunch.Builder(api),
+                () -> new Comet.Builder(api),
+                () -> new CometShower.Builder(api),
+                () -> new EmpireComet.Builder(api),
+                () -> new Explosive.Builder(api),
+                () -> new ExplosionTrail.Builder(api),
+                () -> new Fireball.Builder(api),
+                () -> new FlameWave.Builder(api),
                 // Heal
-                () -> new GodCloud.Builder(null),
-                () -> new Heal.Builder(null),
-                () -> new RadiantBeacon.Builder(null),
+                () -> new GodCloud.Builder(api),
+                () -> new MephiCloud.Builder(api),
+                () -> new Heal.Builder(api),
+                () -> new RadiantBeacon.Builder(api),
                 // Ice
-                () -> new FrostNova.Builder(null),
-                () -> new GlacialSpike.Builder(null),
+                () -> new FrostNova.Builder(api),
+                () -> new GlacialSpike.Builder(api),
                 // Life
-                () -> new BloodBarrier.Builder(null),
-                () -> new BloodBlock.Builder(null),
-                () -> new BloodNova.Builder(null),
-                () -> new BloodSpam.Builder(null),
-                () -> new BloodTap.Builder(null),
-                () -> new Hemorrhage.Builder(null),
-                () -> new LifeReap.Builder(null),
-                () -> new LifeSteal.Builder(null),
+                () -> new BloodBarrier.Builder(api),
+                () -> new BloodBlock.Builder(api),
+                () -> new BloodNova.Builder(api),
+                () -> new BloodSpam.Builder(api),
+                () -> new BloodTap.Builder(api),
+                () -> new Hemorrhage.Builder(api),
+                () -> new LifeReap.Builder(api),
+                () -> new LifeSteal.Builder(api),
                 // Lightning
-                () -> new ChainLightning.Builder(null),
-                () -> new LightningArrow.Builder(null),
-                () -> new LightningBolt.Builder(null),
-                () -> new LightningStorm.Builder(null),
-                () -> new LittleSpark.Builder(null),
-                () -> new SolarLance.Builder(null),
-                () -> new Spark.Builder(null),
-                () -> new ThunderBlast.Builder(null),
+                () -> new ChainLightning.Builder(api),
+                () -> new LightningArrow.Builder(api),
+                () -> new LightningBolt.Builder(api),
+                () -> new LightningStorm.Builder(api),
+                () -> new LittleSpark.Builder(api),
+                () -> new SolarLance.Builder(api),
+                () -> new Spark.Builder(api),
+                () -> new ThunderBlast.Builder(api),
                 // Misc
-                () -> new EmpireLaunch.Builder(null),
-                () -> new EmpireLevitate.Builder(null),
-                () -> new EtherealForm.Builder(null),
-                () -> new ExplosionWave.Builder(null),
+                () -> new EmpireLaunch.Builder(api),
+                () -> new EmpireLevitate.Builder(api),
+                () -> new EtherealForm.Builder(api),
+                () -> new ExplosionWave.Builder(api),
                 // Movement
-                () -> new BlinkStrike.Builder(null),
-                () -> new EmpireEscape.Builder(null),
-                () -> new Leap.Builder(null),
-                () -> new SunburstStep.Builder(null),
-                () -> new Teleport.Builder(null),
+                () -> new BlinkStrike.Builder(api),
+                () -> new EmpireEscape.Builder(api),
+                () -> new Leap.Builder(api),
+                () -> new SunburstStep.Builder(api),
+                () -> new Teleport.Builder(api),
                 // Poison
-                () -> new CrimsonChains.Builder(null),
-                () -> new MephidicReap.Builder(null),
-                () -> new PoisonWave.Builder(null),
-                () -> new SoulSever.Builder(null),
+                () -> new CrimsonChains.Builder(api),
+                () -> new MephidicReap.Builder(api),
+                () -> new PoisonWave.Builder(api),
+                () -> new SoulSever.Builder(api),
                 // Projectile
-                () -> new ArcaneOrb.Builder(null),
-                () -> new MagicMissile.Builder(null),
+                () -> new ArcaneOrb.Builder(api),
+                () -> new MagicMissile.Builder(api),
                 // Weather
-                () -> new Gust.Builder(null),
-                () -> new Tornado.Builder(null)).forEach(builderSupplier -> {
-                    Spell<?> spell = builderSupplier.get().build();
+                () -> new Gust.Builder(api),
+                () -> new Tornado.Builder(api)).forEach(builderSupplier -> {
+                    Spell.Builder<?> builder = builderSupplier.get();
+                    Spell<?> spell = builder.build();
 
-                    if (bukkitSpells != null) {
-                        ConfigurationSection spellCfg = bukkitSpells.getConfigurationSection(spell.key());
-                        if (spellCfg != null) {
-                            spell.loadConfig(spellCfg);
-                        }
-                    } else {
-                        // Geen Bukkit-sectie beschikbaar – netjes melden en doorgaan.
-                        LOGGER.fine(() -> "Skipping config load for spell '" + spell.key()
-                                + "': spells config is not a Bukkit ConfigurationSection");
+                    ReadableConfig spellCfg = bukkitSpells.getConfigurationSection(spell.key());
+                    if (spellCfg != null) {
+                        spell.loadConfig(spellCfg);
                     }
 
                     spells.put(spell.key(), spell);
@@ -249,7 +247,6 @@ public class SpellRegistryImpl implements SpellRegistry {
     }
 
     @Override
-    @SuppressWarnings("null")
     public @NotNull Set<String> getSpellCategories() {
         return spells.values().stream()
                 .map(s -> s.type().name())
@@ -257,7 +254,6 @@ public class SpellRegistryImpl implements SpellRegistry {
     }
 
     @Override
-    @SuppressWarnings("null")
     public @NotNull Set<String> getSpellsByCategory(@NotNull String category) {
         return spells.values().stream()
                 .filter(s -> s.type().name().equalsIgnoreCase(category))
@@ -276,7 +272,6 @@ public class SpellRegistryImpl implements SpellRegistry {
     }
 
     @Override
-    @SuppressWarnings("null")
     public @NotNull List<Spell<?>> findSpells(@NotNull SpellQuery query) {
         Stream<Spell<?>> stream = spells.values().stream();
 
@@ -296,9 +291,10 @@ public class SpellRegistryImpl implements SpellRegistry {
         // (Tags/range/level/enabled/filtering kun je hier later toevoegen)
 
         // Sorteren
-        if (query.getSortField() != null) {
+        var sortField = query.getSortField();
+        if (sortField != null) {
             java.util.Comparator<Spell<?>> cmp;
-            switch (query.getSortField()) {
+            switch (sortField) {
                 case NAME -> cmp = java.util.Comparator
                         .comparing(s -> PlainTextComponentSerializer.plainText().serialize(s.displayName()));
                 case COOLDOWN -> cmp = java.util.Comparator.comparingLong(s -> s.getCooldown().toMillis());
@@ -366,6 +362,52 @@ public class SpellRegistryImpl implements SpellRegistry {
     public void reload() {
         spells.clear();
         registerAllSpells();
+    }
+
+    // ===== Toggleable Spell Methods =====
+
+    @Override
+    @NotNull
+    public Optional<ToggleableSpell> getToggleableSpell(@NotNull String key) {
+        Spell<?> spell = spells.get(key);
+        if (spell instanceof ToggleableSpell) {
+            return Optional.of((ToggleableSpell) spell);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    @NotNull
+    public Map<String, ToggleableSpell> getAllToggleableSpells() {
+        Map<String, ToggleableSpell> toggleableSpells = new HashMap<>();
+        for (Map.Entry<String, Spell<?>> entry : spells.entrySet()) {
+            if (entry.getValue() instanceof ToggleableSpell) {
+                toggleableSpells.put(entry.getKey(), (ToggleableSpell) entry.getValue());
+            }
+        }
+        return Collections.unmodifiableMap(toggleableSpells);
+    }
+
+    @Override
+    @NotNull
+    public Set<String> getToggleableSpellKeys() {
+        return spells.entrySet().stream()
+                .filter(entry -> entry.getValue() instanceof ToggleableSpell)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
+    }
+
+    @Override
+    public boolean isToggleableSpell(@NotNull String key) {
+        Spell<?> spell = spells.get(key);
+        return spell instanceof ToggleableSpell;
+    }
+
+    @Override
+    public int getToggleableSpellCount() {
+        return (int) spells.values().stream()
+                .filter(spell -> spell instanceof ToggleableSpell)
+                .count();
     }
 
     // ===== Metadata wrapper =====

@@ -6,14 +6,10 @@ import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
-import net.kyori.adventure.text.Component;
-import org.bukkit.Particle;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
+import java.util.Objects;
+import org.bukkit.World;
+import org.bukkit.Location;
 
 public class BloodBarrier extends Spell<Void> {
 
@@ -24,7 +20,6 @@ public class BloodBarrier extends Spell<Void> {
             super(api);
             this.name = "Blood Barrier";
             this.description = "Creates a barrier that reduces damage and harms attackers.";
-            this.manaCost = 15; // Example
             this.cooldown = java.time.Duration.ofSeconds(30);
             this.spellType = SpellType.LIFE;
         }
@@ -52,7 +47,7 @@ public class BloodBarrier extends Spell<Void> {
 
     @Override
     protected Void executeSpell(SpellContext context) {
-        Player player = context.caster();
+        org.bukkit.entity.Player player = context.caster();
 
         if (player.hasMetadata(BARRIER_ACTIVE_KEY)) {
             context.fx().fizzle(player);
@@ -63,7 +58,8 @@ public class BloodBarrier extends Spell<Void> {
         double damageReduction = spellConfig.getDouble("values.damage-reduction", 0.3);
         double thornsDamage = spellConfig.getDouble("values.thorns-damage", 1.0);
 
-        player.setMetadata(BARRIER_ACTIVE_KEY, new FixedMetadataValue(context.plugin(), new BarrierData(damageReduction, thornsDamage)));
+        player.setMetadata(BARRIER_ACTIVE_KEY, new org.bukkit.metadata.FixedMetadataValue(context.plugin(),
+                new BarrierData(damageReduction, thornsDamage)));
         new BarrierTask(player, context).runTaskLater(context.plugin(), duration);
 
         spawnBarrierParticles(player);
@@ -75,49 +71,82 @@ public class BloodBarrier extends Spell<Void> {
         // Effects are handled by a listener and scheduler task.
     }
 
-    private void spawnBarrierParticles(Player player) {
+    private void spawnBarrierParticles(@NotNull org.bukkit.entity.Player player) {
+        World world = player.getWorld();
+        if (world == null) {
+            return;
+        }
+        Location baseLoc = player.getLocation();
+        if (baseLoc == null)
+            return;
+        final double bx = baseLoc.getX();
+        final double by = baseLoc.getY();
+        final double bz = baseLoc.getZ();
+        final float yaw = baseLoc.getYaw();
+        final float pitch = baseLoc.getPitch();
         for (int i = 0; i < 30; i++) {
             double x = (Math.random() - 0.5) * 3;
             double y = Math.random() * 2;
             double z = (Math.random() - 0.5) * 3;
-            player.getWorld().spawnParticle(Particle.DUST, player.getLocation().add(x, y, z), 2, new Particle.DustOptions(org.bukkit.Color.fromRGB(128, 0, 0), 1.0f));
+            Location loc = new Location(world, bx + x, by + y, bz + z, yaw, pitch);
+            Objects.requireNonNull(world, "world").spawnParticle(org.bukkit.Particle.DUST, loc, 2,
+                    new org.bukkit.Particle.DustOptions(org.bukkit.Color.fromRGB(128, 0, 0), 1.0f));
         }
     }
 
-    // This method would be called from a central, global EntityDamageByEntityEvent listener
-    public static void handleDamageEvent(EntityDamageByEntityEvent event, EmpireWandAPI api) {
-        if (!(event.getEntity() instanceof Player player)) return;
-        if (!player.hasMetadata(BARRIER_ACTIVE_KEY)) return;
+    // This method would be called from a central, global EntityDamageByEntityEvent
+    // listener
+    public static void handleDamageEvent(org.bukkit.event.entity.EntityDamageByEntityEvent event, EmpireWandAPI api) {
+        if (!(event.getEntity() instanceof org.bukkit.entity.Player player))
+            return;
+        if (!player.hasMetadata(BARRIER_ACTIVE_KEY))
+            return;
 
-        Object metadataValue = player.getMetadata(BARRIER_ACTIVE_KEY).get(0).value();
-        if (!(metadataValue instanceof BarrierData data)) return;
+        var metaList = player.getMetadata(BARRIER_ACTIVE_KEY);
+        if (metaList == null || metaList.isEmpty())
+            return;
+        Object metadataValue = metaList.get(0).value();
+        if (!(metadataValue instanceof BarrierData data))
+            return;
 
         event.setDamage(event.getDamage() * (1.0 - data.damageReduction));
 
-        if (event.getDamager() instanceof LivingEntity attacker) {
-            attacker.damage(data.thornsDamage, player);
+        if (event.getDamager() instanceof org.bukkit.entity.LivingEntity attacker) {
+            attacker.damage(data.thornsDamage, Objects.requireNonNull(player, "player"));
         }
     }
 
-    private record BarrierData(double damageReduction, double thornsDamage) {}
+    private record BarrierData(double damageReduction, double thornsDamage) {
+    }
 
-    private class BarrierTask extends BukkitRunnable {
-        private final Player player;
+    private class BarrierTask extends org.bukkit.scheduler.BukkitRunnable {
+        private final @NotNull org.bukkit.entity.Player player;
         private final SpellContext context;
 
-        public BarrierTask(Player player, SpellContext context) {
+        public BarrierTask(@NotNull org.bukkit.entity.Player player, SpellContext context) {
             this.player = player;
             this.context = context;
         }
 
         @Override
         public void run() {
-            if (player.isValid() && player.hasMetadata(BARRIER_ACTIVE_KEY)) {
+            if (player == null) {
+                return;
+            }
+            if (!player.isValid() || !player.hasMetadata(BARRIER_ACTIVE_KEY)) {
+                return;
+            }
+            World world = player.getWorld();
+            if (world == null) {
                 player.removeMetadata(BARRIER_ACTIVE_KEY, context.plugin());
-                for (LivingEntity entity : player.getWorld().getLivingEntities()) {
-                    if (entity.getLocation().distance(player.getLocation()) <= 3.0 && !entity.equals(player)) {
-                        entity.damage(0.5, player);
-                    }
+                return;
+            }
+            Location playerLoc = Objects.requireNonNull(player.getLocation(), "player location");
+            player.removeMetadata(BARRIER_ACTIVE_KEY, context.plugin());
+            for (org.bukkit.entity.LivingEntity entity : world.getLivingEntities()) {
+                Location entityLoc = Objects.requireNonNull(entity.getLocation(), "entity location");
+                if (entityLoc.distance(playerLoc) <= 3.0 && !entity.equals(player)) {
+                    entity.damage(0.5, Objects.requireNonNull(player, "player"));
                 }
             }
         }

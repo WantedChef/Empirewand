@@ -6,11 +6,12 @@ import java.time.Duration;
 import java.util.logging.Level;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.ConfigurationSection;
+import com.example.empirewand.core.config.ReadableConfig;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents the abstract concept of a spell, providing a foundational
@@ -18,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * <p>
  * This class defines the core properties and behaviors of a spell, such as its
- * name, mana cost,
+ * name,
  * cooldown, and casting logic. It employs a generic type {@code <T>} to
  * represent the result or
  * "effect" produced by the spell's execution, allowing for flexible and
@@ -38,17 +39,29 @@ public abstract class Spell<T> {
 
     protected final String name;
     protected final String description;
-    protected final int manaCost;
     protected final Duration cooldown;
     protected final SpellType spellType;
     protected final EmpireWandAPI api;
 
-    protected ConfigurationSection spellConfig;
+    protected ReadableConfig spellConfig;
 
     protected Spell(Builder<T> builder) {
+        // API may be null during migration of builders; prefer service lookups from
+        // context or static API access where needed.
+        if (builder.name == null) {
+            throw new IllegalArgumentException("Name cannot be null");
+        }
+        if (builder.description == null) {
+            throw new IllegalArgumentException("Description cannot be null");
+        }
+        if (builder.cooldown == null) {
+            throw new IllegalArgumentException("Cooldown cannot be null");
+        }
+        if (builder.spellType == null) {
+            throw new IllegalArgumentException("Spell type cannot be null");
+        }
         this.name = builder.name;
         this.description = builder.description;
-        this.manaCost = builder.manaCost;
         this.cooldown = builder.cooldown;
         this.spellType = builder.spellType;
         this.api = builder.api;
@@ -100,10 +113,6 @@ public abstract class Spell<T> {
         return description;
     }
 
-    public int getManaCost() {
-        return manaCost;
-    }
-
     @NotNull
     public Duration getCooldown() {
         return cooldown;
@@ -114,9 +123,9 @@ public abstract class Spell<T> {
      * typically called once
      * during spell registration.
      *
-     * @param config The {@link ConfigurationSection} for this spell.
+     * @param config The {@link ReadableConfig} for this spell.
      */
-    public void loadConfig(@NotNull ConfigurationSection config) {
+    public void loadConfig(@NotNull ReadableConfig config) {
         this.spellConfig = config;
     }
 
@@ -130,14 +139,7 @@ public abstract class Spell<T> {
         return prereq().check(context).canCast();
     }
 
-    /**
-     * Applies the cost of casting this spell (e.g., deducting mana).
-     *
-     * @param context The context of the spell cast.
-     */
-    public void applyCost(@NotNull SpellContext context) {
-        // Default implementation does nothing. Can be overridden for custom costs.
-    }
+    // Note: No resource cost system is used in this project.
 
     /**
      * The core logic of the spell's execution. This method may be run
@@ -147,7 +149,7 @@ public abstract class Spell<T> {
      * @return The effect produced by the spell, or {@code null} if no effect object
      *         is needed.
      */
-    @NotNull
+    @Nullable
     protected abstract T executeSpell(@NotNull SpellContext context);
 
     /**
@@ -187,9 +189,6 @@ public abstract class Spell<T> {
         }
 
         // TODO: Check and apply cooldown
-        // TODO: Check and apply mana cost
-
-        applyCost(context);
 
         if (requiresAsyncExecution()) {
             return castAsync(context);
@@ -286,11 +285,10 @@ public abstract class Spell<T> {
         protected final EmpireWandAPI api;
         protected String name;
         protected String description;
-        protected int manaCost = 0;
         protected Duration cooldown = Duration.ofSeconds(1);
         protected SpellType spellType = SpellType.MISC;
 
-        protected Builder(EmpireWandAPI api) {
+        protected Builder(@Nullable EmpireWandAPI api) {
             this.api = api;
         }
 
@@ -306,11 +304,7 @@ public abstract class Spell<T> {
             return this;
         }
 
-        @NotNull
-        public Builder<T> manaCost(int manaCost) {
-            this.manaCost = manaCost;
-            return this;
-        }
+        // Resource cost system removed entirely.
 
         @NotNull
         public Builder<T> cooldown(@NotNull Duration cooldown) {

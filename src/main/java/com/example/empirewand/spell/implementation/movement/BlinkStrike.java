@@ -6,7 +6,6 @@ import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -23,7 +22,6 @@ public class BlinkStrike extends Spell<Void> {
             super(api);
             this.name = "Blink Strike";
             this.description = "Teleport behind your target and strike.";
-            this.manaCost = 10; // Example
             this.cooldown = java.time.Duration.ofSeconds(12);
             this.spellType = SpellType.MOVEMENT;
         }

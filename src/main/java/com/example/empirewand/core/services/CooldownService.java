@@ -1,8 +1,10 @@
 package com.example.empirewand.core.services;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -162,9 +164,9 @@ public class CooldownService {
             // Use display name + material as identifier for now
             // In a more sophisticated implementation, you might use custom NBT tags
             String displayName = meta.hasDisplayName() && meta.displayName() != null
-                    ? meta.displayName().toString()
-                    : "";
-            return wand.getType().toString() + ":" + displayName.hashCode();
+                    ? Objects.toString(meta.displayName(), "default")
+                    : "default";
+            return wand.getType().toString() + ":" + (displayName.isEmpty() ? "empty" : displayName).hashCode();
         } catch (Exception e) {
             return "error";
         }

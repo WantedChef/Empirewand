@@ -1,6 +1,6 @@
 package com.example.empirewand.core.config;
 
-import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -8,9 +8,9 @@ import org.jetbrains.annotations.Nullable;
  * Simple delegating wrapper that only exposes read methods we allow.
  */
 public final class ReadOnlyConfig implements ReadableConfig {
-    private final FileConfiguration delegate;
+    private final ConfigurationSection delegate;
 
-    public ReadOnlyConfig(@NotNull FileConfiguration delegate) {
+    public ReadOnlyConfig(@NotNull ConfigurationSection delegate) {
         if (delegate == null) {
             throw new IllegalArgumentException("delegate cannot be null");
         }
@@ -62,6 +62,19 @@ public final class ReadOnlyConfig implements ReadableConfig {
             return delegate.getDouble(path, def);
         } catch (Exception e) {
             return def;
+        }
+    }
+
+    @Override
+    public @Nullable ReadableConfig getConfigurationSection(@NotNull String path) {
+        if (path.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            var section = delegate.getConfigurationSection(path);
+            return section == null ? null : new ReadOnlyConfig(section);
+        } catch (Exception e) {
+            return null;
         }
     }
 

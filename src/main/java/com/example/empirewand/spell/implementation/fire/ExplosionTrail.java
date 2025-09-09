@@ -1,12 +1,12 @@
 package com.example.empirewand.spell.implementation.fire;
 
 import com.example.empirewand.api.EmpireWandAPI;
+import com.example.empirewand.core.config.ReadableConfig;
 
 import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -18,7 +18,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Deque;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 public class ExplosionTrail extends Spell<Void> {
@@ -28,7 +27,6 @@ public class ExplosionTrail extends Spell<Void> {
             super(api);
             this.name = "Explosion Trail";
             this.description = "You become a walking explosion, damaging nearby entities.";
-            this.manaCost = 15; // Example value
             this.cooldown = java.time.Duration.ofSeconds(25);
             this.spellType = SpellType.FIRE;
         }
@@ -40,11 +38,19 @@ public class ExplosionTrail extends Spell<Void> {
         }
     }
 
-    private final Config config;
+    private Config config;
 
     private ExplosionTrail(Builder builder) {
         super(builder);
-        this.config = new Config(spellConfig);
+        // Config will be initialized lazily when first accessed
+    }
+
+    private Config getConfig() {
+        if (config == null) {
+            // This will be called after loadConfig has been called
+            config = new Config(spellConfig);
+        }
+        return config;
     }
 
     @Override
@@ -72,7 +78,7 @@ public class ExplosionTrail extends Spell<Void> {
     }
 
     private void startTrailScheduler(Player caster, SpellContext context) {
-        new TrailScheduler(caster, context, config).runTaskTimer(context.plugin(), 0L, config.tickInterval());
+        new TrailScheduler(caster, context, getConfig()).runTaskTimer(context.plugin(), 0L, getConfig().tickInterval());
     }
 
     private static class TrailScheduler extends BukkitRunnable {
@@ -174,7 +180,7 @@ public class ExplosionTrail extends Spell<Void> {
         private final int blockLifetime;
         private final boolean placeBlocks;
 
-        public Config(org.bukkit.configuration.ConfigurationSection config) {
+        public Config(ReadableConfig config) {
             this.duration = config.getInt("values.duration-ticks", 100);
             this.damage = config.getDouble("values.damage", 8.0);
             this.tickInterval = config.getInt("values.tick-interval", 10);

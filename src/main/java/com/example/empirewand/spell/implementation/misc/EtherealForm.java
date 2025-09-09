@@ -25,7 +25,6 @@ public class EtherealForm extends Spell<Void> {
             super(api);
             this.name = "Ethereal Form";
             this.description = "Become intangible and fall slowly.";
-            this.manaCost = 15; // Example
             this.cooldown = java.time.Duration.ofSeconds(30);
             this.spellType = SpellType.MISC;
         }

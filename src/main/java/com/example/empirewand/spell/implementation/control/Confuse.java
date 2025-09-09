@@ -22,7 +22,6 @@ public class Confuse extends Spell<Void> {
             super(api);
             this.name = "Confuse";
             this.description = "Confuses and slows a target entity.";
-            this.manaCost = 8;
             this.cooldown = java.time.Duration.ofSeconds(15);
             this.spellType = SpellType.CONTROL;
         }

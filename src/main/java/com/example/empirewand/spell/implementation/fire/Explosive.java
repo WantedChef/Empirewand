@@ -7,7 +7,6 @@ import com.example.empirewand.spell.PrereqInterface;
 import com.example.empirewand.spell.ProjectileSpell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -24,7 +23,6 @@ public class Explosive extends ProjectileSpell<WitherSkull> {
             super(api, WitherSkull.class);
             this.name = "Explosive";
             this.description = "Launches an explosive skull.";
-            this.manaCost = 10; // Example value
             this.cooldown = java.time.Duration.ofSeconds(8);
             this.spellType = SpellType.FIRE;
             this.trailParticle = Particle.SMOKE;
@@ -62,12 +60,14 @@ public class Explosive extends ProjectileSpell<WitherSkull> {
             skull.setYield(yield);
             skull.setIsIncendiary(setsFire);
             skull.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, PersistentDataType.STRING, key());
-            skull.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, PersistentDataType.STRING, caster.getUniqueId().toString());
+            skull.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, PersistentDataType.STRING,
+                    caster.getUniqueId().toString());
         });
     }
 
     @Override
-    protected void handleHit(@NotNull SpellContext context, @NotNull Projectile projectile, @NotNull ProjectileHitEvent event) {
+    protected void handleHit(@NotNull SpellContext context, @NotNull Projectile projectile,
+            @NotNull ProjectileHitEvent event) {
         context.fx().impact(projectile.getLocation());
     }
 }

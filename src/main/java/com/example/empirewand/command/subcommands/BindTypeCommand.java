@@ -80,7 +80,10 @@ public class BindTypeCommand implements SubCommand {
             throw new CommandException("No spells of type '" + typeArg + "' found");
         }
 
-        List<String> current = context.wandService().getSpells(item);
+        // Replace problematic inference with explicit generic and null-safe handling:
+        var spells = context.wandService().getSpells(item);
+        List<String> current = new ArrayList<>(spells);
+
         for (String k : toBind) {
             if (!current.contains(k)) {
                 current.add(k);

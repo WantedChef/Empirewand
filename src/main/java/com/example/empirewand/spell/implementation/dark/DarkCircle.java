@@ -26,7 +26,6 @@ public class DarkCircle extends Spell<Void> {
             super(api);
             this.name = "Dark Circle";
             this.description = "Creates a pulling void circle that launches enemies into the air.";
-            this.manaCost = 12;
             this.cooldown = Duration.ofSeconds(10);
             this.spellType = SpellType.DARK;
         }

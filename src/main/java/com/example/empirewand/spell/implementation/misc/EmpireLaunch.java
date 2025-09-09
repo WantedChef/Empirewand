@@ -24,7 +24,6 @@ public class EmpireLaunch extends Spell<Void> {
             super(api);
             this.name = "Empire Launch";
             this.description = "Launches the caster into the air with enhanced mobility and fall protection.";
-            this.manaCost = 5; // Example
             this.cooldown = java.time.Duration.ofSeconds(10);
             this.spellType = SpellType.MISC;
         }
@@ -64,7 +63,8 @@ public class EmpireLaunch extends Spell<Void> {
 
         Vector launchVector = caster.getEyeLocation().getDirection().normalize().multiply(0.4).setY(power);
         caster.setVelocity(launchVector);
-        caster.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, slowFallingDuration, 0, false, true, true));
+        caster.addPotionEffect(
+                new PotionEffect(PotionEffectType.SLOW_FALLING, slowFallingDuration, 0, false, true, true));
 
         Location launchLocation = caster.getLocation().add(0, 0.5, 0);
         context.fx().spawnParticles(launchLocation, Particle.CAMPFIRE_COSY_SMOKE, 30, 0.5, 0.5, 0.5, 0.2);

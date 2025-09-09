@@ -27,7 +27,6 @@ public class LifeSteal extends ProjectileSpell<Snowball> {
             super(api, Snowball.class);
             this.name = "Life Steal";
             this.description = "Steals health from the target.";
-            this.manaCost = 7; // Example
             this.cooldown = java.time.Duration.ofSeconds(3);
             this.spellType = SpellType.LIFE;
             this.trailParticle = null; // Custom trail
@@ -71,7 +70,8 @@ public class LifeSteal extends ProjectileSpell<Snowball> {
 
         double damage = spellConfig.getDouble("values.damage", 4.0);
         double stealModifier = spellConfig.getDouble("values.steal-modifier", 0.5);
-        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig().getBoolean("features.friendly-fire", false);
+        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig()
+                .getBoolean("features.friendly-fire", false);
 
         Player caster = context.caster();
         if (target.equals(caster) && !friendlyFire)

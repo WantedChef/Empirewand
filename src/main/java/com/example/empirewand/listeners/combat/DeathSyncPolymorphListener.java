@@ -22,11 +22,11 @@ public final class DeathSyncPolymorphListener implements Listener {
     public void onEntityDeath(EntityDeathEvent event) {
         LivingEntity dead = event.getEntity();
         var spell = plugin.getSpellRegistry().getSpell("polymorph");
-        if (spell == null)
+        if (!spell.isPresent())
             return;
         try {
-            var methodMap = spell.getClass().getMethod("getPolymorphedEntities");
-            Object mapObj = methodMap.invoke(spell);
+            var methodMap = spell.get().getClass().getMethod("getPolymorphedEntities");
+            Object mapObj = methodMap.invoke(spell.get());
             if (mapObj instanceof java.util.Map<?, ?> map) {
                 Object originalId = map.get(dead.getUniqueId());
                 if (originalId instanceof java.util.UUID uuid) {
@@ -37,7 +37,8 @@ public final class DeathSyncPolymorphListener implements Listener {
                     map.remove(dead.getUniqueId());
                 }
             }
-        } catch (Throwable ignored) {
+        } catch (ReflectiveOperationException | IllegalArgumentException | SecurityException
+                | ClassCastException ignored) {
             // Als Polymorph ontbreekt of API anders is: veilig negeren.
         }
     }

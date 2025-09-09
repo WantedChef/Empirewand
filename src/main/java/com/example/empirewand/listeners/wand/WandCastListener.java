@@ -15,6 +15,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,8 +36,12 @@ public final class WandCastListener implements Listener {
     public void onInteract(PlayerInteractEvent event) {
         if (event.getHand() != EquipmentSlot.HAND)
             return; // voorkom dubbele triggers
+
         Action action = event.getAction();
-        if (action != Action.RIGHT_CLICK_AIR && action != Action.RIGHT_CLICK_BLOCK)
+        boolean isLeftClick = (action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK);
+        boolean isRightClick = (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK);
+
+        if (!isLeftClick && !isRightClick)
             return;
 
         Player player = event.getPlayer();
@@ -50,12 +55,59 @@ public final class WandCastListener implements Listener {
         if (!plugin.getWandService().isWand(item))
             return;
 
-        List<String> spells = plugin.getWandService().getSpells(item);
-        if (spells == null || spells.isEmpty()) {
+        List<String> spells = new ArrayList<>(plugin.getWandService().getSpells(item));
+        if (spells.isEmpty()) {
             plugin.getFxService().showError(player, "wand.no-spells");
             return;
         }
 
+        if (isRightClick) {
+            // Right-click: cycle to next spell
+            cycleToNextSpell(player, item, spells);
+            return;
+        }
+
+        // Left-click: cast current spell
+        castCurrentSpell(player, item, spells);
+    }
+
+    private void cycleToNextSpell(Player player, ItemStack item, List<String> spells) {
+        int currentIndex = Math.max(0, Math.min(plugin.getWandService().getActiveIndex(item), spells.size() - 1));
+        int nextIndex = (currentIndex + 1) % spells.size(); // Wrap around to 0 after last spell
+
+        String newSpellKey = spells.get(nextIndex);
+
+        // Validate spell exists
+        if (plugin.getSpellRegistry().getSpell(newSpellKey).isEmpty()) {
+            plugin.getLogger()
+                    .warning(String.format("Invalid spell '%s' in wand for player %s", newSpellKey, player.getName()));
+            return;
+        }
+
+        // Update the active spell
+        plugin.getWandService().setActiveIndex(item, nextIndex);
+
+        // Get display name and show feedback
+        String displayName = plugin.getSpellRegistry().getSpellDisplayName(newSpellKey);
+
+        // Show action bar and chat message
+        plugin.getFxService().actionBar(player, displayName);
+        player.sendMessage("§aSelected: §r" + displayName);
+
+        // Fire WandSelectEvent for other plugins to listen to
+        var previousSpellKey = spells.get(currentIndex);
+        var previousSpell = plugin.getSpellRegistry().getSpell(previousSpellKey).orElse(null);
+        var newSpell = plugin.getSpellRegistry().getSpell(newSpellKey).orElse(null);
+
+        if (newSpell != null) {
+            var selectEvent = new com.example.empirewand.api.WandSelectEvent(player, previousSpell, newSpell,
+                    previousSpellKey, newSpellKey,
+                    com.example.empirewand.api.WandSelectEvent.SelectionMethod.SNEAK_CLICK);
+            plugin.getServer().getPluginManager().callEvent(selectEvent);
+        }
+    }
+
+    private void castCurrentSpell(Player player, ItemStack item, List<String> spells) {
         int index = Math.max(0, Math.min(plugin.getWandService().getActiveIndex(item), spells.size() - 1));
         String spellKey = spells.get(index);
 

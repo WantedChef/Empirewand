@@ -6,7 +6,6 @@ import com.example.empirewand.spell.Spell;
 import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
 import java.time.Duration;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Entity;
@@ -22,7 +21,6 @@ public class MagicMissile extends Spell<Void> {
             super(api);
             this.name = "Magic Missile";
             this.description = "Fires a sequence of magical beams at the target.";
-            this.manaCost = 20;
             this.cooldown = Duration.ofMillis(4000);
             this.spellType = SpellType.PROJECTILE;
         }

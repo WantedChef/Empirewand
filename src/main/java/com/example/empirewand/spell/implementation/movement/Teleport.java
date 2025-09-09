@@ -8,7 +8,6 @@ import com.example.empirewand.spell.SpellContext;
 import com.example.empirewand.spell.SpellType;
 import com.example.empirewand.visual.Afterimages;
 import com.example.empirewand.visual.RingRenderer;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -25,7 +24,6 @@ public class Teleport extends Spell<Void> {
             super(api);
             this.name = "Teleport";
             this.description = "Teleports you to your target location.";
-            this.manaCost = 5; // Example
             this.cooldown = java.time.Duration.ofSeconds(5);
             this.spellType = SpellType.MOVEMENT;
         }
@@ -65,14 +63,14 @@ public class Teleport extends Spell<Void> {
         }
 
         Location from = player.getLocation().clone();
-        if (Afterimages.get() != null) Afterimages.get().record(from);
+        Afterimages.record(from);
         context.fx().spawnParticles(from, Particle.PORTAL, 35, 0.5, 0.8, 0.5, 0.15);
         context.fx().playSound(player, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.0f);
 
         player.teleport(targetLoc);
 
         Location to = targetLoc.clone();
-        if (Afterimages.get() != null) Afterimages.get().record(to);
+        Afterimages.record(to);
         context.fx().spawnParticles(to, Particle.PORTAL, 45, 0.6, 1.0, 0.6, 0.2);
         new RingVisual(to, 0.3, 0.35).runTaskTimer(context.plugin(), 0L, 2L);
         context.fx().playSound(to, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.0f);

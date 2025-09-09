@@ -17,7 +17,6 @@ public class Leap extends Spell<Void> {
             super(api);
             this.name = "Leap";
             this.description = "Leaps you forward.";
-            this.manaCost = 3; // Example
             this.cooldown = java.time.Duration.ofSeconds(2);
             this.spellType = SpellType.MOVEMENT;
         }
