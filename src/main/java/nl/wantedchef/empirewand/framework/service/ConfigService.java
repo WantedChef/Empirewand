@@ -2,6 +2,7 @@ package nl.wantedchef.empirewand.framework.service;
 
 import nl.wantedchef.empirewand.core.config.ConfigMigrationService;
 import nl.wantedchef.empirewand.core.config.ConfigValidator;
+import nl.wantedchef.empirewand.core.util.PerformanceMonitor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import nl.wantedchef.empirewand.core.config.ReadOnlyConfig;
@@ -9,7 +10,10 @@ import nl.wantedchef.empirewand.core.config.ReadableConfig;
 import org.bukkit.plugin.Plugin;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
 /**
@@ -17,6 +21,8 @@ import java.util.logging.Level;
  * <p>
  * This service is responsible for handling `config.yml` and `spells.yml`.
  * It provides read-only access to the configurations to prevent uncontrolled modifications.
+ * 
+ * Optimized for performance with caching and efficient data structures.
  */
 @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(value = {
         "EI_EXPOSE_REP2" }, justification = "Bukkit Plugin reference retained for lifecycle + logging; service returns read-only wrappers so only the plugin field triggers exposure warning.")
@@ -26,8 +32,23 @@ public class ConfigService {
     private final ConfigMigrationService migrationService;
     private FileConfiguration config; // internal mutable reference
     private FileConfiguration spellsConfig; // internal mutable reference
-    private ReadableConfig readOnlyConfig; // cached read-only view
-    private ReadableConfig readOnlySpellsConfig; // cached read-only view
+    private volatile ReadableConfig readOnlyConfig; // cached read-only view with volatile for thread safety
+    private volatile ReadableConfig readOnlySpellsConfig; // cached read-only view with volatile for thread safety
+    
+    // Performance monitor for tracking config operations
+    private final PerformanceMonitor performanceMonitor;
+    
+    // Caches for frequently accessed configuration values
+    private final ConcurrentHashMap<String, String> messageCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Boolean> featureFlagCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, List<String>> categorySpellsCache = new ConcurrentHashMap<>();
+    private volatile Set<String> categoryNamesCache = null;
+    
+    // Cache for default cooldown value
+    private volatile Long defaultCooldownCache = null;
+    
+    // Cache for spell configuration sections to avoid repeated lookups
+    private final ConcurrentHashMap<String, ReadableConfig> spellConfigCache = new ConcurrentHashMap<>();
 
     /**
      * Constructs a new ConfigService.
@@ -41,6 +62,7 @@ public class ConfigService {
         this.plugin = plugin;
         this.validator = new ConfigValidator();
         this.migrationService = new ConfigMigrationService(plugin, validator);
+        this.performanceMonitor = new PerformanceMonitor(plugin.getLogger());
         loadConfigs();
     }
 
@@ -49,6 +71,7 @@ public class ConfigService {
      * This method also triggers validation and migration services.
      */
     public final void loadConfigs() {
+        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("ConfigService.loadConfigs");
         try {
             // Load config.yml
             plugin.saveDefaultConfig();
@@ -69,6 +92,9 @@ public class ConfigService {
             // Validate and migrate configs
             validateAndMigrateConfigs(spellsFile);
             
+            // Clear caches after config reload
+            clearCaches();
+            
             plugin.getLogger().info("Configuration loaded successfully");
         } catch (Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to load configurations", e);
@@ -77,6 +103,11 @@ public class ConfigService {
             this.spellsConfig = new YamlConfiguration();
             this.readOnlyConfig = new ReadOnlyConfig(this.config);
             this.readOnlySpellsConfig = new ReadOnlyConfig(this.spellsConfig);
+            
+            // Clear caches on error
+            clearCaches();
+        } finally {
+            timing.complete(50); // Log if config loading takes more than 50ms
         }
     }
 
@@ -86,6 +117,7 @@ public class ConfigService {
      * @param spellsFile the spells.yml file
      */
     private void validateAndMigrateConfigs(File spellsFile) {
+        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("ConfigService.validateAndMigrateConfigs");
         try {
             // Validate main config
             List<String> mainConfigErrors = validator.validateMainConfig(config);
@@ -122,12 +154,30 @@ public class ConfigService {
                 this.spellsConfig = YamlConfiguration.loadConfiguration(spellsFile);
                 this.readOnlyConfig = new ReadOnlyConfig(this.config);
                 this.readOnlySpellsConfig = new ReadOnlyConfig(this.spellsConfig);
+                
+                // Clear caches after migration
+                clearCaches();
             }
 
             plugin.getLogger().info("Configuration validation and migration completed successfully.");
         } catch (Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Error during configuration validation and migration", e);
+        } finally {
+            timing.complete(100); // Log if validation/migration takes more than 100ms
         }
+    }
+    
+    /**
+     * Clears all cached configuration values.
+     * This method should be called when configuration is reloaded or during shutdown.
+     */
+    private void clearCaches() {
+        messageCache.clear();
+        featureFlagCache.clear();
+        categorySpellsCache.clear();
+        categoryNamesCache = null;
+        defaultCooldownCache = null;
+        spellConfigCache.clear();
     }
 
     /**
@@ -158,11 +208,24 @@ public class ConfigService {
         if (key == null) {
             return "";
         }
+        
+        // Check cache first
+        String cached = messageCache.get(key);
+        if (cached != null) {
+            return cached;
+        }
+        
+        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("ConfigService.getMessage");
         try {
-            return config.getString("messages." + key, "");
+            String message = config.getString("messages." + key, "");
+            // Cache the result
+            messageCache.put(key, message);
+            return message;
         } catch (Exception e) {
             plugin.getLogger().warning("Error getting message for key: " + key);
             return "";
+        } finally {
+            timing.complete(5); // Log if message retrieval takes more than 5ms
         }
     }
 
@@ -176,11 +239,24 @@ public class ConfigService {
         if (key == null) {
             return false;
         }
+        
+        // Check cache first
+        Boolean cached = featureFlagCache.get(key);
+        if (cached != null) {
+            return cached;
+        }
+        
+        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("ConfigService.getFeatureFlag");
         try {
-            return config.getBoolean("features." + key, false);
+            boolean flag = config.getBoolean("features." + key, false);
+            // Cache the result
+            featureFlagCache.put(key, flag);
+            return flag;
         } catch (Exception e) {
             plugin.getLogger().warning("Error getting feature flag for key: " + key);
             return false;
+        } finally {
+            timing.complete(5); // Log if feature flag retrieval takes more than 5ms
         }
     }
 
@@ -199,11 +275,23 @@ public class ConfigService {
      * @return The default cooldown in milliseconds.
      */
     public long getDefaultCooldown() {
+        // Check cache first
+        Long cached = defaultCooldownCache;
+        if (cached != null) {
+            return cached;
+        }
+        
+        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("ConfigService.getDefaultCooldown");
         try {
-            return config.getLong("cooldowns.default", 500);
+            long cooldown = config.getLong("cooldowns.default", 500);
+            // Cache the result
+            defaultCooldownCache = cooldown;
+            return cooldown;
         } catch (Exception e) {
             plugin.getLogger().warning("Error getting default cooldown, using fallback");
             return 500;
+        } finally {
+            timing.complete(5); // Log if cooldown retrieval takes more than 5ms
         }
     }
 
@@ -214,16 +302,31 @@ public class ConfigService {
      * @param name The name of the category.
      * @return A list of spell keys for the category.
      */
-    public java.util.List<String> getCategorySpells(String name) {
+    public List<String> getCategorySpells(String name) {
         if (name == null) {
-            return java.util.List.of();
+            return Collections.emptyList();
         }
+        
+        // Check cache first
+        List<String> cached = categorySpellsCache.get(name);
+        if (cached != null) {
+            return cached;
+        }
+        
+        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("ConfigService.getCategorySpells");
         try {
-            java.util.List<String> list = config.getStringList("categories." + name + ".spells");
-            return list == null ? java.util.List.of() : list;
+            List<String> list = config.getStringList("categories." + name + ".spells");
+            if (list == null) {
+                list = Collections.emptyList();
+            }
+            // Cache the result
+            categorySpellsCache.put(name, list);
+            return list;
         } catch (Exception e) {
             plugin.getLogger().warning("Error getting category spells for: " + name);
-            return java.util.List.of();
+            return Collections.emptyList();
+        } finally {
+            timing.complete(10); // Log if category spells retrieval takes more than 10ms
         }
     }
 
@@ -232,15 +335,83 @@ public class ConfigService {
      *
      * @return A set of category names.
      */
-    public java.util.Set<String> getCategoryNames() {
+    public Set<String> getCategoryNames() {
+        // Check cache first
+        Set<String> cached = categoryNamesCache;
+        if (cached != null) {
+            return cached;
+        }
+        
+        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("ConfigService.getCategoryNames");
         try {
             var section = config.getConfigurationSection("categories");
-            if (section == null) return java.util.Set.of();
-            return section.getKeys(false);
+            Set<String> names = section == null ? Collections.emptySet() : section.getKeys(false);
+            // Cache the result
+            categoryNamesCache = names;
+            return names;
         } catch (Exception e) {
             plugin.getLogger().warning("Error getting category names");
-            return java.util.Set.of();
+            return Collections.emptySet();
+        } finally {
+            timing.complete(10); // Log if category names retrieval takes more than 10ms
         }
+    }
+    
+    /**
+     * Gets a spell-specific configuration section from spells.yml.
+     * This method caches the result for better performance.
+     *
+     * @param spellKey The key of the spell.
+     * @return A ReadableConfig for the spell's configuration section.
+     */
+    public ReadableConfig getSpellConfig(String spellKey) {
+        if (spellKey == null || spellKey.isEmpty()) {
+            return new ReadOnlyConfig(new YamlConfiguration());
+        }
+        
+        // Check cache first
+        ReadableConfig cached = spellConfigCache.get(spellKey);
+        if (cached != null) {
+            return cached;
+        }
+        
+        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("ConfigService.getSpellConfig");
+        try {
+            var section = spellsConfig.getConfigurationSection(spellKey);
+            YamlConfiguration spellConfig = new YamlConfiguration();
+            if (section != null) {
+                // Copy the section data to a new YamlConfiguration
+                for (String key : section.getKeys(true)) {
+                    spellConfig.set(key, section.get(key));
+                }
+            }
+            ReadableConfig readOnlySpellConfig = new ReadOnlyConfig(spellConfig);
+            
+            // Cache the result
+            spellConfigCache.put(spellKey, readOnlySpellConfig);
+            return readOnlySpellConfig;
+        } catch (Exception e) {
+            plugin.getLogger().warning("Error getting spell config for key: " + spellKey);
+            return new ReadOnlyConfig(new YamlConfiguration());
+        } finally {
+            timing.complete(5); // Log if spell config retrieval takes more than 5ms
+        }
+    }
+    
+    /**
+     * Gets performance metrics for this service.
+     *
+     * @return A string containing performance metrics.
+     */
+    public String getPerformanceMetrics() {
+        return performanceMonitor.getMetricsReport();
+    }
+    
+    /**
+     * Clears performance metrics for this service.
+     */
+    public void clearPerformanceMetrics() {
+        performanceMonitor.clearMetrics();
     }
 }
 

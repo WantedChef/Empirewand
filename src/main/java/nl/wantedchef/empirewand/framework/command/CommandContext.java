@@ -7,6 +7,7 @@ import nl.wantedchef.empirewand.api.service.WandService;
 import nl.wantedchef.empirewand.framework.service.ConfigService;
 import nl.wantedchef.empirewand.framework.service.CooldownService;
 import nl.wantedchef.empirewand.framework.service.FxService;
+import nl.wantedchef.empirewand.core.util.PerformanceMonitor;
 import net.kyori.adventure.text.Component;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.bukkit.command.CommandSender;
@@ -14,9 +15,12 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.logging.Level;
+
 /**
  * Immutable context object containing all dependencies for command execution.
  * Provides type-safe access to services and common validation methods.
+ * Enhanced with performance monitoring and advanced validation capabilities.
  */
 @SuppressFBWarnings(value = { "EI_EXPOSE_REP",
         "EI_EXPOSE_REP2" }, justification = "Record holds references to plugin/services by design; args() returns defensive copy.")
@@ -106,5 +110,85 @@ public record CommandContext(
     @Nullable
     public String getArgOrNull(int index) {
         return index < args.length ? args[index] : null;
+    }
+
+    /**
+     * Starts a performance timing context for the specified operation.
+     * 
+     * @param operation The operation being timed
+     * @return A TimingContext for measuring execution time
+     */
+    public PerformanceMonitor.TimingContext startTiming(@NotNull String operation) {
+        return plugin.getPerformanceMonitor().startTiming("command." + operation);
+    }
+
+    /**
+     * Logs a command execution with performance metrics.
+     * 
+     * @param commandName The name of the command executed
+     * @param executionTimeMs The execution time in milliseconds
+     * @param success Whether the command executed successfully
+     */
+    public void logCommandExecution(@NotNull String commandName, long executionTimeMs, boolean success) {
+        plugin.getLogger().log(Level.INFO, String.format(
+                "Command executed: %s by %s in %dms (success: %s)",
+                commandName,
+                sender.getName(),
+                executionTimeMs,
+                success ? "true" : "false"));
+    }
+
+    /**
+     * Validates that a string argument matches one of the allowed values.
+     * 
+     * @param index The argument index
+     * @param allowedValues The allowed values
+     * @return The validated argument value
+     * @throws CommandException if the argument is invalid
+     */
+    public @NotNull String validateEnumArg(int index, @NotNull String... allowedValues) throws CommandException {
+        String value = getArg(index).toLowerCase();
+        for (String allowed : allowedValues) {
+            if (allowed.toLowerCase().equals(value)) {
+                return value;
+            }
+        }
+        throw new CommandException("Invalid value '" + value + "'. Allowed values: " + String.join(", ", allowedValues));
+    }
+
+    /**
+     * Validates that an integer argument is within the specified range.
+     * 
+     * @param index The argument index
+     * @param min The minimum allowed value
+     * @param max The maximum allowed value
+     * @return The validated integer value
+     * @throws CommandException if the argument is invalid
+     */
+    public int validateIntArg(int index, int min, int max) throws CommandException {
+        try {
+            int value = Integer.parseInt(getArg(index));
+            if (value < min || value > max) {
+                throw new CommandException("Value must be between " + min + " and " + max);
+            }
+            return value;
+        } catch (NumberFormatException e) {
+            throw new CommandException("Invalid number: " + getArg(index));
+        }
+    }
+
+    /**
+     * Validates that a boolean argument is valid.
+     * 
+     * @param index The argument index
+     * @return The validated boolean value
+     * @throws CommandException if the argument is invalid
+     */
+    public boolean validateBooleanArg(int index) throws CommandException {
+        String value = getArg(index).toLowerCase();
+        if ("true".equals(value) || "false".equals(value)) {
+            return Boolean.parseBoolean(value);
+        }
+        throw new CommandException("Invalid boolean value: " + value + ". Use 'true' or 'false'");
     }
 }

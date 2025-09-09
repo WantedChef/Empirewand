@@ -1,0 +1,19 @@
+{
+  "hasSeenIdeIntegrationNudge": true,
+  "ideMode": true,
+  "selectedAuthType": "qwen-oauth",
+  "theme": "Shades Of Purple",
+  "showMemoryUsage": true,
+  "loadMemoryFromIncludeDirectories": true
+}
+
+op spell switchen. voeg voor dat mephidantes alllemaal hetzelfde toe alleen wel ander switch           │
+│   effect (misschien IG een command maken met totaal 20 opties ofzo? /[ew/mz] switcheffect ....           │
+│   moet ook per wand worden bijgehouden want we hebben toch al die keys Verder kajcloud gewoon            │
+│   particels (wolkje onder speler creeeren en is toggleable, werkt alleen als speler vliegt, als          │
+│   speler niet vliegt geen particels (maar als die daarna wel gaat vliegen automatisch aan als die        │
+│   toggle niet off heeft gezet. je moet ook andere spells ALTIJD kunnen gebruiken bij toggle              │
+│   commands (maximaal 3 toggle commands per speler mogen aan staan) maak ook nog meerdere varianten       │
+│   van kajcloud bijv: MephiCloud : komt uit de nether(onderwereld dus is iets van as en vuur.             │
+│   MEphidantes is een soort koning van de dood en leeft in de nether dus (zie mephidrain file was         │
+│   er al een beetje aanbe                                                                                 

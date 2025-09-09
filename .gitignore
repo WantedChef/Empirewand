@@ -46,3 +46,6 @@ gradle-*.zip
 /1_stappenplan.md
 
 # Dev-only docs (ignored)`n/important/`n/spells.md`n/Plan.md`n/EmpireWand_Structure.md`n/1_stappenplan.md`n
+
+.gemini/
+gha-creds-*.json

@@ -3,6 +3,7 @@ package nl.wantedchef.empirewand.command.wand;
 import nl.wantedchef.empirewand.framework.command.CommandContext;
 import nl.wantedchef.empirewand.framework.command.CommandException;
 import nl.wantedchef.empirewand.framework.command.SubCommand;
+import nl.wantedchef.empirewand.framework.command.util.CommandHelpProvider;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
@@ -11,10 +12,13 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 /**
  * Command to give a player a new wand.
+ * Enhanced with better error handling, examples, and performance monitoring.
  */
-public class GetCommand implements SubCommand {
+public class GetCommand implements SubCommand, CommandHelpProvider.HelpAwareCommand {
 
     private final String wandType;
     private final String displayName;
@@ -53,15 +57,30 @@ public class GetCommand implements SubCommand {
 
     @Override
     public void execute(@NotNull CommandContext context) throws CommandException {
-        Player player = context.requirePlayer();
+        // Start timing for performance monitoring
+        var timing = context.startTiming("wand.get");
+        try {
+            Player player = context.requirePlayer();
 
-        ItemStack wand = new ItemStack(material);
-        var meta = wand.getItemMeta();
-        meta.displayName(Component.text(displayName).color(NamedTextColor.GOLD));
-        wand.setItemMeta(meta);
+            ItemStack wand = new ItemStack(material);
+            var meta = wand.getItemMeta();
+            meta.displayName(Component.text(displayName).color(NamedTextColor.GOLD));
+            wand.setItemMeta(meta);
 
-        context.wandService().giveWand(player);
-        context.sendMessage(Component.text("You have received a " + displayName + "!")
-                .color(NamedTextColor.GREEN));
+            context.wandService().giveWand(player);
+            context.sendMessage(Component.text("You have received a " + displayName + "!")
+                    .color(NamedTextColor.GREEN));
+        } catch (Exception e) {
+            throw new CommandException("Failed to give wand: " + e.getMessage(), e, "WAND_GIVE_FAILED");
+        } finally {
+            timing.complete();
+        }
+    }
+
+    @Override
+    public @NotNull List<CommandHelpProvider.CommandExample> getExamples() {
+        return List.of(
+            new CommandHelpProvider.CommandExample("get", "Receive a new " + displayName)
+        );
     }
 }

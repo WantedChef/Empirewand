@@ -13,7 +13,9 @@ import nl.wantedchef.empirewand.command.admin.MigrateCommand;
 import nl.wantedchef.empirewand.command.admin.ReloadCommand;
 import nl.wantedchef.empirewand.command.wand.SetSpellCommand;
 import nl.wantedchef.empirewand.command.wand.SpellsCommand;
+import nl.wantedchef.empirewand.command.wand.StatsCommand;
 import nl.wantedchef.empirewand.command.wand.ToggleCommand;
+import nl.wantedchef.empirewand.command.wand.SwitchEffectCommand;
 import nl.wantedchef.empirewand.command.wand.UnbindCommand;
 import org.bukkit.Material;
 
@@ -46,7 +48,8 @@ public class MephidantesZeistCommand extends BaseWandCommand {
         register(new BindAllCommand("mephidanteszeist"));
         register(new ListCommand("mephidanteszeist"));
         register(new SetSpellCommand("mephidanteszeist"));
-        register(new ToggleCommand("mephidanteszeist"));
+        register(new ToggleCommand());
+        register(new SwitchEffectCommand(plugin));
 
         // Advanced binding commands
         register(new BindTypeCommand("mephidanteszeist"));
@@ -54,6 +57,7 @@ public class MephidantesZeistCommand extends BaseWandCommand {
 
         // Information commands
         register(new SpellsCommand("mephidanteszeist"));
+        register(new StatsCommand("mephidanteszeist"));
 
         // System commands
         register(new ReloadCommand("mephidanteszeist"));

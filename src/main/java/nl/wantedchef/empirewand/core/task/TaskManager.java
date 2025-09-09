@@ -36,6 +36,7 @@ public class TaskManager {
      * Cancel and clear all tracked tasks
      */
     public void cancelAllTasks() {
+        // Cancel all tracked tasks
         for (BukkitTask task : activeTasks) {
             if (task != null && !task.isCancelled()) {
                 task.cancel();
@@ -44,6 +45,7 @@ public class TaskManager {
         activeTasks.clear();
 
         // Also cancel any remaining tasks registered with Bukkit
+        // This ensures we don't leave any tasks running
         plugin.getServer().getScheduler().cancelTasks(plugin);
     }
 

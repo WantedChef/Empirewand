@@ -120,16 +120,26 @@ public class Polymorph extends Spell<Void> {
         return Collections.unmodifiableMap(polymorphedEntities);
     }
 
+    /**
+     * Clean up all polymorphed entities and restore their original state.
+     * This method should be called during plugin shutdown to prevent entity leaks.
+     */
     public void cleanup() {
-        for (Map.Entry<UUID, UUID> entry : new HashMap<>(polymorphedEntities).entrySet()) {
+        // Create a copy of the map to avoid concurrent modification issues
+        Map<UUID, UUID> entitiesToClean = new HashMap<>(polymorphedEntities);
+        polymorphedEntities.clear();
+        
+        for (Map.Entry<UUID, UUID> entry : entitiesToClean.entrySet()) {
             UUID sheepId = entry.getKey();
             UUID originalId = entry.getValue();
 
+            // Clean up sheep entity
             Entity sheep = Bukkit.getEntity(sheepId);
             if (sheep != null && sheep.isValid()) {
                 sheep.remove();
             }
 
+            // Restore original entity
             Entity original = Bukkit.getEntity(originalId);
             if (original instanceof LivingEntity living && living.isValid() && !living.isDead()) {
                 living.setAI(true);
@@ -138,7 +148,6 @@ public class Polymorph extends Spell<Void> {
                 living.setCollidable(true);
             }
         }
-        polymorphedEntities.clear();
     }
 
     /**

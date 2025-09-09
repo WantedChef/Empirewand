@@ -8,26 +8,27 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import nl.wantedchef.empirewand.api.EmpireWandAPI;
 import nl.wantedchef.empirewand.api.service.PermissionService;
-import nl.wantedchef.empirewand.api.spell.SpellRegistry;
 import nl.wantedchef.empirewand.api.service.WandService;
+import nl.wantedchef.empirewand.api.spell.SpellRegistry;
 import nl.wantedchef.empirewand.command.EmpireWandCommand;
 import nl.wantedchef.empirewand.command.MephidantesZeistCommand;
-import nl.wantedchef.empirewand.framework.service.ConfigService;
-import nl.wantedchef.empirewand.framework.service.CooldownService;
-import nl.wantedchef.empirewand.framework.service.FxService;
-import nl.wantedchef.empirewand.framework.service.SpellRegistryImpl;
-import nl.wantedchef.empirewand.framework.service.metrics.DebugMetricsService;
-import nl.wantedchef.empirewand.framework.service.metrics.MetricsService;
+import nl.wantedchef.empirewand.common.visual.Afterimages;
 import nl.wantedchef.empirewand.core.storage.Keys;
 import nl.wantedchef.empirewand.core.task.TaskManager;
 import nl.wantedchef.empirewand.core.text.TextService;
 import nl.wantedchef.empirewand.core.util.PerformanceMonitor;
+import nl.wantedchef.empirewand.framework.service.ConfigService;
+import nl.wantedchef.empirewand.framework.service.CooldownService;
+import nl.wantedchef.empirewand.framework.service.FxService;
+import nl.wantedchef.empirewand.framework.service.metrics.DebugMetricsService;
+import nl.wantedchef.empirewand.framework.service.metrics.MetricsService;
 import nl.wantedchef.empirewand.listener.combat.DeathSyncPolymorphListener;
-import nl.wantedchef.empirewand.listener.combat.PolymorphCleanupListener;
 import nl.wantedchef.empirewand.listener.combat.ExplosionControlListener;
 import nl.wantedchef.empirewand.listener.combat.FallDamageEtherealListener;
+import nl.wantedchef.empirewand.listener.combat.PolymorphCleanupListener;
 import nl.wantedchef.empirewand.listener.player.PlayerJoinQuitListener;
 import nl.wantedchef.empirewand.listener.projectile.ProjectileHitListener;
 import nl.wantedchef.empirewand.listener.wand.WandCastListener;
@@ -35,25 +36,22 @@ import nl.wantedchef.empirewand.listener.wand.WandDropGuardListener;
 import nl.wantedchef.empirewand.listener.wand.WandSelectListener;
 import nl.wantedchef.empirewand.listener.wand.WandStatusListener;
 import nl.wantedchef.empirewand.listener.wand.WandSwapHandListener;
-import nl.wantedchef.empirewand.common.visual.Afterimages;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 @SuppressFBWarnings(value = { "EI_EXPOSE_REP",
         "EI_EXPOSE_REP2" }, justification = "Service getters intentionally expose internal singletons (Bukkit plugin architecture).")
 public final class EmpireWandPlugin extends JavaPlugin {
 
-    private nl.wantedchef.empirewand.framework.service.ConfigService configService;
-    private nl.wantedchef.empirewand.core.text.TextService textService;
-    private nl.wantedchef.empirewand.core.util.PerformanceMonitor performanceMonitor;
-    private nl.wantedchef.empirewand.framework.service.metrics.DebugMetricsService debugMetricsService;
+    private ConfigService configService;
+    private TextService textService;
+    private PerformanceMonitor performanceMonitor;
+    private DebugMetricsService debugMetricsService;
     SpellRegistry spellRegistry;
-    nl.wantedchef.empirewand.framework.service.CooldownService cooldownService;
+    CooldownService cooldownService;
     WandService wandService;
     FxService fxService;
     PermissionService permissionService;
-    nl.wantedchef.empirewand.framework.service.metrics.MetricsService metricsService;
-    private nl.wantedchef.empirewand.core.task.TaskManager taskManager;
+    MetricsService metricsService;
+    private TaskManager taskManager;
 
     @Override
     public void onEnable() {
@@ -66,8 +64,8 @@ public final class EmpireWandPlugin extends JavaPlugin {
             this.textService = new nl.wantedchef.empirewand.core.text.TextService();
             this.performanceMonitor = new nl.wantedchef.empirewand.core.util.PerformanceMonitor(getLogger());
             this.debugMetricsService = new nl.wantedchef.empirewand.framework.service.metrics.DebugMetricsService(1000); // 1000
-                                                                                                                         // samples
-            this.cooldownService = new nl.wantedchef.empirewand.framework.service.CooldownService();
+                                                                                                                     // samples
+            this.cooldownService = new nl.wantedchef.empirewand.framework.service.CooldownService(this);
             this.fxService = new nl.wantedchef.empirewand.framework.service.FxService(this.textService,
                     this.performanceMonitor);
             this.permissionService = new nl.wantedchef.empirewand.framework.service.PermissionServiceImpl();
@@ -194,7 +192,7 @@ public final class EmpireWandPlugin extends JavaPlugin {
             getLogger().warning(String.format("Error cleaning up active spells: %s", e.getMessage()));
         }
 
-        // 7. Unregister all event listeners
+        // 8. Unregister all event listeners
         try {
             HandlerList.unregisterAll(this);
             getLogger().info("Event listeners unregistered");
@@ -202,7 +200,7 @@ public final class EmpireWandPlugin extends JavaPlugin {
             getLogger().warning(String.format("Error unregistering event listeners: %s", e.getMessage()));
         }
 
-        // 8. Shutdown metrics (existing code)
+        // 9. Shutdown metrics (existing code)
         if (this.metricsService != null) {
             try {
                 this.metricsService.shutdown();
@@ -212,7 +210,7 @@ public final class EmpireWandPlugin extends JavaPlugin {
             }
         }
 
-        // 9. Reset API provider to no-op (existing code)
+        // 10. Reset API provider to no-op (existing code)
         EmpireWandAPI.clearProvider();
 
         getLogger().info("EmpireWand has been disabled");
@@ -279,11 +277,11 @@ public final class EmpireWandPlugin extends JavaPlugin {
         return permissionService;
     }
 
-    public nl.wantedchef.empirewand.framework.service.ConfigService getConfigService() {
+    public ConfigService getConfigService() {
         return configService;
     }
 
-    public nl.wantedchef.empirewand.framework.service.CooldownService getCooldownService() {
+    public CooldownService getCooldownService() {
         return cooldownService;
     }
 
@@ -291,7 +289,7 @@ public final class EmpireWandPlugin extends JavaPlugin {
         return fxService;
     }
 
-    public nl.wantedchef.empirewand.framework.service.metrics.MetricsService getMetricsService() {
+    public MetricsService getMetricsService() {
         return metricsService;
     }
 
@@ -299,14 +297,18 @@ public final class EmpireWandPlugin extends JavaPlugin {
         return debugMetricsService;
     }
 
-    public nl.wantedchef.empirewand.core.text.TextService getTextService() {
+    public PerformanceMonitor getPerformanceMonitor() {
+        return performanceMonitor;
+    }
+
+    public TextService getTextService() {
         return textService;
     }
 
     /**
      * Get the task manager for centralized task tracking
      */
-    public nl.wantedchef.empirewand.core.task.TaskManager getTaskManager() {
+    public TaskManager getTaskManager() {
         return taskManager;
     }
 

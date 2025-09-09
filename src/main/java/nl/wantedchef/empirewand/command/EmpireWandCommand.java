@@ -15,7 +15,9 @@ import nl.wantedchef.empirewand.command.admin.MigrateCommand;
 import nl.wantedchef.empirewand.command.admin.ReloadCommand;
 import nl.wantedchef.empirewand.command.wand.SetSpellCommand;
 import nl.wantedchef.empirewand.command.wand.SpellsCommand;
+import nl.wantedchef.empirewand.command.wand.StatsCommand;
 import nl.wantedchef.empirewand.command.wand.ToggleCommand;
+import nl.wantedchef.empirewand.command.wand.SwitchEffectCommand;
 import nl.wantedchef.empirewand.command.wand.UnbindCommand;
 
 /**
@@ -47,7 +49,8 @@ public class EmpireWandCommand extends BaseWandCommand {
         register(new BindAllCommand("empirewand"));
         register(new ListCommand("empirewand"));
         register(new SetSpellCommand("empirewand"));
-        register(new ToggleCommand("empirewand"));
+        register(new ToggleCommand());
+        register(new SwitchEffectCommand(plugin));
 
         // Advanced binding commands
         register(new BindTypeCommand("empirewand"));
@@ -55,6 +58,7 @@ public class EmpireWandCommand extends BaseWandCommand {
 
         // Information commands
         register(new SpellsCommand("empirewand"));
+        register(new StatsCommand("empirewand"));
 
         // System commands
         register(new ReloadCommand("empirewand"));

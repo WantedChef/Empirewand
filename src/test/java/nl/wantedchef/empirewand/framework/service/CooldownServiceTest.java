@@ -36,10 +36,10 @@ class CooldownServiceTest {
         // Should be on cooldown
         assertTrue(cooldownService.isOnCooldown(playerId, spellKey, nowTicks));
         
-        // Should still be on cooldown at exact expiry time (nowTicks == until)
+        // Should still be on cooldown before expiry
         assertTrue(cooldownService.isOnCooldown(playerId, spellKey, nowTicks + cooldownTicks - 1));
         
-        // Should not be on cooldown at exact expiry time
+        // Should not be on cooldown at exact expiry time (nowTicks == until)
         assertFalse(cooldownService.isOnCooldown(playerId, spellKey, nowTicks + cooldownTicks));
         
         // Should not be on cooldown after expiry

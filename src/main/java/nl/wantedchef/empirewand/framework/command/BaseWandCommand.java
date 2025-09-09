@@ -1,6 +1,9 @@
 package nl.wantedchef.empirewand.framework.command;
 
 import nl.wantedchef.empirewand.EmpireWandPlugin;
+import nl.wantedchef.empirewand.framework.command.util.CommandErrorHandler;
+import nl.wantedchef.empirewand.framework.command.util.CommandHelpProvider;
+import nl.wantedchef.empirewand.framework.command.util.HelpCommand;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.Command;
@@ -14,23 +17,28 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
  * Base class for all wand command executors.
  * Handles common functionality like subcommand registration,
  * permission checking, and error handling.
+ * Enhanced with performance monitoring, advanced help system, and better alias management.
  */
 public abstract class BaseWandCommand implements CommandExecutor, TabCompleter {
 
     protected final EmpireWandPlugin plugin;
+    private final CommandErrorHandler errorHandler;
     private final Map<String, SubCommand> subcommands = new LinkedHashMap<>();
     private final Map<String, SubCommand> aliases = new HashMap<>();
 
     protected BaseWandCommand(EmpireWandPlugin plugin) {
         this.plugin = plugin;
+        this.errorHandler = new CommandErrorHandler(plugin);
         registerSubcommands();
+        
+        // Register the enhanced help command
+        register(new HelpCommand(getPermissionPrefix(), getPermissionPrefix(), subcommands, aliases));
     }
 
     /**
@@ -54,11 +62,24 @@ public abstract class BaseWandCommand implements CommandExecutor, TabCompleter {
      * Register a subcommand.
      */
     protected void register(SubCommand subCommand) {
-        subcommands.put(subCommand.getName().toLowerCase(), subCommand);
+        String commandName = subCommand.getName().toLowerCase();
+        
+        // Check for duplicate command names
+        if (subcommands.containsKey(commandName)) {
+            plugin.getLogger().warning("Duplicate command registration: " + commandName);
+            return;
+        }
+        
+        subcommands.put(commandName, subCommand);
 
         // Register aliases
         for (String alias : subCommand.getAliases()) {
-            aliases.put(alias.toLowerCase(), subCommand);
+            String aliasLower = alias.toLowerCase();
+            if (aliases.containsKey(aliasLower)) {
+                plugin.getLogger().warning("Duplicate alias registration: " + aliasLower);
+                continue;
+            }
+            aliases.put(aliasLower, subCommand);
         }
     }
 
@@ -84,28 +105,39 @@ public abstract class BaseWandCommand implements CommandExecutor, TabCompleter {
         }
 
         try {
-            // Create context
+            // Create context with performance monitoring
             CommandContext context = createContext(sender, args);
+            
+            // Start timing for performance monitoring
+            long startTime = System.nanoTime();
+            boolean success = false;
+            
+            try {
+                // Check permission
+                String permission = subCommand.getPermission();
+                if (permission != null) {
+                    context.requirePermission(permission);
+                }
 
-            // Check permission
-            String permission = subCommand.getPermission();
-            if (permission != null) {
-                context.requirePermission(permission);
+                // Check player requirement
+                if (subCommand.requiresPlayer()) {
+                    context.requirePlayer();
+                }
+
+                // Execute command
+                subCommand.execute(context);
+                
+                success = true;
+            } finally {
+                // Log execution metrics
+                long executionTimeMs = (System.nanoTime() - startTime) / 1_000_000;
+                context.logCommandExecution(subCommandName, executionTimeMs, success);
             }
-
-            // Check player requirement
-            if (subCommand.requiresPlayer()) {
-                context.requirePlayer();
-            }
-
-            // Execute command
-            subCommand.execute(context);
 
         } catch (CommandException e) {
-            sender.sendMessage(Component.text(e.getMessage()).color(NamedTextColor.RED));
+            errorHandler.handleCommandException(sender, e, subCommandName);
         } catch (Exception e) {
-            plugin.getLogger().log(Level.SEVERE, "Error executing command: " + String.join(" ", args), e);
-            sender.sendMessage(Component.text("An internal error occurred").color(NamedTextColor.RED));
+            errorHandler.handleUnexpectedException(sender, e, subCommandName, args);
         }
 
         return true;
@@ -164,23 +196,40 @@ public abstract class BaseWandCommand implements CommandExecutor, TabCompleter {
     }
 
     private void sendUsage(CommandSender sender) {
-        Component header = Component.text("=== " + getWandDisplayName() + " Commands ===")
-                .color(NamedTextColor.GOLD);
-        sender.sendMessage(header);
-
-        for (SubCommand subCommand : subcommands.values()) {
-            String permission = subCommand.getPermission();
-            if (permission != null && !plugin.getPermissionService().has(sender, permission)) {
-                continue;
-            }
-
-            Component usage = Component.text("/" + getPermissionPrefix() + " " + subCommand.getUsage())
-                    .color(NamedTextColor.YELLOW);
-            Component description = Component.text(" - " + subCommand.getDescription())
-                    .color(NamedTextColor.GRAY);
-
-            sender.sendMessage(usage.append(description));
-        }
+        Component helpMessage = CommandHelpProvider.generateHelpOverview(
+            sender, 
+            subcommands, 
+            getPermissionPrefix(), 
+            getWandDisplayName()
+        );
+        sender.sendMessage(helpMessage);
+    }
+    
+    /**
+     * Gets all registered subcommands.
+     * 
+     * @return Map of command names to SubCommand instances
+     */
+    public Map<String, SubCommand> getSubcommands() {
+        return new HashMap<>(subcommands);
+    }
+    
+    /**
+     * Gets all registered command aliases.
+     * 
+     * @return Map of alias names to SubCommand instances
+     */
+    public Map<String, SubCommand> getAliases() {
+        return new HashMap<>(aliases);
+    }
+    
+    /**
+     * Gets the error handler for this command executor.
+     * 
+     * @return The command error handler
+     */
+    public CommandErrorHandler getErrorHandler() {
+        return errorHandler;
     }
 }
 

@@ -1,5 +1,6 @@
 package nl.wantedchef.empirewand.core.util;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
@@ -13,6 +14,11 @@ public class PerformanceMonitor {
 
     private final AtomicLong operationCounter = new AtomicLong(0);
     private final Logger logger;
+    
+    // Enhanced metrics collection
+    private final ConcurrentHashMap<String, AtomicLong> operationCounters = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, AtomicLong> totalExecutionTimes = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, AtomicLong> maxExecutionTimes = new ConcurrentHashMap<>();
 
     public PerformanceMonitor(Logger logger) {
         if (logger == null) {
@@ -53,6 +59,9 @@ public class PerformanceMonitor {
 
             long durationMs = durationNs / 1_000_000;
 
+            // Update metrics collections
+            updateMetrics(operationName, durationMs);
+
             if (durationMs >= thresholdMs) {
                 long operationId = operationCounter.incrementAndGet();
                 logger.warning(String.format(
@@ -69,6 +78,63 @@ public class PerformanceMonitor {
     }
 
     /**
+     * Updates the metrics collections with the execution time for an operation.
+     *
+     * @param operationName the name of the operation
+     * @param durationMs    the duration in milliseconds
+     */
+    private void updateMetrics(String operationName, long durationMs) {
+        // Increment operation counter
+        operationCounters.computeIfAbsent(operationName, k -> new AtomicLong(0)).incrementAndGet();
+        
+        // Add to total execution time
+        totalExecutionTimes.computeIfAbsent(operationName, k -> new AtomicLong(0)).addAndGet(durationMs);
+        
+        // Update maximum execution time
+        maxExecutionTimes.computeIfAbsent(operationName, k -> new AtomicLong(0))
+                .accumulateAndGet(durationMs, Math::max);
+    }
+
+    /**
+     * Gets the average execution time for an operation.
+     *
+     * @param operationName the name of the operation
+     * @return the average execution time in milliseconds, or 0 if no data
+     */
+    public double getAverageExecutionTime(String operationName) {
+        AtomicLong count = operationCounters.get(operationName);
+        AtomicLong total = totalExecutionTimes.get(operationName);
+        
+        if (count == null || total == null || count.get() == 0) {
+            return 0.0;
+        }
+        
+        return (double) total.get() / count.get();
+    }
+
+    /**
+     * Gets the maximum execution time for an operation.
+     *
+     * @param operationName the name of the operation
+     * @return the maximum execution time in milliseconds, or 0 if no data
+     */
+    public long getMaxExecutionTime(String operationName) {
+        AtomicLong max = maxExecutionTimes.get(operationName);
+        return max != null ? max.get() : 0L;
+    }
+
+    /**
+     * Gets the number of times an operation has been executed.
+     *
+     * @param operationName the name of the operation
+     * @return the number of executions, or 0 if no data
+     */
+    public long getExecutionCount(String operationName) {
+        AtomicLong count = operationCounters.get(operationName);
+        return count != null ? count.get() : 0L;
+    }
+
+    /**
      * Creates a timing context for measuring operation duration.
      *
      * @param operationName the name of the operation
@@ -79,6 +145,37 @@ public class PerformanceMonitor {
             throw new IllegalArgumentException("Operation name cannot be null or empty");
         }
         return new TimingContext(operationName, System.nanoTime());
+    }
+
+    /**
+     * Gets a formatted report of all collected metrics.
+     *
+     * @return a string containing the performance metrics report
+     */
+    public String getMetricsReport() {
+        StringBuilder report = new StringBuilder();
+        report.append("Performance Metrics Report:\n");
+        
+        for (String operationName : operationCounters.keySet()) {
+            long count = getExecutionCount(operationName);
+            double avgTime = getAverageExecutionTime(operationName);
+            long maxTime = getMaxExecutionTime(operationName);
+            
+            report.append(String.format(
+                    "  %s: %d executions, avg %.2f ms, max %d ms\n",
+                    operationName, count, avgTime, maxTime));
+        }
+        
+        return report.toString();
+    }
+
+    /**
+     * Clears all collected metrics.
+     */
+    public void clearMetrics() {
+        operationCounters.clear();
+        totalExecutionTimes.clear();
+        maxExecutionTimes.clear();
     }
 
     /**

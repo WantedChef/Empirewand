@@ -662,6 +662,7 @@ public class FxService implements EffectService {
 
     /**
      * Shuts down the FxService and flushes any pending particle batches.
+     * This method should be called during plugin shutdown to prevent memory leaks.
      */
     public void shutdown() {
         synchronized (particleBatchLock) {

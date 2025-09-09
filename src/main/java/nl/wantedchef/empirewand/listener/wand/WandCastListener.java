@@ -6,6 +6,7 @@ import nl.wantedchef.empirewand.framework.service.FxService;
 import nl.wantedchef.empirewand.api.spell.SpellRegistry;
 import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.SpellContext;
+import nl.wantedchef.empirewand.framework.service.SpellSwitchService;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -23,14 +24,16 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Casten via RIGHT_CLICK (alleen main hand). Bevat permissie- en
- * cooldown-checks.
+ * Handles wand interactions: left-click to cast, right-click to switch spells.
+ * Implements visual spell switching effects and ensures proper spell cycling.
  */
 public final class WandCastListener implements Listener {
     private final EmpireWandPlugin plugin;
+    private final SpellSwitchService spellSwitchService;
 
     public WandCastListener(EmpireWandPlugin plugin) {
         this.plugin = plugin;
+        this.spellSwitchService = new SpellSwitchService(plugin);
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.NORMAL)
@@ -72,8 +75,9 @@ public final class WandCastListener implements Listener {
         }
 
         if (isRightClick) {
-            // Right-click: cycle to next spell
-            // Shift+right-click: cycle to previous spell
+            // Right-click: cycle to next spell with visual effect
+            // Shift+right-click: cycle to previous spell with visual effect
+            event.setCancelled(true);
             if (player.isSneaking()) {
                 cycleToPreviousSpell(player, item, spells);
             } else {
@@ -83,7 +87,10 @@ public final class WandCastListener implements Listener {
         }
 
         // Left-click: cast current spell
-        castCurrentSpell(player, item, spells);
+        if (isLeftClick) {
+            event.setCancelled(true);
+            castCurrentSpell(player, item, spells);
+        }
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.NORMAL)
@@ -110,7 +117,7 @@ public final class WandCastListener implements Listener {
             return; // Don't show error message for sneak action
         }
 
-        // Sneak: cycle to next spell (same as right-click)
+        // Sneak: cycle to next spell with visual effect
         cycleToNextSpell(player, item, spells);
     }
 
@@ -136,6 +143,9 @@ public final class WandCastListener implements Listener {
         // Show action bar and chat message
         plugin.getFxService().actionBar(player, displayName);
         player.sendMessage("§aSelected: §r" + displayName);
+
+        // Play spell switch effect
+        spellSwitchService.playSpellSwitchEffect(player, item);
 
         // Fire WandSelectEvent for other plugins to listen to
         var previousSpellKey = spells.get(currentIndex);
@@ -172,6 +182,9 @@ public final class WandCastListener implements Listener {
         // Show action bar and chat message
         plugin.getFxService().actionBar(player, displayName);
         player.sendMessage("§aSelected: §r" + displayName);
+
+        // Play spell switch effect
+        spellSwitchService.playSpellSwitchEffect(player, item);
 
         // Fire WandSelectEvent for other plugins to listen to
         var previousSpellKey = spells.get(currentIndex);
@@ -256,5 +269,14 @@ public final class WandCastListener implements Listener {
             plugin.getLogger().warning(String.format("Spell cast error for '%s': %s", spellKey, t.getMessage()));
             plugin.getMetricsService().recordFailedCast();
         }
+    }
+    
+    /**
+     * Public method to allow other parts of the plugin to play spell switch effects
+     * @param player The player
+     * @param wand The wand item
+     */
+    public void playSpellSwitchEffect(Player player, ItemStack wand) {
+        spellSwitchService.playSpellSwitchEffect(player, wand);
     }
 }

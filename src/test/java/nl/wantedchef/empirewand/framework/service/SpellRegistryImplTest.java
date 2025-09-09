@@ -1,6 +1,6 @@
 package nl.wantedchef.empirewand.framework.service;
 
-import nl.wantedchef.empirewand.api.SpellRegistry;
+import nl.wantedchef.empirewand.api.spell.SpellRegistry;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

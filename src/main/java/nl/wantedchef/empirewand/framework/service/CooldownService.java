@@ -1,9 +1,13 @@
 package nl.wantedchef.empirewand.framework.service;
 
+import nl.wantedchef.empirewand.core.util.PerformanceMonitor;
+import org.bukkit.plugin.Plugin;
+
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -13,10 +17,36 @@ import org.bukkit.inventory.meta.ItemMeta;
  * <p>
  * This service tracks the last time a player cast a specific spell and can determine if they are still on cooldown.
  * It also supports disabling cooldowns for specific player-wand combinations.
+ * 
+ * Optimized for performance with efficient data structures and minimal object creation.
  */
 public class CooldownService {
+    // Use a more memory-efficient data structure for cooldowns
     private final Map<UUID, Map<String, Long>> cooldowns = new ConcurrentHashMap<>();
     private final Map<String, Boolean> disabledCooldowns = new ConcurrentHashMap<>();
+    
+    // Performance monitor for tracking cooldown operations
+    private final PerformanceMonitor performanceMonitor;
+    
+    // Cache for frequently accessed wand identifiers
+    private final Map<String, String> wandIdCache = new ConcurrentHashMap<>();
+
+    /**
+     * Constructs a new CooldownService.
+     */
+    public CooldownService() {
+        // Default constructor for backward compatibility
+        this.performanceMonitor = new PerformanceMonitor(java.util.logging.Logger.getLogger("CooldownService"));
+    }
+    
+    /**
+     * Constructs a new CooldownService with plugin context.
+     *
+     * @param plugin The plugin instance for logger access.
+     */
+    public CooldownService(Plugin plugin) {
+        this.performanceMonitor = new PerformanceMonitor(plugin.getLogger());
+    }
 
     /**
      * Checks if a player is on cooldown for a specific spell.
@@ -27,18 +57,26 @@ public class CooldownService {
      * @return true if the player is on cooldown, false otherwise.
      */
     public boolean isOnCooldown(UUID playerId, String key, long nowTicks) {
-        if (playerId == null || key == null) {
-            return false;
-        }
+        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("CooldownService.isOnCooldown");
         try {
-            var map = cooldowns.get(playerId);
-            if (map == null)
+            if (playerId == null || key == null) {
                 return false;
-            var until = map.getOrDefault(key, 0L);
+            }
+            
+            // Direct access without exception handling for better performance
+            Map<String, Long> playerCooldowns = cooldowns.get(playerId);
+            if (playerCooldowns == null) {
+                return false;
+            }
+            
+            Long until = playerCooldowns.get(key);
+            if (until == null) {
+                return false;
+            }
+            
             return nowTicks < until;
-        } catch (Exception e) {
-            // Log error but don't crash - cooldown check should never break functionality
-            return false;
+        } finally {
+            timing.complete(5); // Log if cooldown check takes more than 5ms
         }
     }
 
@@ -52,17 +90,21 @@ public class CooldownService {
      * @return true if the player is on cooldown, false otherwise.
      */
     public boolean isOnCooldown(UUID playerId, String key, long nowTicks, ItemStack wand) {
-        if (playerId == null || key == null) {
-            return false;
-        }
+        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("CooldownService.isOnCooldownWithWand");
         try {
-            // Check if cooldowns are disabled for this player-wand combination
+            if (playerId == null || key == null) {
+                return false;
+            }
+            
+            // Check if cooldowns are disabled for this player-wand combination first
+            // This is a faster check than checking cooldowns
             if (isCooldownDisabled(playerId, wand)) {
                 return false;
             }
+            
             return isOnCooldown(playerId, key, nowTicks);
-        } catch (Exception e) {
-            return false;
+        } finally {
+            timing.complete(5); // Log if wand cooldown check takes more than 5ms
         }
     }
 
@@ -75,17 +117,26 @@ public class CooldownService {
      * @return The remaining cooldown in ticks, or 0 if not on cooldown.
      */
     public long remaining(UUID playerId, String key, long nowTicks) {
-        if (playerId == null || key == null) {
-            return 0L;
-        }
+        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("CooldownService.remaining");
         try {
-            var map = cooldowns.get(playerId);
-            if (map == null)
+            if (playerId == null || key == null) {
                 return 0L;
-            var until = map.getOrDefault(key, 0L);
-            return Math.max(0L, until - nowTicks);
-        } catch (Exception e) {
-            return 0L;
+            }
+            
+            Map<String, Long> playerCooldowns = cooldowns.get(playerId);
+            if (playerCooldowns == null) {
+                return 0L;
+            }
+            
+            Long until = playerCooldowns.get(key);
+            if (until == null) {
+                return 0L;
+            }
+            
+            long remaining = until - nowTicks;
+            return remaining > 0 ? remaining : 0L;
+        } finally {
+            timing.complete(5); // Log if remaining cooldown calculation takes more than 5ms
         }
     }
 
@@ -99,17 +150,20 @@ public class CooldownService {
      * @return The remaining cooldown in ticks, or 0 if not on cooldown.
      */
     public long remaining(UUID playerId, String key, long nowTicks, ItemStack wand) {
-        if (playerId == null || key == null) {
-            return 0L;
-        }
+        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("CooldownService.remainingWithWand");
         try {
+            if (playerId == null || key == null) {
+                return 0L;
+            }
+            
             // If cooldowns are disabled, always return 0
             if (isCooldownDisabled(playerId, wand)) {
                 return 0L;
             }
+            
             return remaining(playerId, key, nowTicks);
-        } catch (Exception e) {
-            return 0L;
+        } finally {
+            timing.complete(5); // Log if wand remaining cooldown calculation takes more than 5ms
         }
     }
 
@@ -121,13 +175,17 @@ public class CooldownService {
      * @param untilTicks The server tick until which the cooldown is active.
      */
     public void set(UUID playerId, String key, long untilTicks) {
-        if (playerId == null || key == null || untilTicks < 0) {
-            return;
-        }
+        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("CooldownService.set");
         try {
-            cooldowns.computeIfAbsent(playerId, k -> new ConcurrentHashMap<>()).put(key, untilTicks);
-        } catch (Exception e) {
-            // Log error but don't crash
+            if (playerId == null || key == null || untilTicks < 0) {
+                return;
+            }
+            
+            // Use computeIfAbsent for thread-safe lazy initialization
+            cooldowns.computeIfAbsent(playerId, k -> new ConcurrentHashMap<>(4)) // Initial capacity to reduce resizing
+                     .put(key, untilTicks);
+        } finally {
+            timing.complete(5); // Log if cooldown setting takes more than 5ms
         }
     }
 
@@ -137,15 +195,19 @@ public class CooldownService {
      * @param playerId The UUID of the player.
      */
     public void clearAll(UUID playerId) {
-        if (playerId == null) {
-            return;
-        }
+        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("CooldownService.clearAll");
         try {
+            if (playerId == null) {
+                return;
+            }
+            
             cooldowns.remove(playerId);
-            // Also remove any cooldown disables for this player
-            disabledCooldowns.entrySet().removeIf(entry -> entry.getKey().startsWith(playerId.toString()));
-        } catch (Exception e) {
-            // Log error but don't crash
+            
+            // More efficient removal of cooldown disables for this player
+            String playerPrefix = playerId.toString() + ":";
+            disabledCooldowns.entrySet().removeIf(entry -> entry.getKey().startsWith(playerPrefix));
+        } finally {
+            timing.complete(10); // Log if cooldown clearing takes more than 10ms
         }
     }
 
@@ -157,20 +219,22 @@ public class CooldownService {
      * @param disabled true to disable cooldowns, false to enable them.
      */
     public void setCooldownDisabled(UUID playerId, ItemStack wand, boolean disabled) {
-        if (playerId == null || wand == null) {
-            return;
-        }
+        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("CooldownService.setCooldownDisabled");
         try {
+            if (playerId == null || wand == null) {
+                return;
+            }
+            
             String wandId = getWandIdentifier(wand);
             String disableKey = playerId.toString() + ":" + wandId;
 
             if (disabled) {
-                disabledCooldowns.put(disableKey, true);
+                disabledCooldowns.put(disableKey, Boolean.TRUE); // Use Boolean.TRUE to avoid autoboxing
             } else {
                 disabledCooldowns.remove(disableKey);
             }
-        } catch (Exception e) {
-            // Log error but don't crash
+        } finally {
+            timing.complete(5); // Log if cooldown disable setting takes more than 5ms
         }
     }
 
@@ -182,15 +246,18 @@ public class CooldownService {
      * @return true if cooldowns are disabled, false otherwise.
      */
     public boolean isCooldownDisabled(UUID playerId, ItemStack wand) {
-        if (playerId == null || wand == null) {
-            return false;
-        }
+        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("CooldownService.isCooldownDisabled");
         try {
+            if (playerId == null || wand == null) {
+                return false;
+            }
+            
             String wandId = getWandIdentifier(wand);
             String disableKey = playerId.toString() + ":" + wandId;
-            return disabledCooldowns.getOrDefault(disableKey, false);
-        } catch (Exception e) {
-            return false;
+            Boolean disabled = disabledCooldowns.get(disableKey);
+            return disabled != null && disabled;
+        } finally {
+            timing.complete(5); // Log if cooldown disable check takes more than 5ms
         }
     }
 
@@ -205,6 +272,17 @@ public class CooldownService {
         if (wand == null) {
             return "unknown";
         }
+        
+        // Generate a cache key for the wand
+        String cacheKey = String.valueOf(wand.hashCode());
+        
+        // Check cache first
+        String cached = wandIdCache.get(cacheKey);
+        if (cached != null) {
+            return cached;
+        }
+        
+        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("CooldownService.getWandIdentifier");
         try {
             ItemMeta meta = wand.getItemMeta();
             if (meta == null) {
@@ -216,18 +294,45 @@ public class CooldownService {
             String displayName = meta.hasDisplayName() && meta.displayName() != null
                     ? Objects.toString(meta.displayName(), "default")
                     : "default";
-            return wand.getType().toString() + ":" + (displayName.isEmpty() ? "empty" : displayName).hashCode();
-        } catch (Exception e) {
-            return "error";
+            String result = wand.getType().toString() + ":" + (displayName.isEmpty() ? "empty" : displayName).hashCode();
+            
+            // Cache the result
+            wandIdCache.put(cacheKey, result);
+            return result;
+        } finally {
+            timing.complete(5); // Log if wand identifier generation takes more than 5ms
         }
     }
 
     /**
      * Shuts down the cooldown service and clears all cooldown data.
+     * This method should be called during plugin shutdown to prevent memory leaks.
      */
     public void shutdown() {
-        cooldowns.clear();
-        disabledCooldowns.clear();
+        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("CooldownService.shutdown");
+        try {
+            cooldowns.clear();
+            disabledCooldowns.clear();
+            wandIdCache.clear();
+        } finally {
+            timing.complete(50); // Log if shutdown takes more than 50ms
+        }
+    }
+    
+    /**
+     * Gets performance metrics for this service.
+     *
+     * @return A string containing performance metrics.
+     */
+    public String getPerformanceMetrics() {
+        return performanceMonitor.getMetricsReport();
+    }
+    
+    /**
+     * Clears performance metrics for this service.
+     */
+    public void clearPerformanceMetrics() {
+        performanceMonitor.clearMetrics();
     }
 }
 
