@@ -1,7 +1,6 @@
 package nl.wantedchef.empirewand.core.services;
 
 import nl.wantedchef.empirewand.core.EmpireWandPlugin;
-import nl.wantedchef.empirewand.core.wand.WandSettings;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -58,8 +57,8 @@ public class SpellSwitchService {
         }
         lastSwitchTime.put(playerId, now);
 
-        WandSettings settings = new WandSettings(wand);
-        String effect = settings.getSpellSwitchEffect();
+        // TODO: Implement WandSettings class
+        String effect = "spiral"; // Default effect
 
         switch (effect.toLowerCase()) {
             case "spiral":

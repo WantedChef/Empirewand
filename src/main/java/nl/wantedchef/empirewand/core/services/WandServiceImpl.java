@@ -609,14 +609,16 @@ public class WandServiceImpl implements WandService {
 
     @Override
     @NotNull
-    public WandBuilder createWand() {
-        return new WandBuilderImpl();
+    public Object createWand() {
+        // TODO: Implement WandBuilder
+        return new Object();
     }
 
     @Override
     @NotNull
-    public WandBuilder createWand(@NotNull WandTemplate template) {
-        return new WandBuilderImpl(template);
+    public Object createWand(@NotNull Object template) {
+        // TODO: Implement WandBuilder and WandTemplate
+        return new Object();
     }
 
     @Override

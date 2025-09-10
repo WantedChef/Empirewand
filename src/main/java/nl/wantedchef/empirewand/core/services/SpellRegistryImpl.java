@@ -1,7 +1,7 @@
 package nl.wantedchef.empirewand.core.services;
 
 import nl.wantedchef.empirewand.api.spell.SpellRegistry;
-import nl.wantedchef.empirewand.spell.base.Spell;
+import nl.wantedchef.empirewand.spell.Spell;
 import org.jetbrains.annotations.NotNull;
 import java.util.Collection;
 import java.util.Map;
@@ -13,7 +13,7 @@ public class SpellRegistryImpl implements SpellRegistry {
     
     @Override
     public void register(@NotNull Spell<?> spell) {
-        spells.put(spell.key(), spell);
+        spells.put(spell.getKey(), spell);
     }
     
     @Override

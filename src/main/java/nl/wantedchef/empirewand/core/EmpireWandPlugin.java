@@ -25,17 +25,6 @@ import nl.wantedchef.empirewand.core.services.CooldownService;
 import nl.wantedchef.empirewand.core.services.FxService;
 import nl.wantedchef.empirewand.core.services.DebugMetricsService;
 import nl.wantedchef.empirewand.core.services.MetricsService;
-import nl.wantedchef.empirewand.listener.combat.DeathSyncPolymorphListener;
-import nl.wantedchef.empirewand.listener.combat.ExplosionControlListener;
-import nl.wantedchef.empirewand.listener.combat.FallDamageEtherealListener;
-import nl.wantedchef.empirewand.listener.combat.PolymorphCleanupListener;
-import nl.wantedchef.empirewand.listener.player.PlayerJoinQuitListener;
-import nl.wantedchef.empirewand.listener.projectile.ProjectileHitListener;
-import nl.wantedchef.empirewand.listener.wand.WandCastListener;
-import nl.wantedchef.empirewand.listener.wand.WandDropGuardListener;
-import nl.wantedchef.empirewand.listener.wand.WandSelectListener;
-import nl.wantedchef.empirewand.listener.wand.WandStatusListener;
-import nl.wantedchef.empirewand.listener.wand.WandSwapHandListener;
 
 @SuppressFBWarnings(value = { "EI_EXPOSE_REP",
         "EI_EXPOSE_REP2" }, justification = "Service getters intentionally expose internal singletons (Bukkit plugin architecture).")
@@ -62,7 +51,7 @@ public final class EmpireWandPlugin extends JavaPlugin {
             // Initialize core services
             this.configService = new ConfigServiceImpl(this);
             this.textService = new nl.wantedchef.empirewand.core.text.TextService();
-            this.performanceMonitor = new nl.wantedchef.empirewand.core.util.PerformanceMonitor(getLogger());
+            this.performanceMonitor = new nl.wantedchef.empirewand.core.util.PerformanceMonitor();
             this.debugMetricsService = new nl.wantedchef.empirewand.core.services.DebugMetricsService(1000); // 1000
                                                                                                              // samples
             this.cooldownService = new nl.wantedchef.empirewand.core.services.CooldownService(this);
