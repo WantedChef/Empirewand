@@ -15,7 +15,7 @@ import nl.wantedchef.empirewand.api.service.WandService;
 import nl.wantedchef.empirewand.api.spell.SpellRegistry;
 import nl.wantedchef.empirewand.command.EmpireWandCommand;
 import nl.wantedchef.empirewand.command.MephidantesZeistCommand;
- // import nl.wantedchef.empirewand.common.visual.Afterimages; // TODO: Create Afterimages class
+// import nl.wantedchef.empirewand.common.visual.Afterimages; // TODO: Create Afterimages class
 import nl.wantedchef.empirewand.core.storage.Keys;
 import nl.wantedchef.empirewand.core.task.TaskManager;
 import nl.wantedchef.empirewand.core.text.TextService;
@@ -63,9 +63,11 @@ public final class EmpireWandPlugin extends JavaPlugin {
             this.configService = new nl.wantedchef.empirewand.core.config.ConfigService(this);
             this.textService = new nl.wantedchef.empirewand.core.text.TextService();
             this.performanceMonitor = new nl.wantedchef.empirewand.core.util.PerformanceMonitor(getLogger());
-            this.debugMetricsService = new nl.wantedchef.empirewand.core.services.DebugMetricsService(1000); // 1000 samples
+            this.debugMetricsService = new nl.wantedchef.empirewand.core.services.DebugMetricsService(1000); // 1000
+                                                                                                             // samples
             this.cooldownService = new nl.wantedchef.empirewand.core.services.CooldownService(this);
-            this.fxService = new nl.wantedchef.empirewand.core.services.FxService(this.textService, this.performanceMonitor);
+            this.fxService = new nl.wantedchef.empirewand.core.services.FxService(this.textService,
+                    this.performanceMonitor);
             this.permissionService = new nl.wantedchef.empirewand.core.services.PermissionServiceImpl();
 
             // Register API provider early so services depending on API can use it
@@ -237,7 +239,9 @@ public final class EmpireWandPlugin extends JavaPlugin {
     private void registerCommands() {
         var ewCommand = getCommand("ew");
         if (ewCommand != null) {
-            // var commandExecutor = new nl.wantedchef.empirewand.command.EmpireWandCommand(this); // TODO: Create EmpireWandCommand
+            // var commandExecutor = new
+            // nl.wantedchef.empirewand.command.EmpireWandCommand(this); // TODO: Create
+            // EmpireWandCommand
             // ewCommand.setExecutor(commandExecutor);
             // ewCommand.setTabCompleter(commandExecutor);
             getLogger().warning("Command 'ew' registration placeholder - command class missing");
@@ -247,7 +251,9 @@ public final class EmpireWandPlugin extends JavaPlugin {
 
         var mzCommand = getCommand("mz");
         if (mzCommand != null) {
-            // var commandExecutor = new nl.wantedchef.empirewand.command.MephidantesZeistCommand(this); // TODO: Create MephidantesZeistCommand
+            // var commandExecutor = new
+            // nl.wantedchef.empirewand.command.MephidantesZeistCommand(this); // TODO:
+            // Create MephidantesZeistCommand
             // mzCommand.setExecutor(commandExecutor);
             // mzCommand.setTabCompleter(commandExecutor);
             getLogger().warning("Command 'mz' registration placeholder - command class missing");
@@ -263,7 +269,8 @@ public final class EmpireWandPlugin extends JavaPlugin {
             int aiMax = spellsCfg.getInt("afterimages.max-size", 32);
             int aiLifetime = spellsCfg.getInt("afterimages.lifetime-ticks", 18);
             long aiPeriod = spellsCfg.getLong("afterimages.period-ticks", 2L);
-            // Afterimages.initialize(this, aiMax, aiLifetime, aiPeriod); // TODO: Implement Afterimages
+            // Afterimages.initialize(this, aiMax, aiLifetime, aiPeriod); // TODO: Implement
+            // Afterimages
             getLogger().info("Afterimages initialized (placeholder)");
         } else {
             getLogger().info("Afterimages disabled via config");
