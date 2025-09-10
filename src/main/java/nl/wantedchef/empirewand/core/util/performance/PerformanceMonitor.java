@@ -1,66 +1,24 @@
 package nl.wantedchef.empirewand.core.util.performance;
 
-import nl.wantedchef.empirewand.core.EmpireWandPlugin;
-import org.jetbrains.annotations.NotNull;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
 
-/**
- * Performance monitor for tracking command and spell execution times.
- * 
- * @since 2.0.0
- */
 public class PerformanceMonitor {
-
-    private final EmpireWandPlugin plugin;
-    private long commandStartTime;
-
-    /**
-     * Constructs a new PerformanceMonitor.
-     * 
-     * @param plugin the plugin instance
-     */
-    public PerformanceMonitor(@NotNull EmpireWandPlugin plugin) {
-        this.plugin = plugin;
-        this.commandStartTime = 0;
+    private final Map<String, Long> metrics = new ConcurrentHashMap<>();
+    
+    public void startTiming(String operation) {
+        metrics.put(operation + "_start", System.nanoTime());
     }
-
-    /**
-     * Starts timing for command execution.
-     */
-    public void startCommandTiming() {
-        this.commandStartTime = System.nanoTime();
-    }
-
-    /**
-     * Records command execution time and logs performance metrics.
-     * 
-     * @param commandName the name of the command
-     */
-    public void recordCommandExecution(@NotNull String commandName) {
-        if (commandStartTime == 0) {
-            plugin.getLogger().warning("recordCommandExecution called without startCommandTiming for " + commandName);
-            return;
+    
+    public void endTiming(String operation) {
+        Long start = metrics.get(operation + "_start");
+        if (start != null) {
+            long duration = System.nanoTime() - start;
+            metrics.put(operation + "_duration", duration);
         }
-        
-        long executionTimeMs = (System.nanoTime() - commandStartTime) / 1_000_000;
-        plugin.getLogger().info(String.format("Command '%s' executed in %d ms", commandName, executionTimeMs));
-        
-        // Reset for next command
-        this.commandStartTime = 0;
     }
-
-    /**
-     * Records command execution time without logging.
-     * 
-     * @param commandName the name of the command
-     * @return the execution time in milliseconds
-     */
-    public long recordCommandExecutionSilent(@NotNull String commandName) {
-        if (commandStartTime == 0) {
-            return 0;
-        }
-        
-        long executionTimeMs = (System.nanoTime() - commandStartTime) / 1_000_000;
-        this.commandStartTime = 0;
-        return executionTimeMs;
+    
+    public long getDuration(String operation) {
+        return metrics.getOrDefault(operation + "_duration", 0L);
     }
 }

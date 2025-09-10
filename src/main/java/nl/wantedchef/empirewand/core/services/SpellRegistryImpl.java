@@ -3,7 +3,6 @@ package nl.wantedchef.empirewand.core.services;
 import nl.wantedchef.empirewand.api.spell.SpellRegistry;
 import nl.wantedchef.empirewand.spell.base.Spell;
 import org.jetbrains.annotations.NotNull;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
