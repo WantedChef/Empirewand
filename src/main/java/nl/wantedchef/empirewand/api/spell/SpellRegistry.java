@@ -1,9 +1,11 @@
 package nl.wantedchef.empirewand.api.spell;
 
-import nl.wantedchef.empirewand.spell.Spell;
-import org.jetbrains.annotations.NotNull;
 import java.util.Collection;
 import java.util.Optional;
+
+import org.jetbrains.annotations.NotNull;
+
+import nl.wantedchef.empirewand.spell.Spell;
 
 public interface SpellRegistry {
     void register(@NotNull Spell<?> spell);
