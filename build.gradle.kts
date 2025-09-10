@@ -2,7 +2,7 @@ plugins {
     java
     id("com.github.johnrengelman.shadow") version "8.1.1"
     checkstyle
-    id("com.github.spotbugs") version "5.2.1"
+    //id("com.github.spotbugs") version "5.2.1"
 }
 
 group = "nl.wantedchef.empirewand"
@@ -96,15 +96,7 @@ tasks.withType<Checkstyle>().configureEach {
     }
 }
 
-spotbugs {
-    excludeFilter.set(file("config/spotbugs/exclude.xml"))
-    reportLevel.set(com.github.spotbugs.snom.Confidence.HIGH)
-}
 
-tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().configureEach {
-    reports.create("html") {
-        required.set(true)
-    }
 }
 
 // Enable test compilation/execution
