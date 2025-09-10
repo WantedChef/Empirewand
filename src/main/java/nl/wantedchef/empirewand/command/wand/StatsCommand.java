@@ -5,11 +5,11 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
-public class BindAllCommand extends BaseWandCommand {
+public class StatsCommand extends BaseWandCommand {
     
     @Override
     public boolean executeCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        // TODO: Implement BindAllCommand logic
+        // TODO: Implement StatsCommand logic
         return true;
     }
 }

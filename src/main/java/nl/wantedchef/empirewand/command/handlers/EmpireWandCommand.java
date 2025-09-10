@@ -1,4 +1,4 @@
-package nl.wantedchef.empirewand.command.handlers.handlers;
+package nl.wantedchef.empirewand.command.handlers;
 
 import org.bukkit.Material;
 

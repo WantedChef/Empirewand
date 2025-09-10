@@ -6,8 +6,10 @@ import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
 public class UnbindCommand extends BaseWandCommand {
+    
     @Override
-    protected boolean execute(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+    public boolean executeCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+        // TODO: Implement UnbindCommand logic
         return true;
     }
 }

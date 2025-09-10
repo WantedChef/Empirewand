@@ -1,6 +1,6 @@
 package nl.wantedchef.empirewand.api.spell;
 
-import nl.wantedchef.empirewand.spell.base.Spell;
+import nl.wantedchef.empirewand.spell.Spell;
 import org.jetbrains.annotations.NotNull;
 import java.util.Collection;
 import java.util.Optional;

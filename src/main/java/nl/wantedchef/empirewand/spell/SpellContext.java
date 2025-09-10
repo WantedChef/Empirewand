@@ -1,34 +1,24 @@
 package nl.wantedchef.empirewand.spell;
 
+import org.bukkit.entity.Player;
+import org.bukkit.Location;
+import org.jetbrains.annotations.NotNull;
+
 /**
- * Spell context for execution.
+ * Context information for spell casting.
  */
 public class SpellContext {
-    private final Object player;
-    private final Object target;
-    private final Object location;
-    private final String spellKey;
+    private final Player caster;
+    private final Location location;
     
-    public SpellContext(Object player, Object target, Object location, String spellKey) {
-        this.player = player;
-        this.target = target;
+    public SpellContext(@NotNull Player caster, @NotNull Location location) {
+        this.caster = caster;
         this.location = location;
-        this.spellKey = spellKey;
     }
     
-    public Object getPlayer() {
-        return player;
-    }
+    @NotNull
+    public Player getCaster() { return caster; }
     
-    public Object getTarget() {
-        return target;
-    }
-    
-    public Object getLocation() {
-        return location;
-    }
-    
-    public String getSpellKey() {
-        return spellKey;
-    }
+    @NotNull
+    public Location getLocation() { return location; }
 }

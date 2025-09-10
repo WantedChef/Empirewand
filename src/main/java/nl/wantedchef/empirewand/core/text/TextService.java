@@ -1,28 +1,25 @@
 package nl.wantedchef.empirewand.core.text;
 
+import org.bukkit.ChatColor;
+import org.jetbrains.annotations.NotNull;
+
 /**
- * Text service for formatting and processing messages.
+ * Service for handling text formatting and messages.
  */
 public class TextService {
     
-    /**
-     * Formats a message with color codes.
-     */
-    public String format(String message) {
-        return message; // Simplified implementation
+    @NotNull
+    public String colorize(@NotNull String message) {
+        return ChatColor.translateAlternateColorCodes('&', message);
     }
     
-    /**
-     * Converts a message to a component.
-     */
-    public Object toComponent(String message) {
-        return message; // Simplified implementation
+    @NotNull  
+    public String format(@NotNull String template, Object... args) {
+        return String.format(colorize(template), args);
     }
     
-    /**
-     * Strips color codes from a message.
-     */
-    public String stripColors(String message) {
-        return message.replaceAll("§[0-9a-fk-or]", "");
+    @NotNull
+    public String stripColor(@NotNull String message) {
+        return ChatColor.stripColor(message);
     }
 }

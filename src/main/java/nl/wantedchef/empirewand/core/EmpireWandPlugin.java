@@ -20,7 +20,7 @@ import nl.wantedchef.empirewand.core.storage.Keys;
 import nl.wantedchef.empirewand.core.task.TaskManager;
 import nl.wantedchef.empirewand.core.text.TextService;
 import nl.wantedchef.empirewand.core.util.PerformanceMonitor;
-import nl.wantedchef.empirewand.core.config.ConfigService;
+import nl.wantedchef.empirewand.core.config.ConfigServiceImpl;
 import nl.wantedchef.empirewand.core.services.CooldownService;
 import nl.wantedchef.empirewand.core.services.FxService;
 import nl.wantedchef.empirewand.core.services.DebugMetricsService;
@@ -41,7 +41,7 @@ import nl.wantedchef.empirewand.listener.wand.WandSwapHandListener;
         "EI_EXPOSE_REP2" }, justification = "Service getters intentionally expose internal singletons (Bukkit plugin architecture).")
 public final class EmpireWandPlugin extends JavaPlugin {
 
-    private ConfigService configService;
+    private ConfigServiceImpl configService;
     private TextService textService;
     private PerformanceMonitor performanceMonitor;
     private DebugMetricsService debugMetricsService;
@@ -60,7 +60,7 @@ public final class EmpireWandPlugin extends JavaPlugin {
             this.taskManager = new nl.wantedchef.empirewand.core.task.TaskManager(this);
 
             // Initialize core services
-            this.configService = new nl.wantedchef.empirewand.core.config.ConfigService(this);
+            this.configService = new ConfigServiceImpl(this);
             this.textService = new nl.wantedchef.empirewand.core.text.TextService();
             this.performanceMonitor = new nl.wantedchef.empirewand.core.util.PerformanceMonitor(getLogger());
             this.debugMetricsService = new nl.wantedchef.empirewand.core.services.DebugMetricsService(1000); // 1000
@@ -290,7 +290,7 @@ public final class EmpireWandPlugin extends JavaPlugin {
         return permissionService;
     }
 
-    public ConfigService getConfigService() {
+    public ConfigServiceImpl getConfigService() {
         return configService;
     }
 
