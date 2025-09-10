@@ -15,13 +15,31 @@ java {
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
-    maven("https://repo.papermc.io/repository/maven-public/")
+    gradlePluginPortal()
+    // Paper repo - with fallback to Spigot
+    maven("https://repo.papermc.io/repository/maven-public/") {
+        content {
+            includeGroup("io.papermc.paper")
+            includeGroup("io.papermc")
+        }
+    }
+    maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") {
+        content {
+            includeGroup("org.spigotmc")
+        }
+    }
+    maven("https://oss.sonatype.org/content/repositories/snapshots/") {
+        content {
+            includeGroup("org.spigotmc")
+        }
+    }
 }
 
 dependencies {
-    // Paper API to compile against Bukkit/Spigot API (provided by server at runtime)
-    compileOnly("io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT")
+    // Spigot API as fallback to Paper API (provided by server at runtime)
+    compileOnly("org.spigotmc:spigot-api:1.20.4-R0.1-SNAPSHOT")
     // Annotations (optional, compileOnly)
     compileOnly("org.jetbrains:annotations:24.1.0")
     // SpotBugs annotations used by @SuppressFBWarnings
@@ -32,7 +50,7 @@ dependencies {
     // Testing dependencies
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
     testImplementation("org.mockito:mockito-core:5.7.0")
-    testImplementation("io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT")
+    testImplementation("org.spigotmc:spigot-api:1.20.4-R0.1-SNAPSHOT")
 }
 
 tasks.processResources {
