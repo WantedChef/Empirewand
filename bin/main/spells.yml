@@ -1,0 +1,750 @@
+# Spell configuration for EmpireWand
+
+config-version: 1.0
+comet:
+  display-name: "<#FF8C00>Comet"
+  cooldown: 2500 # ms
+  values:
+    damage: 7.0 # 3.5 hearts
+    yield: 2.5
+    # Visual trail (purely cosmetic)
+    trail_length: 5
+    particle_count: 3
+  flags:
+    hit-players: true
+    hit-mobs: true
+chain-lightning:
+  display-name: "<#87CEEB>Chain Lightning"
+  cooldown: 7000
+  values:
+    range: 20.0
+    jump-radius: 8.0
+  jumps: 4
+  damage: 8.0
+  # Visual arc (purely cosmetic)
+  arc_particle_count: 8
+  arc_steps: 12
+  max_arc_length: 15.0
+arcane-orb:
+  display-name: "<#7FFFD4>Arcane Orb"
+  cooldown: 6000
+  values:
+    speed: 0.6
+    radius: 3.5
+    damage: 8.0
+  knockback: 0.6
+  # Visual halo + trail (purely cosmetic)
+  trail_length: 4
+  particle_count: 3
+  block_lifetime_ticks: 30
+  halo_particles: 8
+  halo_rotation_speed: 12.0
+empire-comet:
+  display-name: "<#FF4500>Empire Comet"
+  cooldown: 9000
+  values:
+    yield: 3.5
+    speed: 0.8
+    # Visual flaming tail (purely cosmetic)
+    trail_length: 7
+    particle_count: 4
+    block_lifetime_ticks: 40
+    burst_interval_ticks: 6
+little-spark:
+  display-name: "<#FFFF00>Little Spark"
+  cooldown: 1500
+  values:
+    range: 20.0
+    damage: 4.0
+    knockback: 0.5
+    speed: 2.0
+    # Visual lightweight electric trail (purely cosmetic)
+    trail-steps: 6
+    particle-count: 4
+spark:
+  display-name: "<#FFD700>Spark"
+  cooldown: 2000
+  values:
+    range: 25.0
+    damage: 6.0
+    knockback: 0.7
+    speed: 2.2
+    # Visual trail + bursts (purely cosmetic)
+    trail-steps: 8
+    particle-count: 6
+    burst-interval-ticks: 10
+dark-pulse:
+  display-name: "<#4B0082>Dark Pulse"
+  cooldown: 4000
+  values:
+    range: 24.0                # Targeting range for initial shot
+    speed: 1.8                 # Wither skull speed multiplier
+    explosion-radius: 4.0      # AoE radius on impact (blocks)
+    damage: 6.0                # Direct damage at impact
+    knockback: 0.6             # Outward knockback strength
+    wither-duration-ticks: 120 # Wither duration on hit
+    wither-amplifier: 1        # Wither level (0-based)
+    blind-duration-ticks: 60   # Blindness duration on hit
+    # Visual ring pulse (purely cosmetic)
+    ring-particle-count: 14
+    ring-radius-step: 0.25
+    ring-interval-ticks: 2
+explosion-trail:
+  display-name: "<#DC143C>Explosion Trail"
+  cooldown: 8000
+  values:
+    duration-ticks: 100
+    damage: 8.0
+    tick-interval: 10
+    # Visual scorch trail (purely cosmetic)
+    trail-length: 12
+    particle-count: 10
+    block-lifetime-ticks: 40
+    place-temp-blocks: true
+blood-spam:
+  display-name: "<#8B0000>Blood Spam"
+  cooldown: 6000
+  values:
+    projectile-count: 8
+    damage: 1.0
+    delay-ticks: 2
+    # Visual projectile trail (purely cosmetic)
+    trail-steps: 6
+    red-dust-count: 5
+aura:
+  display-name: "<#9932CC>Aura"
+  cooldown: 10000
+  values:
+    radius: 5.0
+    damage-per-tick: 2.0
+    duration-ticks: 200
+    tick-interval: 20
+    # Visual expanding ring (purely cosmetic)
+    ring-particle-count: 40
+    ring-max-radius: 5.0
+    ring-expand-step: 0.6
+# Spell configuration for EmpireWand
+
+config-version: 1.0
+
+comet:
+  display-name: "<#FF8C00>Comet"
+  cooldown: 2500 # ms
+  range: 20.0
+  fx:
+    particles: "EXPLOSION_LARGE"
+    sound: "ENTITY_GENERIC_EXPLODE"
+  values:
+    damage: 7.0 # 3.5 hearts
+    yield: 2.5
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+explosive:
+  display-name: "<#8B0000>Explosive"
+  cooldown: 5000
+  values:
+    damage: 12.0 # 6 hearts
+    radius: 4.0
+  flags:
+    sets-fire: false
+    block-damage: false # Overrides global setting
+
+magic-missile:
+  display-name: "<#9932CC>Magic Missile"
+  cooldown: 3000
+  range: 20.0
+  fx:
+    particles: "CRIT"
+    sound: "ENTITY_ILLUSIONER_CAST_SPELL"
+  values:
+    damage-per-missile: 3.0 # 1.5 hearts
+    missile-count: 3
+    delay-ticks: 7
+    # Visual enhancement parameters
+    extra_particle_count: 4
+  flags:
+    requires-los: true
+
+glacial-spike:
+  display-name: "<#00BFFF>Glacial Spike"
+  cooldown: 2500
+  values:
+    slow-duration-ticks: 80   # 4s
+    slow-amplifier: 2         # Slowness III (amplifier is 0-based)
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+lifesteal:
+  display-name: "<#AA0000>Life Steal"
+  cooldown: 3000
+  values:
+    damage: 6.0               # 3 hearts
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+ethereal-form:
+  display-name: "<#7FFFD4>Ethereal Form"
+  cooldown: 4000
+  values:
+    duration-ticks: 100       # 5 seconds
+
+leap:
+  display-name: "<#00FA9A>Leap"
+  cooldown: 1500
+  values:
+    velocity-multiplier: 1.5
+    vertical-boost: 0.0       # Optional extra lift
+
+heal:
+  display-name: "<#ADFF2F>Heal"
+  cooldown: 2000
+  range: 0.0 # self-cast
+  fx:
+    particles: "HEART"
+    sound: "ENTITY_EXPERIENCE_ORB_PICKUP"
+  values:
+    heal-amount: 8.0          # 4 hearts
+
+grasping-vines:
+  display-name: "<#228B22>Grasping Vines"
+  cooldown: 3000
+  values:
+    duration-ticks: 60
+    slow-amplifier: 250       # Extreme slow = near-root
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+polymorph:
+  display-name: "<#FFDAB9>Polymorph"
+  cooldown: 4000
+  values:
+    duration-ticks: 100
+
+# New spells from NEXT coming spells
+dark-circle:
+  display-name: "<#8B0000>Dark Circle"
+  cooldown: 8000
+  values:
+    radius: 10.0               # Pull/visual circle radius (blocks)
+    pull-strength: 0.6         # Velocity towards center each tick
+    pull-duration-ticks: 30    # Duration of pull phase
+    launch-power: 2.2          # Upward velocity at launch
+    launch-delay-ticks: 10     # Ticks after pull before launch
+    detonation-damage: 4.0     # Bonus damage at launch
+    radial-knockback: 0.7      # Outward knockback added at launch
+    slow-amplifier: 0          # Slowness level during detonation (0=Slowness I)
+    wither-duration-ticks: 60  # Wither duration applied on launch
+
+dark-pulse:
+  display-name: "<#4B0082>Dark Pulse"
+  cooldown: 4000
+  values:
+    range: 24.0                # Targeting range for initial shot
+    speed: 1.8                 # Wither skull speed multiplier
+    explosion-radius: 4.0      # AoE radius on impact (blocks)
+    damage: 6.0                # Direct damage at impact
+    knockback: 0.6             # Outward knockback strength
+    wither-duration-ticks: 120 # Wither duration on hit
+    wither-amplifier: 1        # Wither level (0-based)
+    blind-duration-ticks: 60   # Blindness duration on hit
+
+aura:
+  display-name: "<#9932CC>Aura"
+  cooldown: 10000
+  values:
+    radius: 5.0
+    damage-per-tick: 2.0
+    duration-ticks: 200
+    tick-interval: 20
+
+empire-launch:
+  display-name: "<#FFD700>Empire Launch"
+  cooldown: 8000
+  values:
+    power: 1.8
+    slow-falling-duration: 80
+
+confuse:
+  display-name: "<#FF69B4>Confuse"
+  cooldown: 3500
+  values:
+    range: 15.0
+    damage: 6.0
+    duration-ticks: 80
+    slow-amplifier: 2
+
+teleport:
+  display-name: "<#00CED1>Teleport"
+  cooldown: 2000
+  values:
+    range: 15.0
+  flags:
+    requires-los: true
+
+thunder-blast:
+  display-name: "<#FFFF00>Thunder Blast"
+  cooldown: 6000
+  values:
+    radius: 6.0
+    damage: 16.0
+    strikes: 3
+
+lightning-bolt:
+  display-name: "<#87CEEB>Lightning Bolt"
+  cooldown: 4000
+  values:
+    range: 20.0
+    damage: 24.0
+
+fireball:
+  display-name: "<#FF4500>Fireball"
+  cooldown: 3500
+  values:
+    yield: 3.0
+    speed: 1.0
+    # Visual trail parameters
+    trail_length: 4
+    particle_count: 2
+    block_lifetime_ticks: 40
+  flags:
+    incendiary: true
+    block-damage: true
+
+explosion-trail:
+  display-name: "<#DC143C>Explosion Trail"
+  cooldown: 8000
+  values:
+    duration-ticks: 100
+    damage: 8.0
+    tick-interval: 10
+
+blaze-launch:
+  display-name: "<#FF6347>Blaze Launch"
+  cooldown: 2000
+  values:
+    power: 1.8
+    trail-duration-ticks: 40
+
+lightning-storm:
+  display-name: "<#00FFFF>Lightning Storm"
+  cooldown: 15000
+  values:
+    strikes: 8
+    radius: 10.0
+    damage: 16.0
+    delay-ticks: 10
+
+little-spark:
+  display-name: "<#FFFF00>Little Spark"
+  cooldown: 1500
+  values:
+    range: 20.0
+    damage: 4.0
+    knockback: 0.5
+    speed: 2.0
+
+spark:
+  display-name: "<#FFD700>Spark"
+  cooldown: 2000
+  values:
+    range: 25.0
+    damage: 6.0
+    knockback: 0.7
+    speed: 2.2
+
+lightning-arrow:
+  display-name: "<#87CEEB>Lightning Arrow"
+  cooldown: 3000
+  values:
+    range: 30.0
+    damage: 8.0
+    lightning-damage: 12.0
+    speed: 2.5
+    # Visual trail parameters (purely cosmetic)
+    trail_length: 5
+    particle_count: 3
+    block_lifetime_ticks: 30
+    spark_interval_ticks: 4
+
+poison-wave:
+  display-name: "<#32CD32>Poison Wave"
+  cooldown: 4000
+  values:
+    range: 8.0
+    angle: 60.0
+    damage: 6.0
+    poison-duration-ticks: 100
+    poison-amplifier: 1
+    slow-duration-ticks: 60
+    slow-amplifier: 1
+
+explosion-wave:
+  display-name: "<#FF4500>Explosion Wave"
+  cooldown: 5000
+  values:
+    range: 8.0
+    angle: 60.0
+    damage: 10.0
+    knockback: 1.2
+    yield: 1.5
+
+flame-wave:
+  display-name: "<#FF6347>Flame Wave"
+  cooldown: 4000
+  values:
+    range: 8.0
+    angle: 60.0
+    damage: 8.0
+    fire-duration-ticks: 80
+    knockback: 0.8
+
+empire-aura:
+  display-name: "<#FFD700>Empire Aura"
+  cooldown: 12000
+  values:
+    radius: 6.0
+    duration-ticks: 400
+    tick-interval: 10
+
+empire-levitate:
+  display-name: "<#9370DB>Empire Levitate"
+  cooldown: 10000
+  values:
+    duration-ticks: 60
+    amplifier: 0
+
+blood-block:
+  display-name: "<#8B0000>Blood Block"
+  cooldown: 8000
+  values:
+    damage: 6.0
+    knockback: 1.0
+
+empire-comet:
+  display-name: "<#FF4500>Empire Comet"
+  cooldown: 9000
+  values:
+    yield: 3.5
+    speed: 0.8
+
+blood-spam:
+  display-name: "<#8B0000>Blood Spam"
+  cooldown: 6000
+  values:
+    projectile-count: 8
+    damage: 1.0
+    delay-ticks: 2
+
+earth-quake:
+  display-name: "<#8B4513>Earth Quake"
+  cooldown: 7000
+  values:
+    radius: 7.0
+    knockback-strength: 1.1
+    vertical-boost: 0.35
+
+empire-escape:
+  display-name: "<#00CED1>Empire Escape"
+  cooldown: 10000
+  values:
+    max-range: 16.0
+    speed-duration: 40
+
+comet-shower:
+  display-name: "<#FF6347>Comet Shower"
+  cooldown: 16000
+  values:
+    comet-count: 5
+    radius: 8.0
+    yield: 2.6
+    delay-ticks: 6
+
+god-cloud:
+  display-name: "<#F0F8FF>God Cloud"
+  cooldown: 30000
+  values:
+    duration-ticks: 600
+    particle-interval: 2
+    particle-count: 6
+
+# New spells from NEXT_level_spells.md
+
+# Zeis van Mephidantes
+life-reap:
+  display-name: "<#8B0000>Levenszuiger"
+  cooldown: 7000
+  values:
+    damage: 4.0
+    heal-per-target: 0.8
+    range: 5.0
+    angle-degrees: 120.0
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+ritual-of-unmaking:
+  display-name: "<#4B0082>Ritueel van Ontering"
+  cooldown: 18000
+  values:
+    channel-ticks: 40
+    radius: 6.0
+    damage: 8.0
+    weakness-duration-ticks: 120
+    weakness-amplifier: 0
+
+soul-sever:
+  display-name: "<#000000>Zielsplinters"
+  cooldown: 8000
+  values:
+    dash-distance: 8.0
+    damage: 2.0
+    nausea-duration-ticks: 40
+    nausea-amplifier: 0
+    sample-step: 0.5
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+# BloedMagie
+blood-tap:
+  display-name: "<#8B0000>Blood Tap"
+  cooldown: 3000
+  values:
+    self-damage: 1.0
+    max-charges: 5
+    decay-duration-ticks: 200
+    min-health: 2.0
+
+blood-barrier:
+  display-name: "<#8B0000>Blood Barrier"
+  cooldown: 16000
+  values:
+    duration-ticks: 120
+    damage-reduction: 0.3
+    thorns-damage: 1.0
+
+hemorrhage:
+  display-name: "<#8B0000>Hemorrhage"
+  cooldown: 8000
+  values:
+    base-damage: 2.0
+    movement-bonus: 0.5
+    movement-threshold: 0.8
+    duration-ticks: 120
+    check-interval-ticks: 10
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+blood-nova:
+  display-name: "<#8B0000>Blood Nova"
+  cooldown: 12000
+  values:
+    base-damage: 4.0
+    damage-per-charge: 2.0
+    radius: 4.0
+    knockback-strength: 1.0
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+# Chatage’s Ster
+radiant-beacon:
+  display-name: "<#FFD700>Stralingsbaken"
+  cooldown: 16000
+  values:
+    radius: 6.0
+    heal-amount: 1.0
+    damage-amount: 1.0
+    duration-pulses: 8
+    pulse-interval-ticks: 20
+    max-targets: 8
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+lightwall:
+  display-name: "<#FFFFFF>Lichtmuur"
+  cooldown: 18000
+  values:
+    width: 6.0
+    height: 3.0
+    duration-ticks: 100
+    knockback-strength: 0.5
+    blindness-duration-ticks: 30
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+solar-lance:
+  display-name: "<#FFD700>Zonschicht"
+  cooldown: 10000
+  values:
+    range: 20.0
+    damage: 6.0
+    glowing-duration-ticks: 60
+    max-pierce: 3
+    sample-step: 0.5
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+# Extra spells
+sunburst-step:
+  display-name: "<#FFD700>Sunburst Step"
+  cooldown: 7000
+  values:
+    max-distance: 10.0
+    pulse-radius: 3.5
+    ally-heal: 1.0
+    enemy-damage: 1.0
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+crimson-chains:
+  display-name: "<#8B0000>Crimson Chains"
+  cooldown: 9000
+  values:
+    pull-strength: 0.5
+    slowness-duration-ticks: 40
+    slowness-amplifier: 1
+    projectile-speed: 1.5
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+mephidic-reap:
+  display-name: "<#000000>Mephidic Reap"
+  cooldown: 10000
+  values:
+    range: 8.0
+    damage: 2.0
+    slowness-duration-ticks: 20
+    max-pierce: 3
+    travel-ticks: 14
+  flags:
+    hit-players: true
+    hit-mobs: true
+
+# --- New fun/crazy/amazing spells ---
+frost-nova:
+  display-name: "<#00BFFF>Frost Nova"
+  cooldown: 5000
+  values:
+    radius: 5.0
+    damage: 6.0
+    slow-duration-ticks: 100
+    slow-amplifier: 2
+  # Visual frost effects (purely cosmetic)
+  ring-particle-count: 32
+  ring-expand-step: 0.4
+  snow-swirl-density: 18
+  ice-burst-count: 6
+  enable-reversible-floor: true
+
+chain-lightning:
+  display-name: "<#87CEEB>Chain Lightning"
+  cooldown: 7000
+  values:
+    range: 20.0
+    jump-radius: 8.0
+    jumps: 4
+    damage: 8.0
+  # Visual arc (purely cosmetic)
+  arc_particle_count: 8
+  arc_steps: 12
+  max_arc_length: 15.0
+
+blink-strike:
+  display-name: "<#9932CC>Blink Strike"
+  cooldown: 6000
+  values:
+    range: 15.0
+    behind-distance: 1.5
+    damage: 10.0
+  flags:
+    requires-los: true
+  # Visual blink effects (purely cosmetic)
+  echo-count: 3
+  mist-density: 12
+  invert-ring-radius: 2.5
+
+shadow-cloak:
+  display-name: "<#2F4F4F>Shadow Cloak"
+  cooldown: 10000
+  values:
+    duration-ticks: 120
+    speed-amplifier: 1
+
+stasis-field:
+  display-name: "<#9400D3>Stasis Field"
+  cooldown: 9000
+  values:
+    radius: 6.0
+    duration-ticks: 80
+  # Visual temporal bubble effects (purely cosmetic)
+  bubble-count: 5
+  bubble-radius: 1.2
+  sweep-interval-ticks: 20
+
+gust:
+  display-name: "<#ADD8E6>Gust"
+  cooldown: 3500
+  values:
+    range: 10.0
+    angle: 70.0
+    knockback: 1.2
+    damage: 2.0
+
+arcane-orb:
+  display-name: "<#7FFFD4>Arcane Orb"
+  cooldown: 6000
+  values:
+    speed: 0.6
+    radius: 3.5
+    damage: 8.0
+    knockback: 0.6
+  # Visual halo + trail (purely cosmetic)
+  trail_length: 4
+  particle_count: 3
+  block_lifetime_ticks: 30
+  halo_particles: 8
+  halo_rotation_speed: 12.0
+
+void-swap:
+  display-name: "<#800080>Void Swap"
+  cooldown: 8000
+  values:
+    range: 15.0
+  flags:
+    requires-los: true
+
+sandstorm:
+  display-name: "<#DAA520>Sandstorm"
+  cooldown: 7000
+  values:
+    radius: 6.0
+    blind-duration-ticks: 80
+    slow-duration-ticks: 100
+    slow-amplifier: 1
+  # Visual sandstorm effects (purely cosmetic)
+  spiral-height: 6.0
+  spiral-density: 14
+  grit-pulse-interval-ticks: 8
+  haze-particle-multiplier: 1.0
+
+tornado:
+  display-name: "<#00CED1>Tornado"
+  cooldown: 12000
+  values:
+    radius: 6.0
+    lift-velocity: 0.9
+    levitation-duration-ticks: 40
+    levitation-amplifier: 0
+    damage: 4.0
