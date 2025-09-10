@@ -7,7 +7,11 @@ import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
-import org.bukkit.*;
+import org.bukkit.Location;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.World;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.FallingBlock;
@@ -23,8 +27,8 @@ import java.util.Random;
 import java.util.Set;
 
 /**
- * A powerful spell that calls down a meteor shower over a large area,
- * dealing massive damage and creating craters with enhanced visual effects.
+ * A powerful spell that calls down a meteor shower over a large area, dealing massive damage and
+ * creating craters with enhanced visual effects.
  */
 public class MeteorShowerEnhanced extends Spell<Void> {
 
@@ -32,7 +36,8 @@ public class MeteorShowerEnhanced extends Spell<Void> {
         public Builder(EmpireWandAPI api) {
             super(api);
             this.name = "Meteor Shower";
-            this.description = "Calls down a devastating meteor shower that rains destruction upon your enemies with enhanced visuals.";
+            this.description =
+                    "Calls down a devastating meteor shower that rains destruction upon your enemies with enhanced visuals.";
             this.cooldown = java.time.Duration.ofSeconds(45);
             this.spellType = SpellType.FIRE;
         }
@@ -77,14 +82,15 @@ public class MeteorShowerEnhanced extends Spell<Void> {
         }
 
         // Play initial sound
-        player.getWorld().playSound(targetLocation, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 3.0f, 0.5f);
+        player.getWorld().playSound(targetLocation, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 3.0f,
+                0.5f);
 
         // Create warning effect
         createWarningEffect(context, targetLocation, craterRadius);
 
         // Start meteor shower effect
-        new MeteorShowerTask(context, targetLocation, meteorCount, damage, craterRadius, durationTicks)
-                .runTaskTimer(context.plugin(), 0L, 4L);
+        new MeteorShowerTask(context, targetLocation, meteorCount, damage, craterRadius,
+                durationTicks).runTaskTimer(context.plugin(), 0L, 4L);
         return null;
     }
 
@@ -95,7 +101,8 @@ public class MeteorShowerEnhanced extends Spell<Void> {
 
     private void createWarningEffect(SpellContext context, Location center, int radius) {
         World world = center.getWorld();
-        if (world == null) return;
+        if (world == null)
+            return;
 
         // Create expanding ring to warn of incoming meteors
         new BukkitRunnable() {
@@ -130,7 +137,8 @@ public class MeteorShowerEnhanced extends Spell<Void> {
         private int ticks = 0;
         private int meteorsSpawned = 0;
 
-        public MeteorShowerTask(SpellContext context, Location center, int meteorCount, double damage, int craterRadius, int durationTicks) {
+        public MeteorShowerTask(SpellContext context, Location center, int meteorCount,
+                double damage, int craterRadius, int durationTicks) {
             this.context = context;
             this.center = center;
             this.meteorCount = meteorCount;
@@ -165,10 +173,12 @@ public class MeteorShowerEnhanced extends Spell<Void> {
 
         private void spawnMeteor(Location location) {
             World world = location.getWorld();
-            if (world == null) return;
+            if (world == null)
+                return;
 
             // Create falling block (meteor)
-            FallingBlock meteor = world.spawnFallingBlock(location, Material.MAGMA_BLOCK.createBlockData());
+            FallingBlock meteor =
+                    world.spawnFallingBlock(location, Material.MAGMA_BLOCK.createBlockData());
             meteor.setDropItem(false);
             meteor.setHurtEntities(true);
 
@@ -176,8 +186,10 @@ public class MeteorShowerEnhanced extends Spell<Void> {
             meteor.setVelocity(new Vector(0, -1.5, 0));
 
             // Enhanced visual effects
-            context.fx().followParticles(context.plugin(), meteor, Particle.FLAME, 10, 0.3, 0.3, 0.3, 0.1, null, 1L);
-            context.fx().followParticles(context.plugin(), meteor, Particle.LAVA, 5, 0.2, 0.2, 0.2, 0.05, null, 1L);
+            context.fx().followParticles(context.plugin(), meteor, Particle.FLAME, 10, 0.3, 0.3,
+                    0.3, 0.1, null, 1L);
+            context.fx().followParticles(context.plugin(), meteor, Particle.LAVA, 5, 0.2, 0.2, 0.2,
+                    0.05, null, 1L);
 
             // Trail effect
             new BukkitRunnable() {
@@ -197,11 +209,14 @@ public class MeteorShowerEnhanced extends Spell<Void> {
 
         private void onMeteorImpact(Location impactLocation) {
             World world = impactLocation.getWorld();
-            if (world == null) return;
+            if (world == null)
+                return;
 
             // Damage entities in area
-            for (LivingEntity entity : impactLocation.getWorld().getNearbyLivingEntities(impactLocation, 4, 4, 4)) {
-                if (entity instanceof Player && entity.equals(context.caster())) continue;
+            for (LivingEntity entity : impactLocation.getWorld()
+                    .getNearbyLivingEntities(impactLocation, 4, 4, 4)) {
+                if (entity instanceof Player && entity.equals(context.caster()))
+                    continue;
                 entity.damage(damage, context.caster());
                 entity.setFireTicks(60); // 3 seconds of fire
             }
@@ -221,7 +236,8 @@ public class MeteorShowerEnhanced extends Spell<Void> {
 
         private void createCrater(Location center) {
             World world = center.getWorld();
-            if (world == null) return;
+            if (world == null)
+                return;
 
             int y = center.getBlockY();
             craterLocations.add(center);
@@ -231,7 +247,8 @@ public class MeteorShowerEnhanced extends Spell<Void> {
                 for (int z = -craterRadius; z <= craterRadius; z++) {
                     double distance = Math.sqrt(x * x + z * z);
                     if (distance <= craterRadius) {
-                        Block block = world.getBlockAt(center.getBlockX() + x, y, center.getBlockZ() + z);
+                        Block block =
+                                world.getBlockAt(center.getBlockX() + x, y, center.getBlockZ() + z);
                         if (!block.getType().isAir() && block.getType() != Material.BEDROCK) {
                             // Create a bowl shape with varying depth
                             int depth = (int) Math.max(1, (craterRadius - distance) * 1.5);
@@ -241,10 +258,11 @@ public class MeteorShowerEnhanced extends Spell<Void> {
                                     toModify.setType(Material.AIR);
                                 }
                             }
-                            
+
                             // Create debris particles
                             Location debrisLoc = block.getLocation().add(0.5, 0.5, 0.5);
-                            world.spawnParticle(Particle.BLOCK, debrisLoc, 10, 0.3, 0.3, 0.3, 0.1, block.getBlockData());
+                            world.spawnParticle(Particle.BLOCK, debrisLoc, 10, 0.3, 0.3, 0.3, 0.1,
+                                    block.getBlockData());
                         }
                     }
                 }
@@ -253,7 +271,8 @@ public class MeteorShowerEnhanced extends Spell<Void> {
 
         private void createShockwave(Location center) {
             World world = center.getWorld();
-            if (world == null) return;
+            if (world == null)
+                return;
 
             // Create expanding shockwave
             new BukkitRunnable() {
@@ -268,8 +287,8 @@ public class MeteorShowerEnhanced extends Spell<Void> {
                     }
 
                     // Create ring of particles
-                    RingRenderer.renderRing(center, radius, 36,
-                            (loc, vec) -> world.spawnParticle(Particle.EXPLOSION, loc, 2, 0, 0, 0, 0));
+                    RingRenderer.renderRing(center, radius, 36, (loc, vec) -> world
+                            .spawnParticle(Particle.EXPLOSION, loc, 2, 0, 0, 0, 0));
 
                     radius++;
                 }
@@ -278,7 +297,8 @@ public class MeteorShowerEnhanced extends Spell<Void> {
 
         private void createFinalExplosion() {
             World world = center.getWorld();
-            if (world == null) return;
+            if (world == null)
+                return;
 
             // Create a massive explosion at the center
             world.createExplosion(center, 5.0f, false, false);
@@ -287,7 +307,8 @@ public class MeteorShowerEnhanced extends Spell<Void> {
 
             // Damage all entities in a large radius
             for (LivingEntity entity : world.getNearbyLivingEntities(center, 15, 15, 15)) {
-                if (entity instanceof Player && entity.equals(context.caster())) continue;
+                if (entity instanceof Player && entity.equals(context.caster()))
+                    continue;
                 double distance = entity.getLocation().distance(center);
                 double scaledDamage = damage * (1 - (distance / 15));
                 if (scaledDamage > 0) {
@@ -301,7 +322,8 @@ public class MeteorShowerEnhanced extends Spell<Void> {
 
         private void createMushroomCloud() {
             World world = center.getWorld();
-            if (world == null) return;
+            if (world == null)
+                return;
 
             // Create rising pillar
             new BukkitRunnable() {
@@ -328,7 +350,8 @@ public class MeteorShowerEnhanced extends Spell<Void> {
 
         private void createMushroomCap() {
             World world = center.getWorld();
-            if (world == null) return;
+            if (world == null)
+                return;
 
             Location capCenter = center.clone().add(0, 15, 0);
 
@@ -361,7 +384,8 @@ public class MeteorShowerEnhanced extends Spell<Void> {
         private void createAmbientEffects() {
             if (ticks % 10 == 0) {
                 World world = center.getWorld();
-                if (world == null) return;
+                if (world == null)
+                    return;
 
                 // Create ambient meteor streaks in the sky
                 for (int i = 0; i < 3; i++) {
@@ -375,7 +399,8 @@ public class MeteorShowerEnhanced extends Spell<Void> {
                     // Create streak effect
                     Vector direction = end.toVector().subtract(start.toVector()).normalize();
                     for (int j = 0; j < 20; j++) {
-                        Location particleLoc = start.clone().add(direction.clone().multiply(j * 1.5));
+                        Location particleLoc =
+                                start.clone().add(direction.clone().multiply(j * 1.5));
                         world.spawnParticle(Particle.FLAME, particleLoc, 1, 0, 0, 0, 0);
                     }
                 }

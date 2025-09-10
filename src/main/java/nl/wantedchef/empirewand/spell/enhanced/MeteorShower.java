@@ -5,7 +5,10 @@ import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
-import org.bukkit.*;
+import org.bukkit.Location;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.FallingBlock;
@@ -18,11 +21,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.Random;
+import org.bukkit.Material;
 import java.util.Set;
 
 /**
- * A powerful spell that calls down a meteor shower over a large area,
- * dealing massive damage and creating craters.
+ * A powerful spell that calls down a meteor shower over a large area, dealing massive damage and
+ * creating craters.
  */
 public class MeteorShower extends Spell<Void> {
 
@@ -30,7 +34,8 @@ public class MeteorShower extends Spell<Void> {
         public Builder(EmpireWandAPI api) {
             super(api);
             this.name = "Meteor Shower";
-            this.description = "Calls down a devastating meteor shower that rains destruction upon your enemies.";
+            this.description =
+                    "Calls down a devastating meteor shower that rains destruction upon your enemies.";
             this.cooldown = java.time.Duration.ofSeconds(45);
             this.spellType = SpellType.FIRE;
         }
@@ -75,11 +80,12 @@ public class MeteorShower extends Spell<Void> {
         }
 
         // Play initial sound
-        player.getWorld().playSound(targetLocation, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 3.0f, 0.5f);
+        player.getWorld().playSound(targetLocation, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 3.0f,
+                0.5f);
 
         // Start meteor shower effect
-        new MeteorShowerTask(context, targetLocation, meteorCount, damage, craterRadius, durationTicks)
-                .runTaskTimer(context.plugin(), 0L, 4L);
+        new MeteorShowerTask(context, targetLocation, meteorCount, damage, craterRadius,
+                durationTicks).runTaskTimer(context.plugin(), 0L, 4L);
         return null;
     }
 
@@ -100,7 +106,8 @@ public class MeteorShower extends Spell<Void> {
         private int ticks = 0;
         private int meteorsSpawned = 0;
 
-        public MeteorShowerTask(SpellContext context, Location center, int meteorCount, double damage, int craterRadius, int durationTicks) {
+        public MeteorShowerTask(SpellContext context, Location center, int meteorCount,
+                double damage, int craterRadius, int durationTicks) {
             this.context = context;
             this.center = center;
             this.meteorCount = meteorCount;
@@ -132,10 +139,11 @@ public class MeteorShower extends Spell<Void> {
 
         private void spawnMeteor(Location location) {
             World world = location.getWorld();
-            if (world == null) return;
+            if (world == null)
+                return;
 
             // Create falling block (meteor)
-            FallingBlock meteor = world.spawnFallingBlock(location, Material.MAGMA_BLOCK.createBlockData());
+            FallingBlock meteor = world.spawnFallingBlock(location, Material.MAGMA_BLOCK, (byte) 0);
             meteor.setDropItem(false);
             meteor.setHurtEntities(true);
 
@@ -160,11 +168,14 @@ public class MeteorShower extends Spell<Void> {
 
         private void onMeteorImpact(Location impactLocation) {
             World world = impactLocation.getWorld();
-            if (world == null) return;
+            if (world == null)
+                return;
 
             // Damage entities in area
-            for (LivingEntity entity : impactLocation.getWorld().getNearbyLivingEntities(impactLocation, 4, 4, 4)) {
-                if (entity instanceof Player && entity.equals(context.caster())) continue;
+            for (LivingEntity entity : impactLocation.getWorld()
+                    .getNearbyLivingEntities(impactLocation, 4, 4, 4)) {
+                if (entity instanceof Player && entity.equals(context.caster()))
+                    continue;
                 entity.damage(damage, context.caster());
                 entity.setFireTicks(60); // 3 seconds of fire
             }
@@ -180,7 +191,8 @@ public class MeteorShower extends Spell<Void> {
 
         private void createCrater(Location center) {
             World world = center.getWorld();
-            if (world == null) return;
+            if (world == null)
+                return;
 
             int y = center.getBlockY();
             craterLocations.add(center);
@@ -190,7 +202,8 @@ public class MeteorShower extends Spell<Void> {
                 for (int z = -craterRadius; z <= craterRadius; z++) {
                     double distance = Math.sqrt(x * x + z * z);
                     if (distance <= craterRadius) {
-                        Block block = world.getBlockAt(center.getBlockX() + x, y, center.getBlockZ() + z);
+                        Block block =
+                                world.getBlockAt(center.getBlockX() + x, y, center.getBlockZ() + z);
                         if (!block.getType().isAir() && block.getType() != Material.BEDROCK) {
                             // Create a bowl shape
                             int depth = (int) (craterRadius - distance) + 1;
@@ -208,7 +221,8 @@ public class MeteorShower extends Spell<Void> {
 
         private void createFinalExplosion() {
             World world = center.getWorld();
-            if (world == null) return;
+            if (world == null)
+                return;
 
             // Create a massive explosion at the center
             world.createExplosion(center, 5.0f, false, false);
@@ -217,7 +231,8 @@ public class MeteorShower extends Spell<Void> {
 
             // Damage all entities in a large radius
             for (LivingEntity entity : world.getNearbyLivingEntities(center, 15, 15, 15)) {
-                if (entity instanceof Player && entity.equals(context.caster())) continue;
+                if (entity instanceof Player && entity.equals(context.caster()))
+                    continue;
                 double distance = entity.getLocation().distance(center);
                 double scaledDamage = damage * (1 - (distance / 15));
                 if (scaledDamage > 0) {

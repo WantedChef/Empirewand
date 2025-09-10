@@ -284,7 +284,7 @@ public class ConfigMigrationService {
             return null;
         }
         if (!originalFile.exists()) {
-            plugin.getLogger().warning("Cannot create backup for non-existent file: " + originalFile.getName());
+            plugin.getLogger().warning(String.format("Cannot create backup for non-existent file: %s", originalFile.getName()));
             return null;
         }
         
@@ -295,7 +295,7 @@ public class ConfigMigrationService {
             
             File parentDir = originalFile.getParentFile();
             if (parentDir == null) {
-                plugin.getLogger().warning("Cannot determine parent directory for backup: " + originalFile.getName());
+                plugin.getLogger().warning(String.format("Cannot determine parent directory for backup: %s", originalFile.getName()));
                 return null;
             }
             
@@ -330,7 +330,7 @@ public class ConfigMigrationService {
             return false;
         }
         if (!backupFile.exists()) {
-            plugin.getLogger().warning("Cannot restore from non-existent backup: " + backupFile.getName());
+            plugin.getLogger().warning(String.format("Cannot restore from non-existent backup: %s", backupFile.getName()));
             return false;
         }
         
@@ -374,7 +374,7 @@ public class ConfigMigrationService {
             }
             return null;
         } catch (Exception e) {
-            plugin.getLogger().warning("Error getting config version: " + e.getMessage());
+            plugin.getLogger().warning(String.format("Error getting config version: %s", e.getMessage()));
             return null;
         }
     }
@@ -478,10 +478,10 @@ public class ConfigMigrationService {
             }
             return 0;
         } catch (NumberFormatException e) {
-            plugin.getLogger().warning("Error comparing versions: " + v1 + " vs " + v2 + " - " + e.getMessage());
+            plugin.getLogger().warning(String.format("Error comparing versions: %s vs %s - %s", v1, v2, e.getMessage()));
             return 0;
         } catch (Exception e) {
-            plugin.getLogger().warning("Unexpected error comparing versions: " + e.getMessage());
+            plugin.getLogger().warning(String.format("Unexpected error comparing versions: %s", e.getMessage()));
             return 0;
         }
     }

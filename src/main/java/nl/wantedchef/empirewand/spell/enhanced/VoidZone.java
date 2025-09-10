@@ -1,11 +1,15 @@
 package nl.wantedchef.empirewand.spell.enhanced;
 
 import nl.wantedchef.empirewand.api.EmpireWandAPI;
-import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
-import org.bukkit.*;
+import nl.wantedchef.empirewand.spell.PrereqInterface;
+import org.bukkit.Material;
+import org.bukkit.Location;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.LivingEntity;
@@ -17,7 +21,14 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.HashSet;
+import java.util.HashMap;
 
 /**
  * A terrifying dark spell that creates multiple void zones,

@@ -1,8 +1,7 @@
 package nl.wantedchef.empirewand.core.wand;
 
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class WandSettingsTest {
 

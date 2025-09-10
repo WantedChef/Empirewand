@@ -1,12 +1,18 @@
 package nl.wantedchef.empirewand.spell.enhanced;
 
-import nl.wantedchef.empirewand.api.EmpireWandAPI;
-import nl.wantedchef.empirewand.common.visual.RingRenderer;
-import nl.wantedchef.empirewand.spell.PrereqInterface;
-import nl.wantedchef.empirewand.spell.Spell;
-import nl.wantedchef.empirewand.spell.SpellContext;
-import nl.wantedchef.empirewand.spell.SpellType;
-import org.bukkit.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.LivingEntity;
@@ -18,7 +24,13 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import nl.wantedchef.empirewand.api.EmpireWandAPI;
+import nl.wantedchef.empirewand.common.visual.RingRenderer;
+import nl.wantedchef.empirewand.spell.PrereqInterface;
+import nl.wantedchef.empirewand.spell.Spell;
+import nl.wantedchef.empirewand.spell.SpellContext;
+import nl.wantedchef.empirewand.spell.SpellType;
+
 
 /**
  * A devastating ice spell that creates a blizzard in a large area,

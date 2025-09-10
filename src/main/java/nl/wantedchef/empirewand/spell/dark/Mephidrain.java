@@ -1,15 +1,18 @@
 package nl.wantedchef.empirewand.spell.dark;
 
 import nl.wantedchef.empirewand.api.EmpireWandAPI;
-import nl.wantedchef.empirewand.spell.*;
+import nl.wantedchef.empirewand.spell.Spell;
+import nl.wantedchef.empirewand.spell.SpellContext;
+import nl.wantedchef.empirewand.spell.SpellType;
+import nl.wantedchef.empirewand.spell.PrereqInterface;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 
 /**
- * Mephidrain - A dark spell that drains health from nearby enemies
- * and transfers it to the caster, representing Mephidantes' power.
+ * Mephidrain - A dark spell that drains health from nearby enemies and transfers it to the caster,
+ * representing Mephidantes' power.
  */
 public class Mephidrain extends Spell<Void> {
 
@@ -46,31 +49,32 @@ public class Mephidrain extends Spell<Void> {
     @Override
     protected Void executeSpell(SpellContext context) {
         Player player = context.caster();
-        
+
         // Configuration
         double radius = spellConfig.getDouble("values.radius", 6.0);
         double damage = spellConfig.getDouble("values.damage", 8.0);
         double healPercentage = spellConfig.getDouble("values.heal-percentage", 0.5);
-        boolean friendlyFire = false; // Never affect allies
 
         // Find nearby entities
-        for (var entity : player.getWorld().getNearbyEntities(player.getLocation(), radius, radius, radius)) {
-            if (entity instanceof org.bukkit.entity.LivingEntity living && 
-                !living.equals(player) && 
-                !living.isDead() && 
-                living.isValid()) {
-                
+        for (var entity : player.getWorld().getNearbyEntities(player.getLocation(), radius, radius,
+                radius)) {
+            if (entity instanceof org.bukkit.entity.LivingEntity living && !living.equals(player)
+                    && !living.isDead() && living.isValid()) {
+
                 // Damage the entity
                 living.damage(damage, player);
-                
+
                 // Heal the player
                 double healAmount = damage * healPercentage;
-                double maxHealth = living.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
+                double maxHealth = living
+                        .getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
                 player.setHealth(Math.min(maxHealth, player.getHealth() + healAmount));
-                
+
                 // Visual effects
-                context.fx().spawnParticles(living.getLocation(), org.bukkit.Particle.SMOKE, 15, 0.3, 0.6, 0.3, 0.1);
-                context.fx().spawnParticles(player.getLocation(), org.bukkit.Particle.HEART, 5, 0.3, 0.6, 0.3, 0.1);
+                context.fx().spawnParticles(living.getLocation(), org.bukkit.Particle.SMOKE, 15,
+                        0.3, 0.6, 0.3, 0.1);
+                context.fx().spawnParticles(player.getLocation(), org.bukkit.Particle.HEART, 5, 0.3,
+                        0.6, 0.3, 0.1);
             }
         }
 

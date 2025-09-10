@@ -1,11 +1,14 @@
 package nl.wantedchef.empirewand.spell.lightning;
 
-import nl.wantedchef.empirewand.api.EmpireWandAPI;
-import nl.wantedchef.empirewand.api.service.ConfigService;
-import nl.wantedchef.empirewand.spell.PrereqInterface;
-import nl.wantedchef.empirewand.spell.Spell;
-import nl.wantedchef.empirewand.spell.SpellContext;
-import nl.wantedchef.empirewand.spell.SpellType;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Queue;
+import java.util.Set;
+
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -16,7 +19,11 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import nl.wantedchef.empirewand.api.EmpireWandAPI;
+import nl.wantedchef.empirewand.spell.PrereqInterface;
+import nl.wantedchef.empirewand.spell.Spell;
+import nl.wantedchef.empirewand.spell.SpellContext;
+import nl.wantedchef.empirewand.spell.SpellType;
 
 /**
  * Unleashes a bolt of lightning that jumps between targets with enhanced effects.
@@ -27,7 +34,8 @@ public class ChainLightningEnhanced extends Spell<Void> {
         public Builder(EmpireWandAPI api) {
             super(api);
             this.name = "Enhanced Chain Lightning";
-            this.description = "Unleashes a powerful bolt of lightning that jumps between targets with enhanced visual effects.";
+            this.description =
+                    "Unleashes a powerful bolt of lightning that jumps between targets with enhanced visual effects.";
             this.cooldown = java.time.Duration.ofSeconds(12);
             this.spellType = SpellType.LIGHTNING;
         }
@@ -61,8 +69,7 @@ public class ChainLightningEnhanced extends Spell<Void> {
         double jumpRadius = spellConfig.getDouble("values.jump-radius", 10.0);
         int jumps = spellConfig.getInt("values.jumps", 6);
         double damage = spellConfig.getDouble("values.damage", 10.0);
-        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig()
-                .getBoolean("features.friendly-fire", false);
+        boolean friendlyFire = false; // TODO: Get from config service
         int arcParticleCount = spellConfig.getInt("values.arc_particle_count", 12);
         int arcSteps = spellConfig.getInt("values.arc_steps", 16);
         double maxArcLength = spellConfig.getDouble("values.max_arc_length", 20.0);
@@ -75,7 +82,7 @@ public class ChainLightningEnhanced extends Spell<Void> {
 
         // Start enhanced chain lightning effect
         new EnhancedChainEffect(context, player, current, jumps, jumpRadius, damage, friendlyFire,
-                               arcParticleCount, arcSteps, maxArcLength).runTaskTimer(context.plugin(), 0L, 2L);
+                arcParticleCount, arcSteps, maxArcLength).runTaskTimer(context.plugin(), 0L, 2L);
         return null;
     }
 
@@ -103,8 +110,8 @@ public class ChainLightningEnhanced extends Spell<Void> {
         private boolean isFinished = false;
 
         public EnhancedChainEffect(SpellContext context, Player caster, LivingEntity firstTarget,
-                                  int maxJumps, double jumpRadius, double damage, boolean friendlyFire,
-                                  int arcParticleCount, int arcSteps, double maxArcLength) {
+                int maxJumps, double jumpRadius, double damage, boolean friendlyFire,
+                int arcParticleCount, int arcSteps, double maxArcLength) {
             this.context = context;
             this.caster = caster;
             this.firstTarget = firstTarget;
@@ -162,25 +169,28 @@ public class ChainLightningEnhanced extends Spell<Void> {
 
             // Damage current target
             currentTarget.damage(damage, caster);
-            
+
             // Apply status effects
             applyStatusEffects(currentTarget);
-            
+
             // Visual effects for current target
-            context.fx().spawnParticles(currentTarget.getLocation().add(0, 1, 0), Particle.ELECTRIC_SPARK, 30, 0.5, 0.8, 0.5, 0.2);
-            context.fx().playSound(currentTarget.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 0.8f, 1.3f);
+            context.fx().spawnParticles(currentTarget.getLocation().add(0, 1, 0),
+                    Particle.ELECTRIC_SPARK, 30, 0.5, 0.8, 0.5, 0.2);
+            context.fx().playSound(currentTarget.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_IMPACT,
+                    0.8f, 1.3f);
 
             // Find next target
             nextTarget = findNextTarget(currentTarget);
-            
+
             if (nextTarget != null) {
                 // Create chain segment
-                ChainSegment segment = new ChainSegment(currentTarget.getEyeLocation(), nextTarget.getEyeLocation());
+                ChainSegment segment = new ChainSegment(currentTarget.getEyeLocation(),
+                        nextTarget.getEyeLocation());
                 chainSegments.add(segment);
-                
+
                 // Add to hit entities
                 hitEntities.add(nextTarget);
-                
+
                 // Set next as current for next iteration
                 currentTarget = nextTarget;
             } else {
@@ -194,23 +204,24 @@ public class ChainLightningEnhanced extends Spell<Void> {
 
         private LivingEntity findNextTarget(LivingEntity current) {
             Location currentLoc = current.getLocation();
-            
+
             return current.getWorld().getNearbyLivingEntities(currentLoc, jumpRadius).stream()
                     .filter(entity -> !hitEntities.contains(entity))
                     .filter(entity -> !entity.equals(caster) || friendlyFire)
                     .filter(entity -> entity.isValid() && !entity.isDead())
-                    .min(Comparator.comparingDouble(entity -> entity.getLocation().distanceSquared(currentLoc)))
+                    .min(Comparator.comparingDouble(
+                            entity -> entity.getLocation().distanceSquared(currentLoc)))
                     .orElse(null);
         }
 
         private void applyStatusEffects(LivingEntity target) {
             // Apply weakness
             target.addPotionEffect(new org.bukkit.potion.PotionEffect(
-                org.bukkit.potion.PotionEffectType.WEAKNESS, 100, 1, false, false));
-            
+                    org.bukkit.potion.PotionEffectType.WEAKNESS, 100, 1, false, false));
+
             // Apply slow
             target.addPotionEffect(new org.bukkit.potion.PotionEffect(
-                org.bukkit.potion.PotionEffectType.SLOWNESS, 80, 2, false, false));
+                    org.bukkit.potion.PotionEffectType.SLOWNESS, 80, 2, false, false));
         }
 
         private class ChainSegment {
@@ -227,40 +238,38 @@ public class ChainLightningEnhanced extends Spell<Void> {
                 this.end = end.clone();
                 this.direction = end.toVector().subtract(start.toVector()).normalize();
                 this.length = start.distance(end);
-                
+
                 // Generate lightning bolt points
                 generateBoltPoints();
             }
 
             private void generateBoltPoints() {
                 boltPoints.add(start.clone());
-                
+
                 Vector full = end.toVector().subtract(start.toVector());
-                int steps = Math.max(5, (int)(length / 2));
-                
+                int steps = Math.max(5, (int) (length / 2));
+
                 for (int i = 1; i < steps; i++) {
                     double t = (double) i / steps;
                     Location point = start.clone().add(full.clone().multiply(t));
-                    
+
                     // Add some randomness to create a zigzag effect
                     if (i > 0 && i < steps - 1) {
                         double offset = (Math.random() - 0.5) * 2;
-                        point.add(new Vector(
-                            (Math.random() - 0.5) * offset,
-                            (Math.random() - 0.5) * offset * 0.5,
-                            (Math.random() - 0.5) * offset
-                        ));
+                        point.add(new Vector((Math.random() - 0.5) * offset,
+                                (Math.random() - 0.5) * offset * 0.5,
+                                (Math.random() - 0.5) * offset));
                     }
-                    
+
                     boltPoints.add(point);
                 }
-                
+
                 boltPoints.add(end.clone());
             }
 
             public void update() {
                 progress = Math.min(1.0, progress + SPEED);
-                
+
                 // Render the chain segment
                 renderChain();
             }
@@ -270,10 +279,11 @@ public class ChainLightningEnhanced extends Spell<Void> {
                 for (int i = 0; i < boltPoints.size() - 1; i++) {
                     Location from = boltPoints.get(i);
                     Location to = boltPoints.get(i + 1);
-                    
+
                     // Main lightning particles
-                    from.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, from, 3, 0.1, 0.1, 0.1, 0.05);
-                    
+                    from.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, from, 3, 0.1, 0.1, 0.1,
+                            0.05);
+
                     // Connection particles
                     Vector connection = to.toVector().subtract(from.toVector());
                     int particleCount = (int) (from.distance(to) * 3);
@@ -283,31 +293,31 @@ public class ChainLightningEnhanced extends Spell<Void> {
                         from.getWorld().spawnParticle(Particle.END_ROD, particleLoc, 1, 0, 0, 0, 0);
                     }
                 }
-                
+
                 // Occasionally create branching lightning
                 if (Math.random() < 0.3) {
-                    Location branchPoint = boltPoints.get((int)(Math.random() * boltPoints.size()));
+                    Location branchPoint =
+                            boltPoints.get((int) (Math.random() * boltPoints.size()));
                     createBranch(branchPoint);
                 }
             }
 
             private void createBranch(Location from) {
                 // Create a small branch of lightning
-                Vector branchDirection = new Vector(
-                    Math.random() - 0.5,
-                    Math.random() - 0.5,
-                    Math.random() - 0.5
-                ).normalize().multiply(2);
-                
+                Vector branchDirection =
+                        new Vector(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5)
+                                .normalize().multiply(2);
+
                 Location to = from.clone().add(branchDirection);
-                
+
                 // Draw branch
                 Vector connection = to.toVector().subtract(from.toVector());
                 int particleCount = (int) (from.distance(to) * 4);
                 for (int j = 0; j < particleCount; j++) {
                     double t = (double) j / particleCount;
                     Location particleLoc = from.clone().add(connection.clone().multiply(t));
-                    from.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, particleLoc, 1, 0.05, 0.05, 0.05, 0.02);
+                    from.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, particleLoc, 1, 0.05,
+                            0.05, 0.05, 0.02);
                 }
             }
 

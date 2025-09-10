@@ -1,13 +1,21 @@
 package nl.wantedchef.empirewand.spell.toggle.movement;
 
 import nl.wantedchef.empirewand.api.EmpireWandAPI;
-import nl.wantedchef.empirewand.spell.*;
+import nl.wantedchef.empirewand.spell.Spell;
+import nl.wantedchef.empirewand.spell.SpellContext;
+import nl.wantedchef.empirewand.spell.SpellType;
+import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.api.spell.toggle.ToggleableSpell;
 import nl.wantedchef.empirewand.EmpireWandPlugin;
 import io.papermc.paper.entity.TeleportFlag;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.Location;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -27,13 +35,13 @@ import java.util.WeakHashMap;
 public final class ShadowCloak extends Spell<Void> implements ToggleableSpell {
 
     /* ---------------------------------------- */
-    /*  DATA                                    */
+    /* DATA */
     /* ---------------------------------------- */
     private final Map<UUID, CloakData> cloaks = new WeakHashMap<>();
     private EmpireWandPlugin plugin;
 
     /* ---------------------------------------- */
-    /*  BUILDER                                 */
+    /* BUILDER */
     /* ---------------------------------------- */
     public static class Builder extends Spell.Builder<Void> {
         public Builder(EmpireWandAPI api) {
@@ -55,7 +63,7 @@ public final class ShadowCloak extends Spell<Void> implements ToggleableSpell {
     }
 
     /* ---------------------------------------- */
-    /*  SPELL API                               */
+    /* SPELL API */
     /* ---------------------------------------- */
     @Override
     public String key() {
@@ -79,7 +87,7 @@ public final class ShadowCloak extends Spell<Void> implements ToggleableSpell {
     }
 
     /* ---------------------------------------- */
-    /*  TOGGLE API                              */
+    /* TOGGLE API */
     /* ---------------------------------------- */
     @Override
     public boolean isActive(Player player) {
@@ -88,7 +96,8 @@ public final class ShadowCloak extends Spell<Void> implements ToggleableSpell {
 
     @Override
     public void activate(Player player, SpellContext context) {
-        if (isActive(player)) return;
+        if (isActive(player))
+            return;
         plugin = context.plugin();
         cloaks.put(player.getUniqueId(), new CloakData(player, context));
     }
@@ -99,6 +108,7 @@ public final class ShadowCloak extends Spell<Void> implements ToggleableSpell {
     }
 
     @Override
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
     public void forceDeactivate(Player player) {
         deactivate(player, null);
     }
@@ -109,11 +119,12 @@ public final class ShadowCloak extends Spell<Void> implements ToggleableSpell {
     }
 
     /* ---------------------------------------- */
-    /*  INTERNAL CLASS                          */
+    /* INTERNAL CLASS */
     /* ---------------------------------------- */
     private final class CloakData {
         private final Player player;
-        private final BossBar energyBar = BossBar.bossBar(Component.text("Shadow Energy"), 1, BossBar.Color.PURPLE, BossBar.Overlay.PROGRESS);
+        private final BossBar energyBar = BossBar.bossBar(Component.text("Shadow Energy"), 1,
+                BossBar.Color.PURPLE, BossBar.Overlay.PROGRESS);
         private final BukkitTask ticker;
         private double energy = 100;
         private long lastShadowStep = 0;
@@ -121,8 +132,10 @@ public final class ShadowCloak extends Spell<Void> implements ToggleableSpell {
         CloakData(Player player, SpellContext context) {
             this.player = player;
             player.showBossBar(energyBar);
-            playSound(cfgString("shadow-step.sound", "ENTITY_ENDERMAN_TELEPORT"), cfgFloat("shadow-step.volume", 0.6f), cfgFloat("shadow-step.pitch", 0.9f));
-            spawnParticles(cfgString("particles.activate", "LARGE_SMOKE"), player.getLocation(), 40);
+            playSound(cfgString("shadow-step.sound", "ENTITY_ENDERMAN_TELEPORT"),
+                    cfgFloat("shadow-step.volume", 0.6f), cfgFloat("shadow-step.pitch", 0.9f));
+            spawnParticles(cfgString("particles.activate", "LARGE_SMOKE"), player.getLocation(),
+                    40);
             sendMessage(cfgString("messages.activate", "&8👤 &7You merged with the shadows."));
 
             this.ticker = Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 0, 1);
@@ -133,7 +146,8 @@ public final class ShadowCloak extends Spell<Void> implements ToggleableSpell {
             player.hideBossBar(energyBar);
             removeEffects();
             sendMessage(cfgString("messages.deactivate", "&8👤 &7You emerged from the shadows."));
-            spawnParticles(cfgString("particles.activate", "LARGE_SMOKE"), player.getLocation(), 25);
+            spawnParticles(cfgString("particles.activate", "LARGE_SMOKE"), player.getLocation(),
+                    25);
         }
 
         private void tick() {
@@ -142,50 +156,68 @@ public final class ShadowCloak extends Spell<Void> implements ToggleableSpell {
                 return;
             }
             if (energy <= 0) {
-                sendMessage(cfgString("messages.no-energy", "&cNot enough energy to maintain the cloak."));
+                sendMessage(cfgString("messages.no-energy",
+                        "&cNot enough energy to maintain the cloak."));
                 forceDeactivate(player);
                 return;
             }
 
             int light = player.getLocation().getBlock().getLightLevel();
-            energy -= light > cfgInt("max-light-level", 4) ? 1.5 : cfgDouble("energy-tick-cost", 0.5);
+            energy -=
+                    light > cfgInt("max-light-level", 4) ? 1.5 : cfgDouble("energy-tick-cost", 0.5);
             energyBar.progress((float) (energy / 100));
 
             applyEffects();
-            if (player.getTicksLived() % 20 == 0) tryShadowStep();
-            if (player.getTicksLived() % cfgInt("darkness-aura.interval-ticks", 30) == 0) darknessAura();
+            if (player.getTicksLived() % 20 == 0)
+                tryShadowStep();
+            if (player.getTicksLived() % cfgInt("darkness-aura.interval-ticks", 30) == 0)
+                darknessAura();
         }
 
         private void applyEffects() {
             int dur = cfgInt("invisibility-duration-ticks", 100);
-            player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, dur, 0, false, false));
-            player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, dur, cfgInt("slowness-amplifier", -1) + 1, false, false));
-            player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, dur, cfgInt("jump-boost", 1), false, false));
+            player.addPotionEffect(
+                    new PotionEffect(PotionEffectType.INVISIBILITY, dur, 0, false, false));
+            player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, dur,
+                    cfgInt("slowness-amplifier", -1) + 1, false, false));
+            player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, dur,
+                    cfgInt("jump-boost", 1), false, false));
             if (cfgBool("night-vision", true))
-                player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, dur, 0, false, false));
+                player.addPotionEffect(
+                        new PotionEffect(PotionEffectType.NIGHT_VISION, dur, 0, false, false));
             if (cfgBool("water-breathing", true))
-                player.addPotionEffect(new PotionEffect(PotionEffectType.WATER_BREATHING, dur, 0, false, false));
+                player.addPotionEffect(
+                        new PotionEffect(PotionEffectType.WATER_BREATHING, dur, 0, false, false));
         }
 
         private void tryShadowStep() {
-            if (System.currentTimeMillis() - lastShadowStep < cfgInt("shadow-step.cooldown-ticks", 40) * 50) return;
-            if (Math.random() > cfgDouble("shadow-step.chance-per-second", 0.15)) return;
+            if (System.currentTimeMillis()
+                    - lastShadowStep < cfgInt("shadow-step.cooldown-ticks", 40) * 50)
+                return;
+            if (Math.random() > cfgDouble("shadow-step.chance-per-second", 0.15))
+                return;
 
             Vector dir = player.getLocation().getDirection();
-            Location target = player.getLocation().add(dir.multiply(cfgDouble("shadow-step.max-distance", 6)));
-            if (!target.getBlock().isPassable() || !target.clone().add(0, 1, 0).getBlock().isPassable()) return;
+            Location target = player.getLocation()
+                    .add(dir.multiply(cfgDouble("shadow-step.max-distance", 6)));
+            if (!target.getBlock().isPassable()
+                    || !target.clone().add(0, 1, 0).getBlock().isPassable())
+                return;
 
             lastShadowStep = System.currentTimeMillis();
             spawnParticles(cfgString("particles.shadow-step", "PORTAL"), player.getLocation(), 25);
             player.teleport(target, TeleportFlag.EntityState.RETAIN_PASSENGERS);
-            playSound(cfgString("shadow-step.sound", "ENTITY_ENDERMAN_TELEPORT"), cfgFloat("shadow-step.volume", 0.6f), cfgFloat("shadow-step.pitch", 1.3f));
+            playSound(cfgString("shadow-step.sound", "ENTITY_ENDERMAN_TELEPORT"),
+                    cfgFloat("shadow-step.volume", 0.6f), cfgFloat("shadow-step.pitch", 1.3f));
         }
 
         private void darknessAura() {
             Location c = player.getLocation();
             double r = cfgDouble("darkness-aura.radius", 4);
-            spawnRing(Particle.DUST, c, r, cfgInt("darkness-aura.particles", 32), new Particle.DustOptions(Color.BLACK, 1.3f));
-            playSound(cfgString("darkness-aura.sound", "ENTITY_WITHER_AMBIENT"), cfgFloat("darkness-aura.volume", 0.25f), cfgFloat("darkness-aura.pitch", 0.7f));
+            spawnRing(Particle.DUST, c, r, cfgInt("darkness-aura.particles", 32),
+                    new Particle.DustOptions(Color.BLACK, 1.3f));
+            playSound(cfgString("darkness-aura.sound", "ENTITY_WITHER_AMBIENT"),
+                    cfgFloat("darkness-aura.volume", 0.25f), cfgFloat("darkness-aura.pitch", 0.7f));
         }
 
         private void removeEffects() {
@@ -198,42 +230,51 @@ public final class ShadowCloak extends Spell<Void> implements ToggleableSpell {
 
         /* helpers */
         private void sendMessage(String msg) {
-            if (msg == null || msg.isEmpty()) return;
+            if (msg == null || msg.isEmpty())
+                return;
             player.sendMessage(Component.text(msg.replace('&', '§')));
         }
 
         private void playSound(String sound, float vol, float pit) {
-            if (sound == null || sound.isEmpty()) return;
+            if (sound == null || sound.isEmpty())
+                return;
             try {
                 if (player.getWorld() != null) {
                     player.playSound(player.getLocation(), Sound.valueOf(sound), vol, pit);
                 }
-            } catch (IllegalArgumentException ignore) {}
+            } catch (IllegalArgumentException ignore) {
+            }
         }
     }
 
     /* ---------------------------------------- */
-    /*  UTILS                                   */
+    /* UTILS */
     /* ---------------------------------------- */
     private static void spawnParticles(String type, Location loc, int count) {
-        if (loc.getWorld() == null || type == null || type.isEmpty()) return;
+        if (loc.getWorld() == null || type == null || type.isEmpty())
+            return;
         try {
             Particle particle = Particle.valueOf(type);
-            loc.getWorld().spawnParticle(particle, loc, count, 0.3, 0.5, 0.3, particle == Particle.PORTAL ? 0.8 : 0);
-        } catch (IllegalArgumentException ignore) {}
+            loc.getWorld().spawnParticle(particle, loc, count, 0.3, 0.5, 0.3,
+                    particle == Particle.PORTAL ? 0.8 : 0);
+        } catch (IllegalArgumentException ignore) {
+        }
     }
 
-    private static void spawnRing(Particle particle, Location c, double radius, int amount, Particle.DustOptions data) {
+    private static void spawnRing(Particle particle, Location c, double radius, int amount,
+            Particle.DustOptions data) {
         World w = c.getWorld();
-        if (w == null) return;
+        if (w == null)
+            return;
         for (int i = 0; i < amount; i++) {
             double angle = 2 * Math.PI * i / amount;
-            w.spawnParticle(particle, c.clone().add(radius * Math.cos(angle), 1, radius * Math.sin(angle)), 1, data);
+            w.spawnParticle(particle,
+                    c.clone().add(radius * Math.cos(angle), 1, radius * Math.sin(angle)), 1, data);
         }
     }
 
     /* ---------------------------------------- */
-    /*  CONFIG HELPERS                          */
+    /* CONFIG HELPERS */
     /* ---------------------------------------- */
     private String cfgString(String path, String def) {
         return spellConfig.getString("shadow-cloak." + path, def);

@@ -5,10 +5,6 @@ import nl.wantedchef.empirewand.spell.SpellType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
-import nl.wantedchef.empirewand.spell.toggle.movement.KajCloud;
-import nl.wantedchef.empirewand.spell.toggle.movement.MephiCloud;
 
 class MeteorShowerTest {
 

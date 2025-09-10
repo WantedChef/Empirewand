@@ -21,41 +21,45 @@ import org.mockito.MockitoAnnotations;
 
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.any;
 
 @DisplayName("BaseWandCommand Tests")
 class BaseWandCommandTest {
 
     private TestBaseWandCommand baseCommand;
-    
+
     @Mock
     private EmpireWandPlugin plugin;
-    
+
     @Mock
     private ConfigService configService;
-    
+
     @Mock
     private FxService fxService;
-    
+
     @Mock
     private SpellRegistry spellRegistry;
-    
+
     @Mock
     private WandService wandService;
-    
+
     @Mock
     private CooldownService cooldownService;
-    
+
     @Mock
     private PermissionService permissionService;
-    
+
     @Mock
     private CommandSender sender;
-    
+
     @Mock
     private Player player;
-    
+
     @Mock
     private Command command;
 
@@ -113,7 +117,7 @@ class BaseWandCommandTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        
+
         // Mock plugin services
         when(plugin.getConfigService()).thenReturn(configService);
         when(plugin.getFxService()).thenReturn(fxService);
@@ -121,14 +125,14 @@ class BaseWandCommandTest {
         when(plugin.getWandService()).thenReturn(wandService);
         when(plugin.getCooldownService()).thenReturn(cooldownService);
         when(plugin.getPermissionService()).thenReturn(permissionService);
-        
+
         baseCommand = new TestBaseWandCommand(plugin);
     }
 
     @Nested
     @DisplayName("Initialization Tests")
     class InitializationTests {
-        
+
         @Test
         @DisplayName("Should initialize with plugin")
         void shouldInitializeWithPlugin() {
@@ -140,7 +144,8 @@ class BaseWandCommandTest {
         void shouldRegisterSubcommandsDuringInitialization() {
             Map<String, SubCommand> subcommands = baseCommand.getSubcommands();
             assertTrue(subcommands.containsKey("test"));
-            assertTrue(subcommands.containsKey("help")); // Help command should be automatically registered
+            assertTrue(subcommands.containsKey("help")); // Help command should be automatically
+                                                         // registered
         }
 
         @Test
@@ -154,11 +159,11 @@ class BaseWandCommandTest {
     @Nested
     @DisplayName("Command Execution Tests")
     class CommandExecutionTests {
-        
+
         @Test
         @DisplayName("Should show help when no arguments provided")
         void shouldShowHelpWhenNoArgumentsProvided() {
-            boolean result = baseCommand.onCommand(sender, command, "test", new String[]{});
+            boolean result = baseCommand.onCommand(sender, command, "test", new String[] {});
             assertTrue(result);
             verify(sender).sendMessage((Component) any());
         }
@@ -167,15 +172,16 @@ class BaseWandCommandTest {
         @DisplayName("Should execute valid subcommand")
         void shouldExecuteValidSubcommand() {
             when(permissionService.has(sender, "testwand.command.test")).thenReturn(true);
-            
-            boolean result = baseCommand.onCommand(sender, command, "test", new String[]{"test"});
+
+            boolean result = baseCommand.onCommand(sender, command, "test", new String[] {"test"});
             assertTrue(result);
         }
 
         @Test
         @DisplayName("Should show help for unknown command")
         void shouldShowHelpForUnknownCommand() {
-            boolean result = baseCommand.onCommand(sender, command, "test", new String[]{"unknown"});
+            boolean result =
+                    baseCommand.onCommand(sender, command, "test", new String[] {"unknown"});
             assertTrue(result);
             verify(sender).sendMessage((Component) any());
         }
@@ -184,13 +190,14 @@ class BaseWandCommandTest {
     @Nested
     @DisplayName("Tab Completion Tests")
     class TabCompletionTests {
-        
+
         @Test
         @DisplayName("Should complete subcommand names")
         void shouldCompleteSubcommandNames() {
             when(permissionService.has(sender, "testwand.command.test")).thenReturn(true);
-            
-            var completions = baseCommand.onTabComplete(sender, command, "test", new String[]{"t"});
+
+            var completions =
+                    baseCommand.onTabComplete(sender, command, "test", new String[] {"t"});
             assertNotNull(completions);
             assertTrue(completions.contains("test"));
         }
@@ -199,8 +206,9 @@ class BaseWandCommandTest {
         @DisplayName("Should filter by permissions")
         void shouldFilterByPermissions() {
             when(permissionService.has(sender, "testwand.command.test")).thenReturn(false);
-            
-            var completions = baseCommand.onTabComplete(sender, command, "test", new String[]{"t"});
+
+            var completions =
+                    baseCommand.onTabComplete(sender, command, "test", new String[] {"t"});
             assertNotNull(completions);
             assertFalse(completions.contains("test"));
         }

@@ -16,25 +16,27 @@ import org.jetbrains.annotations.NotNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
- * An enhanced particle engine featuring object pooling and optimized batching for high-performance particle rendering.
- * This engine is designed to handle a large volume of particle effects with minimal impact on server performance.
+ * An enhanced particle engine featuring object pooling and optimized batching for high-performance
+ * particle rendering. This engine is designed to handle a large volume of particle effects with
+ * minimal impact on server performance.
  */
 public class OptimizedParticleEngine {
     private static final int DEFAULT_BATCH_SIZE = 100;
     private static final int MAX_POOL_SIZE = 1000;
     private static final long CLEANUP_INTERVAL_TICKS = 1200L; // 60 seconds
 
-    @SuppressFBWarnings(value = "UUF_UNUSED_FIELD", justification = "Plugin is used for scheduling cleanup tasks")
+    @SuppressFBWarnings(value = "UUF_UNUSED_FIELD",
+            justification = "Plugin is used for scheduling cleanup tasks")
     private final Plugin plugin;
-    private final Logger logger;
+    private static final Logger logger = Logger.getLogger(OptimizedParticleEngine.class.getName());
     private final ParticleBatchPool batchPool;
     private final ConcurrentLinkedQueue<ParticleBatch> activeBatches;
     private final AtomicInteger totalParticlesSpawned = new AtomicInteger(0);
     private BukkitRunnable cleanupTask;
 
     /**
-     * A pooled object representing a batch of particles to be spawned.
-     * Using a pool of these objects reduces garbage collection pressure.
+     * A pooled object representing a batch of particles to be spawned. Using a pool of these
+     * objects reduces garbage collection pressure.
      */
     private static class ParticleBatch {
         Location location;
@@ -61,15 +63,15 @@ public class OptimizedParticleEngine {
          *
          * @param location The location to spawn particles.
          * @param particle The type of particle.
-         * @param count    The number of particles.
-         * @param offsetX  The offset on the X axis.
-         * @param offsetY  The offset on the Y axis.
-         * @param offsetZ  The offset on the Z axis.
-         * @param speed    The speed of the particles.
-         * @param data     The data for the particle (e.g., DustOptions).
+         * @param count The number of particles.
+         * @param offsetX The offset on the X axis.
+         * @param offsetY The offset on the Y axis.
+         * @param offsetZ The offset on the Z axis.
+         * @param speed The speed of the particles.
+         * @param data The data for the particle (e.g., DustOptions).
          */
-        void set(Location location, Particle particle, int count,
-                double offsetX, double offsetY, double offsetZ, double speed, Object data) {
+        void set(Location location, Particle particle, int count, double offsetX, double offsetY,
+                double offsetZ, double speed, Object data) {
             this.location = location;
             this.particle = particle;
             this.count = count;
@@ -92,9 +94,11 @@ public class OptimizedParticleEngine {
             if (world != null) {
                 try {
                     if (data != null) {
-                        world.spawnParticle(particle, location, count, offsetX, offsetY, offsetZ, speed, data);
+                        world.spawnParticle(particle, location, count, offsetX, offsetY, offsetZ,
+                                speed, data);
                     } else {
-                        world.spawnParticle(particle, location, count, offsetX, offsetY, offsetZ, speed);
+                        world.spawnParticle(particle, location, count, offsetX, offsetY, offsetZ,
+                                speed);
                     }
                 } catch (Exception e) {
                     // Silently handle particle spawn failures to avoid spam
@@ -171,14 +175,13 @@ public class OptimizedParticleEngine {
      */
     public OptimizedParticleEngine(Plugin plugin) {
         this.plugin = plugin;
-        this.logger = plugin.getLogger();
         this.batchPool = new ParticleBatchPool(MAX_POOL_SIZE);
         this.activeBatches = new ConcurrentLinkedQueue<>();
     }
 
     /**
-     * Initializes the particle engine by starting its cleanup and flushing tasks.
-     * This should be called when the plugin is enabled.
+     * Initializes the particle engine by starting its cleanup and flushing tasks. This should be
+     * called when the plugin is enabled.
      */
     public void initialize() {
         // Start periodic cleanup task
@@ -190,7 +193,8 @@ public class OptimizedParticleEngine {
         };
         cleanupTask.runTaskTimer(plugin, CLEANUP_INTERVAL_TICKS, CLEANUP_INTERVAL_TICKS);
 
-        logger.info("OptimizedParticleEngine initialized with batch size: " + DEFAULT_BATCH_SIZE);
+        logger.info(String.format("OptimizedParticleEngine initialized with batch size: %d",
+                DEFAULT_BATCH_SIZE));
     }
 
     /**
@@ -198,11 +202,11 @@ public class OptimizedParticleEngine {
      *
      * @param location The location to spawn particles.
      * @param particle The type of particle.
-     * @param count    The number of particles.
-     * @param offsetX  The offset on the X axis.
-     * @param offsetY  The offset on the Y axis.
-     * @param offsetZ  The offset on the Z axis.
-     * @param speed    The speed of the particles.
+     * @param count The number of particles.
+     * @param offsetX The offset on the X axis.
+     * @param offsetY The offset on the Y axis.
+     * @param offsetZ The offset on the Z axis.
+     * @param speed The speed of the particles.
      */
     public void spawnParticle(@NotNull Location location, @NotNull Particle particle, int count,
             double offsetX, double offsetY, double offsetZ, double speed) {
@@ -214,12 +218,12 @@ public class OptimizedParticleEngine {
      *
      * @param location The location to spawn particles.
      * @param particle The type of particle.
-     * @param count    The number of particles.
-     * @param offsetX  The offset on the X axis.
-     * @param offsetY  The offset on the Y axis.
-     * @param offsetZ  The offset on the Z axis.
-     * @param speed    The speed of the particles.
-     * @param data     The data for the particle (e.g., DustOptions).
+     * @param count The number of particles.
+     * @param offsetX The offset on the X axis.
+     * @param offsetY The offset on the Y axis.
+     * @param offsetZ The offset on the Z axis.
+     * @param speed The speed of the particles.
+     * @param data The data for the particle (e.g., DustOptions).
      */
     public void spawnParticle(@NotNull Location location, @NotNull Particle particle, int count,
             double offsetX, double offsetY, double offsetZ, double speed, Object data) {
@@ -241,11 +245,11 @@ public class OptimizedParticleEngine {
      *
      * @param location The location to spawn the burst.
      * @param particle The type of particle.
-     * @param count    The number of particles.
-     * @param spread   The spread of the particles.
+     * @param count The number of particles.
+     * @param spread The spread of the particles.
      */
-    public void spawnParticleBurst(@NotNull Location location, @NotNull Particle particle, int count,
-            double spread) {
+    public void spawnParticleBurst(@NotNull Location location, @NotNull Particle particle,
+            int count, double spread) {
         World world = location.getWorld();
         if (world == null)
             return;
@@ -261,9 +265,9 @@ public class OptimizedParticleEngine {
     /**
      * Creates a particle trail between two locations.
      *
-     * @param start             The start location of the trail.
-     * @param end               The end location of the trail.
-     * @param particle          The particle to use for the trail.
+     * @param start The start location of the trail.
+     * @param end The end location of the trail.
+     * @param particle The particle to use for the trail.
      * @param particlesPerBlock The number of particles to spawn per block of distance.
      */
     public void createTrail(@NotNull Location start, @NotNull Location end,
@@ -318,9 +322,7 @@ public class OptimizedParticleEngine {
      * @return A snapshot of the current performance metrics.
      */
     public ParticleMetrics getMetrics() {
-        return new ParticleMetrics(
-                totalParticlesSpawned.get(),
-                activeBatches.size(),
+        return new ParticleMetrics(totalParticlesSpawned.get(), activeBatches.size(),
                 batchPool.size());
     }
 
@@ -338,7 +340,8 @@ public class OptimizedParticleEngine {
     }
 
     /**
-     * Shuts down the particle engine, stopping the cleanup task and flushing any remaining particles.
+     * Shuts down the particle engine, stopping the cleanup task and flushing any remaining
+     * particles.
      */
     public void shutdown() {
         if (cleanupTask != null) {
@@ -348,24 +351,19 @@ public class OptimizedParticleEngine {
         // Final flush
         flush();
 
-        logger.info("OptimizedParticleEngine shut down. Final metrics: " + getMetrics());
+        logger.info(String.format("OptimizedParticleEngine shut down. Final metrics: %s",
+                getMetrics()));
     }
 
     /**
      * A data class holding a snapshot of particle engine metrics.
      *
      * @param totalParticlesSpawned The total number of particles spawned since startup.
-     * @param activeBatches         The number of batches currently waiting to be flushed.
-     * @param poolSize              The number of available objects in the batch pool.
+     * @param activeBatches The number of batches currently waiting to be flushed.
+     * @param poolSize The number of available objects in the batch pool.
      */
-    public record ParticleMetrics(
-            long totalParticlesSpawned,
-            int activeBatches,
-            int poolSize) {
+    public record ParticleMetrics(long totalParticlesSpawned, int activeBatches, int poolSize) {
     }
 }
-
-
-
 
 

@@ -12,16 +12,15 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Manages command cooldowns and rate limiting to prevent abuse.
- * Provides both global and per-player command cooldowns.
+ * Manages command cooldowns and rate limiting to prevent abuse. Provides both global and per-player
+ * command cooldowns.
  */
 public class CommandCooldownManager {
-    private final EmpireWandPlugin plugin;
     private final Map<String, Long> globalCooldowns = new ConcurrentHashMap<>();
     private final Map<UUID, Map<String, Long>> playerCooldowns = new ConcurrentHashMap<>();
 
     public CommandCooldownManager(@NotNull EmpireWandPlugin plugin) {
-        this.plugin = plugin;
+        // Plugin reference not needed for this implementation
     }
 
     /**
@@ -32,7 +31,8 @@ public class CommandCooldownManager {
      * @param cooldownSeconds The cooldown duration in seconds
      * @throws CommandException if the command is on cooldown
      */
-    public void checkCooldown(@NotNull CommandSender sender, @NotNull String commandName, int cooldownSeconds) throws CommandException {
+    public void checkCooldown(@NotNull CommandSender sender, @NotNull String commandName,
+            int cooldownSeconds) throws CommandException {
         if (cooldownSeconds <= 0) {
             return; // No cooldown
         }
@@ -43,19 +43,18 @@ public class CommandCooldownManager {
 
         if (sender instanceof Player player) {
             UUID playerId = player.getUniqueId();
-            Map<String, Long> playerCooldownsMap = playerCooldowns.computeIfAbsent(playerId, k -> new HashMap<>());
-            
+            Map<String, Long> playerCooldownsMap =
+                    playerCooldowns.computeIfAbsent(playerId, k -> new HashMap<>());
+
             Long cooldownEnd = playerCooldownsMap.get(cooldownKey);
             if (cooldownEnd != null && now < cooldownEnd) {
                 long remainingSeconds = (cooldownEnd - now) / 1000;
                 throw new CommandException(
-                    String.format("This command is on cooldown. Please wait %d second%s.", 
-                        remainingSeconds, remainingSeconds != 1 ? "s" : ""),
-                    "COMMAND_COOLDOWN",
-                    commandName, remainingSeconds
-                );
+                        String.format("This command is on cooldown. Please wait %d second%s.",
+                                remainingSeconds, remainingSeconds != 1 ? "s" : ""),
+                        "COMMAND_COOLDOWN", commandName, remainingSeconds);
             }
-            
+
             // Set new cooldown
             playerCooldownsMap.put(cooldownKey, now + cooldownMs);
         } else {
@@ -64,13 +63,11 @@ public class CommandCooldownManager {
             if (cooldownEnd != null && now < cooldownEnd) {
                 long remainingSeconds = (cooldownEnd - now) / 1000;
                 throw new CommandException(
-                    String.format("This command is on cooldown. Please wait %d second%s.", 
-                        remainingSeconds, remainingSeconds != 1 ? "s" : ""),
-                    "COMMAND_COOLDOWN",
-                    commandName, remainingSeconds
-                );
+                        String.format("This command is on cooldown. Please wait %d second%s.",
+                                remainingSeconds, remainingSeconds != 1 ? "s" : ""),
+                        "COMMAND_COOLDOWN", commandName, remainingSeconds);
             }
-            
+
             // Set new cooldown
             globalCooldowns.put(cooldownKey, now + cooldownMs);
         }
@@ -85,8 +82,8 @@ public class CommandCooldownManager {
      * @param cooldownSeconds The cooldown duration in seconds
      * @throws CommandException if the command is on cooldown
      */
-    public void checkCooldown(@NotNull CommandSender sender, @NotNull String commandName, 
-                             @NotNull String cooldownKey, int cooldownSeconds) throws CommandException {
+    public void checkCooldown(@NotNull CommandSender sender, @NotNull String commandName,
+            @NotNull String cooldownKey, int cooldownSeconds) throws CommandException {
         if (cooldownSeconds <= 0) {
             return; // No cooldown
         }
@@ -97,19 +94,18 @@ public class CommandCooldownManager {
 
         if (sender instanceof Player player) {
             UUID playerId = player.getUniqueId();
-            Map<String, Long> playerCooldownsMap = playerCooldowns.computeIfAbsent(playerId, k -> new HashMap<>());
-            
+            Map<String, Long> playerCooldownsMap =
+                    playerCooldowns.computeIfAbsent(playerId, k -> new HashMap<>());
+
             Long cooldownEnd = playerCooldownsMap.get(fullCooldownKey);
             if (cooldownEnd != null && now < cooldownEnd) {
                 long remainingSeconds = (cooldownEnd - now) / 1000;
                 throw new CommandException(
-                    String.format("This command is on cooldown. Please wait %d second%s.", 
-                        remainingSeconds, remainingSeconds != 1 ? "s" : ""),
-                    "COMMAND_COOLDOWN",
-                    commandName, remainingSeconds
-                );
+                        String.format("This command is on cooldown. Please wait %d second%s.",
+                                remainingSeconds, remainingSeconds != 1 ? "s" : ""),
+                        "COMMAND_COOLDOWN", commandName, remainingSeconds);
             }
-            
+
             // Set new cooldown
             playerCooldownsMap.put(fullCooldownKey, now + cooldownMs);
         } else {
@@ -118,13 +114,11 @@ public class CommandCooldownManager {
             if (cooldownEnd != null && now < cooldownEnd) {
                 long remainingSeconds = (cooldownEnd - now) / 1000;
                 throw new CommandException(
-                    String.format("This command is on cooldown. Please wait %d second%s.", 
-                        remainingSeconds, remainingSeconds != 1 ? "s" : ""),
-                    "COMMAND_COOLDOWN",
-                    commandName, remainingSeconds
-                );
+                        String.format("This command is on cooldown. Please wait %d second%s.",
+                                remainingSeconds, remainingSeconds != 1 ? "s" : ""),
+                        "COMMAND_COOLDOWN", commandName, remainingSeconds);
             }
-            
+
             // Set new cooldown
             globalCooldowns.put(fullCooldownKey, now + cooldownMs);
         }

@@ -9,7 +9,7 @@ import nl.wantedchef.empirewand.api.service.MetricsService;
 import nl.wantedchef.empirewand.api.service.PermissionService;
 import nl.wantedchef.empirewand.api.service.WandService;
 import nl.wantedchef.empirewand.api.spell.SpellRegistry;
-import nl.wantedchef.empirewand.api.spell.SpellManager;
+
 import org.jetbrains.annotations.NotNull;
 
 /**

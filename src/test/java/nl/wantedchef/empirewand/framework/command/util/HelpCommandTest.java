@@ -18,8 +18,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.any;
 
 @DisplayName("HelpCommand Tests")
 class HelpCommandTest {
@@ -27,16 +33,16 @@ class HelpCommandTest {
     private HelpCommand helpCommand;
     private Map<String, SubCommand> commands;
     private Map<String, SubCommand> aliases;
-    
+
     @Mock
     private CommandSender sender;
-    
+
     @Mock
     private Player player;
-    
+
     @Mock
     private CommandContext context;
-    
+
     @Mock
     private SubCommand testCommand;
 
@@ -51,7 +57,7 @@ class HelpCommandTest {
     @Nested
     @DisplayName("Basic Properties Tests")
     class BasicPropertiesTests {
-        
+
         @Test
         @DisplayName("Should return correct command name")
         void shouldReturnCorrectCommandName() {
@@ -89,15 +95,15 @@ class HelpCommandTest {
     @Nested
     @DisplayName("Execution Tests")
     class ExecutionTests {
-        
+
         @Test
         @DisplayName("Should show general help when no arguments")
         void shouldShowGeneralHelpWhenNoArguments() throws CommandException {
-            when(context.args()).thenReturn(new String[]{"help"});
+            when(context.args()).thenReturn(new String[] {"help"});
             when(context.sender()).thenReturn(sender);
-            
+
             helpCommand.execute(context);
-            
+
             verify(sender).sendMessage((Component) any());
         }
 
@@ -110,24 +116,24 @@ class HelpCommandTest {
             when(testCommand.getDescription()).thenReturn("Test command");
             when(testCommand.getPermission()).thenReturn(null);
             commands.put("test", testCommand);
-            
-            when(context.args()).thenReturn(new String[]{"help", "test"});
+
+            when(context.args()).thenReturn(new String[] {"help", "test"});
             when(context.sender()).thenReturn(sender);
-            
+
             helpCommand.execute(context);
-            
+
             verify(sender).sendMessage((Component) any());
         }
 
         @Test
         @DisplayName("Should throw exception for unknown command")
         void shouldThrowExceptionForUnknownCommand() {
-            when(context.args()).thenReturn(new String[]{"help", "unknown"});
-            
+            when(context.args()).thenReturn(new String[] {"help", "unknown"});
+
             CommandException exception = assertThrows(CommandException.class, () -> {
                 helpCommand.execute(context);
             });
-            
+
             assertTrue(exception.getMessage().contains("Unknown command"));
             assertEquals("UNKNOWN_COMMAND", exception.getErrorCode());
         }
@@ -136,7 +142,7 @@ class HelpCommandTest {
     @Nested
     @DisplayName("Tab Completion Tests")
     class TabCompletionTests {
-        
+
         @Test
         @DisplayName("Should complete command names")
         void shouldCompleteCommandNames() {
@@ -144,9 +150,9 @@ class HelpCommandTest {
             when(testCommand.getName()).thenReturn("testcommand");
             when(testCommand.getPermission()).thenReturn(null);
             commands.put("testcommand", testCommand);
-            
-            when(context.args()).thenReturn(new String[]{"help", "test"});
-            
+
+            when(context.args()).thenReturn(new String[] {"help", "test"});
+
             List<String> completions = helpCommand.tabComplete(context);
             assertEquals(1, completions.size());
             assertEquals("testcommand", completions.get(0));
@@ -155,8 +161,8 @@ class HelpCommandTest {
         @Test
         @DisplayName("Should return empty list for no matches")
         void shouldReturnEmptyListForNoMatches() {
-            when(context.args()).thenReturn(new String[]{"help", "xyz"});
-            
+            when(context.args()).thenReturn(new String[] {"help", "xyz"});
+
             List<String> completions = helpCommand.tabComplete(context);
             assertTrue(completions.isEmpty());
         }
@@ -164,8 +170,8 @@ class HelpCommandTest {
         @Test
         @DisplayName("Should return empty list for wrong argument position")
         void shouldReturnEmptyListForWrongArgumentPosition() {
-            when(context.args()).thenReturn(new String[]{"help"});
-            
+            when(context.args()).thenReturn(new String[] {"help"});
+
             List<String> completions = helpCommand.tabComplete(context);
             assertTrue(completions.isEmpty());
         }
@@ -174,28 +180,31 @@ class HelpCommandTest {
     @Nested
     @DisplayName("HelpAwareCommand Tests")
     class HelpAwareCommandTests {
-        
+
         @Test
         @DisplayName("Should provide command examples")
         void shouldProvideCommandExamples() {
             List<CommandExample> examples = helpCommand.getExamples();
             assertFalse(examples.isEmpty());
-            
+
             // Check that we have the expected examples
             boolean foundHelpExample = false;
             boolean foundGetExample = false;
             boolean foundSpellsExample = false;
-            
+
             for (CommandExample example : examples) {
-                if (example.getCommand().equals("help") && example.getDescription().contains("help overview")) {
+                if (example.getCommand().equals("help")
+                        && example.getDescription().contains("help overview")) {
                     foundHelpExample = true;
-                } else if (example.getCommand().equals("help get") && example.getDescription().contains("get command")) {
+                } else if (example.getCommand().equals("help get")
+                        && example.getDescription().contains("get command")) {
                     foundGetExample = true;
-                } else if (example.getCommand().equals("help spells") && example.getDescription().contains("spells command")) {
+                } else if (example.getCommand().equals("help spells")
+                        && example.getDescription().contains("spells command")) {
                     foundSpellsExample = true;
                 }
             }
-            
+
             assertTrue(foundHelpExample, "Should have help example");
             assertTrue(foundGetExample, "Should have get example");
             assertTrue(foundSpellsExample, "Should have spells example");

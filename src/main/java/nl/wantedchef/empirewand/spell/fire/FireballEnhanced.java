@@ -1,7 +1,7 @@
 package nl.wantedchef.empirewand.spell.fire;
 
 import nl.wantedchef.empirewand.api.EmpireWandAPI;
-import nl.wantedchef.empirewand.api.service.ConfigService;
+
 import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.spell.ProjectileSpell;
 import nl.wantedchef.empirewand.spell.SpellContext;

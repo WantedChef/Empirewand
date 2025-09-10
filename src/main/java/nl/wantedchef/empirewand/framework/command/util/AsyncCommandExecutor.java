@@ -2,15 +2,12 @@ package nl.wantedchef.empirewand.framework.command.util;
 
 import nl.wantedchef.empirewand.EmpireWandPlugin;
 import nl.wantedchef.empirewand.framework.command.CommandContext;
-import nl.wantedchef.empirewand.framework.command.CommandException;
 import nl.wantedchef.empirewand.framework.command.SubCommand;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 
@@ -33,11 +30,12 @@ public class AsyncCommandExecutor {
      * @param asyncTask The async task to execute
      * @param successMessage The message to send on success (null for no message)
      */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
     public void executeAsync(@NotNull CommandContext context, @NotNull SubCommand command,
                             @NotNull AsyncCommandTask asyncTask, @NotNull String successMessage) {
         executeAsync(context, command, asyncTask, 
             result -> context.sendMessage(Component.text(successMessage).color(NamedTextColor.GREEN)),
-            null);
+            error -> context.sendMessage(Component.text("An error occurred while processing your request.").color(NamedTextColor.RED)));
     }
 
     /**
@@ -106,11 +104,12 @@ public class AsyncCommandExecutor {
      * @param command The command being executed
      * @param asyncTask The async task to execute
      */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
     public void executeAsync(@NotNull CommandContext context, @NotNull SubCommand command,
                             @NotNull AsyncCommandTask asyncTask) {
         executeAsync(context, command, asyncTask, 
             result -> context.sendMessage(Component.text("Command executed successfully!").color(NamedTextColor.GREEN)),
-            null);
+            error -> context.sendMessage(Component.text("An error occurred while processing your request.").color(NamedTextColor.RED)));
     }
 
     /**

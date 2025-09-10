@@ -1,26 +1,20 @@
 package nl.wantedchef.empirewand.framework.command.util;
 
-import nl.wantedchef.empirewand.framework.command.CommandException;
-import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 import java.util.regex.Pattern;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
- * Utility class for parsing and validating command arguments with rich error messages.
- * Provides type-safe argument extraction with detailed validation.
+ * Utility class for parsing and validating command arguments with rich error messages. Provides
+ * type-safe argument extraction with detailed validation.
  */
 public class ArgumentParser {
     private final String[] args;
-    private final String commandName;
 
     public ArgumentParser(@NotNull String[] args, @NotNull String commandName) {
         this.args = args;
-        this.commandName = commandName;
     }
 
     /**
@@ -33,10 +27,8 @@ public class ArgumentParser {
     public @NotNull String getString(int index) throws CommandException {
         if (index >= args.length) {
             throw new CommandException(
-                String.format("Missing required argument at position %d", index + 1),
-                "ARG_MISSING",
-                index
-            );
+                    String.format("Missing required argument at position %d", index + 1),
+                    "ARG_MISSING", index);
         }
         return args[index];
     }
@@ -68,10 +60,8 @@ public class ArgumentParser {
             return Integer.parseInt(value);
         } catch (NumberFormatException e) {
             throw new CommandException(
-                String.format("Invalid number '%s' at position %d", value, index + 1),
-                "ARG_INVALID_NUMBER",
-                index, value
-            );
+                    String.format("Invalid number '%s' at position %d", value, index + 1),
+                    "ARG_INVALID_NUMBER", index, value);
         }
     }
 
@@ -106,10 +96,8 @@ public class ArgumentParser {
         int value = getInteger(index);
         if (value < min || value > max) {
             throw new CommandException(
-                String.format("Value %d must be between %d and %d", value, min, max),
-                "ARG_OUT_OF_RANGE",
-                index, value, min, max
-            );
+                    String.format("Value %d must be between %d and %d", value, min, max),
+                    "ARG_OUT_OF_RANGE", index, value, min, max);
         }
         return value;
     }
@@ -123,17 +111,13 @@ public class ArgumentParser {
      */
     public boolean getBoolean(int index) throws CommandException {
         String value = getString(index).toLowerCase();
-        if ("true".equals(value)) {
-            return true;
-        } else if ("false".equals(value)) {
-            return false;
-        } else {
-            throw new CommandException(
-                String.format("Invalid boolean value '%s' at position %d. Use 'true' or 'false'", value, index + 1),
-                "ARG_INVALID_BOOLEAN",
-                index, value
-            );
-        }
+        return switch (value) {
+            case "true" -> true;
+            case "false" -> false;
+            default -> throw new CommandException(String.format(
+                    "Invalid boolean value '%s' at position %d. Use 'true' or 'false'", value,
+                    index + 1), "ARG_INVALID_BOOLEAN", index, value);
+        };
     }
 
     /**
@@ -148,13 +132,11 @@ public class ArgumentParser {
             return defaultValue;
         }
         String value = args[index].toLowerCase();
-        if ("true".equals(value)) {
-            return true;
-        } else if ("false".equals(value)) {
-            return false;
-        } else {
-            return defaultValue;
-        }
+        return switch (value) {
+            case "true" -> true;
+            case "false" -> false;
+            default -> defaultValue;
+        };
     }
 
     /**
@@ -170,15 +152,13 @@ public class ArgumentParser {
         try {
             return Enum.valueOf(enumClass, value.toUpperCase());
         } catch (IllegalArgumentException e) {
-            String[] validValues = Arrays.stream(enumClass.getEnumConstants())
-                .map(Enum::name)
-                .toArray(String[]::new);
-            
+            String[] validValues = Arrays.stream(enumClass.getEnumConstants()).map(Enum::name)
+                    .toArray(String[]::new);
+
             throw new CommandException(
-                String.format("Invalid value '%s' at position %d. Valid values: %s", value, index + 1, String.join(", ", validValues)),
-                "ARG_INVALID_ENUM",
-                index, value, enumClass.getSimpleName(), validValues
-            );
+                    String.format("Invalid value '%s' at position %d. Valid values: %s", value,
+                            index + 1, String.join(", ", validValues)),
+                    "ARG_INVALID_ENUM", index, value, enumClass.getSimpleName(), validValues);
         }
     }
 
@@ -190,19 +170,19 @@ public class ArgumentParser {
      * @return The validated argument value (in original case)
      * @throws CommandException if the argument is missing or invalid
      */
-    public @NotNull String validateChoice(int index, @NotNull String... allowedValues) throws CommandException {
+    public @NotNull String validateChoice(int index, @NotNull String... allowedValues)
+            throws CommandException {
         String value = getString(index);
         for (String allowed : allowedValues) {
             if (allowed.equalsIgnoreCase(value)) {
                 return value;
             }
         }
-        
+
         throw new CommandException(
-            String.format("Invalid value '%s' at position %d. Allowed values: %s", value, index + 1, String.join(", ", allowedValues)),
-            "ARG_INVALID_CHOICE",
-            index, value, allowedValues
-        );
+                String.format("Invalid value '%s' at position %d. Allowed values: %s", value,
+                        index + 1, String.join(", ", allowedValues)),
+                "ARG_INVALID_CHOICE", index, value, allowedValues);
     }
 
     /**
@@ -214,14 +194,12 @@ public class ArgumentParser {
      * @return The validated argument value
      * @throws CommandException if the argument is missing or invalid
      */
-    public @NotNull String validatePattern(int index, @NotNull Pattern pattern, @NotNull String description) throws CommandException {
+    public @NotNull String validatePattern(int index, @NotNull Pattern pattern,
+            @NotNull String description) throws CommandException {
         String value = getString(index);
         if (!pattern.matcher(value).matches()) {
-            throw new CommandException(
-                String.format("Invalid value '%s' at position %d. %s", value, index + 1, description),
-                "ARG_INVALID_PATTERN",
-                index, value, description
-            );
+            throw new CommandException(String.format("Invalid value '%s' at position %d. %s", value,
+                    index + 1, description), "ARG_INVALID_PATTERN", index, value, description);
         }
         return value;
     }

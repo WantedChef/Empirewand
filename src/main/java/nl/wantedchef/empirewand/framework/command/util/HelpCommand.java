@@ -5,7 +5,7 @@ import nl.wantedchef.empirewand.framework.command.CommandException;
 import nl.wantedchef.empirewand.framework.command.SubCommand;
 import nl.wantedchef.empirewand.framework.command.util.CommandHelpProvider.CommandExample;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

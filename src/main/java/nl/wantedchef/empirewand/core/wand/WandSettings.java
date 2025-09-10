@@ -6,7 +6,7 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
+
 
 /**
  * Manages wand-specific settings including spell switch effects.

@@ -1,7 +1,10 @@
 package nl.wantedchef.empirewand.spell.toggle.aura;
 
 import nl.wantedchef.empirewand.api.EmpireWandAPI;
-import nl.wantedchef.empirewand.spell.*;
+import nl.wantedchef.empirewand.spell.Spell;
+import nl.wantedchef.empirewand.spell.SpellContext;
+import nl.wantedchef.empirewand.spell.SpellType;
+import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.api.spell.toggle.ToggleableSpell;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
