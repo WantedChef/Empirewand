@@ -7,6 +7,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
+import org.bukkit.scheduler.BukkitScheduler;
 
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -17,9 +18,19 @@ import java.util.logging.Level;
  */
 public class AsyncCommandExecutor {
     private final EmpireWandPlugin plugin;
+    private final BukkitScheduler scheduler;
 
     public AsyncCommandExecutor(@NotNull EmpireWandPlugin plugin) {
         this.plugin = plugin;
+        this.scheduler = plugin.getServer().getScheduler();
+    }
+
+    /**
+     * Package-private constructor primarily for testing to inject a scheduler.
+     */
+    AsyncCommandExecutor(@NotNull EmpireWandPlugin plugin, @NotNull BukkitScheduler scheduler) {
+        this.plugin = plugin;
+        this.scheduler = scheduler;
     }
 
     /**
@@ -61,7 +72,7 @@ public class AsyncCommandExecutor {
         // Track start time for performance monitoring
         long startTime = System.nanoTime();
         
-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+        scheduler.runTaskAsynchronously(plugin, () -> {
             try {
                 Object result = asyncTask.execute();
                 long executionTimeMs = (System.nanoTime() - startTime) / 1_000_000;
@@ -70,7 +81,7 @@ public class AsyncCommandExecutor {
                 context.logCommandExecution(commandName, executionTimeMs, true);
                 
                 // Handle success on main thread
-                plugin.getServer().getScheduler().runTask(plugin, () -> {
+                scheduler.runTask(plugin, () -> {
                     if (onSuccess != null) {
                         onSuccess.accept(result);
                     }
@@ -85,7 +96,7 @@ public class AsyncCommandExecutor {
                     String.format("Async command '%s' failed for sender %s", commandName, sender.getName()), e);
                 
                 // Handle error on main thread
-                plugin.getServer().getScheduler().runTask(plugin, () -> {
+                scheduler.runTask(plugin, () -> {
                     if (onError != null) {
                         onError.accept(e);
                     } else {

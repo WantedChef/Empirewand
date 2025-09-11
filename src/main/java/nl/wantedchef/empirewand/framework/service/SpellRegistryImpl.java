@@ -70,6 +70,57 @@ import nl.wantedchef.empirewand.spell.toggle.aura.Aura;
 import nl.wantedchef.empirewand.spell.toggle.aura.EmpireAura;
 import nl.wantedchef.empirewand.spell.weather.Gust;
 import nl.wantedchef.empirewand.spell.weather.Tornado;
+// New spell imports - 50 amazing spells from real Empirewand
+import nl.wantedchef.empirewand.spell.fire.Flamewalk;
+import nl.wantedchef.empirewand.spell.fire.Burn;
+import nl.wantedchef.empirewand.spell.fire.Lava;
+import nl.wantedchef.empirewand.spell.fire.Inferno;
+import nl.wantedchef.empirewand.spell.fire.MagmaWave;
+import nl.wantedchef.empirewand.spell.ice.Frostwalk;
+import nl.wantedchef.empirewand.spell.ice.Petrify;
+import nl.wantedchef.empirewand.spell.ice.IceWall;
+import nl.wantedchef.empirewand.spell.ice.FreezeRay;
+import nl.wantedchef.empirewand.spell.ice.ArcticBlast;
+import nl.wantedchef.empirewand.spell.dark.Wither;
+import nl.wantedchef.empirewand.spell.dark.Soulburn;
+import nl.wantedchef.empirewand.spell.dark.Torture;
+import nl.wantedchef.empirewand.spell.dark.Pain;
+import nl.wantedchef.empirewand.spell.dark.Vengeance;
+import nl.wantedchef.empirewand.spell.earth.Sandblast;
+import nl.wantedchef.empirewand.spell.earth.Wall;
+import nl.wantedchef.empirewand.spell.earth.Platform;
+import nl.wantedchef.empirewand.spell.earth.Stash;
+import nl.wantedchef.empirewand.spell.earth.Tremor;
+import nl.wantedchef.empirewand.spell.life.Lifewalk;
+import nl.wantedchef.empirewand.spell.life.Pollinate;
+import nl.wantedchef.empirewand.spell.life.Tame;
+import nl.wantedchef.empirewand.spell.life.NatureGrowth;
+import nl.wantedchef.empirewand.spell.life.Regenerate;
+import nl.wantedchef.empirewand.spell.heal.Prayer;
+import nl.wantedchef.empirewand.spell.heal.SuperHeal;
+import nl.wantedchef.empirewand.spell.heal.Repair;
+import nl.wantedchef.empirewand.spell.heal.Restoration;
+import nl.wantedchef.empirewand.spell.heal.DivineHeal;
+import nl.wantedchef.empirewand.spell.movement.Levitate;
+import nl.wantedchef.empirewand.spell.movement.Lift;
+import nl.wantedchef.empirewand.spell.movement.Phase;
+import nl.wantedchef.empirewand.spell.movement.Recall;
+import nl.wantedchef.empirewand.spell.movement.Rocket;
+import nl.wantedchef.empirewand.spell.misc.Gate;
+import nl.wantedchef.empirewand.spell.misc.Empower;
+import nl.wantedchef.empirewand.spell.misc.Invulnerability;
+import nl.wantedchef.empirewand.spell.misc.Mana;
+import nl.wantedchef.empirewand.spell.misc.MagicTorch;
+import nl.wantedchef.empirewand.spell.offensive.SuperKill;
+import nl.wantedchef.empirewand.spell.offensive.Kill;
+import nl.wantedchef.empirewand.spell.offensive.Wound;
+import nl.wantedchef.empirewand.spell.offensive.Volley;
+import nl.wantedchef.empirewand.spell.offensive.Shuriken;
+import nl.wantedchef.empirewand.spell.defensive.Shell;
+import nl.wantedchef.empirewand.spell.defensive.Silence;
+import nl.wantedchef.empirewand.spell.defensive.Invincible;
+import nl.wantedchef.empirewand.spell.defensive.Reflect;
+import nl.wantedchef.empirewand.spell.defensive.Absorb;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -244,7 +295,78 @@ public class SpellRegistryImpl implements SpellRegistry {
                     // Refactored Spells
                     () -> new nl.wantedchef.empirewand.spell.fire.FlameWaveRefactored.Builder(api),
                     () -> new nl.wantedchef.empirewand.spell.lightning.LightningBoltRefactored.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.lightning.ChainLightningRefactored.Builder(api)
+                    () -> new nl.wantedchef.empirewand.spell.lightning.ChainLightningRefactored.Builder(api),
+                    
+                    // ========== 50 NEW AMAZING SPELLS FROM REAL EMPIREWAND ==========
+                    // Fire Spells (5 new)
+                    () -> new Flamewalk.Builder(api),
+                    () -> new Burn.Builder(api),
+                    () -> new Lava.Builder(api),
+                    () -> new Inferno.Builder(api),
+                    () -> new MagmaWave.Builder(api),
+                    
+                    // Ice Spells (5 new)
+                    () -> new Frostwalk.Builder(api),
+                    () -> new Petrify.Builder(api),
+                    () -> new IceWall.Builder(api),
+                    () -> new FreezeRay.Builder(api),
+                    () -> new ArcticBlast.Builder(api),
+                    
+                    // Dark Spells (5 new)
+                    () -> new Wither.Builder(api),
+                    () -> new Soulburn.Builder(api),
+                    () -> new Torture.Builder(api),
+                    () -> new Pain.Builder(api),
+                    () -> new Vengeance.Builder(api),
+                    
+                    // Earth Spells (5 new)
+                    () -> new Sandblast.Builder(api),
+                    () -> new Wall.Builder(api),
+                    () -> new Platform.Builder(api),
+                    () -> new Stash.Builder(api),
+                    () -> new Tremor.Builder(api),
+                    
+                    // Life Spells (5 new)
+                    () -> new Lifewalk.Builder(api),
+                    () -> new Pollinate.Builder(api),
+                    () -> new Tame.Builder(api),
+                    () -> new NatureGrowth.Builder(api),
+                    () -> new Regenerate.Builder(api),
+                    
+                    // Healing Spells (5 new)
+                    () -> new Prayer.Builder(api),
+                    () -> new SuperHeal.Builder(api),
+                    () -> new Repair.Builder(api),
+                    () -> new Restoration.Builder(api),
+                    () -> new DivineHeal.Builder(api),
+                    
+                    // Movement Spells (5 new)
+                    () -> new Levitate.Builder(api),
+                    () -> new Lift.Builder(api),
+                    () -> new Phase.Builder(api),
+                    () -> new Recall.Builder(api),
+                    () -> new Rocket.Builder(api),
+                    
+                    // Misc/Utility Spells (5 new)
+                    () -> new Gate.Builder(api),
+                    () -> new Empower.Builder(api),
+                    () -> new Invulnerability.Builder(api),
+                    () -> new Mana.Builder(api),
+                    () -> new MagicTorch.Builder(api),
+                    
+                    // Offensive Spells (5 new)
+                    () -> new SuperKill.Builder(api),
+                    () -> new Kill.Builder(api),
+                    () -> new Wound.Builder(api),
+                    () -> new Volley.Builder(api),
+                    () -> new Shuriken.Builder(api),
+                    
+                    // Defensive Spells (5 new)
+                    () -> new Shell.Builder(api),
+                    () -> new Silence.Builder(api),
+                    () -> new Invincible.Builder(api),
+                    () -> new Reflect.Builder(api),
+                    () -> new Absorb.Builder(api)
             };
 
             // Register all spells

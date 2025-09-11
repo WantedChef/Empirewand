@@ -34,6 +34,7 @@ gradle-*.zip
 **/*.txt
 **/*.TXT
 !/README.md
+!/index.html
 
 # Ignore GitHub chatmodes/dev docs
 /.github/chatmodes/

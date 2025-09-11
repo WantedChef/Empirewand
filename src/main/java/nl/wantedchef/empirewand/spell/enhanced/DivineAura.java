@@ -158,7 +158,7 @@ public class DivineAura extends Spell<Void> {
 
         private void healAndApplyEffects(LivingEntity entity) {
             // Heal entity
-            double maxHealth = Objects.requireNonNull(entity.getAttribute(Attribute.GENERIC_MAX_HEALTH)).getValue();
+            double maxHealth = Objects.requireNonNull(entity.getAttribute(Attribute.MAX_HEALTH)).getValue();
             entity.setHealth(Math.min(maxHealth, entity.getHealth() + healAmount));
             
             // Grant regeneration if enabled

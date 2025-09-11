@@ -1,6 +1,5 @@
 package nl.wantedchef.empirewand.spell.fire;
 
-import nl.wantedchef.empirewand.spell.ProjectileSpell;
 import nl.wantedchef.empirewand.api.EmpireWandAPI;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,8 +7,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class FireballTest {
 

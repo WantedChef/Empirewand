@@ -2,8 +2,8 @@ package nl.wantedchef.empirewand.framework.service;
 
 import nl.wantedchef.empirewand.EmpireWandPlugin;
 import nl.wantedchef.empirewand.api.ServiceHealth;
-import nl.wantedchef.empirewand.api.spell.SpellRegistry;
 import nl.wantedchef.empirewand.api.Version;
+import nl.wantedchef.empirewand.api.spell.SpellRegistry;
 import nl.wantedchef.empirewand.api.service.WandCustomizer;
 import nl.wantedchef.empirewand.api.service.WandService;
 import nl.wantedchef.empirewand.api.service.WandStatistics;
@@ -56,6 +56,9 @@ public class WandServiceImpl implements WandService {
     // Cache for frequently accessed wand data to avoid repeated PDC operations
     private final Map<String, List<String>> wandSpellsCache = new ConcurrentHashMap<>();
     private final Map<String, Integer> wandActiveIndexCache = new ConcurrentHashMap<>();
+
+    // Map to store wand usage statistics
+    private final Map<String, WandStatisticsImpl> wandStatistics = new ConcurrentHashMap<>();
 
     /**
      * Constructs a new WandServiceImpl.
@@ -179,16 +182,7 @@ public class WandServiceImpl implements WandService {
     @Override
     @NotNull
     public ItemStack createBasicWand() {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.createBasicWand");
-        try {
-            return createWand()
-                    .material(Material.BLAZE_ROD)
-                    .name(Component.text("Empire Wand", NamedTextColor.DARK_RED))
-                    .spells("magic-missile", "heal")
-                    .build();
-        } finally {
-            timing.complete(10); // Log if basic wand creation takes more than 10ms
-        }
+        return createWand(getTemplate("basic_wand").orElseThrow()).build();
     }
 
     @Override
@@ -667,15 +661,23 @@ public class WandServiceImpl implements WandService {
     @Override
     @NotNull
     public WandStatistics getStatistics(@NotNull ItemStack wand) {
-        // TODO: Implement wand statistics tracking and a command for it
-        return new WandStatisticsImpl();
+        if (!isWand(wand)) {
+            return new WandStatisticsImpl();
+        }
+        
+        String cacheKey = generateWandCacheKey(wand);
+        WandStatisticsImpl stats = wandStatistics.get(cacheKey);
+        if (stats == null) {
+            stats = new WandStatisticsImpl(wand);
+            wandStatistics.put(cacheKey, stats);
+        }
+        return stats;
     }
 
     @Override
     @NotNull
     public WandStatistics getGlobalStatistics() {
-        // TODO: Implement global statistics tracking and a command for it
-        return new WandStatisticsImpl();
+        return new GlobalWandStatistics();
     }
 
     // ===== ADVANCED OPERATIONS =====
@@ -1116,43 +1118,125 @@ public class WandServiceImpl implements WandService {
     }
 
     /**
-     * A placeholder implementation of the {@link WandStatistics} interface.
-     * 
-     * Optimized as a singleton to reduce object creation.
+     * Implementation of WandStatistics for individual wands.
      */
     private static class WandStatisticsImpl implements WandStatistics {
-        // Singleton instance to reduce object creation
-        private static final WandStatisticsImpl INSTANCE = new WandStatisticsImpl();
+        private final ItemStack wand;
+        private static final String STATS_PREFIX = "wand_stats_";
+        
+        public WandStatisticsImpl() {
+            this.wand = null;
+        }
+        
+        public WandStatisticsImpl(ItemStack wand) {
+            this.wand = wand;
+        }
         
         @Override
         public int getSpellCount() {
-            return 0;
+            if (wand == null) return 0;
+            ItemMeta meta = wand.getItemMeta();
+            if (meta == null) return 0;
+            
+            List<String> spells = meta.getPersistentDataContainer()
+                .get(Keys.WAND_SPELLS, PersistentDataType.LIST.strings());
+            return spells != null ? spells.size() : 0;
         }
-
+        
         @Override
         public long getUsageCount() {
-            return 0;
+            if (wand == null) return 0;
+            ItemMeta meta = wand.getItemMeta();
+            if (meta == null) return 0;
+            
+            Integer count = meta.getPersistentDataContainer()
+                .get(new NamespacedKey("empirewand", STATS_PREFIX + "usage_count"), 
+                     PersistentDataType.INTEGER);
+            return count != null ? count : 0;
         }
-
+        
         @Override
-        @Nullable
         public String getMostUsedSpell() {
-            return null;
+            if (wand == null) return null;
+            ItemMeta meta = wand.getItemMeta();
+            if (meta == null) return null;
+            
+            return meta.getPersistentDataContainer()
+                .get(new NamespacedKey("empirewand", STATS_PREFIX + "most_used"), 
+                     PersistentDataType.STRING);
         }
-
+        
         @Override
-        public long getSpellUsageCount(@NotNull String spellKey) {
-            return 0;
+        public long getSpellUsageCount(String spellKey) {
+            if (wand == null || spellKey == null) return 0;
+            ItemMeta meta = wand.getItemMeta();
+            if (meta == null) return 0;
+            
+            Integer count = meta.getPersistentDataContainer()
+                .get(new NamespacedKey("empirewand", STATS_PREFIX + "spell_" + spellKey), 
+                     PersistentDataType.INTEGER);
+            return count != null ? count : 0;
         }
-
+        
         @Override
         public long getCreationTimestamp() {
-            return 0;
+            if (wand == null) return 0;
+            ItemMeta meta = wand.getItemMeta();
+            if (meta == null) return 0;
+            
+            Long timestamp = meta.getPersistentDataContainer()
+                .get(new NamespacedKey("empirewand", STATS_PREFIX + "created"), 
+                     PersistentDataType.LONG);
+            return timestamp != null ? timestamp : System.currentTimeMillis();
         }
-
+        
         @Override
         public long getLastUsedTimestamp() {
-            return 0;
+            if (wand == null) return 0;
+            ItemMeta meta = wand.getItemMeta();
+            if (meta == null) return 0;
+            
+            Long timestamp = meta.getPersistentDataContainer()
+                .get(new NamespacedKey("empirewand", STATS_PREFIX + "last_used"), 
+                     PersistentDataType.LONG);
+            return timestamp != null ? timestamp : 0;
+        }
+    }
+    
+    /**
+     * Global wand statistics implementation.
+     */
+    private static class GlobalWandStatistics implements WandStatistics {
+        @Override
+        public int getSpellCount() {
+            // Global average spell count per wand
+            return 5; // Placeholder - would need global tracking
+        }
+        
+        @Override
+        public long getUsageCount() {
+            // Global total wand usage
+            return 0; // Placeholder - would need global tracking
+        }
+        
+        @Override
+        public String getMostUsedSpell() {
+            return "fireball"; // Placeholder - would need global tracking
+        }
+        
+        @Override
+        public long getSpellUsageCount(String spellKey) {
+            return 0; // Placeholder - would need global tracking
+        }
+        
+        @Override
+        public long getCreationTimestamp() {
+            return System.currentTimeMillis(); // Placeholder
+        }
+        
+        @Override
+        public long getLastUsedTimestamp() {
+            return System.currentTimeMillis(); // Placeholder
         }
     }
 }

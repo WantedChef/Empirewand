@@ -102,10 +102,8 @@ public class StatsCommand implements SubCommand, CommandHelpProvider.HelpAwareCo
         stats.maxCastTime = debugMetrics.getSpellCastP95(); // Using P95 as max for now
 
         // Get wand usage stats
-        // TODO: Implement proper wands created tracking in MetricsService
-        stats.wandsCreated = 0; // Placeholder
-        // Note: Active wands count not available, using global statistics placeholder
-        stats.wandsActive = 0; // TODO: Implement active wands tracking
+        stats.wandsCreated = (int) debugMetrics.getTotalWandsCreated();
+        stats.wandsActive = debugMetrics.getActiveWandsCount();
 
         return stats;
     }
