@@ -9,8 +9,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.util.function.Consumer;
 
@@ -26,28 +24,36 @@ class AsyncCommandExecutorTest {
 
     private AsyncCommandExecutor asyncExecutor;
     
-    @Mock
     private EmpireWandPlugin plugin;
-    
-    @Mock
     private BukkitScheduler scheduler;
-    
-    @Mock
     private CommandSender sender;
-    
-    @Mock
     private CommandContext context;
-    
-    @Mock
     private SubCommand command;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        when(plugin.getServer()).thenReturn(mock(org.bukkit.Server.class));
-        when(plugin.getServer().getScheduler()).thenReturn(scheduler);
-        when(context.sender()).thenReturn(sender);
+        plugin = mock(EmpireWandPlugin.class);
+        scheduler = mock(BukkitScheduler.class);
+        sender = mock(CommandSender.class);
+        command = mock(SubCommand.class);
+
+        var server = mock(org.bukkit.Server.class);
+        when(plugin.getServer()).thenReturn(server);
+        when(server.getScheduler()).thenReturn(scheduler);
         when(command.getName()).thenReturn("testcommand");
+
+        context = new CommandContext(
+            plugin,
+            sender,
+            new String[]{"test"},
+            mock(nl.wantedchef.empirewand.framework.service.ConfigService.class),
+            mock(nl.wantedchef.empirewand.framework.service.FxService.class),
+            mock(nl.wantedchef.empirewand.api.spell.SpellRegistry.class),
+            mock(nl.wantedchef.empirewand.api.service.WandService.class),
+            mock(nl.wantedchef.empirewand.framework.service.CooldownService.class),
+            mock(nl.wantedchef.empirewand.api.service.PermissionService.class)
+        );
+
         asyncExecutor = new AsyncCommandExecutor(plugin);
     }
 

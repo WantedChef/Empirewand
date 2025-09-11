@@ -31,12 +31,12 @@ class SubCommandTest {
 
         @Test
         @DisplayName("Should return empty list for default tab completion")
-        void shouldReturnEmptyListForDefaultTabCompletion() {
-            CommandContext context = mock(CommandContext.class);
-            List<String> completions = subCommand.tabComplete(context);
-            assertNotNull(completions);
-            assertTrue(completions.isEmpty());
-        }
+          void shouldReturnEmptyListForDefaultTabCompletion() {
+              CommandContext context = newContext();
+              List<String> completions = subCommand.tabComplete(context);
+              assertNotNull(completions);
+              assertTrue(completions.isEmpty());
+          }
 
         @Test
         @DisplayName("Should not require player by default")
@@ -63,23 +63,23 @@ class SubCommandTest {
 
         @Test
         @DisplayName("Should return custom tab completions")
-        void shouldReturnCustomTabCompletions() {
-            CommandContext context = mock(CommandContext.class);
-            List<String> completions = subCommand.tabComplete(context);
-            assertNotNull(completions);
-            assertEquals(2, completions.size());
-            assertTrue(completions.contains("option1"));
-            assertTrue(completions.contains("option2"));
-        }
+          void shouldReturnCustomTabCompletions() {
+              CommandContext context = newContext();
+              List<String> completions = subCommand.tabComplete(context);
+              assertNotNull(completions);
+              assertEquals(2, completions.size());
+              assertTrue(completions.contains("option1"));
+              assertTrue(completions.contains("option2"));
+          }
 
         @Test
         @DisplayName("Should require player when specified")
         void shouldRequirePlayerWhenSpecified() {
             assertTrue(subCommand.requiresPlayer());
         }
-    }
+      }
 
-    // Simple test implementation
+      // Simple test implementation
     private static class TestSubCommand implements SubCommand {
         @Override
         public String getName() {
@@ -108,7 +108,7 @@ class SubCommandTest {
     }
 
     // Custom implementation with overridden defaults
-    private static class CustomSubCommand implements SubCommand {
+      private static class CustomSubCommand implements SubCommand {
         @Override
         public String getName() {
             return "custom";
@@ -148,5 +148,19 @@ class SubCommandTest {
         public void execute(CommandContext context) {
             // Do nothing for test
         }
+    }
+
+    private CommandContext newContext() {
+        return new CommandContext(
+            mock(nl.wantedchef.empirewand.EmpireWandPlugin.class),
+            mock(org.bukkit.command.CommandSender.class),
+            new String[]{"test"},
+            mock(nl.wantedchef.empirewand.framework.service.ConfigService.class),
+            mock(nl.wantedchef.empirewand.framework.service.FxService.class),
+            mock(nl.wantedchef.empirewand.api.spell.SpellRegistry.class),
+            mock(nl.wantedchef.empirewand.api.service.WandService.class),
+            mock(nl.wantedchef.empirewand.framework.service.CooldownService.class),
+            mock(nl.wantedchef.empirewand.api.service.PermissionService.class)
+        );
     }
 }

@@ -7,6 +7,7 @@ EmpireWand is a Minecraft Paper plugin for 1.20.6 providing magical wand mechani
 - Implemented `WandServiceImpl` backed by PDC and wired through the API provider.
 - Refactored `Spell.Builder` and `ProjectileSpell.Builder` to accept a nullable API; the registry no longer depends on `EmpireWandAPI.get()`.
 - Added `@kajcloud` marker annotation and applied it to KajCloud and GodCloud classes for discoverability.
+- Introduced a `CommandErrorHandler` for consistent command feedback and added the Zeist Chrono Anchor control spell.
 - Added spell authoring templates under `Docs/template/`:
   - `normal-spell.md`, `toggle-spell.md`, `afterimage-spell.md`.
 

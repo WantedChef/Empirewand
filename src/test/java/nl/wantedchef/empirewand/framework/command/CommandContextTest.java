@@ -69,6 +69,8 @@ class CommandContextTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         when(plugin.getMetricsService()).thenReturn(metricsService);
+        when(plugin.getLogger()).thenReturn(java.util.logging.Logger.getLogger("test"));
+        when(sender.getName()).thenReturn("Tester");
 
         context = new CommandContext(plugin, sender, new String[] {"arg1", "arg2", "arg3"},
                 configService, fxService, spellRegistry, wandService, cooldownService,
