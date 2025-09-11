@@ -16,7 +16,13 @@ java {
 
 repositories {
     mavenCentral()
-    maven("https://repo.papermc.io/repository/maven-public/")
+    maven("https://repo.papermc.io/repository/maven-public/") {
+        content {
+            includeGroup("io.papermc.paper")
+            includeGroup("com.mojang")
+            includeGroup("net.md-5")
+        }
+    }
 }
 
 dependencies {
@@ -28,12 +34,13 @@ dependencies {
     compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.6")
     // bStats metrics (classes are referenced; provided at runtime by bundled libs or can be shaded if needed)
     compileOnly("org.bstats:bstats-bukkit:3.0.2")
-    
+
     // Testing dependencies
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
-    testImplementation("org.mockito:mockito-core:5.7.0")
-    testImplementation("org.mockito:mockito-inline:5.12.0")
+    testImplementation("org.mockito:mockito-core:5.9.0")
     testImplementation("io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT")
+    // Include bStats at test runtime to satisfy MetricsService dependencies
+    testImplementation("org.bstats:bstats-bukkit:3.0.2")
 }
 
 tasks.processResources {
@@ -97,4 +104,6 @@ tasks.compileTestJava {
 tasks.test {
     enabled = true
     useJUnitPlatform()
+    // Allow ByteBuddy to instrument Java 21 classes for Mockito inline
+    jvmArgs("-Dnet.bytebuddy.experimental=true")
 }

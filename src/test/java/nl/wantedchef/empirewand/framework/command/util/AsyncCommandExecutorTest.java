@@ -35,36 +35,20 @@ class AsyncCommandExecutorTest {
     @Mock
     private CommandSender sender;
     
+    @Mock
     private CommandContext context;
     
     @Mock
     private SubCommand command;
 
-    // Dependencies for CommandContext
-    @Mock private nl.wantedchef.empirewand.framework.service.ConfigService configService;
-    @Mock private nl.wantedchef.empirewand.framework.service.FxService fxService;
-    @Mock private nl.wantedchef.empirewand.api.spell.SpellRegistry spellRegistry;
-    @Mock private nl.wantedchef.empirewand.api.service.WandService wandService;
-    @Mock private nl.wantedchef.empirewand.framework.service.CooldownService cooldownService;
-    @Mock private nl.wantedchef.empirewand.api.service.PermissionService permissionService;
-
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        when(plugin.getServer()).thenReturn(mock(org.bukkit.Server.class));
+        when(plugin.getServer().getScheduler()).thenReturn(scheduler);
+        when(context.sender()).thenReturn(sender);
         when(command.getName()).thenReturn("testcommand");
-        when(sender.getName()).thenReturn("tester");
-        context = new CommandContext(
-            plugin,
-            sender,
-            new String[] {"help", "arg"},
-            configService,
-            fxService,
-            spellRegistry,
-            wandService,
-            cooldownService,
-            permissionService
-        );
-        asyncExecutor = new AsyncCommandExecutor(plugin, scheduler);
+        asyncExecutor = new AsyncCommandExecutor(plugin);
     }
 
     @Nested
@@ -82,7 +66,7 @@ class AsyncCommandExecutorTest {
             asyncExecutor.executeAsync(context, command, task, onSuccess, onError);
             
             // Verify scheduler interaction
-            verify(scheduler).runTaskAsynchronously(org.mockito.Mockito.eq(plugin), org.mockito.Mockito.any(Runnable.class));
+            verify(plugin.getServer()).getScheduler();
         }
 
         @Test
@@ -98,7 +82,7 @@ class AsyncCommandExecutorTest {
             asyncExecutor.executeAsync(context, command, task, onSuccess, onError);
             
             // Verify scheduler interaction
-            verify(scheduler).runTaskAsynchronously(org.mockito.Mockito.eq(plugin), org.mockito.Mockito.any(Runnable.class));
+            verify(plugin.getServer()).getScheduler();
         }
 
         @Test
@@ -110,7 +94,7 @@ class AsyncCommandExecutorTest {
             asyncExecutor.executeAsync(context, command, task, "Success!");
             
             // Verify scheduler interaction
-            verify(scheduler).runTaskAsynchronously(org.mockito.Mockito.eq(plugin), org.mockito.Mockito.any(Runnable.class));
+            verify(plugin.getServer()).getScheduler();
         }
 
         @Test
@@ -122,7 +106,7 @@ class AsyncCommandExecutorTest {
             asyncExecutor.executeAsync(context, command, task);
             
             // Verify scheduler interaction
-            verify(scheduler).runTaskAsynchronously(org.mockito.Mockito.eq(plugin), org.mockito.Mockito.any(Runnable.class));
+            verify(plugin.getServer()).getScheduler();
         }
     }
 

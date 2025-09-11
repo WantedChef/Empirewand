@@ -61,7 +61,8 @@ public class CommandHelpProvider {
                 .color(command.requiresPlayer() ? NamedTextColor.RED : NamedTextColor.GREEN));
                 
         // Build the complete help message
-        Component helpMessage = header
+        Component helpMessage = Component.empty()
+            .append(header)
             .append(Component.newline())
             .append(name)
             .append(Component.newline())
@@ -117,12 +118,12 @@ public class CommandHelpProvider {
         Component header = Component.text("=== " + displayName + " Commands ===")
             .color(NamedTextColor.GOLD)
             .decorate(TextDecoration.BOLD);
-            
+
         Component intro = Component.text("\nUse ")
             .color(NamedTextColor.WHITE)
             .append(Component.text("/" + permissionPrefix + " help <command>", NamedTextColor.YELLOW))
             .append(Component.text(" for detailed information about a specific command.", NamedTextColor.WHITE));
-            
+
         Component commandList = Component.text("\n\nAvailable Commands:")
             .color(NamedTextColor.GOLD)
             .decorate(TextDecoration.BOLD);
@@ -146,7 +147,7 @@ public class CommandHelpProvider {
             commandList = commandList.append(commandLine);
         }
         
-        return header.append(intro).append(commandList);
+        return Component.empty().append(header).append(intro).append(commandList);
     }
     
     /**

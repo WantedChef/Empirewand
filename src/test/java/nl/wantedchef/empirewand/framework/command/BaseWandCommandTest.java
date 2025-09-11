@@ -127,6 +127,7 @@ class BaseWandCommandTest {
         when(plugin.getPermissionService()).thenReturn(permissionService);
 
         baseCommand = new TestBaseWandCommand(plugin);
+        baseCommand.initialize();
     }
 
     @Nested

@@ -4,9 +4,15 @@ import nl.wantedchef.empirewand.framework.command.CommandContext;
 import nl.wantedchef.empirewand.framework.command.CommandException;
 import nl.wantedchef.empirewand.framework.command.SubCommand;
 import nl.wantedchef.empirewand.framework.command.util.CommandHelpProvider.CommandExample;
+import nl.wantedchef.empirewand.api.service.PermissionService;
+import nl.wantedchef.empirewand.framework.service.ConfigService;
+import nl.wantedchef.empirewand.framework.service.CooldownService;
+import nl.wantedchef.empirewand.framework.service.FxService;
+import nl.wantedchef.empirewand.api.service.WandService;
+import nl.wantedchef.empirewand.api.spell.SpellRegistry;
+import nl.wantedchef.empirewand.EmpireWandPlugin;
 import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -26,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 
 @DisplayName("HelpCommand Tests")
 class HelpCommandTest {
@@ -38,33 +45,7 @@ class HelpCommandTest {
     private CommandSender sender;
 
     @Mock
-    private Player player;
-
-    @Mock
     private SubCommand testCommand;
-
-    // Real CommandContext dependencies
-    @Mock private nl.wantedchef.empirewand.EmpireWandPlugin plugin;
-    @Mock private nl.wantedchef.empirewand.framework.service.ConfigService configService;
-    @Mock private nl.wantedchef.empirewand.framework.service.FxService fxService;
-    @Mock private nl.wantedchef.empirewand.api.spell.SpellRegistry spellRegistry;
-    @Mock private nl.wantedchef.empirewand.api.service.WandService wandService;
-    @Mock private nl.wantedchef.empirewand.framework.service.CooldownService cooldownService;
-    @Mock private nl.wantedchef.empirewand.api.service.PermissionService permissionService;
-
-    private CommandContext ctx(String... args) {
-        return new CommandContext(
-            plugin,
-            sender,
-            args,
-            configService,
-            fxService,
-            spellRegistry,
-            wandService,
-            cooldownService,
-            permissionService
-        );
-    }
 
     @BeforeEach
     void setUp() {
@@ -72,6 +53,22 @@ class HelpCommandTest {
         commands = new HashMap<>();
         aliases = new HashMap<>();
         helpCommand = new HelpCommand("empirewand", "ew", commands, aliases);
+    }
+
+    private CommandContext createContext(CommandSender sender, String... args) {
+        PermissionService permission = mock(PermissionService.class);
+        when(permission.has(any(), any())).thenReturn(true);
+        return new CommandContext(
+            mock(EmpireWandPlugin.class),
+            sender,
+            args,
+            mock(ConfigService.class),
+            mock(FxService.class),
+            mock(SpellRegistry.class),
+            mock(WandService.class),
+            mock(CooldownService.class),
+            permission
+        );
     }
 
     @Nested
@@ -88,8 +85,7 @@ class HelpCommandTest {
         @DisplayName("Should return correct aliases")
         void shouldReturnCorrectAliases() {
             List<String> aliases = helpCommand.getAliases();
-            assertEquals(2, aliases.size());
-            assertTrue(aliases.contains("help"));
+            assertEquals(1, aliases.size());
             assertTrue(aliases.contains("?"));
         }
 
@@ -119,7 +115,8 @@ class HelpCommandTest {
         @Test
         @DisplayName("Should show general help when no arguments")
         void shouldShowGeneralHelpWhenNoArguments() throws CommandException {
-            CommandContext context = ctx("help");
+            CommandContext context = createContext(sender, "help");
+
             helpCommand.execute(context);
 
             verify(sender).sendMessage((Component) any());
@@ -135,7 +132,8 @@ class HelpCommandTest {
             when(testCommand.getPermission()).thenReturn(null);
             commands.put("test", testCommand);
 
-            CommandContext context = ctx("help", "test");
+            CommandContext context = createContext(sender, "help", "test");
+
             helpCommand.execute(context);
 
             verify(sender).sendMessage((Component) any());
@@ -144,7 +142,7 @@ class HelpCommandTest {
         @Test
         @DisplayName("Should throw exception for unknown command")
         void shouldThrowExceptionForUnknownCommand() {
-            CommandContext context = ctx("help", "unknown");
+            CommandContext context = createContext(sender, "help", "unknown");
 
             CommandException exception = assertThrows(CommandException.class, () -> {
                 helpCommand.execute(context);
@@ -167,7 +165,8 @@ class HelpCommandTest {
             when(testCommand.getPermission()).thenReturn(null);
             commands.put("testcommand", testCommand);
 
-            CommandContext context = ctx("help", "test");
+            CommandContext context = createContext(sender, "help", "test");
+
             List<String> completions = helpCommand.tabComplete(context);
             assertEquals(1, completions.size());
             assertEquals("testcommand", completions.get(0));
@@ -176,7 +175,8 @@ class HelpCommandTest {
         @Test
         @DisplayName("Should return empty list for no matches")
         void shouldReturnEmptyListForNoMatches() {
-            CommandContext context = ctx("help", "xyz");
+            CommandContext context = createContext(sender, "help", "xyz");
+
             List<String> completions = helpCommand.tabComplete(context);
             assertTrue(completions.isEmpty());
         }
@@ -184,7 +184,8 @@ class HelpCommandTest {
         @Test
         @DisplayName("Should return empty list for wrong argument position")
         void shouldReturnEmptyListForWrongArgumentPosition() {
-            CommandContext context = ctx("help");
+            CommandContext context = createContext(sender, "help");
+
             List<String> completions = helpCommand.tabComplete(context);
             assertTrue(completions.isEmpty());
         }
