@@ -153,6 +153,15 @@ confuse:
     duration-ticks: 80
     slow-amplifier: 2
 
+zeist-chrono-anchor:
+  display-name: "<#7FFFD4>Zeist Chrono Anchor"
+  cooldown: 4000
+  values:
+    radius: 5.0
+    duration-ticks: 100
+    slowness-amplifier: 1
+    projectile-slow: 0.25
+
 teleport:
   display-name: "<#00CED1>Teleport"
   cooldown: 2000

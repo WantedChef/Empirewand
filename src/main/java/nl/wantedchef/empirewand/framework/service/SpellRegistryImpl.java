@@ -13,6 +13,7 @@ import nl.wantedchef.empirewand.core.util.PerformanceMonitor;
 import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.control.Confuse;
 import nl.wantedchef.empirewand.spell.control.Polymorph;
+import nl.wantedchef.empirewand.spell.control.ZeistChronoAnchor;
 import nl.wantedchef.empirewand.spell.dark.DarkCircle;
 import nl.wantedchef.empirewand.spell.dark.DarkPulse;
 import nl.wantedchef.empirewand.spell.dark.Mephidrain;
@@ -150,6 +151,7 @@ public class SpellRegistryImpl implements SpellRegistry {
                     // Control
                     () -> new Confuse.Builder(api),
                     () -> new Polymorph.Builder(api),
+                    () -> new ZeistChronoAnchor.Builder(api),
                     // Dark
                     () -> new DarkCircle.Builder(api),
                     () -> new DarkPulse.Builder(api),
@@ -286,6 +288,7 @@ public class SpellRegistryImpl implements SpellRegistry {
                 // Control
                 () -> new Confuse.Builder(api),
                 () -> new Polymorph.Builder(api),
+                () -> new ZeistChronoAnchor.Builder(api),
                 // Dark
                 () -> new DarkCircle.Builder(api),
                 () -> new DarkPulse.Builder(api),

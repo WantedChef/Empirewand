@@ -3,6 +3,7 @@ package nl.wantedchef.empirewand.framework.command.util;
 import nl.wantedchef.empirewand.framework.command.SubCommand;
 import nl.wantedchef.empirewand.framework.command.util.CommandHelpProvider.CommandExample;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.command.CommandSender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,15 +50,15 @@ class CommandHelpProviderTest {
             when(command.getPermission()).thenReturn("test.permission");
             when(command.requiresPlayer()).thenReturn(true);
             
-            Component help = CommandHelpProvider.generateCommandHelp(sender, command, "testprefix");
-            
-            assertNotNull(help);
-            String helpText = Component.textOfChildren(help).content();
-            assertTrue(helpText.contains("Command: /testprefix test"));
-            assertTrue(helpText.contains("Usage: /testprefix test <arg>"));
-            assertTrue(helpText.contains("Test command description"));
-            assertTrue(helpText.contains("test.permission"));
-            assertTrue(helpText.contains("Player Required: Yes"));
+              Component help = CommandHelpProvider.generateCommandHelp(sender, command, "testprefix");
+
+              assertNotNull(help);
+              String helpText = PlainTextComponentSerializer.plainText().serialize(help);
+              assertTrue(helpText.contains("Command: /testprefix test"));
+              assertTrue(helpText.contains("Usage: /testprefix test <arg>"));
+              assertTrue(helpText.contains("Test command description"));
+              assertTrue(helpText.contains("test.permission"));
+              assertTrue(helpText.contains("Player Required: Yes"));
         }
 
         @Test
@@ -69,12 +70,12 @@ class CommandHelpProviderTest {
             when(command.getPermission()).thenReturn(null);
             when(command.requiresPlayer()).thenReturn(false);
             
-            Component help = CommandHelpProvider.generateCommandHelp(sender, command, "testprefix");
-            
-            assertNotNull(help);
-            String helpText = Component.textOfChildren(help).content();
-            assertTrue(helpText.contains("Permission: None required"));
-            assertTrue(helpText.contains("Player Required: No"));
+              Component help = CommandHelpProvider.generateCommandHelp(sender, command, "testprefix");
+
+              assertNotNull(help);
+              String helpText = PlainTextComponentSerializer.plainText().serialize(help);
+              assertTrue(helpText.contains("Permission: None required"));
+              assertTrue(helpText.contains("Player Required: No"));
         }
     }
 
@@ -103,15 +104,15 @@ class CommandHelpProviderTest {
             commands.put("cmd1", cmd1);
             commands.put("cmd2", cmd2);
             
-            Component help = CommandHelpProvider.generateHelpOverview(sender, commands, "testprefix", "Test Commands");
-            
-            assertNotNull(help);
-            String helpText = Component.textOfChildren(help).content();
-            assertTrue(helpText.contains("Test Commands Commands"));
-            assertTrue(helpText.contains("/testprefix cmd1"));
-            assertTrue(helpText.contains("First test command"));
-            assertTrue(helpText.contains("/testprefix cmd2 <arg>"));
-            assertTrue(helpText.contains("Second test command"));
+              Component help = CommandHelpProvider.generateHelpOverview(sender, commands, "testprefix", "Test Commands");
+
+              assertNotNull(help);
+              String helpText = PlainTextComponentSerializer.plainText().serialize(help);
+              assertTrue(helpText.contains("Test Commands Commands"));
+              assertTrue(helpText.contains("/testprefix cmd1"));
+              assertTrue(helpText.contains("First test command"));
+              assertTrue(helpText.contains("/testprefix cmd2 <arg>"));
+              assertTrue(helpText.contains("Second test command"));
         }
 
         @Test
@@ -138,12 +139,12 @@ class CommandHelpProviderTest {
             // Sender has permission for restricted command
             when(sender.hasPermission("test.restricted")).thenReturn(true);
             
-            Component help = CommandHelpProvider.generateHelpOverview(sender, commands, "testprefix", "Test Commands");
-            
-            assertNotNull(help);
-            String helpText = Component.textOfChildren(help).content();
-            assertTrue(helpText.contains("/testprefix public"));
-            assertTrue(helpText.contains("/testprefix restricted"));
+              Component help = CommandHelpProvider.generateHelpOverview(sender, commands, "testprefix", "Test Commands");
+
+              assertNotNull(help);
+              String helpText = PlainTextComponentSerializer.plainText().serialize(help);
+              assertTrue(helpText.contains("/testprefix public"));
+              assertTrue(helpText.contains("/testprefix restricted"));
         }
 
         @Test
@@ -170,12 +171,12 @@ class CommandHelpProviderTest {
             // Sender does not have permission for restricted command
             when(sender.hasPermission("test.restricted")).thenReturn(false);
             
-            Component help = CommandHelpProvider.generateHelpOverview(sender, commands, "testprefix", "Test Commands");
-            
-            assertNotNull(help);
-            String helpText = Component.textOfChildren(help).content();
-            assertTrue(helpText.contains("/testprefix public"));
-            assertFalse(helpText.contains("/testprefix restricted"));
+              Component help = CommandHelpProvider.generateHelpOverview(sender, commands, "testprefix", "Test Commands");
+
+              assertNotNull(help);
+              String helpText = PlainTextComponentSerializer.plainText().serialize(help);
+              assertTrue(helpText.contains("/testprefix public"));
+              assertFalse(helpText.contains("/testprefix restricted"));
         }
     }
 
