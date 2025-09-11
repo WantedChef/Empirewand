@@ -32,6 +32,7 @@ dependencies {
     // Testing dependencies
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
     testImplementation("org.mockito:mockito-core:5.7.0")
+    testImplementation("org.mockito:mockito-inline:5.12.0")
     testImplementation("io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT")
 }
 

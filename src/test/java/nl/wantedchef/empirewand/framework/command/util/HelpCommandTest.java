@@ -41,10 +41,30 @@ class HelpCommandTest {
     private Player player;
 
     @Mock
-    private CommandContext context;
-
-    @Mock
     private SubCommand testCommand;
+
+    // Real CommandContext dependencies
+    @Mock private nl.wantedchef.empirewand.EmpireWandPlugin plugin;
+    @Mock private nl.wantedchef.empirewand.framework.service.ConfigService configService;
+    @Mock private nl.wantedchef.empirewand.framework.service.FxService fxService;
+    @Mock private nl.wantedchef.empirewand.api.spell.SpellRegistry spellRegistry;
+    @Mock private nl.wantedchef.empirewand.api.service.WandService wandService;
+    @Mock private nl.wantedchef.empirewand.framework.service.CooldownService cooldownService;
+    @Mock private nl.wantedchef.empirewand.api.service.PermissionService permissionService;
+
+    private CommandContext ctx(String... args) {
+        return new CommandContext(
+            plugin,
+            sender,
+            args,
+            configService,
+            fxService,
+            spellRegistry,
+            wandService,
+            cooldownService,
+            permissionService
+        );
+    }
 
     @BeforeEach
     void setUp() {
@@ -99,9 +119,7 @@ class HelpCommandTest {
         @Test
         @DisplayName("Should show general help when no arguments")
         void shouldShowGeneralHelpWhenNoArguments() throws CommandException {
-            when(context.args()).thenReturn(new String[] {"help"});
-            when(context.sender()).thenReturn(sender);
-
+            CommandContext context = ctx("help");
             helpCommand.execute(context);
 
             verify(sender).sendMessage((Component) any());
@@ -117,9 +135,7 @@ class HelpCommandTest {
             when(testCommand.getPermission()).thenReturn(null);
             commands.put("test", testCommand);
 
-            when(context.args()).thenReturn(new String[] {"help", "test"});
-            when(context.sender()).thenReturn(sender);
-
+            CommandContext context = ctx("help", "test");
             helpCommand.execute(context);
 
             verify(sender).sendMessage((Component) any());
@@ -128,7 +144,7 @@ class HelpCommandTest {
         @Test
         @DisplayName("Should throw exception for unknown command")
         void shouldThrowExceptionForUnknownCommand() {
-            when(context.args()).thenReturn(new String[] {"help", "unknown"});
+            CommandContext context = ctx("help", "unknown");
 
             CommandException exception = assertThrows(CommandException.class, () -> {
                 helpCommand.execute(context);
@@ -151,8 +167,7 @@ class HelpCommandTest {
             when(testCommand.getPermission()).thenReturn(null);
             commands.put("testcommand", testCommand);
 
-            when(context.args()).thenReturn(new String[] {"help", "test"});
-
+            CommandContext context = ctx("help", "test");
             List<String> completions = helpCommand.tabComplete(context);
             assertEquals(1, completions.size());
             assertEquals("testcommand", completions.get(0));
@@ -161,8 +176,7 @@ class HelpCommandTest {
         @Test
         @DisplayName("Should return empty list for no matches")
         void shouldReturnEmptyListForNoMatches() {
-            when(context.args()).thenReturn(new String[] {"help", "xyz"});
-
+            CommandContext context = ctx("help", "xyz");
             List<String> completions = helpCommand.tabComplete(context);
             assertTrue(completions.isEmpty());
         }
@@ -170,8 +184,7 @@ class HelpCommandTest {
         @Test
         @DisplayName("Should return empty list for wrong argument position")
         void shouldReturnEmptyListForWrongArgumentPosition() {
-            when(context.args()).thenReturn(new String[] {"help"});
-
+            CommandContext context = ctx("help");
             List<String> completions = helpCommand.tabComplete(context);
             assertTrue(completions.isEmpty());
         }

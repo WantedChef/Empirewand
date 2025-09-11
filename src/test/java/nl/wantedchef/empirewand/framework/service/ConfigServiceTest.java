@@ -3,7 +3,7 @@ package nl.wantedchef.empirewand.framework.service;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class ConfigServiceTest {
 
