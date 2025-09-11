@@ -79,7 +79,7 @@ public class LifeSteal extends ProjectileSpell<Snowball> {
 
         target.damage(damage, caster);
         double stolenHealth = damage * stealModifier;
-        double maxHealth = Objects.requireNonNull(caster.getAttribute(Attribute.GENERIC_MAX_HEALTH)).getValue();
+        double maxHealth = Objects.requireNonNull(caster.getAttribute(Attribute.MAX_HEALTH)).getValue();
         caster.setHealth(Math.min(maxHealth, caster.getHealth() + stolenHealth));
 
         context.fx().spawnParticles(caster.getLocation(), Particle.HEART, 5, 0.5, 1, 0.5, 0);

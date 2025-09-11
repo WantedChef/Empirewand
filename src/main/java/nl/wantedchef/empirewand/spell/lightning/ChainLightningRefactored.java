@@ -62,7 +62,7 @@ public class ChainLightningRefactored extends Spell<Void> {
         double jumpRadius = spellConfig.getDouble("values.jump-radius", 8.0);
         int jumps = spellConfig.getInt("values.jumps", 4);
         double damage = spellConfig.getDouble("values.damage", 8.0);
-        boolean friendlyFire = false; // TODO: Get from config service
+        boolean friendlyFire = spellConfig.getBoolean("values.friendly_fire", false);
         int arcParticleCount = spellConfig.getInt("values.arc_particle_count", 8);
         int arcSteps = spellConfig.getInt("values.arc_steps", 12);
         double maxArcLength = spellConfig.getDouble("values.max_arc_length", 15.0);

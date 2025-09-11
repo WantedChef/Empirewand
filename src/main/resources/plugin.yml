@@ -1,7 +1,7 @@
 name: ${name}
 version: ${version}
 main: nl.wantedchef.empirewand.EmpireWandPlugin
-api-version: '1.20'
+api-version: '1.21'
 authors: [ "YourName" ]
 description: EmpireWand example plugin
 commands:

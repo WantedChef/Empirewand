@@ -80,7 +80,7 @@ public class CrimsonChains extends ProjectileSpell<Snowball> {
 
         target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, slownessDuration, slownessAmplifier));
 
-        AttributeInstance maxHealthAttr = target.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        AttributeInstance maxHealthAttr = target.getAttribute(Attribute.MAX_HEALTH);
         boolean isBoss = maxHealthAttr != null && maxHealthAttr.getBaseValue() > 100;
 
         if (!isBoss) {

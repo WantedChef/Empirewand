@@ -67,7 +67,7 @@ public class Mephidrain extends Spell<Void> {
                 // Heal the player
                 double healAmount = damage * healPercentage;
                 double maxHealth = living
-                        .getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
+                        .getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue();
                 player.setHealth(Math.min(maxHealth, player.getHealth() + healAmount));
 
                 // Visual effects

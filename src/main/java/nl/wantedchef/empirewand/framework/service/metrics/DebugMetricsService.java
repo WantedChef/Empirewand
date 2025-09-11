@@ -1,5 +1,7 @@
 package nl.wantedchef.empirewand.framework.service.metrics;
 
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -13,6 +15,8 @@ public class DebugMetricsService {
     private final ConcurrentLinkedQueue<Long> eventProcessingTimes = new ConcurrentLinkedQueue<>();
     private final AtomicLong totalSpellCasts = new AtomicLong(0);
     private final AtomicLong totalFailedCasts = new AtomicLong(0);
+    private final AtomicLong totalWandsCreated = new AtomicLong(0);
+    private final Set<String> activeWands = ConcurrentHashMap.newKeySet();
     private final int maxSamples;
 
     public DebugMetricsService(int maxSamples) {
@@ -32,6 +36,21 @@ public class DebugMetricsService {
      */
     public void recordFailedCast() {
         totalFailedCasts.incrementAndGet();
+    }
+
+    /**
+     * Records a wand creation.
+     */
+    public void recordWandCreated(String wandId) {
+        totalWandsCreated.incrementAndGet();
+        activeWands.add(wandId);
+    }
+
+    /**
+     * Records a wand destruction/removal.
+     */
+    public void recordWandRemoved(String wandId) {
+        activeWands.remove(wandId);
     }
 
     /**
@@ -70,6 +89,20 @@ public class DebugMetricsService {
     }
 
     /**
+     * Gets the total number of wands created.
+     */
+    public long getTotalWandsCreated() {
+        return totalWandsCreated.get();
+    }
+
+    /**
+     * Gets the number of active wands.
+     */
+    public int getActiveWandsCount() {
+        return activeWands.size();
+    }
+
+    /**
      * Gets the spell cast success rate as a percentage.
      */
     public double getSpellCastSuccessRate() {
@@ -87,6 +120,8 @@ public class DebugMetricsService {
         eventProcessingTimes.clear();
         totalSpellCasts.set(0);
         totalFailedCasts.set(0);
+        totalWandsCreated.set(0);
+        activeWands.clear();
     }
 
     /**
@@ -101,16 +136,23 @@ public class DebugMetricsService {
     }
 
     /**
-     * Calculates the P95 (95th percentile) from a collection of samples.
+     * Calculates the P95 value from the samples.
      */
-    private long calculateP95(ConcurrentLinkedQueue<Long> samples) {
-        if (samples.isEmpty())
+    private long calculateP95(ConcurrentLinkedQueue<Long> queue) {
+        if (queue.isEmpty()) {
             return 0;
-
-        // Create a sorted copy for percentile calculation
-        var sortedSamples = samples.stream().sorted().toList();
-        int index = (int) Math.ceil(0.95 * sortedSamples.size()) - 1;
-        return sortedSamples.get(Math.max(0, index));
+        }
+        
+        // Convert to array and sort
+        Long[] samples = queue.toArray(new Long[0]);
+        java.util.Arrays.sort(samples);
+        
+        // Calculate P95 index
+        int index = (int) Math.ceil(0.95 * samples.length) - 1;
+        if (index < 0) index = 0;
+        if (index >= samples.length) index = samples.length - 1;
+        
+        return samples[index];
     }
 
     /**
@@ -124,18 +166,17 @@ public class DebugMetricsService {
                         "  Success Rate: %.2f%%%n" +
                         "  Spell Cast P95: %dms%n" +
                         "  Event Processing P95: %dms%n" +
-                        "  Active Samples: %d spell casts, %d events",
+                        "  Active Samples: %d spell casts, %d events%n" +
+                        "  Total Wands Created: %d%n" +
+                        "  Active Wands: %d",
                 getTotalSpellCasts(),
                 getTotalFailedCasts(),
                 getSpellCastSuccessRate(),
                 getSpellCastP95(),
                 getEventProcessingP95(),
                 spellCastTimes.size(),
-                eventProcessingTimes.size());
+                eventProcessingTimes.size(),
+                getTotalWandsCreated(),
+                getActiveWandsCount());
     }
 }
-
-
-
-
-
