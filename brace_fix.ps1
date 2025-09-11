@@ -1,5 +1,5 @@
 param(
-    [string]$Path = "src/main/java/com/example/empirewand/spell/implementation",
+    [string]$Path = "src/main/java/nl/wantedchef/empirewand/spell",
     [switch]$WhatIf
 )
 

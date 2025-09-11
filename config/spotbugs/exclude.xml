@@ -12,7 +12,7 @@
 
     <!-- Exclude main class with intentional System.out.println for debugging -->
     <Match>
-        <Class name="com.example.empirewand.EmpireWandPlugin"/>
+        <Class name="nl.wantedchef.empirewand.EmpireWandPlugin"/>
         <Bug pattern="DM_DEFAULT_ENCODING"/>
     </Match>
 
@@ -24,12 +24,12 @@
     <!-- Allow mutable static fields in registries (by design) -->
     <Match>
         <Bug pattern="MS_MUTABLE_COLLECTION"/>
-        <Class name="com.example.empirewand.core.SpellRegistry"/>
+        <Class name="nl.wantedchef.empirewand.core.SpellRegistry"/>
     </Match>
 
     <!-- Allow mutable static fields in services (by design) -->
     <Match>
         <Bug pattern="MS_MUTABLE_COLLECTION"/>
-        <Class name="com.example.empirewand.core.CooldownService"/>
+        <Class name="nl.wantedchef.empirewand.core.CooldownService"/>
     </Match>
 </FindBugsFilter>

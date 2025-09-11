@@ -1,0 +1,2 @@
+repositories { mavenLocal(); mavenCentral() }
+dependencies { implementation files('/tmp/dummy.jar') }
