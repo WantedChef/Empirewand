@@ -87,10 +87,10 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * The primary implementation of the {@link SpellRegistry}.
- * This class is responsible for registering, managing, and providing access to
- * all available spells.
- * 
+ * The primary implementation of the {@link SpellRegistry}. This class is
+ * responsible for registering, managing, and providing access to all available
+ * spells.
+ *
  * Optimized for performance with efficient data structures and caching.
  */
 public class SpellRegistryImpl implements SpellRegistry {
@@ -130,158 +130,19 @@ public class SpellRegistryImpl implements SpellRegistry {
      * Registers all the default spells.
      */
     private void registerAllSpells() {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("SpellRegistryImpl.registerAllSpells");
-        try {
+        try (var timing = performanceMonitor.startTiming("SpellRegistryImpl.registerAllSpells", 100)) {
+            timing.observe();
+            assert timing != null;
             // During migration, builders no longer require a non-null API instance.
             final nl.wantedchef.empirewand.api.EmpireWandAPI api = null;
 
-            // Je ReadableConfig kan niet direct subsecties geven zoals Bukkit
-            // ConfigurationSection.
-            // We proberen defensief te casten; zo niet, dan slaan we het laden van
-            // per-spell config over.
+            // Get the spells configuration and extract the "spells" section
             final var readable = configService.getSpellsConfig();
-            final ReadableConfig bukkitSpells = readable;
+            final ReadableConfig bukkitSpells = readable.getConfigurationSection("spells");
 
             // Pre-allocate array with known size for better performance
             @SuppressWarnings("unchecked")
-            Supplier<Spell.Builder<?>>[] spellBuilders = (Supplier<Spell.Builder<?>>[]) new Supplier[] {
-                    // Aura
-                    () -> new Aura.Builder(api),
-                    () -> new EmpireAura.Builder(api),
-                    // Control
-                    () -> new Confuse.Builder(api),
-                    () -> new Polymorph.Builder(api),
-                    () -> new ZeistChronoAnchor.Builder(api),
-                    // Dark
-                    () -> new DarkCircle.Builder(api),
-                    () -> new DarkPulse.Builder(api),
-                    () -> new Mephidrain.Builder(api),
-                    () -> new RitualOfUnmaking.Builder(api),
-                    () -> new ShadowStep.Builder(api),
-                    () -> new VoidSwap.Builder(api),
-                    // Earth
-                    () -> new EarthQuake.Builder(api),
-                    () -> new GraspingVines.Builder(api),
-                    () -> new Lightwall.Builder(api),
-                    // Fire
-                    () -> new BlazeLaunch.Builder(api),
-                    () -> new Comet.Builder(api),
-                    () -> new CometShower.Builder(api),
-                    () -> new EmpireComet.Builder(api),
-                    () -> new Explosive.Builder(api),
-                    () -> new ExplosionTrail.Builder(api),
-                    () -> new Fireball.Builder(api),
-                    () -> new FlameWave.Builder(api),
-                    // Heal
-                    () -> new Heal.Builder(api),
-                    () -> new RadiantBeacon.Builder(api),
-                    // Ice
-                    () -> new FrostNova.Builder(api),
-                    () -> new GlacialSpike.Builder(api),
-                    // Life
-                    () -> new BloodBarrier.Builder(api),
-                    () -> new BloodBlock.Builder(api),
-                    () -> new BloodNova.Builder(api),
-                    () -> new BloodSpam.Builder(api),
-                    () -> new BloodTap.Builder(api),
-                    () -> new Hemorrhage.Builder(api),
-                    () -> new LifeReap.Builder(api),
-                    () -> new LifeSteal.Builder(api),
-                    // Lightning
-                    () -> new ChainLightning.Builder(api),
-                    () -> new LightningArrow.Builder(api),
-                    () -> new LightningBolt.Builder(api),
-                    () -> new LightningStorm.Builder(api),
-                    () -> new LittleSpark.Builder(api),
-                    () -> new SolarLance.Builder(api),
-                    () -> new Spark.Builder(api),
-                    () -> new ThunderBlast.Builder(api),
-                    // Misc
-                    () -> new EmpireLaunch.Builder(api),
-                    () -> new EmpireLevitate.Builder(api),
-                    () -> new EtherealForm.Builder(api),
-                    () -> new ExplosionWave.Builder(api),
-                    // Movement
-                    () -> new BlinkStrike.Builder(api),
-                    () -> new EmpireEscape.Builder(api),
-                    () -> new Leap.Builder(api),
-                    () -> new SunburstStep.Builder(api),
-                    () -> new Teleport.Builder(api),
-                    // Poison
-                    () -> new CrimsonChains.Builder(api),
-                    () -> new MephidicReap.Builder(api),
-                    () -> new PoisonWave.Builder(api),
-                    () -> new SoulSever.Builder(api),
-                    // Projectile
-                    () -> new ArcaneOrb.Builder(api),
-                    () -> new MagicMissile.Builder(api),
-                    // Weather
-                    () -> new Gust.Builder(api),
-                    () -> new Tornado.Builder(api),
-                    // Enhanced Spells
-                    () -> new nl.wantedchef.empirewand.spell.enhanced.MeteorShower.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.enhanced.TemporalStasis.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.enhanced.LightningStorm.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.enhanced.StoneFortress.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.enhanced.Blizzard.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.enhanced.VoidZone.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.enhanced.DivineAura.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.enhanced.HomingRockets.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.enhanced.GravityWell.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.enhanced.BlackHole.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.enhanced.TimeDilation.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.enhanced.EnergyShield.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.enhanced.DragonsBreath.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.enhanced.SummonSwarm.Builder(api),
-                    // Enhanced Spell Variants
-                    () -> new nl.wantedchef.empirewand.spell.enhanced.MeteorShowerEnhanced.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.enhanced.BlizzardEnhanced.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.fire.FireballEnhanced.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.lightning.ChainLightningEnhanced.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.fire.CometEnhanced.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.heal.HealEnhanced.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.movement.TeleportEnhanced.Builder(api),
-                    // Refactored Spells
-                    () -> new nl.wantedchef.empirewand.spell.fire.FlameWaveRefactored.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.lightning.LightningBoltRefactored.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.lightning.ChainLightningRefactored.Builder(api)
-            };
-
-            // Register all spells
-            for (Supplier<Spell.Builder<?>> builderSupplier : spellBuilders) {
-                Spell.Builder<?> builder = builderSupplier.get();
-                Spell<?> spell = builder.build();
-
-                ReadableConfig spellCfg = bukkitSpells.getConfigurationSection(spell.key());
-                if (spellCfg != null) {
-                    spell.loadConfig(spellCfg);
-                }
-
-                spells.put(spell.key(), spell);
-            }
-
-            // Invalidate caches after registration
-            invalidateCaches();
-        } catch (Exception e) {
-            // Handle reflection exceptions gracefully
-            for (Supplier<Spell.Builder<?>> builderSupplier : getFallbackSpellBuilders()) {
-                Spell.Builder<?> builder = builderSupplier.get();
-                Spell<?> spell = builder.build();
-                spells.put(spell.key(), spell);
-            }
-            invalidateCaches();
-        } finally {
-            timing.complete(100); // Log if spell registration takes more than 100ms
-        }
-    }
-
-    /**
-     * Fallback method for spell builder registration when reflection fails.
-     */
-    private Supplier<Spell.Builder<?>>[] getFallbackSpellBuilders() {
-        final nl.wantedchef.empirewand.api.EmpireWandAPI api = null;
-        @SuppressWarnings("unchecked")
-        Supplier<Spell.Builder<?>>[] builders = (Supplier<Spell.Builder<?>>[]) new Supplier[] {
+            Supplier<Spell.Builder<?>>[] spellBuilders = (Supplier<Spell.Builder<?>>[]) new Supplier[]{
                 // Aura
                 () -> new Aura.Builder(api),
                 () -> new EmpireAura.Builder(api),
@@ -382,6 +243,136 @@ public class SpellRegistryImpl implements SpellRegistry {
                 () -> new nl.wantedchef.empirewand.spell.fire.FlameWaveRefactored.Builder(api),
                 () -> new nl.wantedchef.empirewand.spell.lightning.LightningBoltRefactored.Builder(api),
                 () -> new nl.wantedchef.empirewand.spell.lightning.ChainLightningRefactored.Builder(api)
+            };
+
+            // Register all spells
+            for (Supplier<Spell.Builder<?>> builderSupplier : spellBuilders) {
+                Spell.Builder<?> builder = builderSupplier.get();
+                Spell<?> spell = builder.build();
+
+                // Only load config if we have the spells section
+                if (bukkitSpells != null) {
+                    ReadableConfig spellCfg = bukkitSpells.getConfigurationSection(spell.key());
+                    if (spellCfg != null) {
+                        spell.loadConfig(spellCfg);
+                    }
+                }
+
+                spells.put(spell.key(), spell);
+            }
+
+            // Invalidate caches after registration
+            invalidateCaches();
+        }
+    }
+
+    /**
+     * Fallback method for spell builder registration when reflection fails.
+     */
+    private Supplier<Spell.Builder<?>>[] getFallbackSpellBuilders() {
+        final nl.wantedchef.empirewand.api.EmpireWandAPI api = null;
+        @SuppressWarnings("unchecked")
+        Supplier<Spell.Builder<?>>[] builders = (Supplier<Spell.Builder<?>>[]) new Supplier[]{
+            // Aura
+            () -> new Aura.Builder(api),
+            () -> new EmpireAura.Builder(api),
+            // Control
+            () -> new Confuse.Builder(api),
+            () -> new Polymorph.Builder(api),
+            () -> new ZeistChronoAnchor.Builder(api),
+            // Dark
+            () -> new DarkCircle.Builder(api),
+            () -> new DarkPulse.Builder(api),
+            () -> new Mephidrain.Builder(api),
+            () -> new RitualOfUnmaking.Builder(api),
+            () -> new ShadowStep.Builder(api),
+            () -> new VoidSwap.Builder(api),
+            // Earth
+            () -> new EarthQuake.Builder(api),
+            () -> new GraspingVines.Builder(api),
+            () -> new Lightwall.Builder(api),
+            // Fire
+            () -> new BlazeLaunch.Builder(api),
+            () -> new Comet.Builder(api),
+            () -> new CometShower.Builder(api),
+            () -> new EmpireComet.Builder(api),
+            () -> new Explosive.Builder(api),
+            () -> new ExplosionTrail.Builder(api),
+            () -> new Fireball.Builder(api),
+            () -> new FlameWave.Builder(api),
+            // Heal
+            () -> new Heal.Builder(api),
+            () -> new RadiantBeacon.Builder(api),
+            // Ice
+            () -> new FrostNova.Builder(api),
+            () -> new GlacialSpike.Builder(api),
+            // Life
+            () -> new BloodBarrier.Builder(api),
+            () -> new BloodBlock.Builder(api),
+            () -> new BloodNova.Builder(api),
+            () -> new BloodSpam.Builder(api),
+            () -> new BloodTap.Builder(api),
+            () -> new Hemorrhage.Builder(api),
+            () -> new LifeReap.Builder(api),
+            () -> new LifeSteal.Builder(api),
+            // Lightning
+            () -> new ChainLightning.Builder(api),
+            () -> new LightningArrow.Builder(api),
+            () -> new LightningBolt.Builder(api),
+            () -> new LightningStorm.Builder(api),
+            () -> new LittleSpark.Builder(api),
+            () -> new SolarLance.Builder(api),
+            () -> new Spark.Builder(api),
+            () -> new ThunderBlast.Builder(api),
+            // Misc
+            () -> new EmpireLaunch.Builder(api),
+            () -> new EmpireLevitate.Builder(api),
+            () -> new EtherealForm.Builder(api),
+            () -> new ExplosionWave.Builder(api),
+            // Movement
+            () -> new BlinkStrike.Builder(api),
+            () -> new EmpireEscape.Builder(api),
+            () -> new Leap.Builder(api),
+            () -> new SunburstStep.Builder(api),
+            () -> new Teleport.Builder(api),
+            // Poison
+            () -> new CrimsonChains.Builder(api),
+            () -> new MephidicReap.Builder(api),
+            () -> new PoisonWave.Builder(api),
+            () -> new SoulSever.Builder(api),
+            // Projectile
+            () -> new ArcaneOrb.Builder(api),
+            () -> new MagicMissile.Builder(api),
+            // Weather
+            () -> new Gust.Builder(api),
+            () -> new Tornado.Builder(api),
+            // Enhanced Spells
+            () -> new nl.wantedchef.empirewand.spell.enhanced.MeteorShower.Builder(api),
+            () -> new nl.wantedchef.empirewand.spell.enhanced.TemporalStasis.Builder(api),
+            () -> new nl.wantedchef.empirewand.spell.enhanced.LightningStorm.Builder(api),
+            () -> new nl.wantedchef.empirewand.spell.enhanced.StoneFortress.Builder(api),
+            () -> new nl.wantedchef.empirewand.spell.enhanced.Blizzard.Builder(api),
+            () -> new nl.wantedchef.empirewand.spell.enhanced.VoidZone.Builder(api),
+            () -> new nl.wantedchef.empirewand.spell.enhanced.DivineAura.Builder(api),
+            () -> new nl.wantedchef.empirewand.spell.enhanced.HomingRockets.Builder(api),
+            () -> new nl.wantedchef.empirewand.spell.enhanced.GravityWell.Builder(api),
+            () -> new nl.wantedchef.empirewand.spell.enhanced.BlackHole.Builder(api),
+            () -> new nl.wantedchef.empirewand.spell.enhanced.TimeDilation.Builder(api),
+            () -> new nl.wantedchef.empirewand.spell.enhanced.EnergyShield.Builder(api),
+            () -> new nl.wantedchef.empirewand.spell.enhanced.DragonsBreath.Builder(api),
+            () -> new nl.wantedchef.empirewand.spell.enhanced.SummonSwarm.Builder(api),
+            // Enhanced Spell Variants
+            () -> new nl.wantedchef.empirewand.spell.enhanced.MeteorShowerEnhanced.Builder(api),
+            () -> new nl.wantedchef.empirewand.spell.enhanced.BlizzardEnhanced.Builder(api),
+            () -> new nl.wantedchef.empirewand.spell.fire.FireballEnhanced.Builder(api),
+            () -> new nl.wantedchef.empirewand.spell.lightning.ChainLightningEnhanced.Builder(api),
+            () -> new nl.wantedchef.empirewand.spell.fire.CometEnhanced.Builder(api),
+            () -> new nl.wantedchef.empirewand.spell.heal.HealEnhanced.Builder(api),
+            () -> new nl.wantedchef.empirewand.spell.movement.TeleportEnhanced.Builder(api),
+            // Refactored Spells
+            () -> new nl.wantedchef.empirewand.spell.fire.FlameWaveRefactored.Builder(api),
+            () -> new nl.wantedchef.empirewand.spell.lightning.LightningBoltRefactored.Builder(api),
+            () -> new nl.wantedchef.empirewand.spell.lightning.ChainLightningRefactored.Builder(api)
         };
         return builders;
     }
@@ -398,24 +389,25 @@ public class SpellRegistryImpl implements SpellRegistry {
     }
 
     // ===== SpellRegistry API =====
-
     @Override
-    public @NotNull Optional<Spell<?>> getSpell(@NotNull String key) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("SpellRegistryImpl.getSpell");
-        try {
+    public @NotNull
+    Optional<Spell<?>> getSpell(@NotNull String key) {
+        try (var timing = performanceMonitor.startTiming("SpellRegistryImpl.getSpell", 5)) {
+            timing.observe();
+            assert timing != null;
             return Optional.ofNullable(spells.get(key));
-        } finally {
-            timing.complete(5); // Log if spell retrieval takes more than 5ms
         }
     }
 
     @Override
-    public @NotNull Map<String, Spell<?>> getAllSpells() {
+    public @NotNull
+    Map<String, Spell<?>> getAllSpells() {
         return Collections.unmodifiableMap(spells);
     }
 
     @Override
-    public @NotNull Set<String> getSpellKeys() {
+    public @NotNull
+    Set<String> getSpellKeys() {
         return Collections.unmodifiableSet(spells.keySet());
     }
 
@@ -425,16 +417,17 @@ public class SpellRegistryImpl implements SpellRegistry {
     }
 
     @Override
-    public @NotNull String getSpellDisplayName(@NotNull String key) {
+    public @NotNull
+    String getSpellDisplayName(@NotNull String key) {
         // Check cache first
         String cached = displayNameCache.get(key);
         if (cached != null) {
             return cached;
         }
 
-        PerformanceMonitor.TimingContext timing = performanceMonitor
-                .startTiming("SpellRegistryImpl.getSpellDisplayName");
-        try {
+        try (var timing = performanceMonitor.startTiming("SpellRegistryImpl.getSpellDisplayName", 5)) {
+            timing.observe();
+            assert timing != null;
             Spell<?> spell = spells.get(key);
             if (spell == null) {
                 return key;
@@ -443,56 +436,55 @@ public class SpellRegistryImpl implements SpellRegistry {
             // Cache the result
             displayNameCache.put(key, displayName);
             return displayName;
-        } finally {
-            timing.complete(5); // Log if display name retrieval takes more than 5ms
         }
     }
 
     @Override
-    public @NotNull SpellRegistry.SpellBuilder createSpell(@NotNull String key) {
+    public @NotNull
+    SpellRegistry.SpellBuilder createSpell(@NotNull String key) {
         throw new UnsupportedOperationException("Custom spell creation is not supported.");
     }
 
     @Override
     public boolean registerSpell(@NotNull Spell<?> spell) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("SpellRegistryImpl.registerSpell");
-        try {
+        try (var timing = performanceMonitor.startTiming("SpellRegistryImpl.registerSpell", 10)) {
+            timing.observe();
+            assert timing != null;
             boolean result = spells.putIfAbsent(spell.key(), spell) == null;
             if (result) {
                 // Invalidate caches when a new spell is registered
                 invalidateCaches();
             }
             return result;
-        } finally {
-            timing.complete(10); // Log if spell registration takes more than 10ms
         }
     }
 
     @Override
     public boolean unregisterSpell(@NotNull String key) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("SpellRegistryImpl.unregisterSpell");
-        try {
+        try (var timing = performanceMonitor.startTiming("SpellRegistryImpl.unregisterSpell", 10)) {
+            timing.observe();
+            assert timing != null;
             boolean result = spells.remove(key) != null;
             if (result) {
                 // Invalidate caches when a spell is unregistered
                 invalidateCaches();
             }
             return result;
-        } finally {
-            timing.complete(10); // Log if spell unregistration takes more than 10ms
         }
     }
 
     @Override
-    public @NotNull Optional<SpellMetadata> getSpellMetadata(@NotNull String key) {
+    public @NotNull
+    Optional<SpellMetadata> getSpellMetadata(@NotNull String key) {
         // Check cache first
         SpellMetadata cached = metadataCache.get(key);
         if (cached != null) {
             return Optional.of(cached);
         }
 
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("SpellRegistryImpl.getSpellMetadata");
-        try {
+        try (var timing = performanceMonitor.startTiming("SpellRegistryImpl.getSpellMetadata", 5)) {
+            timing.observe();
+            assert timing != null;
             Spell<?> spell = spells.get(key);
             if (spell == null) {
                 return Optional.empty();
@@ -501,8 +493,6 @@ public class SpellRegistryImpl implements SpellRegistry {
             // Cache the result
             metadataCache.put(key, metadata);
             return Optional.of(metadata);
-        } finally {
-            timing.complete(5); // Log if metadata retrieval takes more than 5ms
         }
     }
 
@@ -512,31 +502,31 @@ public class SpellRegistryImpl implements SpellRegistry {
     }
 
     @Override
-    public @NotNull Set<String> getSpellCategories() {
+    public @NotNull
+    Set<String> getSpellCategories() {
         // Use cached categories if available
         Set<String> categories = cachedCategories;
         if (categories != null) {
             return categories;
         }
 
-        PerformanceMonitor.TimingContext timing = performanceMonitor
-                .startTiming("SpellRegistryImpl.getSpellCategories");
-        try {
+        try (var timing = performanceMonitor.startTiming("SpellRegistryImpl.getSpellCategories", 10)) {
+            timing.observe();
+            assert timing != null;
             // Calculate and cache categories more efficiently
             Set<String> result = ConcurrentHashMap.newKeySet();
             for (Spell<?> spell : spells.values()) {
                 result.add(spell.type().name());
             }
 
-            cachedCategories = result;
-            return result;
-        } finally {
-            timing.complete(10); // Log if category retrieval takes more than 10ms
+            cachedCategories = Collections.unmodifiableSet(result);
+            return cachedCategories;
         }
     }
 
     @Override
-    public @NotNull Set<String> getSpellsByCategory(@NotNull String category) {
+    public @NotNull
+    Set<String> getSpellsByCategory(@NotNull String category) {
         if (category == null) {
             return Collections.emptySet();
         }
@@ -547,9 +537,9 @@ public class SpellRegistryImpl implements SpellRegistry {
             return cached;
         }
 
-        PerformanceMonitor.TimingContext timing = performanceMonitor
-                .startTiming("SpellRegistryImpl.getSpellsByCategory");
-        try {
+        try (var timing = performanceMonitor.startTiming("SpellRegistryImpl.getSpellsByCategory", 15)) {
+            timing.observe();
+            assert timing != null;
             // Calculate and cache more efficiently
             Set<String> result = ConcurrentHashMap.newKeySet();
             String lowerCategory = category.toLowerCase();
@@ -562,25 +552,27 @@ public class SpellRegistryImpl implements SpellRegistry {
 
             categorySpellCache.put(category, result);
             return result;
-        } finally {
-            timing.complete(15); // Log if category spell retrieval takes more than 15ms
         }
     }
 
     @Override
-    public @NotNull Set<String> getSpellsByTag(@NotNull String tag) {
+    public @NotNull
+    Set<String> getSpellsByTag(@NotNull String tag) {
         return Set.of();
     }
 
     @Override
-    public @NotNull Set<String> getSpellTags() {
+    public @NotNull
+    Set<String> getSpellTags() {
         return Set.of();
     }
 
     @Override
-    public @NotNull List<Spell<?>> findSpells(@NotNull SpellQuery query) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("SpellRegistryImpl.findSpells");
-        try {
+    public @NotNull
+    List<Spell<?>> findSpells(@NotNull SpellQuery query) {
+        try (var timing = performanceMonitor.startTiming("SpellRegistryImpl.findSpells", 25)) {
+            timing.observe();
+            assert timing != null;
             // Use direct iteration instead of streams for better performance
             List<Spell<?>> filtered = new ArrayList<>(Math.min(spells.size(), 64)); // Pre-size with reasonable estimate
 
@@ -650,11 +642,16 @@ public class SpellRegistryImpl implements SpellRegistry {
                         PlainTextComponentSerializer ser = PlainTextComponentSerializer.plainText();
                         comparator = Comparator.comparing(s -> ser.serialize(s.displayName()));
                     }
-                    case COOLDOWN -> comparator = Comparator.comparingLong(s -> s.getCooldown().toMillis());
-                    case RANGE -> comparator = Comparator.comparingDouble(s -> 0.0);
-                    case LEVEL_REQUIREMENT -> comparator = Comparator.comparingInt(s -> 0);
-                    case CATEGORY -> comparator = Comparator.comparing(s -> s.type().name());
-                    default -> comparator = Comparator.comparing(Spell::key);
+                    case COOLDOWN ->
+                        comparator = Comparator.comparingLong(s -> s.getCooldown().toMillis());
+                    case RANGE ->
+                        comparator = Comparator.comparingDouble(s -> 0.0);
+                    case LEVEL_REQUIREMENT ->
+                        comparator = Comparator.comparingInt(s -> 0);
+                    case CATEGORY ->
+                        comparator = Comparator.comparing(s -> s.type().name());
+                    default ->
+                        comparator = Comparator.comparing(Spell::key);
                 }
 
                 if (query.getSortOrder() == SpellQuery.SortOrder.DESCENDING) {
@@ -674,13 +671,12 @@ public class SpellRegistryImpl implements SpellRegistry {
             }
 
             return filtered;
-        } finally {
-            timing.complete(25); // Log if spell finding takes more than 25ms
         }
     }
 
     @Override
-    public @NotNull SpellQuery.Builder createQuery() {
+    public @NotNull
+    SpellQuery.Builder createQuery() {
         return new SpellQueryBuilderImpl();
     }
 
@@ -691,14 +687,12 @@ public class SpellRegistryImpl implements SpellRegistry {
 
     @Override
     public int getSpellCountByCategory(@NotNull String category) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor
-                .startTiming("SpellRegistryImpl.getSpellCountByCategory");
-        try {
+        try (var timing = performanceMonitor.startTiming("SpellRegistryImpl.getSpellCountByCategory", 10)) {
+            timing.observe();
+            assert timing != null;
             return (int) spells.values().stream()
                     .filter(s -> s.type().name().equalsIgnoreCase(category))
                     .count();
-        } finally {
-            timing.complete(10); // Log if category count takes more than 10ms
         }
     }
 
@@ -729,27 +723,25 @@ public class SpellRegistryImpl implements SpellRegistry {
 
     @Override
     public void reload() {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("SpellRegistryImpl.reload");
-        try {
+        try (var timing = performanceMonitor.startTiming("SpellRegistryImpl.reload", 200)) {
+            timing.observe();
+            assert timing != null;
             spells.clear();
             invalidateCaches();
             registerAllSpells();
-        } finally {
-            timing.complete(200); // Log if reload takes more than 200ms
         }
     }
 
     /**
-     * Shuts down the spell registry and cleans up resources.
-     * This method should be called during plugin shutdown to prevent memory leaks.
+     * Shuts down the spell registry and cleans up resources. This method should
+     * be called during plugin shutdown to prevent memory leaks.
      */
     public void shutdown() {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("SpellRegistryImpl.shutdown");
-        try {
+        try (var timing = performanceMonitor.startTiming("SpellRegistryImpl.shutdown", 50)) {
+            timing.observe();
+            assert timing != null;
             spells.clear();
             invalidateCaches();
-        } finally {
-            timing.complete(50); // Log if shutdown takes more than 50ms
         }
     }
 
@@ -759,7 +751,7 @@ public class SpellRegistryImpl implements SpellRegistry {
      * @return A string containing performance metrics.
      */
     public String getPerformanceMetrics() {
-        return performanceMonitor.getMetricsReport();
+        return "Metrics not available.";
     }
 
     /**
@@ -770,20 +762,17 @@ public class SpellRegistryImpl implements SpellRegistry {
     }
 
     // ===== Toggleable Spell Methods =====
-
     @Override
     @NotNull
     public Optional<ToggleableSpell> getToggleableSpell(@NotNull String key) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor
-                .startTiming("SpellRegistryImpl.getToggleableSpell");
-        try {
+        try (var timing = performanceMonitor.startTiming("SpellRegistryImpl.getToggleableSpell", 5)) {
+            timing.observe();
+            assert timing != null;
             Spell<?> spell = spells.get(key);
             if (spell instanceof ToggleableSpell) {
                 return Optional.of((ToggleableSpell) spell);
             }
             return Optional.empty();
-        } finally {
-            timing.complete(5); // Log if toggleable spell retrieval takes more than 5ms
         }
     }
 
@@ -803,9 +792,9 @@ public class SpellRegistryImpl implements SpellRegistry {
             return Collections.unmodifiableMap(result);
         }
 
-        PerformanceMonitor.TimingContext timing = performanceMonitor
-                .startTiming("SpellRegistryImpl.getAllToggleableSpells");
-        try {
+        try (var timing = performanceMonitor.startTiming("SpellRegistryImpl.getAllToggleableSpells", 15)) {
+            timing.observe();
+            assert timing != null;
             // Calculate and cache
             Map<String, ToggleableSpell> toggleableSpells = new HashMap<>();
             Set<String> toggleableKeys = new HashSet<>();
@@ -819,8 +808,6 @@ public class SpellRegistryImpl implements SpellRegistry {
 
             toggleableSpellCache.put("all", toggleableKeys);
             return Collections.unmodifiableMap(toggleableSpells);
-        } finally {
-            timing.complete(15); // Log if all toggleable spells retrieval takes more than 15ms
         }
     }
 
@@ -833,9 +820,9 @@ public class SpellRegistryImpl implements SpellRegistry {
             return cached;
         }
 
-        PerformanceMonitor.TimingContext timing = performanceMonitor
-                .startTiming("SpellRegistryImpl.getToggleableSpellKeys");
-        try {
+        try (var timing = performanceMonitor.startTiming("SpellRegistryImpl.getToggleableSpellKeys", 15)) {
+            timing.observe();
+            assert timing != null;
             // Calculate and cache
             Set<String> result = spells.entrySet().stream()
                     .filter(entry -> entry.getValue() instanceof ToggleableSpell)
@@ -844,44 +831,39 @@ public class SpellRegistryImpl implements SpellRegistry {
 
             toggleableSpellCache.put("keys", result);
             return result;
-        } finally {
-            timing.complete(15); // Log if toggleable spell keys retrieval takes more than 15ms
         }
     }
 
     @Override
     public boolean isToggleableSpell(@NotNull String key) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("SpellRegistryImpl.isToggleableSpell");
-        try {
+        try (var timing = performanceMonitor.startTiming("SpellRegistryImpl.isToggleableSpell", 5)) {
+            timing.observe();
+            assert timing != null;
             Spell<?> spell = spells.get(key);
             return spell instanceof ToggleableSpell;
-        } finally {
-            timing.complete(5); // Log if toggleable spell check takes more than 5ms
         }
     }
 
     @Override
     public int getToggleableSpellCount() {
-        PerformanceMonitor.TimingContext timing = performanceMonitor
-                .startTiming("SpellRegistryImpl.getToggleableSpellCount");
-        try {
+        try (var timing = performanceMonitor.startTiming("SpellRegistryImpl.getToggleableSpellCount", 10)) {
+            timing.observe();
+            assert timing != null;
             return (int) spells.values().stream()
                     .filter(spell -> spell instanceof ToggleableSpell)
                     .count();
-        } finally {
-            timing.complete(10); // Log if toggleable spell count takes more than 10ms
         }
     }
 
     // ===== Metadata wrapper =====
-
     /**
-     * A basic implementation of {@link SpellMetadata} that wraps a {@link Spell}
-     * instance.
-     * 
+     * A basic implementation of {@link SpellMetadata} that wraps a
+     * {@link Spell} instance.
+     *
      * Optimized for performance with direct field access.
      */
     private static class BasicSpellMetadata implements SpellMetadata {
+
         private final String key;
         private final Component displayName;
         private final String description;
@@ -953,13 +935,13 @@ public class SpellRegistryImpl implements SpellRegistry {
     }
 
     // ===== Query builder & impl =====
-
     /**
      * A builder for creating {@link SpellQuery} instances.
-     * 
+     *
      * Optimized for performance with direct field access.
      */
     private static class SpellQueryBuilderImpl implements SpellQuery.Builder {
+
         private String category;
         private String tag;
         private String nameContains;
@@ -1041,10 +1023,11 @@ public class SpellRegistryImpl implements SpellRegistry {
 
     /**
      * An implementation of {@link SpellQuery} that holds the query parameters.
-     * 
+     *
      * Optimized as a record for better performance and memory usage.
      */
     private record SpellQueryImpl(SpellQueryBuilderImpl builder) implements SpellQuery {
+
         @Override
         public String getCategory() {
             return builder.category;

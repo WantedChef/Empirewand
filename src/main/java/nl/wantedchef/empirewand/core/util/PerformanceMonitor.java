@@ -14,11 +14,15 @@ public class PerformanceMonitor {
 
     private final AtomicLong operationCounter = new AtomicLong(0);
     private final Logger logger;
-    
-    // Enhanced metrics collection
+
+    // Enhanced metrics collection with size limits to prevent memory leaks
     private final ConcurrentHashMap<String, AtomicLong> operationCounters = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, AtomicLong> totalExecutionTimes = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, AtomicLong> maxExecutionTimes = new ConcurrentHashMap<>();
+
+    // Maximum number of unique operation names to store (prevents unbounded growth)
+    private static final int MAX_OPERATIONS = 1000;
+    private static final long CLEANUP_INTERVAL = 10000; // Clean up every 10k operations
 
     public PerformanceMonitor(Logger logger) {
         if (logger == null) {
@@ -32,8 +36,8 @@ public class PerformanceMonitor {
      * threshold.
      *
      * @param operationName the name of the operation being monitored
-     * @param startTime     the start time in nanoseconds
-     * @param thresholdMs   threshold in milliseconds above which to log
+     * @param startTime the start time in nanoseconds
+     * @param thresholdMs threshold in milliseconds above which to log
      */
     public void recordExecutionTime(String operationName, long startTime, long thresholdMs) {
         if (operationName == null || operationName.trim().isEmpty()) {
@@ -47,6 +51,12 @@ public class PerformanceMonitor {
         }
 
         try {
+            // Clean up old metrics periodically
+            long count = operationCounter.incrementAndGet();
+            if (count % CLEANUP_INTERVAL == 0) {
+                cleanupOldMetrics();
+            }
+
             long endTime = System.nanoTime();
             long durationNs = endTime - startTime;
 
@@ -59,14 +69,20 @@ public class PerformanceMonitor {
 
             long durationMs = durationNs / 1_000_000;
 
-            // Update metrics collections
-            updateMetrics(operationName, durationMs);
+            // Update metrics collections with size limit
+            if (operationCounters.size() < MAX_OPERATIONS) {
+                updateMetrics(operationName, durationMs);
+            } else {
+                // If at limit, only update existing operations
+                if (operationCounters.containsKey(operationName)) {
+                    updateMetrics(operationName, durationMs);
+                }
+            }
 
             if (durationMs >= thresholdMs) {
-                long operationId = operationCounter.incrementAndGet();
                 logger.warning(String.format(
                         "[PERF] Operation %d: %s took %d ms (threshold: %d ms)",
-                        operationId, operationName, durationMs, thresholdMs));
+                        count, operationName, durationMs, thresholdMs));
             }
         } catch (Exception e) {
             // Log error but don't crash - performance monitoring should never break
@@ -81,153 +97,155 @@ public class PerformanceMonitor {
      * Updates the metrics collections with the execution time for an operation.
      *
      * @param operationName the name of the operation
-     * @param durationMs    the duration in milliseconds
+     * @param durationMs the duration in milliseconds
      */
     private void updateMetrics(String operationName, long durationMs) {
         // Increment operation counter
         operationCounters.computeIfAbsent(operationName, k -> new AtomicLong(0)).incrementAndGet();
-        
+
         // Add to total execution time
         totalExecutionTimes.computeIfAbsent(operationName, k -> new AtomicLong(0)).addAndGet(durationMs);
-        
+
         // Update maximum execution time
         maxExecutionTimes.computeIfAbsent(operationName, k -> new AtomicLong(0))
                 .accumulateAndGet(durationMs, Math::max);
     }
 
     /**
+     * Cleans up old metrics to prevent memory leaks. Removes operations that
+     * haven't been used recently.
+     */
+    private void cleanupOldMetrics() {
+        try {
+            // Simple cleanup: if we have too many operations, clear the least used ones
+            if (operationCounters.size() > MAX_OPERATIONS * 0.8) {
+                // Remove entries that have very low usage
+                operationCounters.entrySet().removeIf(entry -> entry.getValue().get() < 10);
+                totalExecutionTimes.entrySet().removeIf(entry
+                        -> !operationCounters.containsKey(entry.getKey()));
+                maxExecutionTimes.entrySet().removeIf(entry
+                        -> !operationCounters.containsKey(entry.getKey()));
+            }
+        } catch (Exception e) {
+            logger.warning("[PERF] Error during metrics cleanup: " + e.getMessage());
+        }
+    }
+
+    /**
      * Gets the average execution time for an operation.
      *
      * @param operationName the name of the operation
-     * @return the average execution time in milliseconds, or 0 if no data
+     * @return the average execution time in milliseconds, or 0 if not found
      */
     public double getAverageExecutionTime(String operationName) {
-        AtomicLong count = operationCounters.get(operationName);
-        AtomicLong total = totalExecutionTimes.get(operationName);
-        
-        if (count == null || total == null || count.get() == 0) {
+        if (operationName == null) {
             return 0.0;
         }
-        
-        return (double) total.get() / count.get();
+
+        try {
+            AtomicLong count = operationCounters.get(operationName);
+            AtomicLong totalTime = totalExecutionTimes.get(operationName);
+
+            if (count == null || totalTime == null || count.get() == 0) {
+                return 0.0;
+            }
+
+            return (double) totalTime.get() / count.get();
+        } catch (Exception e) {
+            logger.warning("[PERF] Error getting average execution time: " + e.getMessage());
+            return 0.0;
+        }
     }
 
     /**
      * Gets the maximum execution time for an operation.
      *
      * @param operationName the name of the operation
-     * @return the maximum execution time in milliseconds, or 0 if no data
+     * @return the maximum execution time in milliseconds, or 0 if not found
      */
     public long getMaxExecutionTime(String operationName) {
-        AtomicLong max = maxExecutionTimes.get(operationName);
-        return max != null ? max.get() : 0L;
-    }
-
-    /**
-     * Gets the number of times an operation has been executed.
-     *
-     * @param operationName the name of the operation
-     * @return the number of executions, or 0 if no data
-     */
-    public long getExecutionCount(String operationName) {
-        AtomicLong count = operationCounters.get(operationName);
-        return count != null ? count.get() : 0L;
-    }
-
-    /**
-     * Creates a timing context for measuring operation duration.
-     *
-     * @param operationName the name of the operation
-     * @return a TimingContext that can be used to record completion
-     */
-    public TimingContext startTiming(String operationName) {
-        if (operationName == null || operationName.trim().isEmpty()) {
-            throw new IllegalArgumentException("Operation name cannot be null or empty");
+        if (operationName == null) {
+            return 0;
         }
-        return new TimingContext(operationName, System.nanoTime());
-    }
 
-    /**
-     * Gets a formatted report of all collected metrics.
-     *
-     * @return a string containing the performance metrics report
-     */
-    public String getMetricsReport() {
-        StringBuilder report = new StringBuilder();
-        report.append("Performance Metrics Report:\n");
-        
-        for (String operationName : operationCounters.keySet()) {
-            long count = getExecutionCount(operationName);
-            double avgTime = getAverageExecutionTime(operationName);
-            long maxTime = getMaxExecutionTime(operationName);
-            
-            report.append(String.format(
-                    "  %s: %d executions, avg %.2f ms, max %d ms\n",
-                    operationName, count, avgTime, maxTime));
+        try {
+            AtomicLong maxTime = maxExecutionTimes.get(operationName);
+            return maxTime != null ? maxTime.get() : 0;
+        } catch (Exception e) {
+            logger.warning("[PERF] Error getting max execution time: " + e.getMessage());
+            return 0;
         }
-        
-        return report.toString();
     }
 
     /**
-     * Clears all collected metrics.
+     * Clears all performance metrics. Useful for testing or memory cleanup.
      */
     public void clearMetrics() {
-        operationCounters.clear();
-        totalExecutionTimes.clear();
-        maxExecutionTimes.clear();
+        try {
+            operationCounters.clear();
+            totalExecutionTimes.clear();
+            maxExecutionTimes.clear();
+            operationCounter.set(0);
+        } catch (Exception e) {
+            logger.warning("[PERF] Error clearing metrics: " + e.getMessage());
+        }
     }
 
     /**
-     * Timing context for measuring operation duration.
+     * Gets the current number of tracked operations.
+     *
+     * @return the number of unique operations being tracked
      */
-    public class TimingContext {
+    public int getTrackedOperationCount() {
+        return operationCounters.size();
+    }
+
+    /**
+     * Timing context for measuring execution time.
+     */
+    public static class TimingContext implements AutoCloseable {
+
+        private final PerformanceMonitor monitor;
         private final String operationName;
+        private final long thresholdMs;
         private final long startTime;
 
-        private TimingContext(String operationName, long startTime) {
-            // Validate parameters before setting any fields to avoid partial initialization
-            if (operationName == null || operationName.trim().isEmpty()) {
-                throw new IllegalArgumentException("Operation name cannot be null or empty");
-            }
-            if (startTime <= 0) {
-                throw new IllegalArgumentException("Start time must be positive");
-            }
-
+        public TimingContext(PerformanceMonitor monitor, String operationName, long thresholdMs) {
+            this.monitor = monitor;
             this.operationName = operationName;
-            this.startTime = startTime;
+            this.thresholdMs = thresholdMs;
+            this.startTime = System.nanoTime();
         }
 
         /**
-         * Records the completion of the operation.
-         *
-         * @param thresholdMs threshold in milliseconds above which to log
+         * Explicitly marks this timing context as observed/used. This is a
+         * no-op method whose sole purpose is to allow callers to reference the
+         * timing variable (e.g. timing.observe();) so static analysis tools do
+         * not flag the resource variable in try-with-resources blocks as unused
+         * while still retaining the concise "try (var timing =
+         * monitor.startTiming(...))" form.
          */
-        public void complete(long thresholdMs) {
-            if (thresholdMs < 0) {
-                thresholdMs = 0; // Ensure threshold is non-negative
-            }
-            try {
-                PerformanceMonitor.this.recordExecutionTime(operationName, startTime, thresholdMs);
-            } catch (Exception e) {
-                // Log error but don't crash - timing completion should never break
-                // functionality
-                logger.warning(String.format(
-                        "[PERF] Error completing timing for operation: %s - %s",
-                        operationName, e.getMessage()));
-            }
+        public void observe() {
+            // intentionally empty
         }
 
-        /**
-         * Records the completion with a default threshold of 10ms.
-         */
-        public void complete() {
-            complete(10);
+        @Override
+        public void close() {
+            if (monitor != null && operationName != null) {
+                monitor.recordExecutionTime(operationName, startTime, thresholdMs);
+            }
         }
     }
+
+    /**
+     * Starts timing an operation.
+     *
+     * @param operationName the name of the operation
+     * @param thresholdMs the threshold in milliseconds
+     * @return a timing context that will automatically record the time when
+     * closed
+     */
+    public TimingContext startTiming(String operationName, long thresholdMs) {
+        return new TimingContext(this, operationName, thresholdMs);
+    }
 }
-
-
-
-
-

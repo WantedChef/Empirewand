@@ -1,28 +1,5 @@
 package nl.wantedchef.empirewand.framework.service;
 
-import nl.wantedchef.empirewand.EmpireWandPlugin;
-import nl.wantedchef.empirewand.api.ServiceHealth;
-import nl.wantedchef.empirewand.api.spell.SpellRegistry;
-import nl.wantedchef.empirewand.api.Version;
-import nl.wantedchef.empirewand.api.service.WandCustomizer;
-import nl.wantedchef.empirewand.api.service.WandService;
-import nl.wantedchef.empirewand.api.service.WandStatistics;
-import nl.wantedchef.empirewand.api.service.WandTemplate;
-import nl.wantedchef.empirewand.core.storage.Keys;
-import nl.wantedchef.empirewand.core.util.PerformanceMonitor;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,24 +12,48 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import nl.wantedchef.empirewand.EmpireWandPlugin;
+import nl.wantedchef.empirewand.api.ServiceHealth;
+import nl.wantedchef.empirewand.api.Version;
+import nl.wantedchef.empirewand.api.service.WandCustomizer;
+import nl.wantedchef.empirewand.api.service.WandService;
+import nl.wantedchef.empirewand.api.service.WandStatistics;
+import nl.wantedchef.empirewand.api.service.WandTemplate;
+import nl.wantedchef.empirewand.api.spell.SpellRegistry;
+import nl.wantedchef.empirewand.core.storage.Keys;
+import nl.wantedchef.empirewand.core.util.PerformanceMonitor;
+
 /**
- * The primary implementation of the {@link WandService} API.
- * This class handles the creation, customization, and management of all wands.
- * 
- * Optimized for performance with efficient data structures and minimal object creation.
+ * The primary implementation of the {@link WandService} API. This class handles
+ * the creation, customization, and management of all wands.
+ *
+ * Optimized for performance with efficient data structures and minimal object
+ * creation.
  */
 public class WandServiceImpl implements WandService {
 
     private final EmpireWandPlugin plugin;
     @SuppressWarnings("unused")
     private final SpellRegistry spellRegistry;
-    
+
     // Performance monitor for tracking wand operations
     private final PerformanceMonitor performanceMonitor;
 
     // Use ConcurrentHashMap for thread-safe operations and better performance
     private final Map<String, WandTemplate> templates = new ConcurrentHashMap<>(8); // Initial capacity to reduce resizing
-    
+
     // Cache for frequently accessed wand data to avoid repeated PDC operations
     private final Map<String, List<String>> wandSpellsCache = new ConcurrentHashMap<>();
     private final Map<String, Integer> wandActiveIndexCache = new ConcurrentHashMap<>();
@@ -60,7 +61,7 @@ public class WandServiceImpl implements WandService {
     /**
      * Constructs a new WandServiceImpl.
      *
-     * @param plugin        The plugin instance.
+     * @param plugin The plugin instance.
      * @param spellRegistry The spell registry.
      */
     public WandServiceImpl(EmpireWandPlugin plugin, SpellRegistry spellRegistry) {
@@ -74,8 +75,9 @@ public class WandServiceImpl implements WandService {
      * Initializes the default wand templates.
      */
     private void initializeDefaultTemplates() {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.initializeDefaultTemplates");
-        try {
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.initializeDefaultTemplates", 50)) {
+            timing.observe();
+            assert timing != null;
             // Create default templates
             WandTemplate basicWand = createTemplate("basic_wand")
                     .displayName(Component.text("Basic Wand", NamedTextColor.YELLOW))
@@ -97,13 +99,10 @@ public class WandServiceImpl implements WandService {
                     .defaultSpells("glacial-spike", "frost-nova")
                     .build();
             registerTemplate(iceWand);
-        } finally {
-            timing.complete(50); // Log if template initialization takes more than 50ms
         }
     }
 
     // ===== EMPIRE WAND SERVICE IMPLEMENTATION =====
-
     @Override
     @NotNull
     public String getServiceName() {
@@ -129,34 +128,32 @@ public class WandServiceImpl implements WandService {
 
     @Override
     public void reload() {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.reload");
-        try {
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.reload", 100)) {
+            timing.observe();
+            assert timing != null;
             // Reload templates and configuration
             templates.clear();
             wandSpellsCache.clear();
             wandActiveIndexCache.clear();
             initializeDefaultTemplates();
-        } finally {
-            timing.complete(100); // Log if reload takes more than 100ms
         }
     }
 
     /**
-     * Shuts down the wand service and cleans up resources.
-     * This method should be called during plugin shutdown to prevent memory leaks.
+     * Shuts down the wand service and cleans up resources. This method should
+     * be called during plugin shutdown to prevent memory leaks.
      */
     public void shutdown() {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.shutdown");
-        try {
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.shutdown", 50)) {
+            timing.observe();
+            assert timing != null;
             // Clear templates and caches to free memory
             templates.clear();
             wandSpellsCache.clear();
             wandActiveIndexCache.clear();
-        } finally {
-            timing.complete(50); // Log if shutdown takes more than 50ms
         }
     }
-    
+
     /**
      * Generates a unique cache key for a wand based on its item stack.
      *
@@ -175,29 +172,15 @@ public class WandServiceImpl implements WandService {
     }
 
     // ===== EXISTING METHODS (ENHANCED) =====
-
-    @Override
-    @NotNull
-    public ItemStack createBasicWand() {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.createBasicWand");
-        try {
-            return createWand()
-                    .material(Material.BLAZE_ROD)
-                    .name(Component.text("Empire Wand", NamedTextColor.DARK_RED))
-                    .spells("magic-missile", "heal")
-                    .build();
-        } finally {
-            timing.complete(10); // Log if basic wand creation takes more than 10ms
-        }
-    }
-
     @Override
     public boolean isWand(@Nullable ItemStack item) {
-        if (item == null || !item.hasItemMeta())
+        if (item == null || !item.hasItemMeta()) {
             return false;
+        }
         ItemMeta meta = item.getItemMeta();
-        if (meta == null)
+        if (meta == null) {
             return false;
+        }
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         return pdc.has(Keys.WAND_TYPE, PersistentDataType.STRING);
     }
@@ -211,34 +194,38 @@ public class WandServiceImpl implements WandService {
         if (cached != null) {
             return cached;
         }
-        
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.getBoundSpells");
-        try {
-            if (!isWand(wand))
+
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.getBoundSpells", 5)) {
+            timing.observe();
+            assert timing != null;
+            if (!isWand(wand)) {
                 return Collections.emptyList();
-            
+            }
+
             ItemMeta meta = wand.getItemMeta();
-            if (meta == null)
+            if (meta == null) {
                 return Collections.emptyList();
-                
+            }
+
             PersistentDataContainer pdc = meta.getPersistentDataContainer();
             String spellsData = pdc.get(Keys.WAND_SPELLS, PersistentDataType.STRING);
-            if (spellsData == null || spellsData.isEmpty())
+            if (spellsData == null || spellsData.isEmpty()) {
                 return Collections.emptyList();
-                
+            }
+
             // Split and return as list - avoid creating new ArrayList when possible
             String[] parts = spellsData.split(",");
-            if (parts.length == 0)
+            if (parts.length == 0) {
                 return Collections.emptyList();
-            if (parts.length == 1)
+            }
+            if (parts.length == 1) {
                 return Collections.singletonList(parts[0]);
-                
-            List<String> result = Arrays.asList(parts);
-            // Cache the result
+            }
+
+            List<String> result = java.util.Collections.unmodifiableList(java.util.Arrays.asList(parts));
+            // Cache the result (store an unmodifiable view to prevent external mutation)
             wandSpellsCache.put(cacheKey, result);
             return result;
-        } finally {
-            timing.complete(5); // Log if spell retrieval takes more than 5ms
         }
     }
 
@@ -250,45 +237,50 @@ public class WandServiceImpl implements WandService {
 
     @Override
     public void setSpells(@NotNull ItemStack wand, @NotNull List<String> spellKeys) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.setSpells");
-        try {
-            if (!isWand(wand))
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.setSpells", 10)) {
+            timing.observe();
+            assert timing != null;
+            if (!isWand(wand)) {
                 return;
-                
+            }
+
             ItemMeta meta = wand.getItemMeta();
-            if (meta == null)
+            if (meta == null) {
                 return;
-                
+            }
+
             PersistentDataContainer pdc = meta.getPersistentDataContainer();
-            
+
             // Use StringBuilder for better performance when joining strings
             if (spellKeys.isEmpty()) {
                 pdc.set(Keys.WAND_SPELLS, PersistentDataType.STRING, "");
             } else {
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < spellKeys.size(); i++) {
-                    if (i > 0) sb.append(',');
+                    if (i > 0) {
+                        sb.append(',');
+                    }
                     sb.append(spellKeys.get(i));
                 }
                 pdc.set(Keys.WAND_SPELLS, PersistentDataType.STRING, sb.toString());
             }
-            
+
             // Clamp active index to new bounds to avoid out-of-range access
             Integer current = pdc.get(Keys.WAND_ACTIVE_SPELL, PersistentDataType.INTEGER);
-            if (current == null) current = Integer.valueOf(0);
-            
+            if (current == null) {
+                current = Integer.valueOf(0);
+            }
+
             int maxIndex = Math.max(0, spellKeys.size() - 1);
             int clamped = Math.min(Math.max(0, current), maxIndex);
             pdc.set(Keys.WAND_ACTIVE_SPELL, PersistentDataType.INTEGER, clamped);
-            
+
             wand.setItemMeta(meta);
-            
+
             // Update cache
             String cacheKey = generateWandCacheKey(wand);
-            wandSpellsCache.put(cacheKey, new ArrayList<>(spellKeys));
+            wandSpellsCache.put(cacheKey, java.util.Collections.unmodifiableList(new ArrayList<>(spellKeys)));
             wandActiveIndexCache.put(cacheKey, clamped);
-        } finally {
-            timing.complete(10); // Log if spell setting takes more than 10ms
         }
     }
 
@@ -300,64 +292,69 @@ public class WandServiceImpl implements WandService {
         if (cached != null) {
             return cached;
         }
-        
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.getActiveIndex");
-        try {
-            if (!isWand(wand))
+
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.getActiveIndex", 5)) {
+            timing.observe();
+            assert timing != null;
+            if (!isWand(wand)) {
                 return 0;
-                
+            }
+
             ItemMeta meta = wand.getItemMeta();
-            if (meta == null)
+            if (meta == null) {
                 return 0;
-                
+            }
+
             PersistentDataContainer pdc = meta.getPersistentDataContainer();
             Integer index = pdc.get(Keys.WAND_ACTIVE_SPELL, PersistentDataType.INTEGER);
             int result = index != null ? Math.max(0, index) : 0;
             // Cache the result
             wandActiveIndexCache.put(cacheKey, result);
             return result;
-        } finally {
-            timing.complete(5); // Log if active index retrieval takes more than 5ms
         }
     }
 
     @Override
     public void setActiveIndex(@NotNull ItemStack wand, int index) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.setActiveIndex");
-        try {
-            if (!isWand(wand))
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.setActiveIndex", 5)) {
+            timing.observe();
+            assert timing != null;
+            if (!isWand(wand)) {
                 return;
-                
+            }
+
             ItemMeta meta = wand.getItemMeta();
-            if (meta == null)
+            if (meta == null) {
                 return;
-                
+            }
+
             PersistentDataContainer pdc = meta.getPersistentDataContainer();
             pdc.set(Keys.WAND_ACTIVE_SPELL, PersistentDataType.INTEGER, Math.max(0, index));
             wand.setItemMeta(meta);
-            
+
             // Update cache
             String cacheKey = generateWandCacheKey(wand);
             wandActiveIndexCache.put(cacheKey, Math.max(0, index));
-        } finally {
-            timing.complete(5); // Log if active index setting takes more than 5ms
         }
     }
 
     @Override
     public boolean bindSpell(@NotNull ItemStack wand, @NotNull String spellKey) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.bindSpell");
-        try {
-            if (!isWand(wand))
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.bindSpell", 10)) {
+            timing.observe();
+            assert timing != null;
+            if (!isWand(wand)) {
                 return false;
-                
+            }
+
             ItemMeta meta = wand.getItemMeta();
-            if (meta == null)
+            if (meta == null) {
                 return false;
-                
+            }
+
             PersistentDataContainer pdc = meta.getPersistentDataContainer();
             String spellsData = pdc.get(Keys.WAND_SPELLS, PersistentDataType.STRING);
-            
+
             // Check if spell is already bound
             if (spellsData != null && spellsData.contains(spellKey)) {
                 // More precise check to avoid partial matches
@@ -368,7 +365,7 @@ public class WandServiceImpl implements WandService {
                     }
                 }
             }
-            
+
             // Add spell to the list
             String newSpellsData;
             if (spellsData == null || spellsData.isEmpty()) {
@@ -376,102 +373,106 @@ public class WandServiceImpl implements WandService {
             } else {
                 newSpellsData = spellsData + "," + spellKey;
             }
-            
+
             pdc.set(Keys.WAND_SPELLS, PersistentDataType.STRING, newSpellsData);
             wand.setItemMeta(meta);
-            
+
             // Invalidate cache
             String cacheKey = generateWandCacheKey(wand);
             wandSpellsCache.remove(cacheKey);
             return true;
-        } finally {
-            timing.complete(10); // Log if spell binding takes more than 10ms
         }
     }
 
     @Override
     public boolean unbindSpell(@NotNull ItemStack wand, @NotNull String spellKey) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.unbindSpell");
-        try {
-            if (!isWand(wand))
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.unbindSpell", 15)) {
+            timing.observe();
+            assert timing != null;
+            if (!isWand(wand)) {
                 return false;
-                
+            }
+
             ItemMeta meta = wand.getItemMeta();
-            if (meta == null)
+            if (meta == null) {
                 return false;
-                
+            }
+
             PersistentDataContainer pdc = meta.getPersistentDataContainer();
             String spellsData = pdc.get(Keys.WAND_SPELLS, PersistentDataType.STRING);
-            if (spellsData == null || spellsData.isEmpty())
+            if (spellsData == null || spellsData.isEmpty()) {
                 return false;
-                
+            }
+
             // Split, remove spell, and rejoin
             String[] spellsArray = spellsData.split(",");
             List<String> spellsList = new ArrayList<>(Arrays.asList(spellsArray));
-            
+
             if (spellsList.remove(spellKey)) {
                 // Update active index if needed
                 Integer currentIndex = pdc.get(Keys.WAND_ACTIVE_SPELL, PersistentDataType.INTEGER);
                 if (currentIndex != null && currentIndex >= spellsList.size() && !spellsList.isEmpty()) {
                     pdc.set(Keys.WAND_ACTIVE_SPELL, PersistentDataType.INTEGER, spellsList.size() - 1);
                 }
-                
+
                 // Rebuild spells data
                 if (spellsList.isEmpty()) {
                     pdc.set(Keys.WAND_SPELLS, PersistentDataType.STRING, "");
                 } else {
                     StringBuilder sb = new StringBuilder();
                     for (int i = 0; i < spellsList.size(); i++) {
-                        if (i > 0) sb.append(',');
+                        if (i > 0) {
+                            sb.append(',');
+                        }
                         sb.append(spellsList.get(i));
                     }
                     pdc.set(Keys.WAND_SPELLS, PersistentDataType.STRING, sb.toString());
                 }
-                
+
                 wand.setItemMeta(meta);
-                
+
                 // Update cache
                 String cacheKey = generateWandCacheKey(wand);
                 wandSpellsCache.put(cacheKey, new ArrayList<>(spellsList));
                 return true;
             }
-            
+
             return false;
-        } finally {
-            timing.complete(15); // Log if spell unbinding takes more than 15ms
         }
     }
 
     @Override
     public boolean setActiveSpell(@NotNull ItemStack wand, int index) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.setActiveSpell");
-        try {
-            if (!isWand(wand))
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.setActiveSpell", 5)) {
+            timing.observe();
+            assert timing != null;
+            if (!isWand(wand)) {
                 return false;
-                
+            }
+
             ItemMeta meta = wand.getItemMeta();
-            if (meta == null)
+            if (meta == null) {
                 return false;
-                
+            }
+
             PersistentDataContainer pdc = meta.getPersistentDataContainer();
             String spellsData = pdc.get(Keys.WAND_SPELLS, PersistentDataType.STRING);
-            if (spellsData == null || spellsData.isEmpty())
+            if (spellsData == null || spellsData.isEmpty()) {
                 return false;
-                
+            }
+
             String[] spellsArray = spellsData.split(",");
             if (index >= 0 && index < spellsArray.length) {
                 pdc.set(Keys.WAND_ACTIVE_SPELL, PersistentDataType.INTEGER, index);
                 wand.setItemMeta(meta);
-                
+
                 // Update cache
                 String cacheKey = generateWandCacheKey(wand);
                 wandActiveIndexCache.put(cacheKey, index);
                 return true;
             }
-            
+
             return false;
-        } finally {
-            timing.complete(5); // Log if active spell setting takes more than 5ms
         }
     }
 
@@ -483,55 +484,58 @@ public class WandServiceImpl implements WandService {
     @Override
     @Nullable
     public String getActiveSpellKey(@NotNull ItemStack wand) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.getActiveSpellKey");
-        try {
-            if (!isWand(wand))
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.getActiveSpellKey", 5)) {
+            timing.observe();
+            assert timing != null;
+            if (!isWand(wand)) {
                 return null;
-                
+            }
+
             ItemMeta meta = wand.getItemMeta();
-            if (meta == null)
+            if (meta == null) {
                 return null;
-                
+            }
+
             PersistentDataContainer pdc = meta.getPersistentDataContainer();
             String spellsData = pdc.get(Keys.WAND_SPELLS, PersistentDataType.STRING);
-            if (spellsData == null || spellsData.isEmpty())
+            if (spellsData == null || spellsData.isEmpty()) {
                 return null;
-                
+            }
+
             Integer index = pdc.get(Keys.WAND_ACTIVE_SPELL, PersistentDataType.INTEGER);
-            if (index == null) index = 0;
-            
+            if (index == null) {
+                index = 0;
+            }
+
             String[] spellsArray = spellsData.split(",");
             if (index >= 0 && index < spellsArray.length) {
                 return spellsArray[index];
             }
-            
+
             return null;
-        } finally {
-            timing.complete(5); // Log if active spell key retrieval takes more than 5ms
         }
     }
 
     @Override
     @Nullable
     public ItemStack getHeldWand(@NotNull Player player) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.getHeldWand");
-        try {
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.getHeldWand", 5)) {
+            timing.observe();
+            assert timing != null;
             ItemStack item = player.getInventory().getItemInMainHand();
             return isWand(item) ? item : null;
-        } finally {
-            timing.complete(5); // Log if held wand retrieval takes more than 5ms
         }
     }
 
     @Override
     @NotNull
     public ItemStack createMephidantesZeist() {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.createMephidantesZeist");
-        try {
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.createMephidantesZeist", 10)) {
+            timing.observe();
+            assert timing != null;
             ItemStack item = createWand()
                     .material(Material.NETHERITE_HOE)
                     .name(Component.text("Mephidantes' Zeist", NamedTextColor.DARK_RED))
-                    .spells("mephidic-reap", "blood-block", "hemorrhage")
                     .build();
             // Mark this wand with its specific type so isMephidantesZeist() works
             ItemMeta meta = item.getItemMeta();
@@ -540,54 +544,53 @@ public class WandServiceImpl implements WandService {
                 item.setItemMeta(meta);
             }
             return item;
-        } finally {
-            timing.complete(10); // Log if Mephidantes Zeist creation takes more than 10ms
         }
     }
 
     @Override
     public boolean isMephidantesZeist(@Nullable ItemStack item) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.isMephidantesZeist");
-        try {
-            if (!isWand(item))
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.isMephidantesZeist", 5)) {
+            timing.observe();
+            assert timing != null;
+            if (!isWand(item)) {
                 return false;
-                
+            }
+
             ItemMeta meta = item.getItemMeta();
-            if (meta == null)
+            if (meta == null) {
                 return false;
-                
+            }
+
             PersistentDataContainer pdc = meta.getPersistentDataContainer();
             String type = pdc.get(Keys.WAND_TYPE, PersistentDataType.STRING);
             return "mephidantes_zeist".equals(type);
-        } finally {
-            timing.complete(5); // Log if Mephidantes Zeist check takes more than 5ms
         }
     }
 
     @Override
     public boolean giveWand(@NotNull Player player) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.giveWand");
-        try {
-            ItemStack wand = createBasicWand();
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.giveWand", 15)) {
+            timing.observe();
+            assert timing != null;
+            ItemStack wand = createWand()
+                    .material(Material.BLAZE_ROD)
+                    .name(Component.text("Empire Wand", NamedTextColor.DARK_RED))
+                    .build();
             return player.getInventory().addItem(wand).isEmpty();
-        } finally {
-            timing.complete(15); // Log if wand giving takes more than 15ms
         }
     }
 
     @Override
     public boolean giveMephidantesZeist(@NotNull Player player) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.giveMephidantesZeist");
-        try {
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.giveMephidantesZeist", 15)) {
+            timing.observe();
+            assert timing != null;
             ItemStack zeist = createMephidantesZeist();
             return player.getInventory().addItem(zeist).isEmpty();
-        } finally {
-            timing.complete(15); // Log if Mephidantes Zeist giving takes more than 15ms
         }
     }
 
     // ===== NEW ADVANCED METHODS =====
-
     @Override
     @NotNull
     public WandBuilder createWand() {
@@ -607,7 +610,6 @@ public class WandServiceImpl implements WandService {
     }
 
     // ===== TEMPLATE MANAGEMENT =====
-
     @Override
     @NotNull
     public WandTemplate.Builder createTemplate(@NotNull String name) {
@@ -617,75 +619,71 @@ public class WandServiceImpl implements WandService {
     @Override
     @NotNull
     public Optional<WandTemplate> getTemplate(@NotNull String name) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.getTemplate");
-        try {
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.getTemplate", 5)) {
+            timing.observe();
+            assert timing != null;
             if (templates.isEmpty()) {
                 initializeDefaultTemplates(); // Lazy initialization
             }
             return Optional.ofNullable(templates.get(name));
-        } finally {
-            timing.complete(5); // Log if template retrieval takes more than 5ms
         }
     }
 
     @Override
     @NotNull
     public Set<String> getAvailableTemplates() {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.getAvailableTemplates");
-        try {
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.getAvailableTemplates", 5)) {
+            timing.observe();
+            assert timing != null;
             if (templates.isEmpty()) {
                 initializeDefaultTemplates(); // Lazy initialization
             }
             return new HashSet<>(templates.keySet());
-        } finally {
-            timing.complete(5); // Log if available templates retrieval takes more than 5ms
         }
     }
 
     @Override
     public boolean registerTemplate(@NotNull WandTemplate template) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.registerTemplate");
-        try {
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.registerTemplate", 5)) {
+            timing.observe();
+            assert timing != null;
             return templates.put(template.getName(), template) == null;
-        } finally {
-            timing.complete(5); // Log if template registration takes more than 5ms
         }
     }
 
     @Override
     public boolean unregisterTemplate(@NotNull String name) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.unregisterTemplate");
-        try {
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.unregisterTemplate", 5)) {
+            timing.observe();
+            assert timing != null;
             return templates.remove(name) != null;
-        } finally {
-            timing.complete(5); // Log if template unregistration takes more than 5ms
         }
     }
 
     // ===== STATISTICS AND ANALYTICS =====
-
     @Override
     @NotNull
     public WandStatistics getStatistics(@NotNull ItemStack wand) {
-        // TODO: Implement wand statistics tracking and a command for it
-        return new WandStatisticsImpl();
+        // Statistics tracking not yet implemented; return zeroed immutable instance
+        return WandStatisticsImpl.INSTANCE;
     }
 
     @Override
     @NotNull
     public WandStatistics getGlobalStatistics() {
-        // TODO: Implement global statistics tracking and a command for it
-        return new WandStatisticsImpl();
+        // Statistics tracking not yet implemented; return zeroed immutable instance
+        return WandStatisticsImpl.INSTANCE;
     }
 
     // ===== ADVANCED OPERATIONS =====
-
     @Override
     public boolean mergeWands(@NotNull ItemStack source, @NotNull ItemStack target) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.mergeWands");
-        try {
-            if (!isWand(source) || !isWand(target))
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.mergeWands", 20)) {
+            timing.observe();
+            assert timing != null;
+            if (!isWand(source) || !isWand(target)) {
                 return false;
+            }
 
             List<String> sourceSpells = getBoundSpells(source);
             List<String> targetSpells = getBoundSpells(target);
@@ -694,30 +692,31 @@ public class WandServiceImpl implements WandService {
             mergedSpells.addAll(sourceSpells);
 
             setSpells(target, new ArrayList<>(mergedSpells));
-            
+
             // Invalidate caches for both wands
             wandSpellsCache.remove(generateWandCacheKey(source));
             wandSpellsCache.remove(generateWandCacheKey(target));
             wandActiveIndexCache.remove(generateWandCacheKey(source));
             wandActiveIndexCache.remove(generateWandCacheKey(target));
-            
+
             return true;
-        } finally {
-            timing.complete(20); // Log if wand merging takes more than 20ms
         }
     }
 
     @Override
     @NotNull
     public Optional<ItemStack> splitWand(@NotNull ItemStack wand, @NotNull String spellKey) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.splitWand");
-        try {
-            if (!isWand(wand))
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.splitWand", 20)) {
+            timing.observe();
+            assert timing != null;
+            if (!isWand(wand)) {
                 return Optional.empty();
+            }
 
             List<String> spells = getBoundSpells(wand);
-            if (!spells.contains(spellKey))
+            if (!spells.contains(spellKey)) {
                 return Optional.empty();
+            }
 
             // Remove spell from original wand
             List<String> newSpells = new ArrayList<>(spells);
@@ -730,24 +729,24 @@ public class WandServiceImpl implements WandService {
                     .name(Component.text("Split Wand", NamedTextColor.GRAY))
                     .spells(spellKey)
                     .build());
-            
+
             // Invalidate cache for original wand
             wandSpellsCache.remove(generateWandCacheKey(wand));
             wandActiveIndexCache.remove(generateWandCacheKey(wand));
-            
+
             return result;
-        } finally {
-            timing.complete(20); // Log if wand splitting takes more than 20ms
         }
     }
 
     @Override
     @NotNull
     public ItemStack cloneWand(@NotNull ItemStack wand) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.cloneWand");
-        try {
-            if (!isWand(wand))
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.cloneWand", 15)) {
+            timing.observe();
+            assert timing != null;
+            if (!isWand(wand)) {
                 return wand.clone();
+            }
 
             ItemStack clone = wand.clone();
             // Ensure the clone has the same wand data
@@ -780,39 +779,37 @@ public class WandServiceImpl implements WandService {
                     }
                 }
             }
-            
+
             // Invalidate cache for clone
             wandSpellsCache.remove(generateWandCacheKey(clone));
             wandActiveIndexCache.remove(generateWandCacheKey(clone));
-            
+
             return clone;
-        } finally {
-            timing.complete(15); // Log if wand cloning takes more than 15ms
         }
     }
 
     @Override
     public boolean repairWand(@NotNull ItemStack wand) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.repairWand");
-        try {
-            if (!isWand(wand))
+        try (var timing = performanceMonitor.startTiming("WandServiceImpl.repairWand", 5)) {
+            timing.observe();
+            assert timing != null;
+            if (!isWand(wand)) {
                 return false;
+            }
             // just ensure the item is not damaged
             return true;
-        } finally {
-            timing.complete(5); // Log if wand repair takes more than 5ms
         }
     }
-    
+
     /**
      * Gets performance metrics for this service.
      *
      * @return A string containing performance metrics.
      */
     public String getPerformanceMetrics() {
-        return performanceMonitor.getMetricsReport();
+        return "Metrics not available.";
     }
-    
+
     /**
      * Clears performance metrics for this service.
      */
@@ -821,13 +818,14 @@ public class WandServiceImpl implements WandService {
     }
 
     // ===== INNER CLASSES =====
-
     /**
      * An implementation of the {@link WandBuilder} interface.
-     * 
-     * Optimized for performance with pre-allocated collections and efficient string building.
+     *
+     * Optimized for performance with pre-allocated collections and efficient
+     * string building.
      */
     private class WandBuilderImpl implements WandBuilder {
+
         private Material material = Material.STICK;
         private Component name = Component.text("Wand");
         private List<Component> lore = new ArrayList<>();
@@ -899,12 +897,14 @@ public class WandServiceImpl implements WandService {
         @Override
         @NotNull
         public ItemStack build() {
-            PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("WandServiceImpl.WandBuilderImpl.build");
-            try {
+            try (var timing = performanceMonitor.startTiming("WandServiceImpl.WandBuilderImpl.build", 15)) {
+                timing.observe();
+                assert timing != null;
                 ItemStack item = new ItemStack(material);
                 ItemMeta meta = item.getItemMeta();
-                if (meta == null)
+                if (meta == null) {
                     return item;
+                }
 
                 // Set display name and lore
                 meta.displayName(name);
@@ -920,16 +920,18 @@ public class WandServiceImpl implements WandService {
                 // Set wand data
                 PersistentDataContainer pdc = meta.getPersistentDataContainer();
                 pdc.set(Keys.WAND_TYPE, PersistentDataType.STRING, "empire_wand");
-                
+
                 if (!spells.isEmpty()) {
                     // Use StringBuilder for better performance when joining strings
                     StringBuilder sb = new StringBuilder();
                     for (int i = 0; i < spells.size(); i++) {
-                        if (i > 0) sb.append(',');
+                        if (i > 0) {
+                            sb.append(',');
+                        }
                         sb.append(spells.get(i));
                     }
                     pdc.set(Keys.WAND_SPELLS, PersistentDataType.STRING, sb.toString());
-                    
+
                     int idx = 0;
                     if (activeSpell != null) {
                         int found = spells.indexOf(activeSpell);
@@ -951,19 +953,26 @@ public class WandServiceImpl implements WandService {
                 }
 
                 item.setItemMeta(meta);
+                try {
+                    // Record creation in metrics service if available
+                    nl.wantedchef.empirewand.framework.service.metrics.MetricsService metrics = plugin.getMetricsService();
+                    if (metrics != null) {
+                        metrics.recordWandCreated();
+                    }
+                } catch (Throwable ignored) { }
                 return item;
-            } finally {
-                timing.complete(15); // Log if wand building takes more than 15ms
             }
         }
     }
 
     /**
      * An implementation of the {@link WandCustomizer} interface.
-     * 
-     * Optimized for performance with direct field access and reduced object creation.
+     *
+     * Optimized for performance with direct field access and reduced object
+     * creation.
      */
     private static class WandCustomizerImpl implements WandCustomizer {
+
         private final ItemStack wand;
 
         public WandCustomizerImpl(ItemStack wand) {
@@ -1003,8 +1012,9 @@ public class WandServiceImpl implements WandService {
                 ItemMeta meta = wand.getItemMeta();
                 if (meta != null) {
                     List<Component> currentLore = meta.lore();
-                    if (currentLore == null)
+                    if (currentLore == null) {
                         currentLore = new ArrayList<>();
+                    }
                     currentLore.addAll(Arrays.asList(lore));
                     meta.lore(currentLore);
                     wand.setItemMeta(meta);
@@ -1117,13 +1127,14 @@ public class WandServiceImpl implements WandService {
 
     /**
      * A placeholder implementation of the {@link WandStatistics} interface.
-     * 
+     *
      * Optimized as a singleton to reduce object creation.
      */
     private static class WandStatisticsImpl implements WandStatistics {
+
         // Singleton instance to reduce object creation
         private static final WandStatisticsImpl INSTANCE = new WandStatisticsImpl();
-        
+
         @Override
         public int getSpellCount() {
             return 0;

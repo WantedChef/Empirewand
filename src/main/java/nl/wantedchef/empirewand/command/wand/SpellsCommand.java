@@ -54,8 +54,7 @@ public class SpellsCommand implements SubCommand, CommandHelpProvider.HelpAwareC
     @Override
     public void execute(@NotNull CommandContext context) throws CommandException {
         // Start timing for performance monitoring
-        var timing = context.startTiming("spells.list");
-        try {
+        try (var timing = context.startTiming("spells.list")) {
             context.requirePlayer(); // Just to ensure it's a player
 
             if (context.args().length > 1) {
@@ -103,8 +102,6 @@ public class SpellsCommand implements SubCommand, CommandHelpProvider.HelpAwareC
                                     .color(NamedTextColor.GRAY));
                 }
             }
-        } finally {
-            timing.complete();
         }
     }
 

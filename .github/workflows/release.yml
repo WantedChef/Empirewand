@@ -28,10 +28,19 @@ jobs:
           gradle-version: '8.10.2'
           arguments: build --stacktrace
 
+      - name: Generate checksums
+        run: |
+          cd build/libs
+          for f in *-all.jar; do
+            sha256sum "$f" > "$f.sha256"
+          done
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/libs/*.jar
+          files: |
+            build/libs/*-all.jar
+            build/libs/*-all.jar.sha256
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -18,7 +18,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     permissions:
       contents: read
     steps:
@@ -32,14 +36,54 @@ jobs:
           java-version: '21'
           cache: gradle
 
-      - name: Build with Gradle 8.10.2
+      - name: Build and test with Gradle 8.10.2
         uses: gradle/gradle-build-action@v3
         with:
           gradle-version: '8.10.2'
-          arguments: build --stacktrace
+          arguments: >-
+            build --stacktrace
 
-      - name: Upload plugin JAR
+      - name: Upload shaded JAR
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: empirewand-artifacts
-          path: build/libs/*.jar
+          name: empirewand-${{ runner.os }}-jars
+          path: build/libs/*-all.jar
+          if-no-files-found: warn
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ runner.os }}
+          path: |
+            build/test-results/**
+            build/reports/tests/**
+          if-no-files-found: warn
+
+      - name: Upload JaCoCo coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-${{ runner.os }}
+          path: |
+            build/reports/jacoco/test/**
+            build/reports/jacoco/**
+            build/jacoco/**
+          if-no-files-found: warn
+
+      - name: Upload Checkstyle report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkstyle-${{ runner.os }}
+          path: build/reports/checkstyle/**
+          if-no-files-found: warn
+
+      - name: Upload SpotBugs report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotbugs-${{ runner.os }}
+          path: build/reports/spotbugs/**
+          if-no-files-found: warn

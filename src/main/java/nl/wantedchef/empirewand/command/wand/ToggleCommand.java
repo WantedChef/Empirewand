@@ -25,6 +25,16 @@ import nl.wantedchef.empirewand.framework.command.SubCommand;
  */
 public class ToggleCommand implements SubCommand {
 
+    private final String permissionPrefix;
+
+    public ToggleCommand() {
+        this("empirewand");
+    }
+
+    public ToggleCommand(@NotNull String permissionPrefix) {
+        this.permissionPrefix = (permissionPrefix == null || permissionPrefix.isBlank()) ? "empirewand" : permissionPrefix;
+    }
+
     @Override
     @NotNull
     public String getName() {
@@ -40,7 +50,7 @@ public class ToggleCommand implements SubCommand {
     @Override
     @Nullable
     public String getPermission() {
-        return "empirewand.command.toggle";
+        return permissionPrefix + ".command.toggle";
     }
 
     @Override

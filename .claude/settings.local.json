@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew:*)",
+      "Bash(java:*)",
+      "Bash(where java)",
+      "Read(//c/Program Files/Eclipse Adoptium/**)",
+      "Read(//c/Program Files/**)",
+      "Bash(jar:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Bash($env:JAVA_HOME)",
+      "WebSearch",
+      "Bash(powershell:*)",
+      "Bash(copy spells.yml spells.yml.backup)",
+      "Bash(python:*)",
+      "Bash(gradlew build:*)",
+      "Bash(gradlew.bat build:*)",
+      "Bash(gradlew.bat test:*)",
+      "Bash(find:*)",
+      "Bash(gradlew.bat clean:*)",
+      "Bash(cmd /c:*)",
+      "Bash(gradle clean:*)",
+      "Bash(rm:*)",
+      "Bash(grep:*)",
+      "Bash(gradlew:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

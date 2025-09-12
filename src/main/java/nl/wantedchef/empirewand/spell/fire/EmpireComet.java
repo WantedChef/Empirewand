@@ -95,8 +95,8 @@ public class EmpireComet extends Spell<Void> {
         context.fx().spawnParticles(caster.getEyeLocation(), Particle.FLAME, LAUNCH_PARTICLE_COUNT, LAUNCH_PARTICLE_OFFSET, LAUNCH_PARTICLE_OFFSET, LAUNCH_PARTICLE_OFFSET, LAUNCH_PARTICLE_SPEED);
         context.fx().playSound(caster.getLocation(), Sound.ENTITY_BLAZE_SHOOT, LAUNCH_SOUND_VOLUME, LAUNCH_SOUND_PITCH);
 
-        new EmpireCometTail(context, comet, trailLength, particleCount, blockLifetime, burstInterval)
-                .runTaskTimer(context.plugin(), TASK_TIMER_DELAY, TASK_TIMER_PERIOD);
+        BukkitRunnable task = new EmpireCometTail(context, comet, trailLength, particleCount, blockLifetime, burstInterval);
+        context.plugin().getTaskManager().runTaskTimer(task, TASK_TIMER_DELAY, TASK_TIMER_PERIOD);
         return null;
     }
 
@@ -164,12 +164,12 @@ public class EmpireComet extends Spell<Void> {
                 context.fx().spawnParticles(comet.getLocation(), Particle.EXPLOSION, BURST_PARTICLE_COUNT, BURST_PARTICLE_OFFSET, BURST_PARTICLE_OFFSET, BURST_PARTICLE_OFFSET, BURST_PARTICLE_SPEED);
             }
 
-            while (!queue.isEmpty() && queue.peekFirst().expireTick <= tick) {
+            while (!queue.isEmpty() && queue.peekFirst().expireTick() <= tick) {
                 var tb = queue.pollFirst();
-                if (tb.block.getType() == Material.CRIMSON_NYLIUM) {
-                    tb.block.setBlockData(tb.previous, false);
+                if (tb.block().getType() == Material.CRIMSON_NYLIUM) {
+                    tb.block().setBlockData(tb.previous(), false);
                 }
-                ours.remove(tb.block);
+                ours.remove(tb.block());
             }
 
             tick++;
@@ -185,26 +185,17 @@ public class EmpireComet extends Spell<Void> {
         private void cleanup() {
             while (!queue.isEmpty()) {
                 var tb = queue.pollFirst();
-                if (tb.block.getType() == Material.CRIMSON_NYLIUM) {
-                    tb.block.setBlockData(tb.previous, false);
+                if (tb.block().getType() == Material.CRIMSON_NYLIUM) {
+                    tb.block().setBlockData(tb.previous(), false);
                 }
-                ours.remove(tb.block);
+                ours.remove(tb.block());
             }
         }
 
         /**
          * A record representing a temporary block.
          */
-        private static class TempBlock {
-            Block block;
-            BlockData previous;
-            int expireTick;
-
-            public TempBlock(Block block, BlockData previous, int expireTick) {
-                this.block = block;
-                this.previous = previous;
-                this.expireTick = expireTick;
-            }
+        private record TempBlock(Block block, BlockData previous, int expireTick) {
         }
     }
 }

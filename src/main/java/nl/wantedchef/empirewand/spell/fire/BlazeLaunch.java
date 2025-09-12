@@ -13,9 +13,31 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+ import java.util.Objects;
 
 /**
- * A spell that launches the player forward, leaving a trail of fire particles.
+ * A mobility-focused fire spell that launches the caster forward and leaves a
+ * short-lived flame trail for dramatic feedback.
+ * <p>
+ * The launch power and trail duration are configurable via the spell config. A
+ * lightweight scheduler renders flame particles behind the player for a brief
+ * period after launch, together with periodic ambient sounds.
+ * <p>
+ * Features:
+ * <ul>
+ *   <li>Forward dash based on the caster's eye direction.</li>
+ *   <li>Configurable launch power and trail duration.</li>
+ *   <li>Visual flame trail and ambient blaze sounds.</li>
+ * </ul>
+ *
+ * Usage example:
+ * <pre>{@code
+ * Spell<Void> blaze = new BlazeLaunch.Builder(api)
+ *     .name("Blaze Launch")
+ *     .description("Launches you forward, leaving a trail of fire.")
+ *     .cooldown(java.time.Duration.ofSeconds(10))
+ *     .build();
+ * }</pre>
  */
 public class BlazeLaunch extends Spell<Void> {
 
@@ -61,23 +83,33 @@ public class BlazeLaunch extends Spell<Void> {
     }
 
     @Override
+    @NotNull
     public String key() {
         return "blaze-launch";
     }
 
     @Override
+    @NotNull
     public PrereqInterface prereq() {
         return new PrereqInterface.NonePrereq();
     }
 
     @Override
     protected Void executeSpell(SpellContext context) {
+        Objects.requireNonNull(context, "Context cannot be null");
+
         Player player = context.caster();
 
         double power = spellConfig.getDouble("values.power", DEFAULT_POWER);
         int trailDuration = spellConfig.getInt("values.trail-duration-ticks", DEFAULT_TRAIL_DURATION_TICKS);
 
-        Vector direction = player.getEyeLocation().getDirection().normalize();
+        Location eye = player.getEyeLocation();
+        if (eye == null) {
+            context.fx().fizzle(player);
+            return null;
+        }
+
+        Vector direction = eye.getDirection().normalize();
         player.setVelocity(direction.multiply(power));
 
         startFireTrail(player, trailDuration, context);
@@ -99,7 +131,7 @@ public class BlazeLaunch extends Spell<Void> {
      * @param context  The spell context.
      */
     private void startFireTrail(Player player, int duration, SpellContext context) {
-        new BukkitRunnable() {
+        BukkitRunnable task = new BukkitRunnable() {
             private int ticks = 0;
 
             @Override
@@ -110,13 +142,18 @@ public class BlazeLaunch extends Spell<Void> {
                 }
 
                 Location playerLoc = player.getLocation();
-                context.fx().spawnParticles(playerLoc, Particle.FLAME, PARTICLE_COUNT, PARTICLE_OFFSET, PARTICLE_OFFSET, PARTICLE_OFFSET, PARTICLE_SPEED);
+                if (playerLoc != null) {
+                    context.fx().spawnParticles(playerLoc, Particle.FLAME, PARTICLE_COUNT, PARTICLE_OFFSET, PARTICLE_OFFSET, PARTICLE_OFFSET, PARTICLE_SPEED);
+                }
 
                 if (ticks % AMBIENT_SOUND_INTERVAL_TICKS == 0) {
-                    context.fx().playSound(playerLoc, Sound.ENTITY_BLAZE_AMBIENT, AMBIENT_SOUND_VOLUME, AMBIENT_SOUND_PITCH);
+                    if (playerLoc != null) {
+                        context.fx().playSound(playerLoc, Sound.ENTITY_BLAZE_AMBIENT, AMBIENT_SOUND_VOLUME, AMBIENT_SOUND_PITCH);
+                    }
                 }
                 ticks++;
             }
-        }.runTaskTimer(context.plugin(), TASK_TIMER_DELAY, TASK_TIMER_PERIOD);
+        };
+        context.plugin().getTaskManager().runTaskTimer(task, TASK_TIMER_DELAY, TASK_TIMER_PERIOD);
     }
 }

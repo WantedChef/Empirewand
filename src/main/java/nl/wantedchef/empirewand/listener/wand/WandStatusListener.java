@@ -34,7 +34,12 @@ public final class WandStatusListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        scheduleStatusUpdates(player);
+        // Use async task to avoid blocking main thread during join
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (player.isOnline()) {
+                scheduleStatusUpdates(player);
+            }
+        }, 5L); // Slight delay to let join process complete
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -47,11 +52,14 @@ public final class WandStatusListener implements Listener {
     public void onItemHeld(PlayerItemHeldEvent event) {
         Player player = event.getPlayer();
 
-        // Schedule status updates with a slight delay to ensure the item change is
-        // processed
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-            scheduleStatusUpdates(player);
+        // Schedule status updates with a slight delay to ensure the item change is processed
+        // Use task manager for better resource tracking
+        BukkitTask task = plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (player.isOnline()) {
+                scheduleStatusUpdates(player);
+            }
         }, 2L);
+        plugin.getTaskManager().registerTask(task);
     }
 
     private void scheduleStatusUpdates(Player player) {
@@ -68,23 +76,43 @@ public final class WandStatusListener implements Listener {
 
         // Create a new repeating task that updates every 10 ticks (0.5 seconds)
         BukkitTask task = new BukkitRunnable() {
+            private int updateCount = 0;
+            
             @Override
             public void run() {
-                if (!player.isOnline() || !player.isValid()) {
+                try {
+                    // Quick validation checks for performance
+                    if (!player.isOnline() || !player.isValid()) {
+                        cancel();
+                        activeUpdaters.remove(playerId);
+                        return;
+                    }
+
+                    ItemStack currentItem = player.getInventory().getItemInMainHand();
+                    if (!plugin.getWandService().isWand(currentItem)) {
+                        // Player is no longer holding a wand, stop updates
+                        cancel();
+                        activeUpdaters.remove(playerId);
+                        return;
+                    }
+
+                    updateWandStatus(player, currentItem);
+                    
+                    // Periodic cleanup to prevent memory leaks
+                    updateCount++;
+                    if (updateCount > 1200) { // Every 10 minutes (1200 * 0.5s)
+                        // Restart task to clean up any potential memory issues
+                        cancel();
+                        activeUpdaters.remove(playerId);
+                        scheduleStatusUpdates(player);
+                        return;
+                    }
+                } catch (Exception e) {
+                    plugin.getLogger().warning(String.format("Error in WandStatusListener for player %s: %s", 
+                        player.getName(), e.getMessage()));
                     cancel();
                     activeUpdaters.remove(playerId);
-                    return;
                 }
-
-                ItemStack currentItem = player.getInventory().getItemInMainHand();
-                if (!plugin.getWandService().isWand(currentItem)) {
-                    // Player is no longer holding a wand, stop updates
-                    cancel();
-                    activeUpdaters.remove(playerId);
-                    return;
-                }
-
-                updateWandStatus(player, currentItem);
             }
         }.runTaskTimer(plugin, 0L, 10L); // Run immediately, then every 10 ticks
 

@@ -1,29 +1,22 @@
 package nl.wantedchef.empirewand.spell.fire;
 
 import nl.wantedchef.empirewand.api.EmpireWandAPI;
-
+import nl.wantedchef.empirewand.common.visual.ProjectileTrail;
+import nl.wantedchef.empirewand.core.config.ReadableConfig;
 import nl.wantedchef.empirewand.core.storage.Keys;
 import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.spell.ProjectileSpell;
 import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.Set;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.block.Block;
-import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -57,11 +50,6 @@ public class Fireball extends ProjectileSpell<org.bukkit.entity.Fireball> {
         }
     }
 
-    private static final double DEFAULT_YIELD = 3.0;
-    private static final boolean DEFAULT_INCENDIARY = true;
-    private static final int DEFAULT_TRAIL_LENGTH = 4;
-    private static final int DEFAULT_PARTICLE_COUNT = 2;
-    private static final int DEFAULT_BLOCK_LIFETIME_TICKS = 40;
     private static final long TASK_TIMER_DELAY = 0L;
     private static final long TASK_TIMER_PERIOD = 1L;
     private static final float LAUNCH_SOUND_VOLUME = 1.0f;
@@ -75,13 +63,42 @@ public class Fireball extends ProjectileSpell<org.bukkit.entity.Fireball> {
     private static final double MAX_DAMAGE = 20.0;
     private static final double MIN_DAMAGE = 1.0;
 
+    /**
+     * Configuration for the Fireball spell.
+     *
+     * @param yield The explosion yield/power
+     * @param incendiary Whether the explosion causes fire
+     * @param trailLength Length of the fire trail
+     * @param particleCount Number of particles in the trail
+     * @param blockLifetimeTicks How long trail blocks remain
+     * @param blockDamage Whether the explosion damages blocks
+     */
+    private record Config(double yield, boolean incendiary, int trailLength, int particleCount, 
+                         int blockLifetimeTicks, boolean blockDamage) {}
+
+    private Config config;
+
     private Fireball(Builder builder) {
         super(builder);
+        this.config = new Config(3.0, true, 4, 2, 40, true);
     }
 
     @Override
     public String key() {
         return "fireball";
+    }
+
+    @Override
+    public void loadConfig(@NotNull ReadableConfig spellConfig) {
+        super.loadConfig(spellConfig);
+        this.config = new Config(
+                spellConfig.getDouble("values.yield", config.yield),
+                spellConfig.getBoolean("flags.incendiary", config.incendiary),
+                spellConfig.getInt("values.trail_length", config.trailLength),
+                spellConfig.getInt("values.particle_count", config.particleCount),
+                spellConfig.getInt("values.block_lifetime_ticks", config.blockLifetimeTicks),
+                spellConfig.getBoolean("flags.block-damage", config.blockDamage)
+        );
     }
 
     @Override
@@ -93,21 +110,26 @@ public class Fireball extends ProjectileSpell<org.bukkit.entity.Fireball> {
     protected void launchProjectile(@NotNull SpellContext context) {
         Player player = context.caster();
 
-        double explosionYield = spellConfig.getDouble("values.yield", DEFAULT_YIELD);
-        boolean incendiary = spellConfig.getBoolean("flags.incendiary", DEFAULT_INCENDIARY);
-        int trailLength = spellConfig.getInt("values.trail_length", DEFAULT_TRAIL_LENGTH);
-        int particleCount = spellConfig.getInt("values.particle_count", DEFAULT_PARTICLE_COUNT);
-        int lifeTicks = spellConfig.getInt("values.block_lifetime_ticks", DEFAULT_BLOCK_LIFETIME_TICKS);
-
         player.launchProjectile(org.bukkit.entity.Fireball.class,
                 player.getEyeLocation().getDirection().multiply(speed), fireball -> {
-                    fireball.setYield((float) explosionYield);
-                    fireball.setIsIncendiary(incendiary);
+                    fireball.setYield((float) config.yield);
+                    fireball.setIsIncendiary(config.incendiary);
                     fireball.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, PersistentDataType.STRING, key());
                     fireball.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, PersistentDataType.STRING,
                             player.getUniqueId().toString());
-                    new FireTrail(fireball, trailLength, particleCount, lifeTicks).runTaskTimer(context.plugin(), TASK_TIMER_DELAY,
-                            TASK_TIMER_PERIOD);
+                    // Create standard fire trail with magma blocks
+                    ProjectileTrail.TrailConfig trailConfig = ProjectileTrail.TrailConfig.builder()
+                            .trailLength(config.trailLength)
+                            .particleCount(config.particleCount)
+                            .blockLifetimeTicks(config.blockLifetimeTicks)
+                            .trailMaterial(Material.MAGMA_BLOCK)
+                            .particle(Particle.FLAME)
+                            .build();
+                    context.plugin().getTaskManager().runTaskTimer(
+                        new ProjectileTrail(fireball, trailConfig), 
+                        TASK_TIMER_DELAY, 
+                        TASK_TIMER_PERIOD
+                    );
                 });
 
         context.fx().playSound(player, Sound.ENTITY_BLAZE_SHOOT, LAUNCH_SOUND_VOLUME, LAUNCH_SOUND_PITCH);
@@ -116,8 +138,7 @@ public class Fireball extends ProjectileSpell<org.bukkit.entity.Fireball> {
     @Override
     protected void handleHit(@NotNull SpellContext context, @NotNull Projectile projectile,
             @NotNull ProjectileHitEvent event) {
-        boolean blockDamage = spellConfig.getBoolean("flags.block-damage", true);
-        if (!blockDamage) {
+        if (!config.blockDamage) {
             // If block damage is disabled, create a visual-only explosion
             // and manually damage entities, since the projectile's explosion is cancelled.
             Location hitLoc = projectile.getLocation();
@@ -137,86 +158,4 @@ public class Fireball extends ProjectileSpell<org.bukkit.entity.Fireball> {
         }
     }
 
-    /**
-     * A runnable that creates a fire trail effect for the fireball.
-     */
-    private static final class FireTrail extends BukkitRunnable {
-        private static final double Y_OFFSET = -0.25;
-        private static final Material TRAIL_BLOCK_MATERIAL = Material.MAGMA_BLOCK;
-        private static final double PARTICLE_OFFSET = 0.1;
-        private static final double PARTICLE_SPEED = 0.01;
-        private static final int MAX_LIFETIME_TICKS = 300; // 15 seconds
-
-        private final org.bukkit.entity.Fireball fireball;
-        private final int trailLength;
-        private final int particleCount;
-        private final int lifeTicks;
-        private int tick = 0;
-        private final Deque<TempBlock> queue = new ArrayDeque<>();
-        private final Set<Block> ours = new HashSet<>();
-
-        FireTrail(org.bukkit.entity.Fireball fireball, int trailLength, int particleCount, int lifeTicks) {
-            this.fireball = fireball;
-            this.trailLength = trailLength;
-            this.particleCount = particleCount;
-            this.lifeTicks = lifeTicks;
-        }
-
-        @Override
-        public void run() {
-            if (!fireball.isValid() || fireball.isDead()) {
-                cleanup();
-                cancel();
-                return;
-            }
-
-            Vector dir = fireball.getVelocity().clone().normalize();
-            Location base = fireball.getLocation().clone().add(0, Y_OFFSET, 0);
-
-            for (int i = 0; i < trailLength; i++) {
-                Location l = base.clone().add(dir.clone().multiply(-i));
-                Block b = l.getBlock();
-                if (!ours.contains(b) && b.getType().isAir()) {
-                    queue.addLast(new TempBlock(b, b.getBlockData(), tick + lifeTicks));
-                    b.setType(TRAIL_BLOCK_MATERIAL, false);
-                    ours.add(b);
-                    fireball.getWorld().spawnParticle(Particle.FLAME, l, particleCount, PARTICLE_OFFSET, PARTICLE_OFFSET, PARTICLE_OFFSET, PARTICLE_SPEED);
-                }
-            }
-
-            while (!queue.isEmpty() && queue.peekFirst().expireTick <= tick) {
-                queue.pollFirst().revert();
-            }
-
-            tick++;
-            if (tick > MAX_LIFETIME_TICKS) {
-                cleanup();
-                cancel();
-            }
-        }
-
-        /**
-         * Cleans up any temporary blocks created by the trail.
-         */
-        private void cleanup() {
-            while (!queue.isEmpty()) {
-                queue.pollFirst().revert();
-            }
-        }
-
-        /**
-         * A record representing a temporary block.
-         *
-         * @param block      The block that was changed.
-         * @param previous   The previous block data.
-         * @param expireTick The tick at which the block should revert.
-         */
-        private record TempBlock(Block block, BlockData previous, int expireTick) {
-            void revert() {
-                if (block.getType() == TRAIL_BLOCK_MATERIAL) {
-                    block.setBlockData(previous, false);
-                }
-            }
-        }
-    }
 }

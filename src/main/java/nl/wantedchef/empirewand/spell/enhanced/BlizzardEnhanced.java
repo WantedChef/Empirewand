@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.Objects;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -31,22 +32,69 @@ import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
 
+import java.time.Duration;
 
 /**
  * A devastating ice spell that creates a blizzard in a large area,
  * slowing and damaging enemies while creating icy terrain with enhanced visual effects.
+ * <p>
+ * This enhanced version of the blizzard spell creates a more visually impressive effect
+ * with animated snowflakes, gusts of wind, and improved particle effects. It applies
+ * slowness and occasional blindness effects to entities, and temporarily transforms
+ * ground blocks into ice. The spell includes visual and audio feedback for the blizzard
+ * effects and automatically cleans up the ice blocks when the spell ends.
+ * <p>
+ * <strong>Features:</strong>
+ * <ul>
+ *   <li>Animated snowflake particle effects</li>
+ *   <li>Area of effect snow and cloud particles</li>
+ *   <li>Slowness and blindness potion effects on entities</li>
+ *   <li>Periodic damage to affected entities</li>
+ *   <li>Wind gusts that push entities</li>
+ *   <li>Temporary ice block creation</li>
+ *   <li>Automatic cleanup of ice blocks</li>
+ *   <li>Expanding and dissipating ring effects</li>
+ * </ul>
+ *
+ * <p>
+ * <strong>Usage Example:</strong>
+ * <pre>{@code
+ * Spell blizzard = new BlizzardEnhanced.Builder(api)
+ *     .name("Blizzard")
+ *     .description("Creates a devastating blizzard that slows and damages enemies while covering the area in ice with enhanced visuals.")
+ *     .cooldown(Duration.ofSeconds(55))
+ *     .build();
+ * }</pre>
+ *
+ * @since 1.0.0
  */
 public class BlizzardEnhanced extends Spell<Void> {
 
+    /**
+     * Builder for creating BlizzardEnhanced spell instances.
+     * <p>
+     * Provides a fluent API for configuring the enhanced blizzard spell with sensible defaults.
+     */
     public static class Builder extends Spell.Builder<Void> {
-        public Builder(EmpireWandAPI api) {
+        /**
+         * Creates a new BlizzardEnhanced spell builder.
+         *
+         * @param api the EmpireWandAPI instance
+         * @throws NullPointerException if api is null
+         */
+        public Builder(@NotNull EmpireWandAPI api) {
             super(api);
             this.name = "Blizzard";
             this.description = "Creates a devastating blizzard that slows and damages enemies while covering the area in ice with enhanced visuals.";
-            this.cooldown = java.time.Duration.ofSeconds(55);
+            this.cooldown = Duration.ofSeconds(55);
             this.spellType = SpellType.ICE;
         }
 
+        /**
+         * Builds and returns a new BlizzardEnhanced spell instance.
+         *
+         * @return the constructed BlizzardEnhanced spell
+         */
         @Override
         @NotNull
         public Spell<Void> build() {
@@ -54,23 +102,57 @@ public class BlizzardEnhanced extends Spell<Void> {
         }
     }
 
-    private BlizzardEnhanced(Builder builder) {
+    /**
+     * Constructs a new BlizzardEnhanced spell instance.
+     *
+     * @param builder the builder containing spell configuration
+     * @throws NullPointerException if builder is null
+     */
+    private BlizzardEnhanced(@NotNull Builder builder) {
         super(builder);
     }
 
+    /**
+     * Returns the unique key for this spell.
+     * <p>
+     * This key is used for configuration, identification, and event handling.
+     *
+     * @return the spell key "blizzard-enhanced"
+     */
     @Override
-    public @NotNull String key() {
+    @NotNull
+    public String key() {
         return "blizzard-enhanced";
     }
 
+    /**
+     * Returns the prerequisites for casting this spell.
+     * <p>
+     * Currently, this spell has no prerequisites beyond standard casting requirements.
+     *
+     * @return a no-op prerequisite
+     */
     @Override
-    public @NotNull PrereqInterface prereq() {
+    @NotNull
+    public PrereqInterface prereq() {
         return new PrereqInterface.NonePrereq();
     }
 
+    /**
+     * Executes the enhanced blizzard spell logic.
+     * <p>
+     * This method creates an enhanced blizzard effect at the caster's location that applies
+     * slowness and blindness effects to nearby entities and creates temporary ice blocks.
+     *
+     * @param context the spell context containing caster and target information
+     * @return null (this spell produces no effect object)
+     */
     @Override
-    protected @Nullable Void executeSpell(SpellContext context) {
+    protected @Nullable Void executeSpell(@NotNull SpellContext context) {
+        Objects.requireNonNull(context, "Context cannot be null");
+        
         Player player = context.caster();
+        var world = player.getWorld();
 
         // Configuration
         double radius = spellConfig.getDouble("values.radius", 20.0);
@@ -81,28 +163,51 @@ public class BlizzardEnhanced extends Spell<Void> {
         boolean createIce = spellConfig.getBoolean("flags.create-ice", true);
 
         // Play initial sound
-        player.getWorld().playSound(player.getLocation(), Sound.AMBIENT_UNDERWATER_LOOP, 2.0f, 0.3f);
+        if (world != null) {
+            world.playSound(player.getLocation(), Sound.AMBIENT_UNDERWATER_LOOP, 2.0f, 0.3f);
+        }
 
         // Create initial blizzard effect
         createInitialEffect(context, player.getLocation(), radius);
 
         // Start blizzard effect
-        new BlizzardTask(context, player.getLocation(), radius, damage, slowDuration, slowAmplifier, durationTicks, createIce)
-                .runTaskTimer(context.plugin(), 0L, 3L);
+        BukkitRunnable blizzardTask = new BlizzardTask(context, player.getLocation(), radius, damage, slowDuration, slowAmplifier, durationTicks, createIce);
+        context.plugin().getTaskManager().runTaskTimer(blizzardTask, 0L, 3L);
         return null;
     }
 
+    /**
+     * Handles the spell effect after execution.
+     * <p>
+     * This spell's effects are handled asynchronously through BukkitRunnables.
+     *
+     * @param context the spell context
+     * @param result the result of the spell execution (always null for this spell)
+     */
     @Override
     protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
         // Effects handled in scheduler
     }
 
-    private void createInitialEffect(SpellContext context, Location center, double radius) {
+    /**
+     * Creates the initial expanding ring effect for the blizzard.
+     * <p>
+     * This method creates a visual indicator of the blizzard's area of effect
+     * by rendering an expanding ring of snowflake particles.
+     *
+     * @param context the spell context
+     * @param center the center location of the blizzard
+     * @param radius the radius of the blizzard effect
+     */
+    private void createInitialEffect(@NotNull SpellContext context, @NotNull Location center, double radius) {
+        Objects.requireNonNull(context, "Context cannot be null");
+        Objects.requireNonNull(center, "Center location cannot be null");
+        
         World world = center.getWorld();
         if (world == null) return;
 
         // Create expanding ring to indicate blizzard area
-        new BukkitRunnable() {
+        BukkitRunnable expandingRingTask = new BukkitRunnable() {
             int currentRadius = 1;
             
             @Override
@@ -117,9 +222,16 @@ public class BlizzardEnhanced extends Spell<Void> {
                 
                 currentRadius += 2;
             }
-        }.runTaskTimer(context.plugin(), 0L, 1L);
+        };
+        context.plugin().getTaskManager().runTaskTimer(expandingRingTask, 0L, 1L);
     }
 
+    /**
+     * A runnable that handles the enhanced blizzard's effects over time.
+     * <p>
+     * This task manages the blizzard's behavior including animated snowflake effects,
+     * particle effects, entity effects, ice block creation, and cleanup.
+     */
     private static class BlizzardTask extends BukkitRunnable {
         private final SpellContext context;
         private final Location center;
@@ -136,10 +248,22 @@ public class BlizzardEnhanced extends Spell<Void> {
         private int ticks = 0;
         private final List<Snowflake> snowflakes = new ArrayList<>();
 
-        public BlizzardTask(SpellContext context, Location center, double radius, double damage,
+        /**
+         * Creates a new BlizzardTask instance.
+         *
+         * @param context the spell context
+         * @param center the center location of the blizzard
+         * @param radius the radius of the blizzard effect
+         * @param damage the damage to apply to entities
+         * @param slowDuration the duration of slowness effects in ticks
+         * @param slowAmplifier the amplifier for slowness effects
+         * @param durationTicks the duration of the blizzard in ticks
+         * @param createIce whether to create ice blocks
+         */
+        public BlizzardTask(@NotNull SpellContext context, @NotNull Location center, double radius, double damage,
                            int slowDuration, int slowAmplifier, int durationTicks, boolean createIce) {
-            this.context = context;
-            this.center = center;
+            this.context = Objects.requireNonNull(context, "Context cannot be null");
+            this.center = Objects.requireNonNull(center, "Center location cannot be null");
             this.radius = radius;
             this.damage = damage;
             this.slowDuration = slowDuration;
@@ -154,8 +278,16 @@ public class BlizzardEnhanced extends Spell<Void> {
             }
         }
 
+        /**
+         * Runs the enhanced blizzard task, creating visual effects and applying entity effects.
+         */
         @Override
         public void run() {
+            if (world == null) {
+                this.cancel();
+                return;
+            }
+            
             if (ticks >= durationTicks) {
                 this.cancel();
                 cleanupIce();
@@ -181,6 +313,12 @@ public class BlizzardEnhanced extends Spell<Void> {
             ticks++;
         }
 
+        /**
+         * Updates the animated snowflake particles.
+         * <p>
+         * This method moves the snowflake particles according to their velocity
+         * and spawns them in the world.
+         */
         private void updateSnowflakes() {
             for (Snowflake snowflake : snowflakes) {
                 snowflake.update();
@@ -190,7 +328,17 @@ public class BlizzardEnhanced extends Spell<Void> {
             }
         }
 
+        /**
+         * Creates the blizzard's visual particle effects.
+         * <p>
+         * This method spawns snow and cloud particles throughout the blizzard area
+         * and periodically pushes entities with wind effects and gusts.
+         */
         private void createBlizzardEffects() {
+            if (world == null) {
+                return;
+            }
+            
             // Create snow particles in a large area
             for (int i = 0; i < 20; i++) {
                 double angle = random.nextDouble() * 2 * Math.PI;
@@ -230,7 +378,17 @@ public class BlizzardEnhanced extends Spell<Void> {
             }
         }
 
+        /**
+         * Applies the blizzard's effects to nearby entities.
+         * <p>
+         * This method damages entities, applies slowness potion effects, and
+         * occasionally applies blindness effects.
+         */
         private void applyBlizzardEffects() {
+            if (world == null) {
+                return;
+            }
+            
             for (LivingEntity entity : world.getNearbyLivingEntities(center, radius, 15, radius)) {
                 if (entity.equals(context.caster())) continue;
                 if (entity.isDead() || !entity.isValid()) continue;
@@ -247,12 +405,25 @@ public class BlizzardEnhanced extends Spell<Void> {
                 }
 
                 // Visual effects
-                world.spawnParticle(Particle.SNOWFLAKE, entity.getLocation().add(0, 1, 0), 15, 0.5, 0.7, 0.5, 0.02);
-                world.spawnParticle(Particle.CLOUD, entity.getLocation().add(0, 1, 0), 5, 0.3, 0.5, 0.3, 0.01);
+                var entityLocation = entity.getLocation();
+                if (entityLocation != null) {
+                    world.spawnParticle(Particle.SNOWFLAKE, entityLocation.add(0, 1, 0), 15, 0.5, 0.7, 0.5, 0.02);
+                    world.spawnParticle(Particle.CLOUD, entityLocation.add(0, 1, 0), 5, 0.3, 0.5, 0.3, 0.01);
+                }
             }
         }
 
+        /**
+         * Creates temporary ice blocks in the blizzard area.
+         * <p>
+         * This method transforms ground blocks into ice blocks and stores their
+         * original state for later cleanup.
+         */
         private void createIceBlocks() {
+            if (world == null) {
+                return;
+            }
+            
             for (int i = 0; i < 15; i++) {
                 double angle = random.nextDouble() * 2 * Math.PI;
                 double distance = random.nextDouble() * (radius - 3);
@@ -280,7 +451,16 @@ public class BlizzardEnhanced extends Spell<Void> {
             }
         }
 
+        /**
+         * Cleans up the temporary ice blocks created by the blizzard.
+         * <p>
+         * This method restores the original block states and plays a cleanup sound.
+         */
         private void cleanupIce() {
+            if (world == null) {
+                return;
+            }
+            
             // Restore original blocks
             for (Location loc : iceBlocks) {
                 Block block = world.getBlockAt(loc);
@@ -301,8 +481,14 @@ public class BlizzardEnhanced extends Spell<Void> {
             createDissipatingEffect();
         }
 
+        /**
+         * Creates the dissipating ring effect when the blizzard ends.
+         * <p>
+         * This method creates a visual indicator that the blizzard is ending
+         * by rendering a shrinking ring of cloud particles.
+         */
         private void createDissipatingEffect() {
-            new BukkitRunnable() {
+            BukkitRunnable dissipatingTask = new BukkitRunnable() {
                 int ticks = 0;
                 final int maxTicks = 20;
                 
@@ -320,9 +506,16 @@ public class BlizzardEnhanced extends Spell<Void> {
                     
                     ticks++;
                 }
-            }.runTaskTimer(context.plugin(), 0L, 1L);
+            };
+            context.plugin().getTaskManager().runTaskTimer(dissipatingTask, 0L, 1L);
         }
 
+        /**
+         * Represents an animated snowflake particle in the blizzard.
+         * <p>
+         * This class manages the position and movement of individual snowflake particles
+         * to create a more realistic blizzard effect.
+         */
         private static class Snowflake {
             Location location;
             Vector velocity;
@@ -330,10 +523,17 @@ public class BlizzardEnhanced extends Spell<Void> {
             final double radius;
             final Random random;
 
-            Snowflake(Location center, double radius, Random random) {
-                this.center = center;
+            /**
+             * Creates a new Snowflake instance.
+             *
+             * @param center the center location of the blizzard
+             * @param radius the radius of the blizzard effect
+             * @param random the random number generator
+             */
+            Snowflake(@NotNull Location center, double radius, @NotNull Random random) {
+                this.center = Objects.requireNonNull(center, "Center cannot be null");
                 this.radius = radius;
-                this.random = random;
+                this.random = Objects.requireNonNull(random, "Random cannot be null");
                 
                 // Random starting position above the blizzard area
                 double angle = random.nextDouble() * 2 * Math.PI;
@@ -346,6 +546,12 @@ public class BlizzardEnhanced extends Spell<Void> {
                 this.velocity = new Vector(0, -0.3 - random.nextDouble() * 0.4, 0);
             }
 
+            /**
+             * Updates the snowflake's position according to its velocity.
+             * <p>
+             * This method moves the snowflake downward with some horizontal drift,
+             * and resets it to the top when it falls too far or moves outside the radius.
+             */
             void update() {
                 // Apply gravity
                 location.add(velocity);

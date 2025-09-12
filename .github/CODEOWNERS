@@ -1,0 +1,16 @@
+# Code owners for review assignment and protection
+# Syntax: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners
+* @WantedChef
+
+# Gradle build and workflows
+/build.gradle.kts @WantedChef
+/.github/workflows/* @WantedChef
+
+# Java sources
+/src/main/java/ @WantedChef
+/src/test/java/ @WantedChef
+
+# Resources
+/src/main/resources/ @WantedChef

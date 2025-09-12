@@ -13,9 +13,12 @@ public final class Keys {
     public static final NamespacedKey WAND_ACTIVE_SPELL = new NamespacedKey("empirewand", "wand.active_spell");
     public static final NamespacedKey PROJECTILE_SPELL = new NamespacedKey("empirewand", "projectile.spell");
     public static final NamespacedKey PROJECTILE_OWNER = new NamespacedKey("empirewand", "projectile.owner");
+    public static final NamespacedKey PROJECTILE_PROCESSED = new NamespacedKey("empirewand", "projectile.processed");
     public static final NamespacedKey ETHEREAL_ACTIVE = new NamespacedKey("empirewand", "ethereal.active");
     public static final NamespacedKey ETHEREAL_EXPIRES_TICK = new NamespacedKey("empirewand", "ethereal.expires_tick");
     public static final NamespacedKey DAMAGE = new NamespacedKey("empirewand", "projectile.damage");
+    public static final NamespacedKey WAND_SWITCH_EFFECT = new NamespacedKey("empirewand", "wand.switch_effect");
+    public static final NamespacedKey WAND_TOGGLE_COMMANDS = new NamespacedKey("empirewand", "wand.toggle_commands");
 
     // Reusable PersistentDataType wrappers
     public static final PersistentDataTypeWrapper<String> STRING_TYPE = new PersistentDataTypeWrapper<>(

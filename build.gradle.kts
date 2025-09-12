@@ -1,8 +1,14 @@
+import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
+import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.language.jvm.tasks.ProcessResources
+
 plugins {
     java
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    kotlin("jvm") version "1.9.23"
     checkstyle
     id("com.github.spotbugs") version "5.2.1"
+    jacoco
+    id("com.gradleup.shadow") version "9.1.0"
 }
 
 group = "nl.wantedchef.empirewand"
@@ -32,8 +38,8 @@ dependencies {
     compileOnly("org.jetbrains:annotations:24.1.0")
     // SpotBugs annotations used by @SuppressFBWarnings
     compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.6")
-    // bStats metrics (classes are referenced; provided at runtime by bundled libs or can be shaded if needed)
-    compileOnly("org.bstats:bstats-bukkit:3.0.2")
+    // bStats metrics (bundled and relocated in shaded jar; disabled by default via config)
+    implementation("org.bstats:bstats-bukkit:3.0.2")
 
     // Testing dependencies
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
@@ -43,33 +49,72 @@ dependencies {
     testImplementation("org.bstats:bstats-bukkit:3.0.2")
 }
 
-tasks.processResources {
-    // Replace ${name} and ${version} in plugin.yml
-    filesMatching("plugin.yml") {
-        expand(
+tasks.shadowJar {
+    // We leveren alleen een shaded plugin jar (met "all" classifier) voor gebruik op de server
+    archiveClassifier.set("all")
+    // Relocate bStats om classpath conflicts met andere plugins te voorkomen.
+    // Heractiveerd met Shadow 9.1.0 - volledige JDK 21 ondersteuning met ASM 9.8
+    relocate("org.bstats", "nl.wantedchef.empirewand.shaded.bstats")
+    // Manifest attributes voor debugging
+    manifest {
+        attributes(
             mapOf(
-                "name" to (project.name),
-                "version" to (project.version.toString())
+                "Implementation-Title" to "EmpireWand",
+                "Implementation-Version" to project.version,
+                "Built-By" to System.getProperty("user.name"),
+                "Built-JDK" to System.getProperty("java.version"),
+                "Created-By" to "Gradle Shadow"
             )
         )
     }
 }
 
-tasks.jar {
-    // Keep default archiveBaseName = project.name (set in settings.gradle.kts)
-    // processResources already adds resources; avoid duplicates
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+tasks.named<ProcessResources>("processResources") {
+    // Vervang placeholders in plugin.yml. Gebruik een nette weergavenaam i.p.v. rootProject.name
+    filesMatching("plugin.yml") {
+        expand(
+            mapOf(
+                "name" to "EmpireWand", // weergavenaam in /plugins lijst
+                "version" to project.version.toString()
+            )
+        )
+    }
 }
 
-tasks.shadowJar {
-    archiveClassifier.set("all")
-    // No relocation by default; add if shading third-party libs
-    // Note: minimization can fail with newer class file versions; disabled here
+// Schakel de 'plain' jar uit om conflicts/overschrijven door shadowJar te voorkomen
+tasks.jar {
+    enabled = false
 }
 
 tasks.build {
-    dependsOn(tasks.jar)
     dependsOn(tasks.shadowJar)
+}
+
+jacoco {
+    toolVersion = "0.8.11"
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+}
+
+tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.test)
+    violationRules {
+        rule {
+            limit {
+                counter = "INSTRUCTION"
+                value = "COVEREDRATIO"
+                // Restored to 80% coverage requirement for production quality
+                minimum = "0.80".toBigDecimal()
+            }
+        }
+    }
 }
 
 checkstyle {
@@ -95,6 +140,17 @@ tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().configureEach {
     reports.create("html") {
         required.set(true)
     }
+    reports.create("xml") {
+        required.set(true)
+    }
+}
+
+tasks.spotbugsMain {
+    enabled = true
+}
+
+tasks.spotbugsTest {
+    enabled = true
 }
 
 // Enable test compilation/execution
@@ -106,4 +162,9 @@ tasks.test {
     useJUnitPlatform()
     // Allow ByteBuddy to instrument Java 21 classes for Mockito inline
     jvmArgs("-Dnet.bytebuddy.experimental=true")
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.check {
+    dependsOn("jacocoTestCoverageVerification")
 }

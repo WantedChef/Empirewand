@@ -321,12 +321,12 @@ class CommandContextTest {
             PerformanceMonitor.TimingContext timingContext =
                     mock(PerformanceMonitor.TimingContext.class);
             when(plugin.getPerformanceMonitor()).thenReturn(performanceMonitor);
-            when(performanceMonitor.startTiming(anyString())).thenReturn(timingContext);
+            when(performanceMonitor.startTiming(anyString(), org.mockito.ArgumentMatchers.anyLong())).thenReturn(timingContext);
 
             var timing = context.startTiming("test.operation");
             assertNotNull(timing);
 
-            verify(performanceMonitor).startTiming("command.test.operation");
+            verify(performanceMonitor).startTiming("command.test.operation", 50L);
         }
 
         @Test

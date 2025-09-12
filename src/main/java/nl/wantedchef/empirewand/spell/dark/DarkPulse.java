@@ -24,9 +24,48 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.time.Duration;
+import java.util.Objects;
+
+/**
+ * A dark spell that launches a pulsing void skull projectile.
+ * <p>
+ * This spell creates a charged wither skull that pulses with dark energy as it travels
+ * toward a target entity. Upon impact, it damages and applies wither and blindness effects
+ * to entities within its explosion radius.
+ * <p>
+ * <strong>Features:</strong>
+ * <ul>
+ *   <li>Charged wither skull projectile with homing capabilities</li>
+ *   <li>Visual pulsing ring effect that grows as the projectile travels</li>
+ *   <li>Area of effect damage on impact</li>
+ *   <li>Wither and blindness effects on affected entities</li>
+ *   <li>Knockback effect pushing entities away from impact point</li>
+ *   <li>Sound and particle feedback for casting and impact</li>
+ * </ul>
+ *
+ * <p>
+ * <strong>Usage Example:</strong>
+ * <pre>{@code
+ * Spell darkPulse = new DarkPulse.Builder(api)
+ *     .name("Dark Pulse")
+ *     .description("Launches a pulsing void skull.")
+ *     .cooldown(Duration.ofSeconds(8))
+ *     .build();
+ * }</pre>
+ *
+ * @since 1.0.0
+ */
 public class DarkPulse extends Spell<Void> {
 
+    /**
+     * Configuration record for the DarkPulse spell.
+     * <p>
+     * This record holds all configurable values for the spell, providing a clean
+     * and immutable way to manage spell parameters.
+     */
     public record Config(
             double range,
             int witherDuration,
@@ -42,15 +81,31 @@ public class DarkPulse extends Spell<Void> {
             int ringEveryTicks) {
     }
 
+    /**
+     * Builder for creating DarkPulse spell instances.
+     * <p>
+     * Provides a fluent API for configuring the dark pulse spell with sensible defaults.
+     */
     public static class Builder extends Spell.Builder<Void> {
+        /**
+         * Creates a new DarkPulse spell builder.
+         *
+         * @param api the EmpireWandAPI instance
+         * @throws NullPointerException if api is null
+         */
         public Builder(EmpireWandAPI api) {
             super(api);
             this.name = "Dark Pulse";
             this.description = "Launches a pulsing void skull.";
-            this.cooldown = java.time.Duration.ofSeconds(8);
+            this.cooldown = Duration.ofSeconds(8);
             this.spellType = SpellType.DARK;
         }
 
+        /**
+         * Builds and returns a new DarkPulse spell instance.
+         *
+         * @return the constructed DarkPulse spell
+         */
         @Override
         @NotNull
         public Spell<Void> build() {
@@ -60,11 +115,25 @@ public class DarkPulse extends Spell<Void> {
 
     private Config config;
 
+    /**
+     * Constructs a new DarkPulse spell instance.
+     *
+     * @param builder the builder containing spell configuration
+     * @throws NullPointerException if builder is null
+     */
     private DarkPulse(Builder builder) {
         super(builder);
         // Config will be initialized lazily when first accessed
     }
 
+    /**
+     * Gets the spell configuration, initializing it if necessary.
+     * <p>
+     * This method lazily initializes the configuration from the spell config file
+     * with sensible defaults if values are missing.
+     *
+     * @return the spell configuration
+     */
     private Config getConfig() {
         if (config == null) {
             // This will be called after loadConfig has been called
@@ -86,18 +155,46 @@ public class DarkPulse extends Spell<Void> {
         return config;
     }
 
+    /**
+     * Returns the unique key for this spell.
+     * <p>
+     * This key is used for configuration, identification, and event handling.
+     *
+     * @return the spell key "dark-pulse"
+     */
     @Override
+    @NotNull
     public String key() {
         return "dark-pulse";
     }
 
+    /**
+     * Returns the prerequisites for casting this spell.
+     * <p>
+     * Currently, this spell has no prerequisites beyond standard casting requirements.
+     *
+     * @return a no-op prerequisite
+     */
     @Override
+    @NotNull
     public PrereqInterface prereq() {
         return new PrereqInterface.NonePrereq();
     }
 
+    /**
+     * Executes the dark pulse spell logic.
+     * <p>
+     * This method launches a charged wither skull toward the target entity and
+     * creates a visual pulsing ring effect that grows as the projectile travels.
+     *
+     * @param context the spell context containing caster and target information
+     * @return null (this spell produces no effect object)
+     */
     @Override
+    @Nullable
     protected Void executeSpell(SpellContext context) {
+        Objects.requireNonNull(context, "Context cannot be null");
+        
         Player player = context.caster();
 
         var targetEntity = player.getTargetEntity((int) getConfig().range);
@@ -115,9 +212,11 @@ public class DarkPulse extends Spell<Void> {
         skull.setShooter(player);
         skull.getPersistentDataContainer().set(Keys.PROJECTILE_SPELL, Keys.STRING_TYPE.getType(), key());
 
-        new RingPulse(context, skull, getConfig().ringParticleCount, getConfig().ringRadiusStep,
-                getConfig().ringEveryTicks)
-                .runTaskTimer(context.plugin(), 0L, 1L);
+        context.plugin().getTaskManager().runTaskTimer(
+            new RingPulse(context, skull, getConfig().ringParticleCount, getConfig().ringRadiusStep,
+                    getConfig().ringEveryTicks),
+            0L, 1L
+        );
         context.fx().playSound(player, Sound.ENTITY_WITHER_SHOOT, 1.0f, 1.0f);
 
         context.plugin().getServer().getPluginManager().registerEvents(
@@ -128,11 +227,25 @@ public class DarkPulse extends Spell<Void> {
         return null;
     }
 
+    /**
+     * Handles the spell effect after execution.
+     * <p>
+     * This spell's effects are handled by the registered listener.
+     *
+     * @param context the spell context
+     * @param result the result of the spell execution (always null for this spell)
+     */
     @Override
     protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
         // Effects are handled by the listener.
     }
 
+    /**
+     * A runnable that creates the pulsing ring effect around the projectile.
+     * <p>
+     * This class creates a visual effect that pulses around the wither skull as it travels,
+     * with the ring growing larger over time.
+     */
     private static class RingPulse extends BukkitRunnable {
         private final SpellContext context;
         private final WitherSkull projectile;
@@ -142,6 +255,15 @@ public class DarkPulse extends Spell<Void> {
         private int ticks = 0;
         private double accumRadius = 0;
 
+        /**
+         * Creates a new RingPulse instance.
+         *
+         * @param context the spell context
+         * @param projectile the wither skull projectile
+         * @param ringParticleCount the number of particles in each ring
+         * @param radiusStep the amount to increase the ring radius each interval
+         * @param interval the tick interval between ring updates
+         */
         RingPulse(SpellContext context, WitherSkull projectile, int ringParticleCount, double radiusStep,
                 int interval) {
             this.context = context;
@@ -151,6 +273,9 @@ public class DarkPulse extends Spell<Void> {
             this.interval = Math.max(1, interval);
         }
 
+        /**
+         * Runs the ring pulse effect, creating particles around the projectile.
+         */
         @Override
         public void run() {
             if (!projectile.isValid() || projectile.isDead()) {
@@ -182,6 +307,12 @@ public class DarkPulse extends Spell<Void> {
         }
     }
 
+    /**
+     * Listener for handling the projectile hit event and applying effects.
+     * <p>
+     * This listener handles the impact of the wither skull projectile, applying damage
+     * and effects to entities within the explosion radius.
+     */
     private static class PulseListener implements Listener {
         private final SpellContext context;
         private final int witherDuration;
@@ -192,6 +323,18 @@ public class DarkPulse extends Spell<Void> {
         private final double knockback;
         private final boolean friendlyFire;
 
+        /**
+         * Creates a new PulseListener instance.
+         *
+         * @param context the spell context
+         * @param witherDuration the duration of the wither effect in ticks
+         * @param witherAmplifier the amplifier level for the wither effect
+         * @param blindDuration the duration of the blindness effect in ticks
+         * @param radius the explosion radius
+         * @param damage the damage to apply
+         * @param knockback the knockback strength
+         * @param friendlyFire whether friendly fire is enabled
+         */
         public PulseListener(SpellContext context, int witherDuration, int witherAmplifier, int blindDuration,
                 double radius, double damage, double knockback, boolean friendlyFire) {
             this.context = context;
@@ -204,6 +347,14 @@ public class DarkPulse extends Spell<Void> {
             this.friendlyFire = friendlyFire;
         }
 
+        /**
+         * Handles the projectile hit event.
+         * <p>
+         * This method applies damage and effects to entities within the explosion radius
+         * and creates visual and audio feedback for the impact.
+         *
+         * @param event the projectile hit event
+         */
         @EventHandler
         public void onProjectileHit(ProjectileHitEvent event) {
             Projectile projectile = event.getEntity();

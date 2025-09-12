@@ -6,7 +6,7 @@ import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
 import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.api.spell.toggle.ToggleableSpell;
-import nl.wantedchef.empirewand.EmpireWandPlugin;
+
 import io.papermc.paper.entity.TeleportFlag;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
@@ -38,7 +38,6 @@ public final class ShadowCloak extends Spell<Void> implements ToggleableSpell {
     /* DATA */
     /* ---------------------------------------- */
     private final Map<UUID, CloakData> cloaks = new WeakHashMap<>();
-    private EmpireWandPlugin plugin;
 
     /* ---------------------------------------- */
     /* BUILDER */
@@ -98,7 +97,6 @@ public final class ShadowCloak extends Spell<Void> implements ToggleableSpell {
     public void activate(Player player, SpellContext context) {
         if (isActive(player))
             return;
-        plugin = context.plugin();
         cloaks.put(player.getUniqueId(), new CloakData(player, context));
     }
 
@@ -138,7 +136,7 @@ public final class ShadowCloak extends Spell<Void> implements ToggleableSpell {
                     40);
             sendMessage(cfgString("messages.activate", "&8👤 &7You merged with the shadows."));
 
-            this.ticker = Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 0, 1);
+            this.ticker = Bukkit.getScheduler().runTaskTimer(context.plugin(), this::tick, 0, 1);
         }
 
         void stop() {

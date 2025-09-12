@@ -58,15 +58,7 @@ public interface WandService extends EmpireWandService {
 
     // ===== EXISTING METHODS (ENHANCED) =====
 
-    /**
-     * Creates a new basic EmpireWand.
-     *
-     * @return a new wand ItemStack
-     * @deprecated Use {@link #createWandBuilder()} instead
-     */
-    @Deprecated(forRemoval = true)
-    @NotNull
-    ItemStack createBasicWand();
+    
 
     /**
      * Checks if an ItemStack is an EmpireWand.

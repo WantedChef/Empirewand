@@ -26,19 +26,22 @@ import net.kyori.adventure.text.Component;
 /**
  * Optimized asynchronous spell processing system.
  * <p>
- * This class provides a dedicated, managed thread pool for executing spells asynchronously.
- * It ensures that spell casting does not block the main server thread, improving performance and responsiveness.
- * It includes features for performance monitoring, error handling, and graceful shutdown.
+ * This class provides a dedicated, managed thread pool for executing spells
+ * asynchronously. It ensures that spell casting does not block the main server
+ * thread, improving performance and responsiveness. It includes features for
+ * performance monitoring, error handling, and graceful shutdown.
  */
 public final class AsyncSpellProcessor {
 
     /**
      * A lightweight, non-leaky reference to the plugin.
      * <p>
-     * This class avoids holding a direct reference to the Plugin instance, which can prevent proper garbage collection
-     * during plugin reloads. It retrieves the plugin instance from Bukkit's PluginManager when needed.
+     * This class avoids holding a direct reference to the Plugin instance,
+     * which can prevent proper garbage collection during plugin reloads. It
+     * retrieves the plugin instance from Bukkit's PluginManager when needed.
      */
     private static final class PluginRef {
+
         private final String name;
 
         /**
@@ -83,16 +86,18 @@ public final class AsyncSpellProcessor {
     }
 
     private final PluginRef pluginRef;
-    private final Logger logger;
+    private static final Logger LOGGER = Logger.getLogger(AsyncSpellProcessor.class.getName());
     private final ThreadPoolExecutor spellExecutor;
     private final MetricsCollector metrics;
     private final AtomicLong threadCounter = new AtomicLong(0);
 
     /**
      * Internal metrics collector for tracking spell performance and failures.
-     * This class is thread-safe and uses LongAdder for high-performance, concurrent updates.
+     * This class is thread-safe and uses LongAdder for high-performance,
+     * concurrent updates.
      */
     private static final class MetricsCollector {
+
         private final LongAdder totalSpellsProcessed = new LongAdder();
         private final LongAdder totalProcessingTime = new LongAdder();
         private final LongAdder failedSpells = new LongAdder();
@@ -100,8 +105,9 @@ public final class AsyncSpellProcessor {
         /**
          * Records the result of a single spell cast.
          *
-         * @param processingTimeNanos The time it took to process the spell, in nanoseconds.
-         * @param success             True if the spell was successful, false otherwise.
+         * @param processingTimeNanos The time it took to process the spell, in
+         * nanoseconds.
+         * @param success True if the spell was successful, false otherwise.
          */
         void recordSpellCast(long processingTimeNanos, boolean success) {
             totalSpellsProcessed.increment();
@@ -112,7 +118,8 @@ public final class AsyncSpellProcessor {
         }
 
         /**
-         * Records a spell failure that occurred before or after the main execution.
+         * Records a spell failure that occurred before or after the main
+         * execution.
          */
         void recordSpellFailure() {
             failedSpells.increment();
@@ -125,7 +132,9 @@ public final class AsyncSpellProcessor {
          */
         double getAverageProcessingTimeMs() {
             long processed = totalSpellsProcessed.sum();
-            if (processed == 0) return 0.0;
+            if (processed == 0) {
+                return 0.0;
+            }
             return (totalProcessingTime.sum() / (double) processed) / 1_000_000.0;
         }
 
@@ -156,7 +165,7 @@ public final class AsyncSpellProcessor {
     public AsyncSpellProcessor(@NotNull Plugin plugin) {
         Objects.requireNonNull(plugin, "plugin");
         this.pluginRef = new PluginRef(plugin);
-        this.logger = plugin.getLogger(); // instance logger is fine (plugin-provided)
+        // Use class logger (static) to conform to logging best practices
         this.metrics = new MetricsCollector();
 
         final int cores = Runtime.getRuntime().availableProcessors();
@@ -179,14 +188,14 @@ public final class AsyncSpellProcessor {
                 new ThreadPoolExecutor.CallerRunsPolicy()
         );
 
-        logger.info(String.format("AsyncSpellProcessor initialized with %d-%d threads", coreThreads, maxThreads));
+        LOGGER.info(() -> String.format("AsyncSpellProcessor initialized with %d-%d threads", coreThreads, maxThreads));
     }
 
     /**
-     * Casts a spell asynchronously, returning a future with the result.
-     * This method offloads the spell execution to a worker thread.
+     * Casts a spell asynchronously, returning a future with the result. This
+     * method offloads the spell execution to a worker thread.
      *
-     * @param spell   The spell to cast. Must not be null.
+     * @param spell The spell to cast. Must not be null.
      * @param context The context of the spell cast. Must not be null.
      * @return A CompletableFuture that will complete with the CastResult.
      */
@@ -202,9 +211,9 @@ public final class AsyncSpellProcessor {
                 metrics.recordSpellCast(System.nanoTime() - startTime, ok);
                 return result;
             } catch (Throwable t) {
-                logger.log(Level.WARNING,
+                LOGGER.log(Level.WARNING,
                         () -> String.format("Async spell casting failed for '%s': %s", safeKey(spell), t.getMessage()));
-                logger.log(Level.FINE, "Stacktrace for failed async spell cast", t);
+                LOGGER.log(Level.FINE, "Stacktrace for failed async spell cast", t);
                 metrics.recordSpellFailure();
                 return CastResult.fail(Component.text("Spell casting failed: " + t.getMessage()));
             }
@@ -213,18 +222,21 @@ public final class AsyncSpellProcessor {
 
     /**
      * Casts a spell asynchronously and handles the result on the main thread.
-     * This is the preferred method for most spell casting scenarios as it ensures
-     * that any Bukkit API calls in the result handler are performed safely.
+     * This is the preferred method for most spell casting scenarios as it
+     * ensures that any Bukkit API calls in the result handler are performed
+     * safely.
      *
-     * @param spell         The spell to cast. Must not be null.
-     * @param context       The context of the spell cast. Must not be null.
-     * @param effectService The service to use for displaying effects. Must not be null.
-     * @param textService   The service to use for displaying text. Must not be null.
+     * @param spell The spell to cast. Must not be null.
+     * @param context The context of the spell cast. Must not be null.
+     * @param effectService The service to use for displaying effects. Must not
+     * be null.
+     * @param textService The service to use for displaying text. Must not be
+     * null.
      */
     public void castSpellAsyncWithCallback(@NotNull Spell<?> spell,
-                                           @NotNull SpellContext context,
-                                           @NotNull EffectService effectService,
-                                           @NotNull TextService textService) {
+            @NotNull SpellContext context,
+            @NotNull EffectService effectService,
+            @NotNull TextService textService) {
         Objects.requireNonNull(spell, "spell");
         Objects.requireNonNull(context, "context");
         Objects.requireNonNull(effectService, "effectService");
@@ -232,39 +244,40 @@ public final class AsyncSpellProcessor {
 
         castSpellAsync(spell, context).whenComplete((result, throwable) -> {
             if (pluginRef.isEnabled()) {
-                pluginRef.runOnMain(() ->
-                        handleCastResult(spell, context, result, throwable, effectService, textService));
+                pluginRef.runOnMain(()
+                        -> handleCastResult(spell, context, result, throwable, effectService, textService));
             }
         });
     }
 
     /**
-     * Handles the result of an asynchronous spell cast on the main thread.
-     * This method is responsible for providing feedback to the player based on the outcome.
+     * Handles the result of an asynchronous spell cast on the main thread. This
+     * method is responsible for providing feedback to the player based on the
+     * outcome.
      *
-     * @param spell         The spell that was cast.
-     * @param context       The original spell context.
-     * @param result        The result of the spell cast, may be null.
-     * @param throwable     The exception thrown during casting, may be null.
+     * @param spell The spell that was cast.
+     * @param context The original spell context.
+     * @param result The result of the spell cast, may be null.
+     * @param throwable The exception thrown during casting, may be null.
      * @param effectService The service for displaying effects.
-     * @param textService   The service for displaying text.
+     * @param textService The service for displaying text.
      */
     private void handleCastResult(@NotNull Spell<?> spell,
-                                  @NotNull SpellContext context,
-                                  CastResult result,
-                                  Throwable throwable,
-                                  @NotNull EffectService effectService,
-                                  @NotNull TextService textService) {
+            @NotNull SpellContext context,
+            CastResult result,
+            Throwable throwable,
+            @NotNull EffectService effectService,
+            @NotNull TextService textService) {
 
         // Touch textService to avoid "never read" hint (and handy for deep debug)
-        if (logger.isLoggable(Level.FINER)) {
-            logger.finer("Callback using TextService: " + textService.getClass().getSimpleName());
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.finer(() -> String.format("Callback using TextService: %s", textService.getClass().getSimpleName()));
         }
 
         if (throwable != null) {
-            logger.log(Level.WARNING,
+            LOGGER.log(Level.WARNING,
                     () -> String.format("Exception in async spell cast for '%s'", safeKey(spell)));
-            logger.log(Level.FINE, "Stacktrace in async spell callback", throwable);
+            LOGGER.log(Level.FINE, "Stacktrace in async spell callback", throwable);
             if (context.caster().isOnline()) {
                 effectService.actionBar(context.caster(),
                         Component.text("§cSpell failed: " + throwable.getMessage()));
@@ -273,7 +286,7 @@ public final class AsyncSpellProcessor {
         }
 
         if (result == null) {
-            logger.warning(() -> String.format("Null result from async spell cast for '%s'", safeKey(spell)));
+            LOGGER.warning(() -> String.format("Null result from async spell cast for '%s'", safeKey(spell)));
             if (context.caster().isOnline()) {
                 effectService.actionBar(context.caster(), Component.text("§cSpell failed: Unknown error"));
             }
@@ -306,17 +319,18 @@ public final class AsyncSpellProcessor {
     }
 
     /**
-     * Shuts down the async processor gracefully, allowing currently running tasks to complete.
+     * Shuts down the async processor gracefully, allowing currently running
+     * tasks to complete.
      */
     public void shutdown() {
-        logger.info("Shutting down AsyncSpellProcessor...");
+        LOGGER.info("Shutting down AsyncSpellProcessor...");
 
         spellExecutor.shutdown();
         try {
             if (!spellExecutor.awaitTermination(30, TimeUnit.SECONDS)) {
                 spellExecutor.shutdownNow();
                 if (!spellExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
-                    logger.warning("AsyncSpellProcessor did not terminate cleanly");
+                    LOGGER.warning("AsyncSpellProcessor did not terminate cleanly");
                 }
             }
         } catch (InterruptedException e) {
@@ -324,29 +338,37 @@ public final class AsyncSpellProcessor {
             Thread.currentThread().interrupt();
         }
 
-        logger.info(() -> String.format("AsyncSpellProcessor shut down. Processed %d spells",
+        LOGGER.info(() -> String.format("AsyncSpellProcessor shut down. Processed %d spells",
                 metrics.getTotalSpellsProcessed()));
     }
 
     /**
-     * Safely gets the key of a spell, returning a placeholder if an error occurs.
+     * Safely gets the key of a spell, returning a placeholder if an error
+     * occurs.
      *
      * @param spell The spell to get the key from.
      * @return The spell key, or a placeholder string if an error occurs.
      */
     private static String safeKey(Spell<?> spell) {
-        try { return String.valueOf(spell.key()); }
-        catch (Throwable ignored) { return "<unknown-spell>"; }
+        try {
+            return String.valueOf(spell.key());
+        } catch (Throwable ignored) {
+            return "<unknown-spell>";
+        }
     }
 
     /**
-     * A data class holding a snapshot of performance metrics for the spell processor.
+     * A data class holding a snapshot of performance metrics for the spell
+     * processor.
      *
-     * @param totalSpellsProcessed    The total number of spells processed since startup.
-     * @param averageProcessingTimeMs The average time to process a spell, in milliseconds.
-     * @param failedSpells            The total number of spells that failed.
-     * @param activeThreads           The number of threads currently executing spells.
-     * @param queuedSpells            The number of spells waiting in the queue for execution.
+     * @param totalSpellsProcessed The total number of spells processed since
+     * startup.
+     * @param averageProcessingTimeMs The average time to process a spell, in
+     * milliseconds.
+     * @param failedSpells The total number of spells that failed.
+     * @param activeThreads The number of threads currently executing spells.
+     * @param queuedSpells The number of spells waiting in the queue for
+     * execution.
      */
     public record SpellProcessorMetrics(
             long totalSpellsProcessed,
@@ -354,10 +376,7 @@ public final class AsyncSpellProcessor {
             long failedSpells,
             int activeThreads,
             int queuedSpells
-    ) {}
+            ) {
+
+    }
 }
-
-
-
-
-

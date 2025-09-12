@@ -2,6 +2,7 @@ package nl.wantedchef.empirewand.framework.service;
 
 import nl.wantedchef.empirewand.EmpireWandPlugin;
 import nl.wantedchef.empirewand.core.wand.WandSettings;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -26,7 +27,7 @@ public class SpellSwitchService {
     // Available switch effects
     private static final Set<String> AVAILABLE_EFFECTS =
             Set.of("default", "spiral", "explosion", "portal", "fire", "ice", "lightning", "nether",
-                    "enchant", "hearts", "music", "ender", "dragon", "void");
+                    "enchant", "hearts", "music", "ender", "dragon", "void", "lapis", "redstone", "emerald", "gold", "iron");
 
     public SpellSwitchService(EmpireWandPlugin plugin) {
         this.plugin = plugin;
@@ -100,33 +101,48 @@ public class SpellSwitchService {
             case "void":
                 playVoidEffect(player);
                 break;
+            case "lapis":
+                playColorDustEffect(player, Color.BLUE);
+                break;
+            case "redstone":
+                playColorDustEffect(player, Color.RED);
+                break;
+            case "emerald":
+                playColorDustEffect(player, Color.GREEN);
+                break;
+            case "gold":
+                playColorDustEffect(player, Color.YELLOW);
+                break;
+            case "iron":
+                playColorDustEffect(player, Color.SILVER);
+                break;
             case "default":
             default:
-                playDefaultEffect(player);
+                playDefaultEffect(player, wand);
                 break;
         }
     }
 
+    private void playColorDustEffect(Player player, Color color) {
+        Location loc = player.getLocation().add(0, 0.5, 0);
+        World world = player.getWorld();
+        Particle.DustOptions dustOptions = new Particle.DustOptions(color, 1.5f);
+        world.spawnParticle(Particle.DUST, loc, 50, 0.3, 0.3, 0.3, 0.15, dustOptions);
+        world.playSound(loc, Sound.BLOCK_STONE_BREAK, 1.0f, 1.0f);
+    }
+
     /**
-     * Plays the default spell switch effect.
+     * Plays the default spell switch effect based on wand type.
      * 
      * @param player The player
+     * @param wand The wand item
      */
-    private void playDefaultEffect(Player player) {
-        Location loc = player.getLocation().add(0, 1, 0);
-        World world = player.getWorld();
-
-        // Simple particle ring
-        for (int i = 0; i < 16; i++) {
-            double angle = 2 * Math.PI * i / 16;
-            double x = Math.cos(angle) * 0.8;
-            double z = Math.sin(angle) * 0.8;
-            Location particleLoc = loc.clone().add(x, 0, z);
-            world.spawnParticle(Particle.CRIT, particleLoc, 1, 0, 0, 0, 0);
+    private void playDefaultEffect(Player player, ItemStack wand) {
+        if (plugin.getWandService().isMephidantesZeist(wand)) {
+            playColorDustEffect(player, Color.RED);
+        } else {
+            playColorDustEffect(player, Color.BLUE);
         }
-
-        // Sound effect
-        world.playSound(loc, Sound.ENTITY_PLAYER_LEVELUP, 0.5f, 1.5f);
     }
 
     /**

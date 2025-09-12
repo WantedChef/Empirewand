@@ -282,6 +282,15 @@ public class MetricsService {
     }
 
     /**
+     * Haalt het huidige aantal aangemaakte wands op.
+     *
+     * @return het aantal aangemaakte wands sinds de plugin start.
+     */
+    public int getWandsCreatedCount() {
+        return wandsCreated.get();
+    }
+
+    /**
      * Controleert of de statistiekenverzameling is ingeschakeld.
      *
      * @return {@code true} als statistieken zijn ingeschakeld, anders

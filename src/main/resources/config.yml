@@ -32,8 +32,8 @@ cooldowns:
 
 # Metrics and analytics (opt-in)
 metrics:
-  enabled: true  # Set to false to disable bStats metrics collection
-  debug: false   # Set to true to enable additional debug metrics
+  enabled: true   # Set to false to disable bStats metrics collection
+  debug: false    # Set to true to enable additional debug metrics
   plugin-id: 27206  
 
 # Custom spell categories for convenience commands like /ew bindcat <category>
@@ -112,3 +112,29 @@ categories:
       - polymorph
       - confuse
       - stasis-field
+  poison:
+    spells:
+      - poison-wave
+      - mephidic-reap
+  life:
+    spells:
+      - life-reap
+      - life-steal
+  heal:
+    spells:
+      - heal
+      - radiant-beacon
+  enhanced:
+    spells:
+      - fireball-enhanced
+      - comet-enhanced
+      - heal-enhanced
+      - meteor-shower-enhanced
+      - blizzard-enhanced
+      - teleport-enhanced
+      - chain-lightning-enhanced
+  toggle:
+    spells:
+      - kaj-cloud
+      - mephi-cloud
+      - empire-aura

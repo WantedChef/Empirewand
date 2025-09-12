@@ -70,8 +70,17 @@ public class BindTypeCommand implements SubCommand {
         var all = new ArrayList<>(context.spellRegistry().getAllSpells().keySet());
         List<String> toBind = new ArrayList<>();
         for (String key : all) {
-            SpellType t = SpellTypes.resolveTypeFromKey(key);
-            if (t.name().equalsIgnoreCase(typeArg)) {
+            SpellType t = null;
+            try {
+                var spellOpt = context.spellRegistry().getSpell(key);
+                if (spellOpt.isPresent()) {
+                    t = spellOpt.get().type();
+                }
+            } catch (Exception ignored) { }
+            if (t == null) {
+                t = SpellTypes.resolveTypeFromKey(key);
+            }
+            if (t != null && t.name().equalsIgnoreCase(typeArg)) {
                 toBind.add(key);
             }
         }

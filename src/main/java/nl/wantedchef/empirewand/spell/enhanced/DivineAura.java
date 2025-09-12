@@ -20,21 +20,65 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.Duration;
+
 /**
  * A divine healing spell that creates a powerful healing aura,
  * restoring health and granting beneficial effects to allies.
+ * <p>
+ * This spell creates a healing aura around the caster that periodically restores
+ * health to nearby allies and grants beneficial potion effects. The spell includes
+ * visual effects with expanding rings of particles and a central beam, and provides
+ * audio feedback when activated and deactivated.
+ * <p>
+ * <strong>Features:</strong>
+ * <ul>
+ *   <li>Area of effect healing for allies</li>
+ *   <li>Regeneration and resistance potion effects</li>
+ *   <li>Animated particle visual effects</li>
+ *   <li>Audio feedback for activation and deactivation</li>
+ *   <li>Configurable radius, heal amount, and duration</li>
+ * </ul>
+ *
+ * <p>
+ * <strong>Usage Example:</strong>
+ * <pre>{@code
+ * Spell divineAura = new DivineAura.Builder(api)
+ *     .name("Divine Aura")
+ *     .description("Creates a powerful healing aura that restores health and grants beneficial effects to allies.")
+ *     .cooldown(Duration.ofSeconds(45))
+ *     .build();
+ * }</pre>
+ *
+ * @since 1.0.0
  */
 public class DivineAura extends Spell<Void> {
 
+    /**
+     * Builder for creating DivineAura spell instances.
+     * <p>
+     * Provides a fluent API for configuring the divine aura spell with sensible defaults.
+     */
     public static class Builder extends Spell.Builder<Void> {
-        public Builder(EmpireWandAPI api) {
+        /**
+         * Creates a new DivineAura spell builder.
+         *
+         * @param api the EmpireWandAPI instance
+         * @throws NullPointerException if api is null
+         */
+        public Builder(@NotNull EmpireWandAPI api) {
             super(api);
             this.name = "Divine Aura";
             this.description = "Creates a powerful healing aura that restores health and grants beneficial effects to allies.";
-            this.cooldown = java.time.Duration.ofSeconds(45);
+            this.cooldown = Duration.ofSeconds(45);
             this.spellType = SpellType.HEAL;
         }
 
+        /**
+         * Builds and returns a new DivineAura spell instance.
+         *
+         * @return the constructed DivineAura spell
+         */
         @Override
         @NotNull
         public Spell<Void> build() {
@@ -42,23 +86,57 @@ public class DivineAura extends Spell<Void> {
         }
     }
 
-    private DivineAura(Builder builder) {
+    /**
+     * Constructs a new DivineAura spell instance.
+     *
+     * @param builder the builder containing spell configuration
+     * @throws NullPointerException if builder is null
+     */
+    private DivineAura(@NotNull Builder builder) {
         super(builder);
     }
 
+    /**
+     * Returns the unique key for this spell.
+     * <p>
+     * This key is used for configuration, identification, and event handling.
+     *
+     * @return the spell key "divine-aura"
+     */
     @Override
-    public @NotNull String key() {
+    @NotNull
+    public String key() {
         return "divine-aura";
     }
 
+    /**
+     * Returns the prerequisites for casting this spell.
+     * <p>
+     * Currently, this spell has no prerequisites beyond standard casting requirements.
+     *
+     * @return a no-op prerequisite
+     */
     @Override
-    public @NotNull PrereqInterface prereq() {
+    @NotNull
+    public PrereqInterface prereq() {
         return new PrereqInterface.NonePrereq();
     }
 
+    /**
+     * Executes the divine aura spell logic.
+     * <p>
+     * This method creates a healing aura around the caster that periodically
+     * restores health to nearby allies and grants beneficial potion effects.
+     *
+     * @param context the spell context containing caster and target information
+     * @return null (this spell produces no effect object)
+     */
     @Override
-    protected @Nullable Void executeSpell(SpellContext context) {
+    protected @Nullable Void executeSpell(@NotNull SpellContext context) {
+        Objects.requireNonNull(context, "Context cannot be null");
+        
         Player player = context.caster();
+        var world = player.getWorld();
 
         // Configuration
         double radius = spellConfig.getDouble("values.radius", 15.0);
@@ -69,20 +147,37 @@ public class DivineAura extends Spell<Void> {
         boolean grantsResistance = spellConfig.getBoolean("flags.grants-resistance", true);
 
         // Play initial sound
-        player.getWorld().playSound(player.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 2.0f, 1.5f);
+        if (world != null) {
+            world.playSound(player.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 2.0f, 1.5f);
+        }
 
         // Start aura effect
-        new DivineAuraTask(context, player.getLocation(), radius, healAmount, durationTicks, affectsPlayers, 
-                          grantsRegeneration, grantsResistance)
-                .runTaskTimer(context.plugin(), 0L, 5L);
+        context.plugin().getTaskManager().runTaskTimer(
+            new DivineAuraTask(context, player.getLocation(), radius, healAmount, durationTicks, affectsPlayers, 
+                              grantsRegeneration, grantsResistance),
+            0L, 5L
+        );
         return null;
     }
 
+    /**
+     * Handles the spell effect after execution.
+     * <p>
+     * This spell's effects are handled asynchronously through BukkitRunnables.
+     *
+     * @param context the spell context
+     * @param result the result of the spell execution (always null for this spell)
+     */
     @Override
     protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
         // Effects handled in scheduler
     }
 
+    /**
+     * A runnable that handles the divine aura's effects over time.
+     * <p>
+     * This task manages the aura's healing effects and visual particle effects.
+     */
     private static class DivineAuraTask extends BukkitRunnable {
         private final SpellContext context;
         private final Location center;
@@ -96,10 +191,22 @@ public class DivineAura extends Spell<Void> {
         private int ticks = 0;
         private final int maxTicks;
 
-        public DivineAuraTask(SpellContext context, Location center, double radius, double healAmount,
+        /**
+         * Creates a new DivineAuraTask instance.
+         *
+         * @param context the spell context
+         * @param center the center location of the aura
+         * @param radius the radius of the aura effect
+         * @param healAmount the amount of health to restore per tick
+         * @param durationTicks the duration of the aura in ticks
+         * @param affectsPlayers whether the aura affects players
+         * @param grantsRegeneration whether the aura grants regeneration
+         * @param grantsResistance whether the aura grants resistance
+         */
+        public DivineAuraTask(@NotNull SpellContext context, @NotNull Location center, double radius, double healAmount,
                              int durationTicks, boolean affectsPlayers, boolean grantsRegeneration, boolean grantsResistance) {
-            this.context = context;
-            this.center = center;
+            this.context = Objects.requireNonNull(context, "Context cannot be null");
+            this.center = Objects.requireNonNull(center, "Center location cannot be null");
             this.radius = radius;
             this.healAmount = healAmount;
             this.durationTicks = durationTicks;
@@ -110,8 +217,16 @@ public class DivineAura extends Spell<Void> {
             this.maxTicks = durationTicks / 5; // Convert to our tick interval
         }
 
+        /**
+         * Runs the divine aura task, applying healing effects and creating visual effects.
+         */
         @Override
         public void run() {
+            if (world == null) {
+                this.cancel();
+                return;
+            }
+            
             if (ticks >= maxTicks) {
                 this.cancel();
                 // Play end sound
@@ -128,7 +243,16 @@ public class DivineAura extends Spell<Void> {
             ticks++;
         }
 
+        /**
+         * Applies the aura's healing effects to entities within the radius.
+         * <p>
+         * This method heals nearby allies and grants beneficial potion effects.
+         */
         private void applyAuraEffects() {
+            if (world == null) {
+                return;
+            }
+            
             Collection<LivingEntity> nearbyEntities = world.getNearbyLivingEntities(center, radius, radius, radius);
             
             for (LivingEntity entity : nearbyEntities) {
@@ -156,10 +280,23 @@ public class DivineAura extends Spell<Void> {
             }
         }
 
-        private void healAndApplyEffects(LivingEntity entity) {
+        /**
+         * Heals an entity and applies beneficial potion effects.
+         * <p>
+         * This method restores health to the entity and optionally grants regeneration
+         * and resistance potion effects.
+         *
+         * @param entity the entity to heal and apply effects to
+         */
+        private void healAndApplyEffects(@NotNull LivingEntity entity) {
+            Objects.requireNonNull(entity, "Entity cannot be null");
+            
             // Heal entity
-            double maxHealth = Objects.requireNonNull(entity.getAttribute(Attribute.GENERIC_MAX_HEALTH)).getValue();
-            entity.setHealth(Math.min(maxHealth, entity.getHealth() + healAmount));
+            var healthAttribute = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+            if (healthAttribute != null) {
+                double maxHealth = healthAttribute.getValue();
+                entity.setHealth(Math.min(maxHealth, entity.getHealth() + healAmount));
+            }
             
             // Grant regeneration if enabled
             if (grantsRegeneration) {
@@ -172,10 +309,23 @@ public class DivineAura extends Spell<Void> {
             }
             
             // Visual effect for healed entity
-            world.spawnParticle(Particle.HEART, entity.getLocation().add(0, 1, 0), 3, 0.3, 0.3, 0.3, 0.01);
+            var entityLocation = entity.getLocation();
+            if (world != null && entityLocation != null) {
+                world.spawnParticle(Particle.HEART, entityLocation.add(0, 1, 0), 3, 0.3, 0.3, 0.3, 0.01);
+            }
         }
 
+        /**
+         * Creates the aura's visual particle effects.
+         * <p>
+         * This method generates expanding rings of particles and a central beam
+         * to visualize the aura's effect.
+         */
         private void createVisualEffects() {
+            if (world == null) {
+                return;
+            }
+            
             // Create expanding rings of particles
             double currentRadius = radius * (1.0 - (ticks / (double) maxTicks));
             

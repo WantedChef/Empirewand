@@ -1,6 +1,7 @@
 package nl.wantedchef.empirewand.api;
 
 import java.util.Optional;
+import java.util.Objects;
 
 import nl.wantedchef.empirewand.api.service.CooldownService;
 import nl.wantedchef.empirewand.api.service.ConfigService;
@@ -45,7 +46,6 @@ import org.jetbrains.annotations.NotNull;
  */
 public final class EmpireWandAPI {
 
-    private static volatile EmpireWandProvider provider;
     private static final EmpireWandProvider NO_OP_PROVIDER = new EmpireWandProvider() {
         /**
          * {@inheritDoc}
@@ -108,7 +108,7 @@ public final class EmpireWandAPI {
          */
         @Override
         public @NotNull Version getAPIVersion() {
-            return Version.of(2, 0, 0);
+            return API_VERSION;
         }
 
         /**
@@ -119,6 +119,8 @@ public final class EmpireWandAPI {
             return false;
         }
     };
+
+    private static volatile EmpireWandProvider provider = NO_OP_PROVIDER;
 
     // Current API version
     private static final Version API_VERSION = Version.of(2, 0, 0);
@@ -142,8 +144,9 @@ public final class EmpireWandAPI {
      * @param provider the provider implementation
      * @throws IllegalStateException if a provider is already set
      */
-    public static void setProvider(@NotNull EmpireWandProvider provider) {
-        if (EmpireWandAPI.provider != null && EmpireWandAPI.provider != NO_OP_PROVIDER) {
+    public static synchronized void setProvider(@NotNull EmpireWandProvider provider) {
+        Objects.requireNonNull(provider, "provider");
+        if (EmpireWandAPI.provider != NO_OP_PROVIDER) {
             throw new IllegalStateException("Provider already set");
         }
         EmpireWandAPI.provider = provider;
@@ -155,7 +158,7 @@ public final class EmpireWandAPI {
      * null and
      * related NPE warnings.
      */
-    public static void clearProvider() {
+    public static synchronized void clearProvider() {
         EmpireWandAPI.provider = NO_OP_PROVIDER;
     }
 

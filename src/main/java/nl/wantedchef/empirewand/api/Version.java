@@ -62,34 +62,30 @@ public final class Version implements Comparable<Version> {
      */
     @NotNull
     public static Version parse(@NotNull String versionString) {
-        // Implementation for parsing version strings
-        String[] parts = versionString.split("[+\\-]");
-        String[] versionParts = parts[0].split("\\.");
+        // Robust semantic version parser: MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
+        java.util.Objects.requireNonNull(versionString, "versionString");
+        final String s = versionString.trim();
+        if (s.isEmpty()) {
+            throw new IllegalArgumentException("Version string is empty");
+        }
 
-        if (versionParts.length < 3) {
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                "^(\\d+)\\.(\\d+)\\.(\\d+)(?:-([0-9A-Za-z.-]+))?(?:\\+([0-9A-Za-z.-]+))?$");
+        java.util.regex.Matcher matcher = pattern.matcher(s);
+        if (!matcher.matches()) {
             throw new IllegalArgumentException("Invalid version format: " + versionString);
         }
 
-        int major = Integer.parseInt(versionParts[0]);
-        int minor = Integer.parseInt(versionParts[1]);
-        int patch = Integer.parseInt(versionParts[2]);
-
-        String preRelease = null;
-        String buildMetadata = null;
-
-        if (parts.length > 1) {
-            if (versionString.contains("-") && versionString.contains("+")) {
-                String[] metaParts = versionString.split("\\+");
-                preRelease = metaParts[0].split("-")[1];
-                buildMetadata = metaParts[1];
-            } else if (versionString.contains("-")) {
-                preRelease = versionString.split("-")[1];
-            } else if (versionString.contains("+")) {
-                buildMetadata = versionString.split("\\+")[1];
-            }
+        try {
+            int major = Integer.parseInt(matcher.group(1));
+            int minor = Integer.parseInt(matcher.group(2));
+            int patch = Integer.parseInt(matcher.group(3));
+            String preRelease = matcher.group(4);
+            String buildMetadata = matcher.group(5);
+            return new Version(major, minor, patch, preRelease, buildMetadata);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid numeric component in version: " + versionString, e);
         }
-
-        return new Version(major, minor, patch, preRelease, buildMetadata);
     }
 
     /**

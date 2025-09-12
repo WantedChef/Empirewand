@@ -119,7 +119,15 @@ public class TextService {
         if (text == null) {
             return Component.empty();
         }
-        return Component.text(text).color(TextColor.fromHexString(hexColor));
+        try {
+            TextColor color = TextColor.fromHexString(hexColor);
+            if (color == null) {
+                return Component.text(text);
+            }
+            return Component.text(text).color(color);
+        } catch (Exception e) {
+            return Component.text(text);
+        }
     }
 
     /**

@@ -18,7 +18,7 @@ public final class ExplosionControlListener implements Listener {
         this.plugin = plugin;
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.NORMAL)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onEntityExplode(EntityExplodeEvent event) {
         if (event.getEntity() == null) {
             return;
@@ -26,18 +26,17 @@ public final class ExplosionControlListener implements Listener {
 
         String tag = event.getEntity().getPersistentDataContainer().get(Keys.PROJECTILE_SPELL,
                 Keys.STRING_TYPE.getType());
-        if (tag == null || !tag.equals("explosive"))
+        if (tag == null || !"explosive".equals(tag)) {
             return;
-
-        // Use synchronized access to config to prevent race conditions
-        ConfigService cfg = plugin.getConfigService();
-        boolean blockDamage;
-        synchronized (cfg) {
-            blockDamage = cfg.getSpellsConfig().getBoolean("explosive.flags.block-damage", false);
         }
 
+        // Access config without synchronization as ConfigService is thread-safe
+        // and this is running on the main thread anyway
+        ConfigService cfg = plugin.getConfigService();
+        boolean blockDamage = cfg.getSpellsConfig().getBoolean("explosive.flags.block-damage", false);
+
         if (!blockDamage) {
-            event.blockList().clear(); // visuals blijven, geen block destruction
+            event.blockList().clear(); // Keep visuals, prevent block destruction
         }
     }
 }

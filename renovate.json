@@ -1,0 +1,21 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":disableRateLimiting",
+    ":semanticCommits",
+    ":automergeMinor"
+  ],
+  "labels": ["dependencies"],
+  "rangeStrategy": "bump",
+  "packageRules": [
+    {
+      "matchManagers": ["gradle"],
+      "enabled": true
+    },
+    {
+      "matchDepTypes": ["testImplementation", "compileOnly"],
+      "stabilityDays": 3
+    }
+  ]
+}

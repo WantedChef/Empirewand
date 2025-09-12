@@ -18,21 +18,67 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.Duration;
+import java.util.Objects;
+
 /**
  * A powerful spell that dilates time in an area,
  * drastically slowing enemies while allowing the caster to move at normal speed.
+ * <p>
+ * This spell creates a time dilation field that applies extreme slowness, jump boost,
+ * and mining fatigue effects to enemies within the radius while leaving the caster
+ * unaffected. The spell includes visual effects with portal and cloud particles to
+ * enhance the time distortion experience.
+ * <p>
+ * <strong>Features:</strong>
+ * <ul>
+ *   <li>Area of effect time dilation</li>
+ *   <li>Extreme slowness for affected entities</li>
+ *   <li>Jump boost and mining fatigue effects</li>
+ *   <li>Animated particle visual effects</li>
+ *   <li>Audio feedback for activation and deactivation</li>
+ *   <li>Configurable radius, duration, and amplifier</li>
+ * </ul>
+ *
+ * <p>
+ * <strong>Usage Example:</strong>
+ * <pre>{@code
+ * Spell timeDilation = new TimeDilation.Builder(api)
+ *     .name("Time Dilation")
+ *     .description("Dilates time in an area, drastically slowing enemies while you move at normal speed.")
+ *     .cooldown(Duration.ofSeconds(65))
+ *     .build();
+ * }</pre>
+ *
+ * @since 1.0.0
  */
 public class TimeDilation extends Spell<Void> {
 
+    /**
+     * Builder for creating TimeDilation spell instances.
+     * <p>
+     * Provides a fluent API for configuring the time dilation spell with sensible defaults.
+     */
     public static class Builder extends Spell.Builder<Void> {
-        public Builder(EmpireWandAPI api) {
+        /**
+         * Creates a new TimeDilation spell builder.
+         *
+         * @param api the EmpireWandAPI instance
+         * @throws NullPointerException if api is null
+         */
+        public Builder(@NotNull EmpireWandAPI api) {
             super(api);
             this.name = "Time Dilation";
             this.description = "Dilates time in an area, drastically slowing enemies while you move at normal speed.";
-            this.cooldown = java.time.Duration.ofSeconds(65);
+            this.cooldown = Duration.ofSeconds(65);
             this.spellType = SpellType.CONTROL;
         }
 
+        /**
+         * Builds and returns a new TimeDilation spell instance.
+         *
+         * @return the constructed TimeDilation spell
+         */
         @Override
         @NotNull
         public Spell<Void> build() {
@@ -40,22 +86,55 @@ public class TimeDilation extends Spell<Void> {
         }
     }
 
-    private TimeDilation(Builder builder) {
+    /**
+     * Constructs a new TimeDilation spell instance.
+     *
+     * @param builder the builder containing spell configuration
+     * @throws NullPointerException if builder is null
+     */
+    private TimeDilation(@NotNull Builder builder) {
         super(builder);
     }
 
+    /**
+     * Returns the unique key for this spell.
+     * <p>
+     * This key is used for configuration, identification, and event handling.
+     *
+     * @return the spell key "time-dilation"
+     */
     @Override
-    public @NotNull String key() {
+    @NotNull
+    public String key() {
         return "time-dilation";
     }
 
+    /**
+     * Returns the prerequisites for casting this spell.
+     * <p>
+     * Currently, this spell has no prerequisites beyond standard casting requirements.
+     *
+     * @return a no-op prerequisite
+     */
     @Override
-    public @NotNull PrereqInterface prereq() {
+    @NotNull
+    public PrereqInterface prereq() {
         return new PrereqInterface.NonePrereq();
     }
 
+    /**
+     * Executes the time dilation spell logic.
+     * <p>
+     * This method creates a time dilation effect that drastically slows enemies
+     * within a radius while leaving the caster unaffected.
+     *
+     * @param context the spell context containing caster and target information
+     * @return null (this spell produces no effect object)
+     */
     @Override
-    protected @Nullable Void executeSpell(SpellContext context) {
+    protected @Nullable Void executeSpell(@NotNull SpellContext context) {
+        Objects.requireNonNull(context, "Context cannot be null");
+        
         Player player = context.caster();
 
         // Configuration
@@ -65,19 +144,40 @@ public class TimeDilation extends Spell<Void> {
         boolean affectsPlayers = spellConfig.getBoolean("flags.affects-players", true);
 
         // Play initial sound
-        player.getWorld().playSound(player.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 2.0f, 0.3f);
+        var world = player.getWorld();
+        var playerLocation = player.getLocation();
+        
+        if (world != null && playerLocation != null) {
+            world.playSound(playerLocation, Sound.BLOCK_BEACON_ACTIVATE, 2.0f, 0.3f);
+        }
 
         // Start time dilation effect
-        new TimeDilationTask(context, player.getLocation(), radius, durationTicks, slowAmplifier, affectsPlayers)
-                .runTaskTimer(context.plugin(), 0L, 3L);
+        if (playerLocation != null) {
+            BukkitRunnable timeDilationTask = new TimeDilationTask(context, playerLocation, radius, durationTicks, slowAmplifier, affectsPlayers);
+            context.plugin().getTaskManager().runTaskTimer(timeDilationTask, 0L, 3L);
+        }
         return null;
     }
 
+    /**
+     * Handles the spell effect after execution.
+     * <p>
+     * This spell's effects are handled asynchronously through BukkitRunnables.
+     *
+     * @param context the spell context
+     * @param result the result of the spell execution (always null for this spell)
+     */
     @Override
     protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
         // Effects handled in scheduler
     }
 
+    /**
+     * A runnable that handles the time dilation effects over time.
+     * <p>
+     * This task manages the application of time dilation effects to entities and
+     * creates visual particle effects for the distortion field.
+     */
     private static class TimeDilationTask extends BukkitRunnable {
         private final SpellContext context;
         private final Location center;
@@ -89,10 +189,20 @@ public class TimeDilation extends Spell<Void> {
         private int ticks = 0;
         private final int maxTicks;
 
-        public TimeDilationTask(SpellContext context, Location center, double radius, 
+        /**
+         * Creates a new TimeDilationTask instance.
+         *
+         * @param context the spell context
+         * @param center the center location of the time dilation effect
+         * @param radius the radius of the time dilation effect
+         * @param durationTicks the duration of the effect in ticks
+         * @param slowAmplifier the amplifier for the slowness effect
+         * @param affectsPlayers whether the effect affects players
+         */
+        public TimeDilationTask(@NotNull SpellContext context, @NotNull Location center, double radius, 
                                int durationTicks, int slowAmplifier, boolean affectsPlayers) {
-            this.context = context;
-            this.center = center;
+            this.context = Objects.requireNonNull(context, "Context cannot be null");
+            this.center = Objects.requireNonNull(center, "Center location cannot be null");
             this.radius = radius;
             this.durationTicks = durationTicks;
             this.slowAmplifier = slowAmplifier;
@@ -101,8 +211,17 @@ public class TimeDilation extends Spell<Void> {
             this.maxTicks = durationTicks / 3; // Convert to our tick interval
         }
 
+        /**
+         * Runs the time dilation task, applying effects to entities and creating
+         * visual effects for the time distortion field.
+         */
         @Override
         public void run() {
+            if (world == null) {
+                this.cancel();
+                return;
+            }
+            
             if (ticks >= maxTicks) {
                 this.cancel();
                 // Play end sound
@@ -119,7 +238,17 @@ public class TimeDilation extends Spell<Void> {
             ticks++;
         }
 
+        /**
+         * Applies time dilation effects to entities within the radius.
+         * <p>
+         * This method applies extreme slowness, jump boost, and mining fatigue
+         * potion effects to affected entities and creates periodic visual effects.
+         */
         private void applyTimeDilationEffects() {
+            if (world == null) {
+                return;
+            }
+            
             Collection<LivingEntity> nearbyEntities = world.getNearbyLivingEntities(center, radius, radius, radius);
             
             for (LivingEntity entity : nearbyEntities) {
@@ -139,13 +268,26 @@ public class TimeDilation extends Spell<Void> {
                 
                 // Visual effect for time-slowed entities
                 if (ticks % 5 == 0) {
-                    world.spawnParticle(Particle.CLOUD, entity.getLocation().add(0, 1, 0), 5, 0.3, 0.5, 0.3, 0.01);
-                    world.spawnParticle(Particle.PORTAL, entity.getLocation().add(0, 1, 0), 3, 0.2, 0.3, 0.2, 0.01);
+                    var entityLocation = entity.getLocation();
+                    if (entityLocation != null) {
+                        world.spawnParticle(Particle.CLOUD, entityLocation.add(0, 1, 0), 5, 0.3, 0.5, 0.3, 0.01);
+                        world.spawnParticle(Particle.PORTAL, entityLocation.add(0, 1, 0), 3, 0.2, 0.3, 0.2, 0.01);
+                    }
                 }
             }
         }
 
+        /**
+         * Creates visual effects for the time dilation field.
+         * <p>
+         * This method generates animated portal and cloud particles to visualize
+         * the time distortion field and includes a central time vortex effect.
+         */
         private void createVisualEffects() {
+            if (world == null) {
+                return;
+            }
+            
             // Create time distortion field
             double currentRadius = radius * (1.0 - (ticks / (double) maxTicks) * 0.5);
             

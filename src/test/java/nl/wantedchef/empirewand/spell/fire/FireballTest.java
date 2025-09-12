@@ -1,15 +1,14 @@
 package nl.wantedchef.empirewand.spell.fire;
 
-import nl.wantedchef.empirewand.spell.ProjectileSpell;
 import nl.wantedchef.empirewand.api.EmpireWandAPI;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 class FireballTest {
 
@@ -20,7 +19,7 @@ class FireballTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        openMocks(this);
         fireball = (Fireball) new Fireball.Builder(api).build();
     }
 

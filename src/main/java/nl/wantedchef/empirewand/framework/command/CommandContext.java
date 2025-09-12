@@ -119,7 +119,7 @@ public record CommandContext(
      * @return A TimingContext for measuring execution time
      */
     public PerformanceMonitor.TimingContext startTiming(@NotNull String operation) {
-        return plugin.getPerformanceMonitor().startTiming("command." + operation);
+        return plugin.getPerformanceMonitor().startTiming("command." + operation, 50L);
     }
 
     /**

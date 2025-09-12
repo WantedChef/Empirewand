@@ -30,6 +30,7 @@ import nl.wantedchef.empirewand.listener.combat.ExplosionControlListener;
 import nl.wantedchef.empirewand.listener.combat.FallDamageEtherealListener;
 import nl.wantedchef.empirewand.listener.combat.PolymorphCleanupListener;
 import nl.wantedchef.empirewand.listener.player.PlayerJoinQuitListener;
+import nl.wantedchef.empirewand.listener.player.SpellCleanupListener;
 import nl.wantedchef.empirewand.listener.projectile.ProjectileHitListener;
 import nl.wantedchef.empirewand.listener.wand.WandCastListener;
 import nl.wantedchef.empirewand.listener.wand.WandDropGuardListener;
@@ -52,6 +53,7 @@ public final class EmpireWandPlugin extends JavaPlugin {
     PermissionService permissionService;
     MetricsService metricsService;
     private TaskManager taskManager;
+    private WandStatusListener wandStatusListener;
 
     @Override
     public void onEnable() {
@@ -164,7 +166,17 @@ public final class EmpireWandPlugin extends JavaPlugin {
             }
         }
 
-        // 6. Cleanup WandService
+        // 6. Shutdown WandStatusListener
+        if (this.wandStatusListener != null) {
+            try {
+                this.wandStatusListener.shutdown();
+                getLogger().info("WandStatusListener shut down");
+            } catch (Exception e) {
+                getLogger().warning(String.format("Error shutting down WandStatusListener: %s", e.getMessage()));
+            }
+        }
+
+        // 7. Cleanup WandService
         if (this.wandService != null) {
             try {
                 if (this.wandService instanceof nl.wantedchef.empirewand.framework.service.WandServiceImpl ws) {
@@ -176,7 +188,7 @@ public final class EmpireWandPlugin extends JavaPlugin {
             }
         }
 
-        // 7. Cleanup all active spells with ethereal forms, polymorphs, etc.
+        // 8. Cleanup all active spells with ethereal forms, polymorphs, etc.
         try {
             cleanupActiveSpells();
             // Only attempt polymorph cleanup if spellRegistry is available
@@ -219,9 +231,14 @@ public final class EmpireWandPlugin extends JavaPlugin {
     private void registerListeners() {
         var pm = getServer().getPluginManager();
         pm.registerEvents(new PlayerJoinQuitListener(this), this);
+        pm.registerEvents(new SpellCleanupListener(this), this);
         pm.registerEvents(new WandCastListener(this), this);
         pm.registerEvents(new WandSelectListener(this), this);
-        pm.registerEvents(new WandStatusListener(this), this);
+        
+        // Store reference to WandStatusListener for proper shutdown
+        this.wandStatusListener = new WandStatusListener(this);
+        pm.registerEvents(this.wandStatusListener, this);
+        
         pm.registerEvents(new WandSwapHandListener(this), this);
         pm.registerEvents(new WandDropGuardListener(this), this);
         pm.registerEvents(new ProjectileHitListener(this), this);

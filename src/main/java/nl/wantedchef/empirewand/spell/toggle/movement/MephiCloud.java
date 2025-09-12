@@ -6,7 +6,7 @@ import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
 import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.api.spell.toggle.ToggleableSpell;
-import nl.wantedchef.empirewand.EmpireWandPlugin;
+
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -33,7 +33,6 @@ public final class MephiCloud extends Spell<Void> implements ToggleableSpell {
     /* DATA */
     /* ---------------------------------------- */
     private final Map<UUID, CloudData> clouds = new WeakHashMap<>();
-    private EmpireWandPlugin plugin;
 
     /* ---------------------------------------- */
     /* BUILDER */
@@ -93,7 +92,6 @@ public final class MephiCloud extends Spell<Void> implements ToggleableSpell {
     public void activate(Player player, SpellContext context) {
         if (isActive(player))
             return;
-        plugin = context.plugin();
         clouds.put(player.getUniqueId(), new CloudData(player, context));
     }
 
@@ -125,7 +123,7 @@ public final class MephiCloud extends Spell<Void> implements ToggleableSpell {
                     "§c🔥 §7Mephi Cloud activated. Nether particles will appear when you fly."));
 
             // Start the ticker
-            this.ticker = Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 0, 2); // Run every
+            this.ticker = Bukkit.getScheduler().runTaskTimer(context.plugin(), this::tick, 0, 2); // Run every
                                                                                         // 2 ticks
         }
 

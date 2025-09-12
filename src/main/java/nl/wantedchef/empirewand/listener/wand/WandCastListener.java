@@ -36,43 +36,38 @@ public final class WandCastListener implements Listener {
         this.spellSwitchService = new SpellSwitchService(plugin);
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.NORMAL)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onInteract(PlayerInteractEvent event) {
-        if (event.getHand() != EquipmentSlot.HAND)
-            return; // voorkom dubbele triggers
+        // Early exit conditions for maximum performance
+        if (event.getHand() != EquipmentSlot.HAND) {
+            return; // Prevent double triggers
+        }
 
         Action action = event.getAction();
-        boolean isLeftClick = (action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK);
-        boolean isRightClick = (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK);
-
-        // Allow casting even when not looking at a block
-        if (!isLeftClick && !isRightClick) {
-            // Check for air clicks (when not looking at a block)
-            if (action == Action.LEFT_CLICK_AIR) {
-                isLeftClick = true;
-            } else if (action == Action.RIGHT_CLICK_AIR) {
-                isRightClick = true;
-            } else {
-                return;
-            }
+        if (action != Action.LEFT_CLICK_AIR && action != Action.LEFT_CLICK_BLOCK 
+            && action != Action.RIGHT_CLICK_AIR && action != Action.RIGHT_CLICK_BLOCK) {
+            return;
         }
 
         Player player = event.getPlayer();
-
-        // Check if player is still online and valid
+        // Combined validation for better performance
         if (!player.isOnline() || !player.isValid()) {
             return;
         }
 
         ItemStack item = player.getInventory().getItemInMainHand();
-        if (!plugin.getWandService().isWand(item))
+        if (!plugin.getWandService().isWand(item)) {
             return;
+        }
 
         List<String> spells = new ArrayList<>(plugin.getWandService().getSpells(item));
         if (spells.isEmpty()) {
             plugin.getFxService().showError(player, "wand.no-spells");
             return;
         }
+
+        boolean isLeftClick = (action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK);
+        boolean isRightClick = (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK);
 
         if (isRightClick) {
             // Right-click: cycle to next spell with visual effect
@@ -249,24 +244,34 @@ public final class WandCastListener implements Listener {
                 return;
             }
 
-            // Use new cast API
-            spell.cast(ctx);
-            cds.set(player.getUniqueId(), spellKey, nowTicks + cdTicks);
+            // Use new cast API and handle result
+            nl.wantedchef.empirewand.spell.CastResult result = spell.cast(ctx);
 
-            // Only show success message if player is still online
-            if (player.isOnline()) {
-                var params = new HashMap<String, String>();
-                params.put("spell", registry.getSpellDisplayName(spellKey));
-                fx.showSuccess(player, "spell-cast", params);
+            // Only apply cooldown and show success on success
+            if (result.isSuccess()) {
+                cds.set(player.getUniqueId(), spellKey, nowTicks + cdTicks);
+
+                if (player.isOnline()) {
+                    var params = new HashMap<String, String>();
+                    params.put("spell", registry.getSpellDisplayName(spellKey));
+                    fx.showSuccess(player, "spell-cast", params);
+                }
+
+                plugin.getMetricsService().recordSpellCast(spellKey, (System.nanoTime() - start) / 1_000_000);
+            } else {
+                // Failure: show error if player is online and record metrics
+                if (player.isOnline()) {
+                    fx.showError(player, "wand.cast-error");
+                }
+                plugin.getMetricsService().recordFailedCast();
             }
-
-            plugin.getMetricsService().recordSpellCast(spellKey, (System.nanoTime() - start) / 1_000_000);
-        } catch (Throwable t) {
-            // Only show error if player is still online
+        } catch (Exception e) {
+            // Base Spell.cast handles failure events; as a safety net, log and show error
             if (player.isOnline()) {
                 fx.showError(player, "wand.cast-error");
             }
-            plugin.getLogger().warning(String.format("Spell cast error for '%s': %s", spellKey, t.getMessage()));
+            plugin.getLogger().warning(String.format("Spell cast error for '%s' by player %s: %s", 
+                spellKey, player.getName(), e.getMessage()));
             plugin.getMetricsService().recordFailedCast();
         }
     }

@@ -71,8 +71,7 @@ public class ConfigService {
      * This method also triggers validation and migration services.
      */
     public final void loadConfigs() {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("ConfigService.loadConfigs");
-        try {
+        try (var timing = performanceMonitor.startTiming("ConfigService.loadConfigs", 50)) {
             // Load config.yml
             plugin.saveDefaultConfig();
             plugin.reloadConfig();
@@ -106,8 +105,6 @@ public class ConfigService {
             
             // Clear caches on error
             clearCaches();
-        } finally {
-            timing.complete(50); // Log if config loading takes more than 50ms
         }
     }
 
@@ -117,8 +114,7 @@ public class ConfigService {
      * @param spellsFile the spells.yml file
      */
     private void validateAndMigrateConfigs(File spellsFile) {
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("ConfigService.validateAndMigrateConfigs");
-        try {
+        try (var timing = performanceMonitor.startTiming("ConfigService.validateAndMigrateConfigs", 100)) {
             // Validate main config
             List<String> mainConfigErrors = validator.validateMainConfig(config);
             if (!mainConfigErrors.isEmpty()) {
@@ -162,8 +158,6 @@ public class ConfigService {
             plugin.getLogger().info("Configuration validation and migration completed successfully.");
         } catch (Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Error during configuration validation and migration", e);
-        } finally {
-            timing.complete(100); // Log if validation/migration takes more than 100ms
         }
     }
     
@@ -215,8 +209,7 @@ public class ConfigService {
             return cached;
         }
         
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("ConfigService.getMessage");
-        try {
+        try (var timing = performanceMonitor.startTiming("ConfigService.getMessage", 5)) {
             String message = config.getString("messages." + key, "");
             // Cache the result
             messageCache.put(key, message);
@@ -224,8 +217,6 @@ public class ConfigService {
         } catch (Exception e) {
             plugin.getLogger().warning("Error getting message for key: " + key);
             return "";
-        } finally {
-            timing.complete(5); // Log if message retrieval takes more than 5ms
         }
     }
 
@@ -246,8 +237,7 @@ public class ConfigService {
             return cached;
         }
         
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("ConfigService.getFeatureFlag");
-        try {
+        try (var timing = performanceMonitor.startTiming("ConfigService.getFeatureFlag", 5)) {
             boolean flag = config.getBoolean("features." + key, false);
             // Cache the result
             featureFlagCache.put(key, flag);
@@ -255,8 +245,6 @@ public class ConfigService {
         } catch (Exception e) {
             plugin.getLogger().warning("Error getting feature flag for key: " + key);
             return false;
-        } finally {
-            timing.complete(5); // Log if feature flag retrieval takes more than 5ms
         }
     }
 
@@ -281,8 +269,7 @@ public class ConfigService {
             return cached;
         }
         
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("ConfigService.getDefaultCooldown");
-        try {
+        try (var timing = performanceMonitor.startTiming("ConfigService.getDefaultCooldown", 5)) {
             long cooldown = config.getLong("cooldowns.default", 500);
             // Cache the result
             defaultCooldownCache = cooldown;
@@ -290,8 +277,6 @@ public class ConfigService {
         } catch (Exception e) {
             plugin.getLogger().warning("Error getting default cooldown, using fallback");
             return 500;
-        } finally {
-            timing.complete(5); // Log if cooldown retrieval takes more than 5ms
         }
     }
 
@@ -313,8 +298,7 @@ public class ConfigService {
             return cached;
         }
         
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("ConfigService.getCategorySpells");
-        try {
+        try (var timing = performanceMonitor.startTiming("ConfigService.getCategorySpells", 10)) {
             List<String> list = config.getStringList("categories." + name + ".spells");
             if (list == null) {
                 list = Collections.emptyList();
@@ -325,8 +309,6 @@ public class ConfigService {
         } catch (Exception e) {
             plugin.getLogger().warning("Error getting category spells for: " + name);
             return Collections.emptyList();
-        } finally {
-            timing.complete(10); // Log if category spells retrieval takes more than 10ms
         }
     }
 
@@ -342,8 +324,7 @@ public class ConfigService {
             return cached;
         }
         
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("ConfigService.getCategoryNames");
-        try {
+        try (var timing = performanceMonitor.startTiming("ConfigService.getCategoryNames", 10)) {
             var section = config.getConfigurationSection("categories");
             Set<String> names = section == null ? Collections.emptySet() : section.getKeys(false);
             // Cache the result
@@ -352,8 +333,6 @@ public class ConfigService {
         } catch (Exception e) {
             plugin.getLogger().warning("Error getting category names");
             return Collections.emptySet();
-        } finally {
-            timing.complete(10); // Log if category names retrieval takes more than 10ms
         }
     }
     
@@ -375,8 +354,7 @@ public class ConfigService {
             return cached;
         }
         
-        PerformanceMonitor.TimingContext timing = performanceMonitor.startTiming("ConfigService.getSpellConfig");
-        try {
+        try (var timing = performanceMonitor.startTiming("ConfigService.getSpellConfig", 5)) {
             var section = spellsConfig.getConfigurationSection(spellKey);
             YamlConfiguration spellConfig = new YamlConfiguration();
             if (section != null) {
@@ -393,8 +371,6 @@ public class ConfigService {
         } catch (Exception e) {
             plugin.getLogger().warning("Error getting spell config for key: " + spellKey);
             return new ReadOnlyConfig(new YamlConfiguration());
-        } finally {
-            timing.complete(5); // Log if spell config retrieval takes more than 5ms
         }
     }
     
@@ -404,7 +380,8 @@ public class ConfigService {
      * @return A string containing performance metrics.
      */
     public String getPerformanceMetrics() {
-        return performanceMonitor.getMetricsReport();
+        // This method is deprecated in the new PerformanceMonitor
+        return "Metrics not available.";
     }
     
     /**

@@ -8,7 +8,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -58,22 +57,20 @@ public class GetCommand implements SubCommand, CommandHelpProvider.HelpAwareComm
     @Override
     public void execute(@NotNull CommandContext context) throws CommandException {
         // Start timing for performance monitoring
-        var timing = context.startTiming("wand.get");
-        try {
+        try (var timing = context.startTiming("wand.get")) {
             Player player = context.requirePlayer();
 
-            ItemStack wand = new ItemStack(material);
-            var meta = wand.getItemMeta();
-            meta.displayName(Component.text(displayName).color(NamedTextColor.GOLD));
-            wand.setItemMeta(meta);
-
-            context.wandService().giveWand(player);
+            // Give appropriate wand based on type
+            if (wandType.equals("mephidanteszeist")) {
+                context.wandService().giveMephidantesZeist(player);
+            } else {
+                context.wandService().giveWand(player);
+            }
+            
             context.sendMessage(Component.text("You have received a " + displayName + "!")
                     .color(NamedTextColor.GREEN));
         } catch (Exception e) {
             throw new CommandException("Failed to give wand: " + e.getMessage(), e, "WAND_GIVE_FAILED");
-        } finally {
-            timing.complete();
         }
     }
 

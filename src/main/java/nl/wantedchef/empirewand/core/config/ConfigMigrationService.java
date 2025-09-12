@@ -12,6 +12,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.logging.Level;
+import java.util.Objects;
 
 /**
  * Handles configuration migrations based on config-version.
@@ -25,14 +26,8 @@ public class ConfigMigrationService {
     private final ConfigValidator validator;
 
     public ConfigMigrationService(Plugin plugin, ConfigValidator validator) {
-        if (plugin == null) {
-            throw new IllegalArgumentException("Plugin cannot be null");
-        }
-        if (validator == null) {
-            throw new IllegalArgumentException("ConfigValidator cannot be null");
-        }
-        this.plugin = plugin;
-        this.validator = validator;
+        this.plugin = Objects.requireNonNull(plugin, "Plugin cannot be null");
+        this.validator = Objects.requireNonNull(validator, "ConfigValidator cannot be null");
     }
 
     /**
@@ -87,11 +82,6 @@ public class ConfigMigrationService {
             if (compareVersions(currentVersion, "1.0") < 0) {
                 migrated = migrateTo10(config, configFile) || migrated;
             }
-
-            // Future migrations:
-            // if (compareVersions(currentVersion, "1.1") < 0) {
-            // migrated = migrateTo11(config, configFile) || migrated;
-            // }
 
             if (migrated) {
                 plugin.getLogger().info("Main config migration completed successfully");
@@ -149,9 +139,9 @@ public class ConfigMigrationService {
             plugin.getLogger()
                     .info(String.format("Migrating spells config from version %s to %s", currentVersion, targetVersion));
 
-            // Perform step-by-step migration
             boolean migrated = false;
 
+            // Migration steps from older versions to current
             if (compareVersions(currentVersion, "1.0") < 0) {
                 migrated = migrateSpellsTo10(spellsConfig, spellsFile) || migrated;
             }
@@ -175,7 +165,7 @@ public class ConfigMigrationService {
             plugin.getLogger().warning("Cannot migrate spells config - null parameters");
             return false;
         }
-        
+
         plugin.getLogger().info("Migrating spells config to version 1.0");
 
         // Create backup
@@ -186,11 +176,13 @@ public class ConfigMigrationService {
         }
 
         try {
-            // Step 1: Ensure all spells have required fields
-            plugin.getLogger().info("Migration Step 1: Validating spell configurations");
+            // Ensure spells section exists
+            if (!spellsConfig.contains("spells")) {
+                plugin.getLogger().info("Migration: Adding spells section");
+                spellsConfig.createSection("spells");
+            }
 
-            // Step 2: Update version
-            plugin.getLogger().info("Migration Step 2: Updating spells config version");
+            // Update version
             spellsConfig.set("config-version", "1.0");
 
             // Save the migrated config
@@ -199,8 +191,7 @@ public class ConfigMigrationService {
             // Validate the migrated config
             var errors = validator.validateSpellsConfig(spellsConfig);
             if (!errors.isEmpty()) {
-                plugin.getLogger().log(Level.SEVERE, "Spells migration validation failed: {0}",
-                        String.join(", ", errors));
+                plugin.getLogger().log(Level.SEVERE, "Spells migration validation failed: {0}", String.join(", ", errors));
                 // Restore from backup
                 restoreFromBackup(backup, spellsFile);
                 return false;
@@ -228,48 +219,27 @@ public class ConfigMigrationService {
      * @return true if any migration was performed
      */
     public boolean migrateAllConfigs() {
-        plugin.getLogger().info("Performing forced migration of all configurations...");
-
         boolean migrated = false;
-
+        
         try {
-            // Migrate main config
             File configFile = new File(plugin.getDataFolder(), "config.yml");
-            if (configFile.exists()) {
-                try {
-                    FileConfiguration config = plugin.getConfig();
-                    if (config != null) {
-                        migrated = migrateMainConfig(config, configFile, true) || migrated;
-                    }
-                } catch (Exception e) {
-                    plugin.getLogger().log(Level.SEVERE, "Error migrating main config", e);
-                }
-            }
-
-            // Migrate spells config
             File spellsFile = new File(plugin.getDataFolder(), "spells.yml");
-            if (spellsFile.exists()) {
-                try {
-                    FileConfiguration spellsConfig = YamlConfiguration.loadConfiguration(spellsFile);
-                    if (spellsConfig != null) {
-                        migrated = migrateSpellsConfig(spellsConfig, spellsFile, true) || migrated;
-                    }
-                } catch (Exception e) {
-                    plugin.getLogger().log(Level.SEVERE, "Error migrating spells config", e);
-                }
+
+            if (configFile.exists() && configFile.canRead()) {
+                FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
+                migrated = migrateMainConfig(config, configFile, true) || migrated;
             }
 
-            if (migrated) {
-                plugin.getLogger()
-                        .info("Forced migration completed. Please restart the server for changes to take effect.");
-            } else {
-                plugin.getLogger().info("No migrations were necessary.");
+            if (spellsFile.exists() && spellsFile.canRead()) {
+                FileConfiguration spellsConfig = YamlConfiguration.loadConfiguration(spellsFile);
+                migrated = migrateSpellsConfig(spellsConfig, spellsFile, true) || migrated;
             }
+
+            return migrated;
         } catch (Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Error during forced migration", e);
+            return false;
         }
-
-        return migrated;
     }
 
     /**
@@ -279,40 +249,38 @@ public class ConfigMigrationService {
      * @return the backup file, or null if backup failed
      */
     public File createBackup(File originalFile) {
-        if (originalFile == null) {
-            plugin.getLogger().warning("Cannot create backup for null file");
+        if (originalFile == null || !originalFile.exists()) {
+            plugin.getLogger().warning("Cannot backup null or non-existent file");
             return null;
         }
-        if (!originalFile.exists()) {
-            plugin.getLogger().warning(String.format("Cannot create backup for non-existent file: %s", originalFile.getName()));
-            return null;
-        }
-        
-        try {
-            Path originalPath = originalFile.toPath();
-            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-            String backupFileName = originalFile.getName().replace(".yml", "_backup_" + timestamp + ".yml");
-            
-            File parentDir = originalFile.getParentFile();
-            if (parentDir == null) {
-                plugin.getLogger().warning(String.format("Cannot determine parent directory for backup: %s", originalFile.getName()));
-                return null;
-            }
-            
-            Path backupPath = parentDir.toPath().resolve(backupFileName);
 
-            Files.copy(originalPath, backupPath, StandardCopyOption.REPLACE_EXISTING);
-            plugin.getLogger().log(Level.INFO, "Created backup: {0}", backupPath.getFileName());
-            return backupPath.toFile();
+        try {
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+            String backupName = originalFile.getName().replace(".yml", "_backup_" + timestamp + ".yml");
+            File backupFile = new File(originalFile.getParentFile(), backupName);
+
+            // Ensure parent directory exists
+            File parentDir = backupFile.getParentFile();
+            if (parentDir != null && !parentDir.exists()) {
+                if (!parentDir.mkdirs()) {
+                    plugin.getLogger().warning("Failed to create backup directory");
+                    return null;
+                }
+            }
+
+            // Create backup with proper resource handling
+            Path source = originalFile.toPath();
+            Path target = backupFile.toPath();
+            Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+
+            plugin.getLogger().info(String.format("Created backup: %s", backupFile.getName()));
+            return backupFile;
+
         } catch (IOException e) {
-            plugin.getLogger().log(Level.SEVERE, "Failed to create backup for {0}",
-                    new Object[] { originalFile.getName() });
-            plugin.getLogger().log(Level.SEVERE, "Backup exception", e);
+            plugin.getLogger().log(Level.SEVERE, "Failed to create backup", e);
             return null;
         } catch (Exception e) {
-            plugin.getLogger().log(Level.SEVERE, "Unexpected error creating backup for {0}",
-                    new Object[] { originalFile.getName() });
-            plugin.getLogger().log(Level.SEVERE, "Backup exception", e);
+            plugin.getLogger().log(Level.SEVERE, "Unexpected error during backup creation", e);
             return null;
         }
     }
@@ -326,27 +294,28 @@ public class ConfigMigrationService {
      */
     public boolean restoreFromBackup(File backupFile, File targetFile) {
         if (backupFile == null || targetFile == null) {
-            plugin.getLogger().warning("Cannot restore from backup - null file parameters");
+            plugin.getLogger().warning("Cannot restore from null backup or target file");
             return false;
         }
+
         if (!backupFile.exists()) {
-            plugin.getLogger().warning(String.format("Cannot restore from non-existent backup: %s", backupFile.getName()));
+            plugin.getLogger().warning("Backup file does not exist: " + backupFile.getName());
             return false;
         }
-        
+
         try {
-            Files.copy(backupFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            plugin.getLogger().log(Level.INFO, "Restored config from backup: {0}", backupFile.getName());
+            Path source = backupFile.toPath();
+            Path target = targetFile.toPath();
+            Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+
+            plugin.getLogger().info(String.format("Restored from backup: %s", backupFile.getName()));
             return true;
+
         } catch (IOException e) {
-            plugin.getLogger().log(Level.SEVERE, "Failed to restore from backup {0}",
-                    new Object[] { backupFile.getName() });
-            plugin.getLogger().log(Level.SEVERE, "Restore exception", e);
+            plugin.getLogger().log(Level.SEVERE, "Failed to restore from backup", e);
             return false;
         } catch (Exception e) {
-            plugin.getLogger().log(Level.SEVERE, "Unexpected error restoring from backup {0}",
-                    new Object[] { backupFile.getName() });
-            plugin.getLogger().log(Level.SEVERE, "Restore exception", e);
+            plugin.getLogger().log(Level.SEVERE, "Unexpected error during restore", e);
             return false;
         }
     }
@@ -388,7 +357,7 @@ public class ConfigMigrationService {
             plugin.getLogger().warning("Cannot migrate config - null parameters");
             return false;
         }
-        
+
         plugin.getLogger().info("Migrating config to version 1.0");
 
         // Create backup
@@ -456,38 +425,27 @@ public class ConfigMigrationService {
      * Returns negative if v1 < v2, 0 if equal, positive if v1 > v2.
      */
     private int compareVersions(String v1, String v2) {
-        if (v1 == null || v2 == null) {
-            return 0;
-        }
-        
+        if (v1 == null && v2 == null) return 0;
+        if (v1 == null) return -1;
+        if (v2 == null) return 1;
+
         try {
             String[] parts1 = v1.split("\\.");
             String[] parts2 = v2.split("\\.");
 
-            int length = Math.max(parts1.length, parts2.length);
-            for (int i = 0; i < length; i++) {
-                int part1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
-                int part2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
-
-                if (part1 < part2) {
-                    return -1;
-                }
-                if (part1 > part2) {
-                    return 1;
+            int maxLength = Math.max(parts1.length, parts2.length);
+            for (int i = 0; i < maxLength; i++) {
+                int num1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
+                int num2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
+                
+                if (num1 != num2) {
+                    return Integer.compare(num1, num2);
                 }
             }
             return 0;
         } catch (NumberFormatException e) {
-            plugin.getLogger().warning(String.format("Error comparing versions: %s vs %s - %s", v1, v2, e.getMessage()));
-            return 0;
-        } catch (Exception e) {
-            plugin.getLogger().warning(String.format("Unexpected error comparing versions: %s", e.getMessage()));
-            return 0;
+            // Fallback to string comparison if parsing fails
+            return v1.compareTo(v2);
         }
     }
 }
-
-
-
-
-

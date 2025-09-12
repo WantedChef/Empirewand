@@ -1,6 +1,6 @@
 # EmpireWand Plugin
 
-EmpireWand is a Minecraft Paper plugin for 1.20.6 providing magical wand mechanics with configurable spells.
+EmpireWand is a Minecraft Paper plugin providing magical wand mechanics with configurable spells.
 
 ## What’s new in 1.1.1
 - Fixed startup crash related to `EmpireWandAPI` construction when the registry referenced the legacy singleton during enable.
@@ -69,6 +69,11 @@ public class FireballSpell extends ProjectileSpell {
 - Fixed compilation errors by ensuring all spell classes use correct APIs (`LegacySpell`, `PrereqInterface`).
 - Deprecated legacy `Prereq` usage in favor of `PrereqInterface` for better type safety and consistency.
 
+## Supported Versions
+
+- Paper: 1.20.6
+- Java: 21
+
 ## Setup
 
 1. Clone the repository.
@@ -77,13 +82,28 @@ public class FireballSpell extends ProjectileSpell {
 
 ## Build
 
-- `./gradlew clean build` - Builds the JAR in `build/libs/empirewand-1.1.1.jar`.
-- `./gradlew test` - Runs JUnit tests.
-- `./gradlew spotbugsMain` - Static analysis.
+The project now produces ONLY a single shaded plugin JAR (no separate `-all` classifier) to simplify deployment.
 
-## Run
+Commands:
+- Unix/macOS: `./gradlew clean build`
+- Windows (PowerShell): `./gradlew.bat clean build`
 
-- Copy JAR to Paper server `plugins/` folder.
+Useful tasks:
+- `build` – compiles, runs static analysis, creates shaded jar
+- `test` – runs JUnit tests (`./gradlew test`)
+- `spotbugsMain` – SpotBugs analysis
+- `checkstyleMain` – Checkstyle report
+
+Output:
+- Shaded plugin JAR: `build/libs/empirewand-<version>.jar`  (deploy this one)
+
+Notes:
+- bStats is currently NOT relocated due to an ASM limitation parsing Java 21 class files in the Shadow plugin version used. If relocation becomes necessary, uncomment the `relocate("org.bstats", "nl.wantedchef.empirewand.shaded.bstats")` line in `build.gradle.kts` once Shadow/ASM supports class file major version 65 fully.
+- The build uses a Java 21 toolchain for compilation; ensure your Gradle daemon runs on JDK 17+.
+
+## Install / Upgrade
+
+- Copy `empirewand-<version>.jar` from `build/libs/` to your Paper server `plugins/` folder.
 - Start server: `java -jar paper-1.20.6.jar`.
 - Use `/ew get` to get a wand.
 - Bind spells: `/ew bind <spell-key>`.
@@ -103,8 +123,17 @@ Best practices:
 - Respect permissions: `empirewand.spell.use.<key>` (use) and `empirewand.spell.bind.<key>` (bind).
 - Guard early in listeners and keep event paths light (no blocking I/O, keep allocations low).
 
-Production notes:
-- Metrics: until a definitive bStats plugin ID is configured, set `metrics.enabled: false` on production servers. Keep it enabled during development for local insights.
+## Telemetry & Privacy
+
+- Metrics (bStats) are disabled by default: `metrics.enabled: false` in `config.yml`.
+- To enable, set `metrics.enabled: true` and ensure a valid `metrics.plugin-id` is configured.
+- No stacktraces are sent to players; errors are logged to the console/logger.
+
+## Commands & Permissions
+
+See `src/main/resources/plugin.yml` for the authoritative list of commands and permissions. Document highlights:
+- Primary commands: `/ew`, `/mz`
+- Wildcards: `nl.wantedchef.empirewand.spell.use.*` (default: true), `nl.wantedchef.empirewand.spell.bind.*` (default: op)
 
 ## API Usage
 

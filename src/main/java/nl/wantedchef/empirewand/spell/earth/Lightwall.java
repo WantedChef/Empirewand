@@ -8,6 +8,7 @@ import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -20,11 +21,53 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+/**
+ * An earth spell that creates a temporary wall of light that knocks back entities.
+ * <p>
+ * This spell creates a wall of invisible armor stands that act as a barrier,
+ * knocking back any entities that come into contact with it. The wall also applies
+ * blindness effects to entities that touch it. The spell has a Dutch display name
+ * ("Lichtmuur") and includes visual particle effects.
+ * <p>
+ * <strong>Features:</strong>
+ * <ul>
+ *   <li>Temporary light wall barrier</li>
+ *   <li>Knockback effect on contact</li>
+ *   <li>Blindness potion effect application</li>
+ *   <li>Dutch display name ("Lichtmuur")</li>
+ *   <li>Particle effects for visual feedback</li>
+ *   <li>Configurable size, duration, and effects</li>
+ * </ul>
+ *
+ * <p>
+ * <strong>Usage Example:</strong>
+ * <pre>{@code
+ * Spell lightwall = new Lightwall.Builder(api)
+ *     .name("Lightwall")
+ *     .description("Creates a temporary wall of light that knocks back entities.")
+ *     .cooldown(Duration.ofSeconds(18))
+ *     .build();
+ * }</pre>
+ *
+ * @since 1.0.0
+ */
 public class Lightwall extends Spell<Void> {
 
+    /**
+     * Builder for creating Lightwall spell instances.
+     * <p>
+     * Provides a fluent API for configuring the lightwall spell with sensible defaults.
+     */
     public static class Builder extends Spell.Builder<Void> {
-        public Builder(EmpireWandAPI api) {
+        /**
+         * Creates a new Lightwall spell builder.
+         *
+         * @param api the EmpireWandAPI instance
+         * @throws NullPointerException if api is null
+         */
+        public Builder(@NotNull EmpireWandAPI api) {
             super(api);
             this.name = "Lightwall";
             this.description = "Creates a temporary wall of light that knocks back entities.";
@@ -32,6 +75,11 @@ public class Lightwall extends Spell<Void> {
             this.spellType = SpellType.EARTH;
         }
 
+        /**
+         * Builds and returns a new Lightwall spell instance.
+         *
+         * @return the constructed Lightwall spell
+         */
         @Override
         @NotNull
         public Spell<Void> build() {
@@ -39,30 +87,73 @@ public class Lightwall extends Spell<Void> {
         }
     }
 
-    private Lightwall(Builder builder) {
+    /**
+     * Constructs a new Lightwall spell instance.
+     *
+     * @param builder the builder containing spell configuration
+     * @throws NullPointerException if builder is null
+     */
+    private Lightwall(@NotNull Builder builder) {
         super(builder);
     }
 
+    /**
+     * Returns the unique key for this spell.
+     * <p>
+     * This key is used for configuration, identification, and event handling.
+     *
+     * @return the spell key "lightwall"
+     */
     @Override
+    @NotNull
     public String key() {
         return "lightwall";
     }
 
+    /**
+     * Returns the display name for this spell.
+     * <p>
+     * This spell uses a Dutch display name: "Lichtmuur".
+     *
+     * @return the Dutch display name component
+     */
     @Override
+    @NotNull
     public Component displayName() {
         return Component.text("Lichtmuur");
     }
 
+    /**
+     * Returns the prerequisites for casting this spell.
+     * <p>
+     * Currently, this spell has no prerequisites beyond standard casting requirements.
+     *
+     * @return a no-op prerequisite
+     */
     @Override
+    @NotNull
     public PrereqInterface prereq() {
         return new PrereqInterface.NonePrereq();
     }
 
+    /**
+     * Executes the lightwall spell logic.
+     * <p>
+     * This method creates a wall of invisible armor stands at a location in front
+     * of the caster, which knock back entities that come into contact with them.
+     *
+     * @param context the spell context containing caster and target information
+     * @return null (this spell produces no effect object)
+     */
     @Override
-    protected Void executeSpell(SpellContext context) {
+    @Nullable
+    protected Void executeSpell(@NotNull SpellContext context) {
+        Objects.requireNonNull(context, "Context cannot be null");
+        
         Player player = context.caster();
-        Location center = player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(3));
-        Vector right = player.getEyeLocation().getDirection().crossProduct(new Vector(0, 1, 0)).normalize();
+        Location eyeLocation = player.getEyeLocation();
+        Location center = eyeLocation.add(eyeLocation.getDirection().multiply(3));
+        Vector right = eyeLocation.getDirection().crossProduct(new Vector(0, 1, 0)).normalize();
 
         double width = spellConfig.getDouble("values.width", 6.0);
         double height = spellConfig.getDouble("values.height", 3.0);
@@ -91,19 +182,47 @@ public class Lightwall extends Spell<Void> {
         return null;
     }
 
+    /**
+     * Handles the spell effect after execution.
+     * <p>
+     * This spell's effects are handled asynchronously through BukkitRunnables.
+     *
+     * @param context the spell context
+     * @param result the result of the spell execution (always null for this spell)
+     */
     @Override
     protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
         // Effects are handled in the scheduler.
     }
 
-    private List<ArmorStand> createWallStands(Location center, Vector right, double width, double height) {
+    /**
+     * Creates the armor stands that form the light wall.
+     * <p>
+     * This method spawns invisible armor stands in a wall formation at the specified
+     * location with the given dimensions.
+     *
+     * @param center the center location of the wall
+     * @param right the right vector for wall orientation
+     * @param width the width of the wall
+     * @param height the height of the wall
+     * @return a list of armor stands forming the wall
+     */
+    private @NotNull List<ArmorStand> createWallStands(@NotNull Location center, @NotNull Vector right, double width, double height) {
+        Objects.requireNonNull(center, "Center location cannot be null");
+        Objects.requireNonNull(right, "Right vector cannot be null");
+        
         List<ArmorStand> wallStands = new ArrayList<>();
+        var world = center.getWorld();
+        if (world == null) {
+            return wallStands;
+        }
+        
         for (int w = 0; w < width; w++) {
             for (int h = 0; h < height; h++) {
                 Vector offset = right.clone().multiply(w - width / 2).add(new Vector(0, h, 0));
                 Location standLocation = center.clone().add(offset);
 
-                ArmorStand stand = center.getWorld().spawn(standLocation, ArmorStand.class, s -> {
+                ArmorStand stand = world.spawn(standLocation, ArmorStand.class, s -> {
                     s.setInvisible(true);
                     s.setMarker(true);
                     s.setGravity(false);
@@ -115,6 +234,12 @@ public class Lightwall extends Spell<Void> {
         return wallStands;
     }
 
+    /**
+     * A runnable that handles the wall's collision detection and effects.
+     * <p>
+     * This task checks for entities near the wall and applies knockback and blindness
+     * effects to them when they come into contact.
+     */
     private class WallTask extends BukkitRunnable {
         private final SpellContext context;
         private final List<ArmorStand> wallStands;
@@ -125,10 +250,22 @@ public class Lightwall extends Spell<Void> {
         private final double width;
         private final double height;
 
-        public WallTask(SpellContext context, List<ArmorStand> wallStands, double knockbackStrength,
+        /**
+         * Creates a new WallTask instance.
+         *
+         * @param context the spell context
+         * @param wallStands the armor stands forming the wall
+         * @param knockbackStrength the strength of the knockback effect
+         * @param blindnessDuration the duration of the blindness effect in ticks
+         * @param hitPlayers whether to affect players
+         * @param hitMobs whether to affect mobs
+         * @param width the width of the wall
+         * @param height the height of the wall
+         */
+        public WallTask(@NotNull SpellContext context, @NotNull List<ArmorStand> wallStands, double knockbackStrength,
                 int blindnessDuration, boolean hitPlayers, boolean hitMobs, double width, double height) {
-            this.context = context;
-            this.wallStands = wallStands;
+            this.context = Objects.requireNonNull(context, "Context cannot be null");
+            this.wallStands = Objects.requireNonNull(wallStands, "Wall stands cannot be null");
             this.knockbackStrength = knockbackStrength;
             this.blindnessDuration = blindnessDuration;
             this.hitPlayers = hitPlayers;
@@ -137,6 +274,9 @@ public class Lightwall extends Spell<Void> {
             this.height = height;
         }
 
+        /**
+         * Runs the wall task, checking for entities near the wall and applying effects.
+         */
         @Override
         public void run() {
             if (wallStands.isEmpty() || !wallStands.get(0).isValid()) {
@@ -148,7 +288,11 @@ public class Lightwall extends Spell<Void> {
                 if (!stand.isValid())
                     return;
 
-                stand.getWorld().getNearbyEntities(stand.getLocation(), 1.5, 1.5, 1.5).forEach(entity -> {
+                var world = stand.getWorld();
+                if (world == null)
+                    return;
+
+                world.getNearbyEntities(stand.getLocation(), 1.5, 1.5, 1.5).forEach(entity -> {
                     if (entity instanceof LivingEntity living) {
                         if ((entity instanceof Player && !hitPlayers) || (!(entity instanceof Player) && !hitMobs))
                             return;
@@ -164,13 +308,32 @@ public class Lightwall extends Spell<Void> {
             if (System.currentTimeMillis() % 1000 < 50) { // Roughly every second
                 ArmorStand firstStand = wallStands.get(0);
                 Location center = firstStand.getLocation(); // Approximate center
-                Vector right = firstStand.getLocation().getDirection().crossProduct(new Vector(0, 1, 0)).normalize();
-                spawnWallParticles(context, center, width, height, right);
+                Vector direction = firstStand.getLocation().getDirection();
+                if (direction != null) {
+                    Vector right = direction.crossProduct(new Vector(0, 1, 0)).normalize();
+                    spawnWallParticles(context, center, width, height, right);
+                }
             }
         }
     }
 
-    private void spawnWallParticles(SpellContext context, Location center, double width, double height, Vector right) {
+    /**
+     * Spawns wall particles for visual feedback.
+     * <p>
+     * This method creates particle effects throughout the wall to make it visible
+     * to players.
+     *
+     * @param context the spell context
+     * @param center the center location of the wall
+     * @param width the width of the wall
+     * @param height the height of the wall
+     * @param right the right vector for wall orientation
+     */
+    private void spawnWallParticles(@NotNull SpellContext context, @NotNull Location center, double width, double height, @NotNull Vector right) {
+        Objects.requireNonNull(context, "Context cannot be null");
+        Objects.requireNonNull(center, "Center location cannot be null");
+        Objects.requireNonNull(right, "Right vector cannot be null");
+        
         for (int w = 0; w < width; w++) {
             for (int h = 0; h < height; h++) {
                 Vector offset = right.clone().multiply(w - width / 2).add(new Vector(0, h, 0));

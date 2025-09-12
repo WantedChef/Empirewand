@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -15,6 +16,20 @@ import org.jetbrains.annotations.Nullable;
 
 import net.kyori.adventure.text.Component;
 import nl.wantedchef.empirewand.EmpireWandPlugin;
+import nl.wantedchef.empirewand.command.admin.CooldownCommand;
+import nl.wantedchef.empirewand.command.admin.MigrateCommand;
+import nl.wantedchef.empirewand.command.admin.ReloadCommand;
+import nl.wantedchef.empirewand.command.wand.BindAllCommand;
+import nl.wantedchef.empirewand.command.wand.BindCategoryCommand;
+import nl.wantedchef.empirewand.command.wand.BindCommand;
+import nl.wantedchef.empirewand.command.wand.BindTypeCommand;
+import nl.wantedchef.empirewand.command.wand.GetCommand;
+import nl.wantedchef.empirewand.command.wand.ListCommand;
+import nl.wantedchef.empirewand.command.wand.SetSpellCommand;
+import nl.wantedchef.empirewand.command.wand.SpellsCommand;
+import nl.wantedchef.empirewand.command.wand.StatsCommand;
+import nl.wantedchef.empirewand.command.wand.SwitchEffectCommand;
+import nl.wantedchef.empirewand.command.wand.ToggleCommand;
 import nl.wantedchef.empirewand.framework.command.util.CommandErrorHandler;
 import nl.wantedchef.empirewand.framework.command.util.CommandHelpProvider;
 import nl.wantedchef.empirewand.framework.command.util.HelpCommand;
@@ -69,8 +84,38 @@ public abstract class BaseWandCommand implements CommandExecutor, TabCompleter {
 
     /**
      * Register all subcommands for this wand type. Called during construction.
+     * Default implementation registers all standard wand commands.
      */
-    protected abstract void registerSubcommands();
+    protected void registerSubcommands() {
+        String prefix = getPermissionPrefix();
+        String displayName = getWandDisplayName();
+        Material wandMaterial = getWandMaterial();
+
+        // Core wand management commands
+        register(new GetCommand(prefix, displayName, wandMaterial));
+        register(new BindCommand(prefix));
+        register(new UnbindCommand(prefix));
+        register(new BindAllCommand(prefix));
+        register(new ListCommand(prefix));
+        register(new SetSpellCommand(prefix));
+        register(new ToggleCommand(prefix));
+        register(new SwitchEffectCommand(plugin, prefix));
+
+        // Advanced binding commands
+        register(new BindTypeCommand(prefix));
+        register(new BindCategoryCommand(prefix));
+
+        // Information commands
+        register(new SpellsCommand(prefix));
+        register(new StatsCommand(prefix));
+
+        // System commands
+        register(new ReloadCommand(prefix));
+        register(new MigrateCommand(prefix));
+
+        // Cooldown management
+        register(new CooldownCommand(prefix));
+    }
 
     /**
      * Get the permission prefix for this wand type. E.g., "empirewand" or "mephidanteszeist"
@@ -81,6 +126,11 @@ public abstract class BaseWandCommand implements CommandExecutor, TabCompleter {
      * Get the display name for this wand type.
      */
     protected abstract String getWandDisplayName();
+
+    /**
+     * Get the material for this wand type.
+     */
+    protected abstract Material getWandMaterial();
 
     /**
      * Register a subcommand.

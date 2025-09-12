@@ -5,7 +5,9 @@
       "args": [
         "-y",
         "@modelcontextprotocol/server-memory"
-      ]
+      ],
+      "disabled": false,
+      "autoApprove": []
     },
     "context7": {
       "command": "npx",
