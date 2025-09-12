@@ -70,7 +70,7 @@ public class SwitchEffectCommand implements SubCommand {
         }
 
         String effectName = context.getArg(1).toLowerCase();
-        SpellSwitchService switchService = new SpellSwitchService(this.plugin);
+        SpellSwitchService switchService = new SpellSwitchService(this.plugin, context.wandService());
         Set<String> availableEffects = switchService.getAvailableEffects();
 
         if (!availableEffects.contains(effectName)) {
@@ -92,7 +92,7 @@ public class SwitchEffectCommand implements SubCommand {
                 ItemStack item = player.getInventory().getItemInMainHand();
                 if (context.wandService().isWand(item)) {
                     String partial = context.args()[1].toLowerCase();
-                    SpellSwitchService switchService = new SpellSwitchService(this.plugin);
+                    SpellSwitchService switchService = new SpellSwitchService(this.plugin, context.wandService());
                     return switchService.getAvailableEffects().stream()
                             .filter(effect -> effect.startsWith(partial))
                             .collect(Collectors.toList());

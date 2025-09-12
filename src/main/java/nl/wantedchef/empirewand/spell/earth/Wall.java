@@ -101,7 +101,7 @@ public class Wall extends Spell<Player> {
                 for (Block block : wallBlocks) {
                     if (block.getType() == Material.STONE_BRICKS) {
                         block.setType(Material.AIR);
-                        block.getWorld().spawnParticle(Particle.BLOCK_DUST, block.getLocation(), 5, 0.2, 0.2, 0.2, 0, 
+                        block.getWorld().spawnParticle(Particle.DUST, block.getLocation(), 5, 0.2, 0.2, 0.2, 0, 
                             Material.STONE_BRICKS.createBlockData());
                     }
                 }

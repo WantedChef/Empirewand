@@ -83,7 +83,7 @@ public class LifeReap extends Spell<Void> {
         }
 
         double maxHealth = 20.0; // Default max health
-        var maxHealthAttr = player.getAttribute(Attribute.MAX_HEALTH);
+        var maxHealthAttr = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
         if (maxHealthAttr != null) {
             maxHealth = maxHealthAttr.getValue();
         }

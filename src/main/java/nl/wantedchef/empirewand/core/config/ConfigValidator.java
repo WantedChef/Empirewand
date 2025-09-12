@@ -588,18 +588,20 @@ public class ConfigValidator {
      * Checks if a value key should be numeric.
      */
     private boolean isNumericValueKey(String key) {
-        return key != null && (
-            key.contains("damage") || 
-            key.contains("radius") || 
-            key.contains("range") || 
-            key.contains("yield") ||
-            key.contains("speed") ||
-            key.contains("distance") ||
-            key.contains("power") ||
-            key.contains("strength") ||
-            key.contains("multiplier") ||
-            key.contains("modifier")
-        );
+        if (key == null) return false;
+        // Exclude boolean-like keys that incidentally contain numeric-related words
+        if ("cancel-on-damage".equals(key)) return false;
+
+        return key.contains("damage") ||
+               key.contains("radius") ||
+               key.contains("range") ||
+               key.contains("yield") ||
+               key.contains("speed") ||
+               key.contains("distance") ||
+               key.contains("power") ||
+               key.contains("strength") ||
+               key.contains("multiplier") ||
+               key.contains("modifier");
     }
 
     /**

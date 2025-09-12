@@ -79,13 +79,13 @@ public class Petrify extends Spell<LivingEntity> {
         
         // Apply effects
         target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, duration, 255));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.JUMP, duration, 128));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, duration, 128));
         target.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, duration, 255));
         target.damage(damage, player);
         
         // Visual effects
         target.getWorld().spawnParticle(Particle.SNOWFLAKE, target.getLocation(), 50, 0.5, 1, 0.5, 0.1);
-        target.getWorld().spawnParticle(Particle.BLOCK_DUST, target.getLocation().add(0, 1, 0), 30, 0.3, 0.5, 0.3, 0, org.bukkit.Material.ICE.createBlockData());
+        target.getWorld().spawnParticle(Particle.DUST, target.getLocation().add(0, 1, 0), 30, 0.3, 0.5, 0.3, 0, org.bukkit.Material.ICE.createBlockData());
         
         // Sound effects
         context.fx().playSound(target.getLocation(), Sound.BLOCK_GLASS_PLACE, 1.5f, 0.5f);

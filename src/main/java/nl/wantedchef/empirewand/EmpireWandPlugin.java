@@ -54,6 +54,7 @@ public final class EmpireWandPlugin extends JavaPlugin {
     MetricsService metricsService;
     private TaskManager taskManager;
     private WandStatusListener wandStatusListener;
+    private nl.wantedchef.empirewand.api.spell.toggle.SpellManager spellManager;
 
     @Override
     public void onEnable() {
@@ -71,6 +72,9 @@ public final class EmpireWandPlugin extends JavaPlugin {
             this.fxService = new nl.wantedchef.empirewand.framework.service.FxService(this.textService,
                     this.performanceMonitor);
             this.permissionService = new nl.wantedchef.empirewand.framework.service.PermissionServiceImpl();
+
+            // Initialize toggle SpellManager
+            this.spellManager = new nl.wantedchef.empirewand.framework.service.toggle.SpellManagerImpl(this);
 
             // Register API provider early so services depending on API can use it
             EmpireWandAPI.setProvider(new EmpireWandProviderImpl(this));
@@ -233,6 +237,7 @@ public final class EmpireWandPlugin extends JavaPlugin {
         pm.registerEvents(new PlayerJoinQuitListener(this), this);
         pm.registerEvents(new SpellCleanupListener(this), this);
         pm.registerEvents(new WandCastListener(this), this);
+        pm.registerEvents(new nl.wantedchef.empirewand.listener.wand.WandSwingListener(this), this);
         pm.registerEvents(new WandSelectListener(this), this);
         
         // Store reference to WandStatusListener for proper shutdown
@@ -308,6 +313,10 @@ public final class EmpireWandPlugin extends JavaPlugin {
 
     public MetricsService getMetricsService() {
         return metricsService;
+    }
+
+    public nl.wantedchef.empirewand.api.spell.toggle.SpellManager getSpellManager() {
+        return spellManager;
     }
 
     public DebugMetricsService getDebugMetricsService() {
@@ -413,6 +422,11 @@ record EmpireWandProviderImpl(EmpireWandPlugin plugin) implements EmpireWandAPI.
         return new nl.wantedchef.empirewand.api.impl.MetricsServiceAdapter(
                 plugin.getMetricsService(),
                 plugin.getDebugMetricsService());
+    }
+
+    @Override
+    public nl.wantedchef.empirewand.api.spell.toggle.SpellManager getSpellManager() {
+        return plugin.getSpellManager();
     }
 
     @Override

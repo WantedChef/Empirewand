@@ -1,6 +1,7 @@
 import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.language.jvm.tasks.ProcessResources
+import org.gradle.api.plugins.jvm.JvmTestSuite
 
 plugins {
     java
@@ -31,9 +32,19 @@ repositories {
     }
 }
 
+// Configure test suites to explicitly use JUnit Jupiter
+// This avoids Gradle's deprecated automatic loading of test framework dependencies
+testing {
+    suites {
+        val test by getting(JvmTestSuite::class) {
+            useJUnitJupiter()
+        }
+    }
+}
+
 dependencies {
     // Paper API to compile against Bukkit/Spigot API (provided by server at runtime)
-    compileOnly("io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT")
     // Annotations (optional, compileOnly)
     compileOnly("org.jetbrains:annotations:24.1.0")
     // SpotBugs annotations used by @SuppressFBWarnings
@@ -42,9 +53,12 @@ dependencies {
     implementation("org.bstats:bstats-bukkit:3.0.2")
 
     // Testing dependencies
+    // Explicitly declare JUnit Jupiter API and runtime engine to avoid Gradle's deprecated auto-loading
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
+
     testImplementation("org.mockito:mockito-core:5.9.0")
-    testImplementation("io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT")
+    testImplementation("io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT")
     // Include bStats at test runtime to satisfy MetricsService dependencies
     testImplementation("org.bstats:bstats-bukkit:3.0.2")
 }
@@ -103,19 +117,19 @@ tasks.jacocoTestReport {
     }
 }
 
-// tasks.jacocoTestCoverageVerification {
-//     dependsOn(tasks.test)
-//     violationRules {
-//         rule {
-//             limit {
-//                 counter = "INSTRUCTION"
-//                 value = "COVEREDRATIO"
-//                 // Restored to 80% coverage requirement for production quality
-//                 minimum = "0.80".toBigDecimal()
-//             }
-//         }
-//     }
-// }
+tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.test)
+    violationRules {
+        rule {
+            limit {
+                counter = "INSTRUCTION"
+                value = "COVEREDRATIO"
+                // Restored to 80% coverage requirement for production quality
+                minimum = "0.80".toBigDecimal()
+            }
+        }
+    }
+}
 
 checkstyle {
     toolVersion = "10.12.0"
@@ -161,7 +175,11 @@ tasks.test {
     enabled = true
     useJUnitPlatform()
     // Allow ByteBuddy to instrument Java 21 classes for Mockito inline
-    jvmArgs("-Dnet.bytebuddy.experimental=true")
+    // and hide the JVM warning about dynamic agent loading during tests
+    jvmArgs(
+        "-Dnet.bytebuddy.experimental=true",
+        "-XX:+EnableDynamicAgentLoading"
+    )
     finalizedBy(tasks.jacocoTestReport)
 }
 

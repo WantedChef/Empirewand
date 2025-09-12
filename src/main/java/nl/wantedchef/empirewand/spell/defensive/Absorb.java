@@ -26,7 +26,7 @@ public class Absorb extends Spell<Player> {
             this.name = "Absorb";
             this.description = "Absorb incoming damage and convert it to health";
             this.cooldown = Duration.ofSeconds(40);
-            this.spellType = SpellType.UTILITY;
+            this.spellType = SpellType.MISC;
         }
 
         @Override

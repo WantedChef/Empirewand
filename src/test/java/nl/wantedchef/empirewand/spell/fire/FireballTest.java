@@ -8,10 +8,7 @@ import org.mockito.Mock;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-<<<<<<< HEAD
 import static org.mockito.MockitoAnnotations.openMocks;
-=======
->>>>>>> origin/main
 
 class FireballTest {
 

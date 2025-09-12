@@ -26,7 +26,7 @@ public class Shell extends Spell<Player> {
             this.name = "Shell";
             this.description = "Create a protective shell around yourself";
             this.cooldown = Duration.ofSeconds(30);
-            this.spellType = SpellType.UTILITY;
+            this.spellType = SpellType.MISC;
         }
 
         @Override
@@ -96,7 +96,7 @@ public class Shell extends Spell<Player> {
                 
                 // Shimmer effect
                 if (ticks % 20 == 0) {
-                    player.getWorld().spawnParticle(Particle.ENCHANTMENT_TABLE, 
+                    player.getWorld().spawnParticle(Particle.ENCHANT, 
                         player.getLocation().add(0, 1, 0), 10, 0.5, 0.5, 0.5, 0.05);
                 }
                 

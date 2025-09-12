@@ -16,6 +16,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.metadata.FixedMetadataValue;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,13 +28,16 @@ import java.util.Optional;
  * Handles wand interactions: left-click to cast, right-click to switch spells.
  * Implements visual spell switching effects and ensures proper spell cycling.
  */
+import nl.wantedchef.empirewand.api.EmpireWandAPI;
+import nl.wantedchef.empirewand.api.service.WandService;
+
 public final class WandCastListener implements Listener {
     private final EmpireWandPlugin plugin;
     private final SpellSwitchService spellSwitchService;
 
     public WandCastListener(EmpireWandPlugin plugin) {
         this.plugin = plugin;
-        this.spellSwitchService = new SpellSwitchService(plugin);
+        this.spellSwitchService = new SpellSwitchService(plugin, EmpireWandAPI.getService(WandService.class));
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
@@ -44,10 +48,6 @@ public final class WandCastListener implements Listener {
         }
 
         Action action = event.getAction();
-        if (action != Action.LEFT_CLICK_AIR && action != Action.LEFT_CLICK_BLOCK 
-            && action != Action.RIGHT_CLICK_AIR && action != Action.RIGHT_CLICK_BLOCK) {
-            return;
-        }
 
         Player player = event.getPlayer();
         // Combined validation for better performance
@@ -66,8 +66,12 @@ public final class WandCastListener implements Listener {
             return;
         }
 
+        // Treat clicks generically: just left/right with the wand, regardless of AIR/BLOCK
         boolean isLeftClick = (action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK);
         boolean isRightClick = (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK);
+        if (!isLeftClick && !isRightClick) {
+            return; // Ignore non-click actions (e.g., PHYSICAL)
+        }
 
         if (isRightClick) {
             // Right-click: cycle to next spell with visual effect
@@ -84,36 +88,16 @@ public final class WandCastListener implements Listener {
         // Left-click: cast current spell
         if (isLeftClick) {
             event.setCancelled(true);
+            // mark last wand click tick to help the swing listener avoid double-casting
+            long now = player.getWorld().getFullTime();
+            player.setMetadata("empirewand.lastWandClick", new FixedMetadataValue(plugin, now));
             castCurrentSpell(player, item, spells);
         }
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.NORMAL)
     public void onSneak(PlayerToggleSneakEvent event) {
-        Player player = event.getPlayer();
-
-        // Only handle when player starts sneaking (not when they stop)
-        if (!event.isSneaking()) {
-            return;
-        }
-
-        // Check if player is still online and valid
-        if (!player.isOnline() || !player.isValid()) {
-            return;
-        }
-
-        ItemStack item = player.getInventory().getItemInMainHand();
-        if (!plugin.getWandService().isWand(item)) {
-            return;
-        }
-
-        List<String> spells = new ArrayList<>(plugin.getWandService().getSpells(item));
-        if (spells.isEmpty()) {
-            return; // Don't show error message for sneak action
-        }
-
-        // Sneak: cycle to next spell with visual effect
-        cycleToNextSpell(player, item, spells);
+        // Do not switch spells on sneak anymore. Intentionally left blank to comply with requested behavior.
     }
 
     private void cycleToNextSpell(Player player, ItemStack item, List<String> spells) {

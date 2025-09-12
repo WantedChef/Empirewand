@@ -109,7 +109,7 @@ public class Restoration extends Spell<LivingEntity> {
             context.plugin().getServer().getScheduler().runTaskLater(context.plugin(), () -> {
                 target.getWorld().spawnParticle(Particle.END_ROD, 
                     target.getLocation().add(0, 1 + wave * 0.5, 0), 15, 0.3, 0.3, 0.3, 0.05);
-                target.getWorld().spawnParticle(Particle.TOTEM, 
+                target.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, 
                     target.getLocation().add(0, 1, 0), 10, 0.5, 0.5, 0.5, 0.1);
             }, i * 5L);
         }

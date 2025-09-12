@@ -90,7 +90,7 @@ public class Lifewalk extends Spell<Player> {
                 Location loc = player.getLocation();
                 
                 // Nature particles
-                loc.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, loc, 5, 0.5, 0.1, 0.5, 0);
+                loc.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, loc, 5, 0.5, 0.1, 0.5, 0);
                 loc.getWorld().spawnParticle(Particle.SPORE_BLOSSOM_AIR, loc, 3, 0.3, 0.1, 0.3, 0);
                 
                 // Grow plants around player

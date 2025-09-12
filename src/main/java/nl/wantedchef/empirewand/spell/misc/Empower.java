@@ -65,7 +65,7 @@ public class Empower extends Spell<Player> {
         player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, duration, 1));
         player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, duration, 1));
         player.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, duration, 1));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP, duration, 1));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, duration, 1));
         player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, duration, 0));
         
         // Visual effect over time
@@ -85,7 +85,7 @@ public class Empower extends Spell<Player> {
                     double x = Math.cos(angle) * 0.5;
                     double z = Math.sin(angle) * 0.5;
                     double y = Math.sin(ticks * 0.1) * 0.5 + 1;
-                    player.getWorld().spawnParticle(Particle.ENCHANTMENT_TABLE, 
+                    player.getWorld().spawnParticle(Particle.ENCHANT, 
                         player.getLocation().add(x, y, z), 1, 0, 0, 0, 0);
                 }
                 
@@ -102,7 +102,7 @@ public class Empower extends Spell<Player> {
         }.runTaskTimer(context.plugin(), 0L, 5L);
         
         // Initial effects
-        player.getWorld().spawnParticle(Particle.EXPLOSION_HUGE, 
+        player.getWorld().spawnParticle(Particle.EXPLOSION, 
             player.getLocation().add(0, 1, 0), 1, 0, 0, 0, 0);
         player.getWorld().spawnParticle(Particle.END_ROD, 
             player.getLocation(), 50, 1, 1, 1, 0.1);

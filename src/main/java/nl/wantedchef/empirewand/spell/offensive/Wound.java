@@ -26,7 +26,7 @@ public class Wound extends Spell<LivingEntity> {
             this.name = "Wound";
             this.description = "Inflict serious wounds on your target";
             this.cooldown = Duration.ofSeconds(8);
-            this.spellType = SpellType.OFFENSIVE;
+            this.spellType = SpellType.DARK;
         }
 
         @Override

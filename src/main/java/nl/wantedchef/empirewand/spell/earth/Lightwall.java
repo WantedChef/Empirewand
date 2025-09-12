@@ -298,10 +298,17 @@ public class Lightwall extends Spell<Void> {
                         if ((entity instanceof Player && !hitPlayers) || (!(entity instanceof Player) && !hitMobs))
                             return;
 
-                        Vector knockback = living.getLocation().toVector().subtract(stand.getLocation().toVector())
-                                .normalize();
-                        living.setVelocity(entity.getVelocity().add(knockback.multiply(knockbackStrength).setY(0.2)));
-                        living.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, blindnessDuration, 0));
+                        Vector delta = living.getLocation().toVector().subtract(stand.getLocation().toVector());
+                        if (delta.lengthSquared() < 1.0E-6) {
+                            return; // Avoid normalizing a zero-length vector
+                        }
+                        Vector knockback = delta.normalize();
+                        Vector result = entity.getVelocity().add(knockback.multiply(knockbackStrength)).setY(0.2);
+                        if (Double.isFinite(result.getX()) && Double.isFinite(result.getY()) && Double.isFinite(result.getZ())) {
+                            living.setVelocity(result);
+                            living.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, blindnessDuration, 0));
+                        }
+                        // else skip applying non-finite velocity
                     }
                 });
             });

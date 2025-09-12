@@ -2,6 +2,12 @@ package nl.wantedchef.empirewand.framework.command.util;
 
 import nl.wantedchef.empirewand.EmpireWandPlugin;
 import nl.wantedchef.empirewand.framework.command.CommandContext;
+import nl.wantedchef.empirewand.framework.service.ConfigService;
+import nl.wantedchef.empirewand.framework.service.CooldownService;
+import nl.wantedchef.empirewand.framework.service.FxService;
+import nl.wantedchef.empirewand.api.spell.SpellRegistry;
+import nl.wantedchef.empirewand.api.service.WandService;
+import nl.wantedchef.empirewand.api.service.PermissionService;
 import nl.wantedchef.empirewand.framework.command.SubCommand;
 import org.bukkit.command.CommandSender;
 import org.bukkit.scheduler.BukkitScheduler;
@@ -14,9 +20,12 @@ import org.mockito.MockitoAnnotations;
 
 import java.util.function.Consumer;
 
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
@@ -35,7 +44,6 @@ class AsyncCommandExecutorTest {
     @Mock
     private CommandSender sender;
     
-    @Mock
     private CommandContext context;
     
     @Mock
@@ -44,11 +52,28 @@ class AsyncCommandExecutorTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        when(plugin.getServer()).thenReturn(mock(org.bukkit.Server.class));
-        when(plugin.getServer().getScheduler()).thenReturn(scheduler);
-        when(context.sender()).thenReturn(sender);
+        // We inject the scheduler directly; no need to mock Server
         when(command.getName()).thenReturn("testcommand");
-        asyncExecutor = new AsyncCommandExecutor(plugin);
+        when(plugin.getLogger()).thenReturn(mock(java.util.logging.Logger.class));
+        // Build a real CommandContext to avoid mocking final record classes
+        ConfigService config = mock(ConfigService.class);
+        FxService fx = mock(FxService.class);
+        SpellRegistry spellRegistry = mock(SpellRegistry.class);
+        WandService wandService = mock(WandService.class);
+        CooldownService cooldownService = mock(CooldownService.class);
+        PermissionService permissionService = mock(PermissionService.class);
+        when(sender.getName()).thenReturn("tester");
+        context = new CommandContext(
+                plugin,
+                sender,
+                new String[0],
+                config,
+                fx,
+                spellRegistry,
+                wandService,
+                cooldownService,
+                permissionService);
+        asyncExecutor = new AsyncCommandExecutor(plugin, scheduler);
     }
 
     @Nested
@@ -66,7 +91,7 @@ class AsyncCommandExecutorTest {
             asyncExecutor.executeAsync(context, command, task, onSuccess, onError);
             
             // Verify scheduler interaction
-            verify(plugin.getServer()).getScheduler();
+            verify(scheduler).runTaskAsynchronously(eq(plugin), any(Runnable.class));
         }
 
         @Test
@@ -82,7 +107,7 @@ class AsyncCommandExecutorTest {
             asyncExecutor.executeAsync(context, command, task, onSuccess, onError);
             
             // Verify scheduler interaction
-            verify(plugin.getServer()).getScheduler();
+            verify(scheduler).runTaskAsynchronously(eq(plugin), any(Runnable.class));
         }
 
         @Test
@@ -94,7 +119,7 @@ class AsyncCommandExecutorTest {
             asyncExecutor.executeAsync(context, command, task, "Success!");
             
             // Verify scheduler interaction
-            verify(plugin.getServer()).getScheduler();
+            verify(scheduler).runTaskAsynchronously(eq(plugin), any(Runnable.class));
         }
 
         @Test
@@ -106,7 +131,7 @@ class AsyncCommandExecutorTest {
             asyncExecutor.executeAsync(context, command, task);
             
             // Verify scheduler interaction
-            verify(plugin.getServer()).getScheduler();
+            verify(scheduler).runTaskAsynchronously(eq(plugin), any(Runnable.class));
         }
     }
 

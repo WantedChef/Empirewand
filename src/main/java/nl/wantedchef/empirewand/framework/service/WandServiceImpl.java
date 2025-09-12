@@ -1,7 +1,5 @@
 package nl.wantedchef.empirewand.framework.service;
 
-<<<<<<< HEAD
-=======
 import nl.wantedchef.empirewand.EmpireWandPlugin;
 import nl.wantedchef.empirewand.api.ServiceHealth;
 import nl.wantedchef.empirewand.api.Version;
@@ -25,7 +23,6 @@ import org.jetbrains.annotations.Nullable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
->>>>>>> origin/main
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,29 +34,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import nl.wantedchef.empirewand.EmpireWandPlugin;
-import nl.wantedchef.empirewand.api.ServiceHealth;
-import nl.wantedchef.empirewand.api.Version;
-import nl.wantedchef.empirewand.api.service.WandCustomizer;
-import nl.wantedchef.empirewand.api.service.WandService;
-import nl.wantedchef.empirewand.api.service.WandStatistics;
-import nl.wantedchef.empirewand.api.service.WandTemplate;
-import nl.wantedchef.empirewand.api.spell.SpellRegistry;
-import nl.wantedchef.empirewand.core.storage.Keys;
-import nl.wantedchef.empirewand.core.util.PerformanceMonitor;
 
 /**
  * The primary implementation of the {@link WandService} API. This class handles
@@ -201,16 +175,12 @@ public class WandServiceImpl implements WandService {
     }
 
     // ===== EXISTING METHODS (ENHANCED) =====
-<<<<<<< HEAD
-=======
 
-    @Override
     @NotNull
     public ItemStack createBasicWand() {
         return createWand(getTemplate("basic_wand").orElseThrow()).build();
     }
 
->>>>>>> origin/main
     @Override
     public boolean isWand(@Nullable ItemStack item) {
         if (item == null || !item.hasItemMeta()) {
@@ -703,33 +673,18 @@ public class WandServiceImpl implements WandService {
     @Override
     @NotNull
     public WandStatistics getStatistics(@NotNull ItemStack wand) {
-<<<<<<< HEAD
-        // Statistics tracking not yet implemented; return zeroed immutable instance
-        return WandStatisticsImpl.INSTANCE;
-=======
         if (!isWand(wand)) {
-            return new WandStatisticsImpl();
+            return new WandStatisticsImpl(null);
         }
-        
+
         String cacheKey = generateWandCacheKey(wand);
-        WandStatisticsImpl stats = wandStatistics.get(cacheKey);
-        if (stats == null) {
-            stats = new WandStatisticsImpl(wand);
-            wandStatistics.put(cacheKey, stats);
-        }
-        return stats;
->>>>>>> origin/main
+        return wandStatistics.computeIfAbsent(cacheKey, k -> new WandStatisticsImpl(wand));
     }
 
     @Override
     @NotNull
     public WandStatistics getGlobalStatistics() {
-<<<<<<< HEAD
-        // Statistics tracking not yet implemented; return zeroed immutable instance
-        return WandStatisticsImpl.INSTANCE;
-=======
         return new GlobalWandStatistics();
->>>>>>> origin/main
     }
 
     // ===== ADVANCED OPERATIONS =====
@@ -1183,103 +1138,89 @@ public class WandServiceImpl implements WandService {
     }
 
     /**
-<<<<<<< HEAD
-     * A placeholder implementation of the {@link WandStatistics} interface.
-     *
-     * Optimized as a singleton to reduce object creation.
-     */
-    private static class WandStatisticsImpl implements WandStatistics {
-
-        // Singleton instance to reduce object creation
-        private static final WandStatisticsImpl INSTANCE = new WandStatisticsImpl();
-
-=======
      * Implementation of WandStatistics for individual wands.
      */
     private static class WandStatisticsImpl implements WandStatistics {
         private final ItemStack wand;
         private static final String STATS_PREFIX = "wand_stats_";
-        
-        public WandStatisticsImpl() {
-            this.wand = null;
-        }
-        
-        public WandStatisticsImpl(ItemStack wand) {
+
+        public WandStatisticsImpl(@Nullable ItemStack wand) {
             this.wand = wand;
         }
-        
->>>>>>> origin/main
+
         @Override
         public int getSpellCount() {
             if (wand == null) return 0;
             ItemMeta meta = wand.getItemMeta();
             if (meta == null) return 0;
-            
-            List<String> spells = meta.getPersistentDataContainer()
-                .get(Keys.WAND_SPELLS, PersistentDataType.LIST.strings());
-            return spells != null ? spells.size() : 0;
+
+            String spellsData = meta.getPersistentDataContainer().get(Keys.WAND_SPELLS, PersistentDataType.STRING);
+            if (spellsData == null || spellsData.isEmpty()) {
+                return 0;
+            }
+            return spellsData.split(",").length;
         }
-        
+
         @Override
         public long getUsageCount() {
             if (wand == null) return 0;
             ItemMeta meta = wand.getItemMeta();
             if (meta == null) return 0;
-            
+
             Integer count = meta.getPersistentDataContainer()
-                .get(new NamespacedKey("empirewand", STATS_PREFIX + "usage_count"), 
-                     PersistentDataType.INTEGER);
+                    .get(new NamespacedKey("empirewand", STATS_PREFIX + "usage_count"),
+                            PersistentDataType.INTEGER);
             return count != null ? count : 0;
         }
-        
+
         @Override
         public String getMostUsedSpell() {
             if (wand == null) return null;
             ItemMeta meta = wand.getItemMeta();
             if (meta == null) return null;
-            
+
             return meta.getPersistentDataContainer()
-                .get(new NamespacedKey("empirewand", STATS_PREFIX + "most_used"), 
-                     PersistentDataType.STRING);
+                    .get(new NamespacedKey("empirewand", STATS_PREFIX + "most_used"),
+                            PersistentDataType.STRING);
         }
-        
+
         @Override
-        public long getSpellUsageCount(String spellKey) {
-            if (wand == null || spellKey == null) return 0;
+        public long getSpellUsageCount(@NotNull String spellKey) {
+            if (wand == null) return 0;
             ItemMeta meta = wand.getItemMeta();
             if (meta == null) return 0;
-            
+
             Integer count = meta.getPersistentDataContainer()
-                .get(new NamespacedKey("empirewand", STATS_PREFIX + "spell_" + spellKey), 
-                     PersistentDataType.INTEGER);
+                    .get(new NamespacedKey("empirewand", STATS_PREFIX + "spell_" + spellKey),
+                            PersistentDataType.INTEGER);
             return count != null ? count : 0;
         }
-        
+
         @Override
         public long getCreationTimestamp() {
             if (wand == null) return 0;
             ItemMeta meta = wand.getItemMeta();
             if (meta == null) return 0;
-            
+
             Long timestamp = meta.getPersistentDataContainer()
-                .get(new NamespacedKey("empirewand", STATS_PREFIX + "created"), 
-                     PersistentDataType.LONG);
+                    .get(new NamespacedKey("empirewand", STATS_PREFIX + "created"),
+                            PersistentDataType.LONG);
             return timestamp != null ? timestamp : System.currentTimeMillis();
         }
-        
+
         @Override
         public long getLastUsedTimestamp() {
             if (wand == null) return 0;
             ItemMeta meta = wand.getItemMeta();
             if (meta == null) return 0;
-            
+
             Long timestamp = meta.getPersistentDataContainer()
-                .get(new NamespacedKey("empirewand", STATS_PREFIX + "last_used"), 
-                     PersistentDataType.LONG);
+                    .get(new NamespacedKey("empirewand", STATS_PREFIX + "last_used"),
+                            PersistentDataType.LONG);
             return timestamp != null ? timestamp : 0;
         }
     }
-    
+
     /**
      * Global wand statistics implementation.
      */

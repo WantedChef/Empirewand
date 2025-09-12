@@ -119,7 +119,7 @@ public class Recall extends Spell<Player> {
                     double x = Math.cos(angle) * 1.5;
                     double z = Math.sin(angle) * 1.5;
                     Location loc = player.getLocation().clone().add(x, 0.5, z);
-                    loc.getWorld().spawnParticle(Particle.ENCHANTMENT_TABLE, loc, 1, 0, 0, 0, 0);
+                    loc.getWorld().spawnParticle(Particle.ENCHANT, loc, 1, 0, 0, 0, 0);
                 }
                 
                 if (ticks % 20 == 0) {

@@ -5,6 +5,8 @@ config-version: 1.0
 spells:
   comet:
     display-name: "<#FF8C00>Comet"
+    description: "Launches a powerful explosive comet at your target location"
+    type: PROJECTILE
     cooldown: 2500 # ms
     range: 20.0
     fx:
@@ -19,6 +21,8 @@ spells:
 
   explosive:
     display-name: "<#8B0000>Explosive"
+    description: "Creates a powerful explosion that damages enemies in a large radius"
+    type: FIRE
     cooldown: 5000
     values:
       damage: 12.0 # 6 hearts
@@ -29,6 +33,8 @@ spells:
 
   magic-missile:
     display-name: "<#9932CC>Magic Missile"
+    description: "Fires multiple homing magical projectiles at your target"
+    type: PROJECTILE
     cooldown: 3000
     range: 20.0
     fx:
@@ -45,662 +51,770 @@ spells:
 
   glacial-spike:
     display-name: "<#00BFFF>Glacial Spike"
+    description: "Launches an icy spike that slows enemies on impact"
+    type: ICE
     cooldown: 2500
-  values:
-    slow-duration-ticks: 80   # 4s
-    slow-amplifier: 2         # Slowness III (amplifier is 0-based)
-  flags:
-    hit-players: true
-    hit-mobs: true
+    values:
+      slow-duration-ticks: 80   # 4s
+      slow-amplifier: 2         # Slowness III (amplifier is 0-based)
+    flags:
+      hit-players: true
+      hit-mobs: true
 
   lifesteal:
     display-name: "<#AA0000>Life Steal"
+    description: "Damages an enemy and heals you for a portion of the damage dealt"
+    type: DARK
     cooldown: 3000
-  values:
-    damage: 6.0               # 3 hearts
-  flags:
-    hit-players: true
-    hit-mobs: true
+    values:
+      damage: 6.0               # 3 hearts
+    flags:
+      hit-players: true
+      hit-mobs: true
 
   ethereal-form:
     display-name: "<#7FFFD4>Ethereal Form"
+    description: "Makes you temporarily ethereal and immune to fall damage"
+    type: MOVEMENT
     cooldown: 4000
-  values:
-    duration-ticks: 100       # 5 seconds
+    values:
+      duration-ticks: 100       # 5 seconds
 
   leap:
     display-name: "<#00FA9A>Leap"
+    description: "Propels you forward with enhanced velocity"
+    type: MOVEMENT
     cooldown: 1500
-  values:
-    velocity-multiplier: 1.5
-    vertical-boost: 0.0       # Optional extra lift
+    values:
+      velocity-multiplier: 1.5
+      vertical-boost: 0.0       # Optional extra lift
 
   heal:
     display-name: "<#ADFF2F>Heal"
+    description: "Restores your health instantly"
+    type: HEAL
     cooldown: 2000
     range: 0.0 # self-cast
-  fx:
-    particles: "HEART"
-    sound: "ENTITY_EXPERIENCE_ORB_PICKUP"
-  values:
-    heal-amount: 8.0          # 4 hearts
+    fx:
+      particles: "HEART"
+      sound: "ENTITY_EXPERIENCE_ORB_PICKUP"
+    values:
+      heal-amount: 8.0          # 4 hearts
 
   grasping-vines:
     display-name: "<#228B22>Grasping Vines"
+    description: "Summons vines that root enemies in place with extreme slowness"
+    type: EARTH
     cooldown: 3000
-  values:
-    duration-ticks: 60
-    slow-amplifier: 250       # Extreme slow = near-root
-  flags:
-    hit-players: true
-    hit-mobs: true
+    values:
+      duration-ticks: 60
+      slow-amplifier: 250       # Extreme slow = near-root
+    flags:
+      hit-players: true
+      hit-mobs: true
 
   polymorph:
     display-name: "<#FFDAB9>Polymorph"
+    description: "Transforms an enemy temporarily, disabling their abilities"
+    type: CONTROL
     cooldown: 4000
-  values:
-    duration-ticks: 100
+    values:
+      duration-ticks: 100
 
 # New spells from NEXT coming spells
   dark-circle:
     display-name: "<#8B0000>Dark Circle"
+    description: "Creates a dark vortex that pulls enemies in and launches them upward"
+    type: DARK
     cooldown: 8000
-  values:
-    radius: 10.0               # Pull/visual circle radius (blocks)
-    pull-strength: 0.6         # Velocity towards center each tick
-    pull-duration-ticks: 30    # Duration of pull phase
-    launch-power: 2.2          # Upward velocity at launch
-    launch-delay-ticks: 10     # Ticks after pull before launch
-    detonation-damage: 4.0     # Bonus damage at launch
-    radial-knockback: 0.7      # Outward knockback added at launch
-    slow-amplifier: 0          # Slowness level during detonation (0=Slowness I)
-    wither-duration-ticks: 60  # Wither duration applied on launch
+    values:
+      radius: 10.0               # Pull/visual circle radius (blocks)
+      pull-strength: 0.6         # Velocity towards center each tick
+      pull-duration-ticks: 30    # Duration of pull phase
+      launch-power: 2.2          # Upward velocity at launch
+      launch-delay-ticks: 10     # Ticks after pull before launch
+      detonation-damage: 4.0     # Bonus damage at launch
+      radial-knockback: 0.7      # Outward knockback added at launch
+      slow-amplifier: 0          # Slowness level during detonation (0=Slowness I)
+      wither-duration-ticks: 60  # Wither duration applied on launch
 
   dark-pulse:
     display-name: "<#4B0082>Dark Pulse"
+    description: "Fires a wither skull that explodes on impact, applying wither and blindness"
+    type: DARK
     cooldown: 4000
-  values:
-    range: 24.0                # Targeting range for initial shot
-    speed: 1.8                 # Wither skull speed multiplier
-    explosion-radius: 4.0      # AoE radius on impact (blocks)
-    damage: 6.0                # Direct damage at impact
-    knockback: 0.6             # Outward knockback strength
-    wither-duration-ticks: 120 # Wither duration on hit
-    wither-amplifier: 1        # Wither level (0-based)
-    blind-duration-ticks: 60   # Blindness duration on hit
+    values:
+      range: 24.0                # Targeting range for initial shot
+      speed: 1.8                 # Wither skull speed multiplier
+      explosion-radius: 4.0      # AoE radius on impact (blocks)
+      damage: 6.0                # Direct damage at impact
+      knockback: 0.6             # Outward knockback strength
+      wither-duration-ticks: 120 # Wither duration on hit
+      wither-amplifier: 1        # Wither level (0-based)
+      blind-duration-ticks: 60   # Blindness duration on hit
 
   aura:
     display-name: "<#9932CC>Aura"
+    description: "Creates a damaging aura around you that harms nearby enemies over time"
+    type: AURA
     cooldown: 10000
-  values:
-    radius: 5.0
-    damage-per-tick: 2.0
-    duration-ticks: 200
-    tick-interval: 20
+    values:
+      radius: 5.0
+      damage-per-tick: 2.0
+      duration-ticks: 200
+      tick-interval: 20
 
   empire-launch:
     display-name: "<#FFD700>Empire Launch"
+    description: "Launches you into the air with slow falling protection"
+    type: MOVEMENT
     cooldown: 8000
-  values:
-    power: 1.8
-    slow-falling-duration: 80
+    values:
+      power: 1.8
+      slow-falling-duration: 80
 
   confuse:
     display-name: "<#FF69B4>Confuse"
+    description: "Damages and disorients an enemy with confusion and slowness"
+    type: CONTROL
     cooldown: 3500
-  values:
-    range: 15.0
-    damage: 6.0
-    duration-ticks: 80
-    slow-amplifier: 2
+    values:
+      range: 15.0
+      damage: 6.0
+      duration-ticks: 80
+      slow-amplifier: 2
 
   zeist-chrono-anchor:
     display-name: "<#7FFFD4>Zeist Chrono Anchor"
+    description: "Creates a temporal field that slows enemies and projectiles in the area"
+    type: CONTROL
     cooldown: 4000
-  values:
-    radius: 5.0
-    duration-ticks: 100
-    slowness-amplifier: 1
-    projectile-slow: 0.25
+    values:
+      radius: 5.0
+      duration-ticks: 100
+      slowness-amplifier: 1
+      projectile-slow: 0.25
 
   teleport:
     display-name: "<#00CED1>Teleport"
+    description: "Instantly teleports you to your target location within line of sight"
+    type: MOVEMENT
     cooldown: 2000
-  values:
-    range: 15.0
-  flags:
-    requires-los: true
+    values:
+      range: 15.0
+    flags:
+      requires-los: true
 
   thunder-blast:
     display-name: "<#FFFF00>Thunder Blast"
+    description: "Creates multiple lightning strikes in a radius around you"
+    type: LIGHTNING
     cooldown: 6000
-  values:
-    radius: 6.0
-    damage: 16.0
-    strikes: 3
+    values:
+      radius: 6.0
+      damage: 16.0
+      strikes: 3
 
   lightning-bolt:
     display-name: "<#87CEEB>Lightning Bolt"
+    description: "Strikes your target with a powerful lightning bolt"
+    type: LIGHTNING
     cooldown: 4000
-  values:
-    range: 20.0
-    damage: 24.0
+    values:
+      range: 20.0
+      damage: 24.0
 
   fireball:
     display-name: "<#FF4500>Fireball"
+    description: "Launches a blazing fireball that explodes on impact and sets blocks on fire"
+    type: FIRE
     cooldown: 3500
-  values:
-    yield: 3.0
-    speed: 1.0
-    # Visual trail parameters
-    trail_length: 4
-    particle_count: 2
-    block_lifetime_ticks: 40
-  flags:
-    incendiary: true
-    block-damage: true
+    values:
+      yield: 3.0
+      speed: 1.0
+      # Visual trail parameters
+      trail_length: 4
+      particle_count: 2
+      block_lifetime_ticks: 40
+    flags:
+      incendiary: true
+      block-damage: true
 
   explosion-trail:
     display-name: "<#DC143C>Explosion Trail"
+    description: "Leaves a trail of explosions behind you that damage enemies"
+    type: FIRE
     cooldown: 8000
-  values:
-    duration-ticks: 100
-    damage: 8.0
-    tick-interval: 10
+    values:
+      duration-ticks: 100
+      damage: 8.0
+      tick-interval: 10
 
   blaze-launch:
     display-name: "<#FF6347>Blaze Launch"
+    description: "Launches you into the air while leaving a fiery trail"
+    type: FIRE
     cooldown: 2000
-  values:
-    power: 1.8
-    trail-duration-ticks: 40
+    values:
+      power: 1.8
+      trail-duration-ticks: 40
 
   lightning-storm:
     display-name: "<#00FFFF>Lightning Storm"
+    description: "Summons a devastating storm of lightning strikes over a wide area"
+    type: LIGHTNING
     cooldown: 15000
-  values:
-    strikes: 8
-    radius: 10.0
-    damage: 16.0
-    delay-ticks: 10
+    values:
+      strikes: 8
+      radius: 10.0
+      damage: 16.0
+      delay-ticks: 10
 
   little-spark:
     display-name: "<#FFFF00>Little Spark"
+    description: "Fires a small but fast lightning projectile at your target"
+    type: LIGHTNING
     cooldown: 1500
-  values:
-    range: 20.0
-    damage: 4.0
-    knockback: 0.5
-    speed: 2.0
+    values:
+      range: 20.0
+      damage: 4.0
+      knockback: 0.5
+      speed: 2.0
 
   spark:
     display-name: "<#FFD700>Spark"
+    description: "Fires a medium-powered lightning projectile with good knockback"
+    type: LIGHTNING
     cooldown: 2000
-  values:
-    range: 25.0
-    damage: 6.0
-    knockback: 0.7
-    speed: 2.2
+    values:
+      range: 25.0
+      damage: 6.0
+      knockback: 0.7
+      speed: 2.2
 
   lightning-arrow:
     display-name: "<#87CEEB>Lightning Arrow"
+    description: "Shoots a fast lightning arrow that strikes the target with additional lightning damage"
+    type: LIGHTNING
     cooldown: 3000
-  values:
-    range: 30.0
-    damage: 8.0
-    lightning-damage: 12.0
-    speed: 2.5
-    # Visual trail parameters (purely cosmetic)
-    trail_length: 5
-    particle_count: 3
-    block_lifetime_ticks: 30
-    spark_interval_ticks: 4
+    values:
+      range: 30.0
+      damage: 8.0
+      lightning-damage: 12.0
+      speed: 2.5
+      # Visual trail parameters (purely cosmetic)
+      trail_length: 5
+      particle_count: 3
+      block_lifetime_ticks: 30
+      spark_interval_ticks: 4
 
   poison-wave:
     display-name: "<#32CD32>Poison Wave"
+    description: "Sends out a cone of poison that damages and poisons enemies"
+    type: POISON
     cooldown: 4000
-  values:
-    range: 8.0
-    angle: 60.0
-    damage: 6.0
-    poison-duration-ticks: 100
-    poison-amplifier: 1
-    slow-duration-ticks: 60
-    slow-amplifier: 1
+    values:
+      range: 8.0
+      angle: 60.0
+      damage: 6.0
+      poison-duration-ticks: 100
+      poison-amplifier: 1
+      slow-duration-ticks: 60
+      slow-amplifier: 1
 
   explosion-wave:
     display-name: "<#FF4500>Explosion Wave"
+    description: "Creates a cone of explosions that damage and knock back enemies"
+    type: FIRE
     cooldown: 5000
-  values:
-    range: 8.0
-    angle: 60.0
-    damage: 10.0
-    knockback: 1.2
-    yield: 1.5
+    values:
+      range: 8.0
+      angle: 60.0
+      damage: 10.0
+      knockback: 1.2
+      yield: 1.5
 
   flame-wave:
     display-name: "<#FF6347>Flame Wave"
+    description: "Sends out a wave of flames that ignites and damages enemies"
+    type: FIRE
     cooldown: 4000
-  values:
-    range: 8.0
-    angle: 60.0
-    damage: 8.0
-    fire-duration-ticks: 80
-    knockback: 0.8
+    values:
+      range: 8.0
+      angle: 60.0
+      damage: 8.0
+      fire-duration-ticks: 80
+      knockback: 0.8
 
   empire-aura:
     display-name: "<#FFD700>Empire Aura"
+    description: "Creates a powerful golden aura that continuously damages nearby enemies"
+    type: AURA
     cooldown: 12000
-  values:
-    radius: 6.0
-    duration-ticks: 400
-    tick-interval: 10
+    values:
+      radius: 6.0
+      duration-ticks: 400
+      tick-interval: 10
 
   empire-levitate:
     display-name: "<#9370DB>Empire Levitate"
+    description: "Grants you the ability to levitate for a short duration"
+    type: MOVEMENT
     cooldown: 10000
-  values:
-    duration-ticks: 60
-    amplifier: 0
+    values:
+      duration-ticks: 60
+      amplifier: 0
 
   blood-block:
     display-name: "<#8B0000>Blood Block"
+    description: "Creates a blood-magic barrier that damages and knocks back attackers"
+    type: DARK
     cooldown: 8000
-  values:
-    damage: 6.0
-    knockback: 1.0
+    values:
+      damage: 6.0
+      knockback: 1.0
 
   empire-comet:
     display-name: "<#FF4500>Empire Comet"
+    description: "Launches a massive slow-moving comet with devastating explosive power"
+    type: PROJECTILE
     cooldown: 9000
-  values:
-    yield: 3.5
-    speed: 0.8
+    values:
+      yield: 3.5
+      speed: 0.8
 
   blood-spam:
     display-name: "<#8B0000>Blood Spam"
+    description: "Rapidly fires multiple blood projectiles in quick succession"
+    type: DARK
     cooldown: 6000
-  values:
-    projectile-count: 8
-    damage: 1.0
-    delay-ticks: 2
+    values:
+      projectile-count: 8
+      damage: 1.0
+      delay-ticks: 2
 
   earth-quake:
     display-name: "<#8B4513>Earth Quake"
+    description: "Creates a powerful earthquake that knocks back all nearby enemies"
+    type: EARTH
     cooldown: 7000
-  values:
-    radius: 7.0
-    knockback-strength: 1.1
-    vertical-boost: 0.35
+    values:
+      radius: 7.0
+      knockback-strength: 1.1
+      vertical-boost: 0.35
 
   empire-escape:
     display-name: "<#00CED1>Empire Escape"
+    description: "Quickly teleports you away from danger with a temporary speed boost"
+    type: MOVEMENT
     cooldown: 10000
-  values:
-    max-range: 16.0
-    speed-duration: 40
+    values:
+      max-range: 16.0
+      speed-duration: 40
 
   comet-shower:
     display-name: "<#FF6347>Comet Shower"
+    description: "Rains down multiple explosive comets over a large area"
+    type: PROJECTILE
     cooldown: 16000
-  values:
-    comet-count: 5
-    radius: 8.0
-    yield: 2.6
-    delay-ticks: 6
+    values:
+      comet-count: 5
+      radius: 8.0
+      yield: 2.6
+      delay-ticks: 6
 
   god-cloud:
     display-name: "<#F0F8FF>God Cloud"
+    description: "Creates a divine cloud that follows you and provides protective effects"
+    type: AURA
     cooldown: 30000
-  values:
-    duration-ticks: 600
-    particle-interval: 2
-    particle-count: 6
+    values:
+      duration-ticks: 600
+      particle-interval: 2
+      particle-count: 6
 
   mephi-cloud:
     display-name: "<#8B0000>Mephi Cloud"
+    description: "Summons a dark cloud that follows you and enhances your dark magic"
+    type: DARK
     cooldown: 45000
-  values:
-    duration-ticks: 600
-    particle-interval: 2
-    particle-density-modifier: 3
-    spread-xz: 0.28
-    y-offset: 0.10
+    values:
+      duration-ticks: 600
+      particle-interval: 2
+      particle-density-modifier: 3
+      spread-xz: 0.28
+      y-offset: 0.10
 
 # New spells from NEXT_level_spells.md
 
 # Zeis van Mephidantes
   life-reap:
     display-name: "<#8B0000>Levenszuiger"
+    description: "Damages enemies in a cone and heals you based on the number of targets hit"
+    type: LIFE
     cooldown: 7000
-  values:
-    damage: 4.0
-    heal-per-target: 0.8
-    range: 5.0
-    angle-degrees: 120.0
-  flags:
-    hit-players: true
-    hit-mobs: true
+    values:
+      damage: 4.0
+      heal-per-target: 0.8
+      range: 5.0
+      angle-degrees: 120.0
+    flags:
+      hit-players: true
+      hit-mobs: true
 
   ritual-of-unmaking:
     display-name: "<#4B0082>Ritueel van Ontering"
+    description: "Channels a powerful ritual that damages and weakens all enemies in a large area"
+    type: DARK
     cooldown: 18000
-  values:
-    channel-ticks: 40
-    radius: 6.0
-    damage: 8.0
-    weakness-duration-ticks: 120
-    weakness-amplifier: 0
+    values:
+      channel-ticks: 40
+      radius: 6.0
+      damage: 8.0
+      weakness-duration-ticks: 120
+      weakness-amplifier: 0
 
   soul-sever:
     display-name: "<#000000>Zielsplinters"
+    description: "Dashes through enemies, damaging them and causing nausea"
+    type: DARK
     cooldown: 8000
-  values:
-    dash-distance: 8.0
-    damage: 2.0
-    nausea-duration-ticks: 40
-    nausea-amplifier: 0
-    sample-step: 0.5
-  flags:
-    hit-players: true
-    hit-mobs: true
+    values:
+      dash-distance: 8.0
+      damage: 2.0
+      nausea-duration-ticks: 40
+      nausea-amplifier: 0
+      sample-step: 0.5
+    flags:
+      hit-players: true
+      hit-mobs: true
 
 # BloedMagie
   blood-tap:
     display-name: "<#8B0000>Blood Tap"
+    description: "Sacrifices health to gain blood charges for empowering other spells"
+    type: DARK
     cooldown: 3000
-  values:
-    self-damage: 1.0
-    max-charges: 5
-    decay-duration-ticks: 200
-    min-health: 2.0
+    values:
+      self-damage: 1.0
+      max-charges: 5
+      decay-duration-ticks: 200
+      min-health: 2.0
 
   blood-barrier:
     display-name: "<#8B0000>Blood Barrier"
+    description: "Creates a protective barrier that reduces damage and reflects attacks"
+    type: DARK
     cooldown: 16000
-  values:
-    duration-ticks: 120
-    damage-reduction: 0.3
-    thorns-damage: 1.0
+    values:
+      duration-ticks: 120
+      damage-reduction: 0.3
+      thorns-damage: 1.0
 
   hemorrhage:
     display-name: "<#8B0000>Hemorrhage"
+    description: "Inflicts bleeding damage that increases when the target moves"
+    type: DARK
     cooldown: 8000
-  values:
-    base-damage: 2.0
-    movement-bonus: 0.5
-    movement-threshold: 0.8
-    duration-ticks: 120
-    check-interval-ticks: 10
-  flags:
-    hit-players: true
-    hit-mobs: true
+    values:
+      base-damage: 2.0
+      movement-bonus: 0.5
+      movement-threshold: 0.8
+      duration-ticks: 120
+      check-interval-ticks: 10
+    flags:
+      hit-players: true
+      hit-mobs: true
 
   blood-nova:
     display-name: "<#8B0000>Blood Nova"
+    description: "Explodes outward with blood magic, dealing damage based on accumulated charges"
+    type: DARK
     cooldown: 12000
-  values:
-    base-damage: 4.0
-    damage-per-charge: 2.0
-    radius: 4.0
-    knockback-strength: 1.0
-  flags:
-    hit-players: true
-    hit-mobs: true
+    values:
+      base-damage: 4.0
+      damage-per-charge: 2.0
+      radius: 4.0
+      knockback-strength: 1.0
+    flags:
+      hit-players: true
+      hit-mobs: true
 
 # Chatage’s Ster
   radiant-beacon:
     display-name: "<#FFD700>Stralingsbaken"
+    description: "Creates a beacon that pulses light, healing allies and damaging enemies"
+    type: LIFE
     cooldown: 16000
-  values:
-    radius: 6.0
-    heal-amount: 1.0
-    damage-amount: 1.0
-    duration-pulses: 8
-    pulse-interval-ticks: 20
-    max-targets: 8
-  flags:
-    hit-players: true
-    hit-mobs: true
+    values:
+      radius: 6.0
+      heal-amount: 1.0
+      damage-amount: 1.0
+      duration-pulses: 8
+      pulse-interval-ticks: 20
+      max-targets: 8
+    flags:
+      hit-players: true
+      hit-mobs: true
 
   lightwall:
     display-name: "<#FFFFFF>Lichtmuur"
+    description: "Conjures a wall of pure light that blinds and repels enemies"
+    type: LIFE
     cooldown: 18000
-  values:
-    width: 6.0
-    height: 3.0
-    duration-ticks: 100
-    knockback-strength: 0.5
-    blindness-duration-ticks: 30
-  flags:
-    hit-players: true
-    hit-mobs: true
+    values:
+      width: 6.0
+      height: 3.0
+      duration-ticks: 100
+      knockback-strength: 0.5
+      blindness-duration-ticks: 30
+    flags:
+      hit-players: true
+      hit-mobs: true
 
   solar-lance:
     display-name: "<#FFD700>Zonschicht"
+    description: "Fires a piercing beam of solar energy that can hit multiple enemies"
+    type: LIFE
     cooldown: 10000
-  values:
-    range: 20.0
-    damage: 6.0
-    glowing-duration-ticks: 60
-    max-pierce: 3
-    sample-step: 0.5
-  flags:
-    hit-players: true
-    hit-mobs: true
+    values:
+      range: 20.0
+      damage: 6.0
+      glowing-duration-ticks: 60
+      max-pierce: 3
+      sample-step: 0.5
+    flags:
+      hit-players: true
+      hit-mobs: true
 
 # Extra spells
   sunburst-step:
     display-name: "<#FFD700>Sunburst Step"
+    description: "Teleports you forward and creates a radiant pulse that heals allies and harms enemies"
+    type: LIFE
     cooldown: 7000
-  values:
-    max-distance: 10.0
-    pulse-radius: 3.5
-    ally-heal: 1.0
-    enemy-damage: 1.0
-  flags:
-    hit-players: true
-    hit-mobs: true
+    values:
+      max-distance: 10.0
+      pulse-radius: 3.5
+      ally-heal: 1.0
+      enemy-damage: 1.0
+    flags:
+      hit-players: true
+      hit-mobs: true
 
   crimson-chains:
     display-name: "<#8B0000>Crimson Chains"
+    description: "Fires chains that pull enemies toward you and slow them down"
+    type: DARK
     cooldown: 9000
-  values:
-    pull-strength: 0.5
-    slowness-duration-ticks: 40
-    slowness-amplifier: 1
-    projectile-speed: 1.5
-  flags:
-    hit-players: true
-    hit-mobs: true
+    values:
+      pull-strength: 0.5
+      slowness-duration-ticks: 40
+      slowness-amplifier: 1
+      projectile-speed: 1.5
+    flags:
+      hit-players: true
+      hit-mobs: true
 
   mephidic-reap:
     display-name: "<#000000>Mephidic Reap"
+    description: "Sends out a dark reaper that pierces through enemies and slows them"
+    type: DARK
     cooldown: 10000
-  values:
-    range: 8.0
-    damage: 2.0
-    slowness-duration-ticks: 20
-    max-pierce: 3
-    travel-ticks: 14
-  flags:
-    hit-players: true
-    hit-mobs: true
+    values:
+      range: 8.0
+      damage: 2.0
+      slowness-duration-ticks: 20
+      max-pierce: 3
+      travel-ticks: 14
+    flags:
+      hit-players: true
+      hit-mobs: true
 
 # --- New fun/crazy/amazing spells ---
   frost-nova:
     display-name: "<#00BFFF>Frost Nova"
+    description: "Creates an expanding ring of frost that damages and severely slows enemies"
+    type: ICE
     cooldown: 5000
-  values:
-    radius: 5.0
-    damage: 6.0
-    slow-duration-ticks: 100
-    slow-amplifier: 2
-  # Visual frost effects (purely cosmetic)
-    ring-particle-count: 32
-    ring-expand-step: 0.4
-    snow-swirl-density: 18
-    ice-burst-count: 6
-    enable-reversible-floor: true
+    values:
+      radius: 5.0
+      damage: 6.0
+      slow-duration-ticks: 100
+      slow-amplifier: 2
+      # Visual frost effects (purely cosmetic)
+      ring-particle-count: 32
+      ring-expand-step: 0.4
+      snow-swirl-density: 18
+      ice-burst-count: 6
+      enable-reversible-floor: true
 
   chain-lightning:
     display-name: "<#87CEEB>Chain Lightning"
+    description: "Fires lightning that jumps between nearby enemies multiple times"
+    type: LIGHTNING
     cooldown: 7000
-  values:
-    range: 20.0
-    jump-radius: 8.0
-    jumps: 4
-    damage: 8.0
-  # Visual arc (purely cosmetic)
-    arc_particle_count: 8
-    arc_steps: 12
-    max_arc_length: 15.0
+    values:
+      range: 20.0
+      jump-radius: 8.0
+      jumps: 4
+      damage: 8.0
+      # Visual arc (purely cosmetic)
+      arc_particle_count: 8
+      arc_steps: 12
+      max_arc_length: 15.0
 
   blink-strike:
     display-name: "<#9932CC>Blink Strike"
+    description: "Instantly teleports behind your target and delivers a powerful strike"
+    type: MOVEMENT
     cooldown: 6000
-  values:
-    range: 15.0
-    behind-distance: 1.5
-    damage: 10.0
-  flags:
-    requires-los: true
-  # Visual blink effects (purely cosmetic)
-    echo-count: 3
-    mist-density: 12
-    invert-ring-radius: 2.5
+    values:
+      range: 15.0
+      behind-distance: 1.5
+      damage: 10.0
+      # Visual blink effects (purely cosmetic)
+      echo-count: 3
+      mist-density: 12
+      invert-ring-radius: 2.5
+    flags:
+      requires-los: true
 
   shadow-cloak:
     display-name: "<#2F4F4F>Shadow Cloak"
+    description: "Cloaks you in shadows, providing invisibility and enhanced movement abilities"
+    type: DARK
     cooldown: 8000
-  # Balans
-    max-duration-ticks: 1800          # 90 s
-    energy-tick-cost: 0.5             # per tick
-    cooldown-seconds: 8
-    cancel-on-damage: true
-    cancel-on-attack: true
-
-  # Stealth
-    invisibility-duration-ticks: 100
-    slowness-amplifier: -1            # -1 = speed 0
-    night-vision: true
-    jump-boost: 1
-    water-breathing: true
-
-  # Shadow Step
-  shadow-step:
-    chance-per-second: 0.15
-    max-distance: 6.0
-    cooldown-ticks: 40
-    sound: ENTITY_ENDERMAN_TELEPORT
-    volume: 0.6f
-    pitch: 1.3f
-
-  # Darkness Aura
-  darkness-aura:
-    interval-ticks: 30
-    radius: 4.0
-    particles: 32
-    sound: ENTITY_WITHER_AMBIENT
-    volume: 0.25f
-    pitch: 0.7f
-
-  # Particles
-  particles:
-    idle:
-      type: DUST
-      color: 0x000000
-      size: 1.2f
-      amount: 2
-      offset: 0.3
-    shadow-step:
-      type: PORTAL
-      amount: 25
-    activate:
-      type: LARGE_SMOKE
-      amount: 40
-
-  # Light-level
-    max-light-level: 4
-
-  # Messages
-  messages:
-    activate: "&8👤 &7You merged with the shadows."
-    deactivate: "&8👤 &7You emerged from the shadows."
-    force-remove: "&c&lYour cloak was ripped away!"
-    no-energy: "&cNot enough energy to maintain the cloak."
+    values:
+      # Balans
+      max-duration-ticks: 1800          # 90 s
+      energy-tick-cost: 0.5             # per tick
+      cooldown-seconds: 8
+      cancel-on-damage: true
+      cancel-on-attack: true
+      # Stealth
+      invisibility-duration-ticks: 100
+      slowness-amplifier: -1            # -1 = speed 0
+      night-vision: true
+      jump-boost: 1
+      water-breathing: true
+      # Shadow Step
+      shadow-step-chance-per-second: 0.15
+      shadow-step-max-distance: 6.0
+      shadow-step-cooldown-ticks: 40
+      shadow-step-sound: ENTITY_ENDERMAN_TELEPORT
+      shadow-step-volume: 0.6
+      shadow-step-pitch: 1.3
+      # Darkness Aura
+      darkness-aura-interval-ticks: 30
+      darkness-aura-radius: 4.0
+      darkness-aura-particles: 32
+      darkness-aura-sound: ENTITY_WITHER_AMBIENT
+      darkness-aura-volume: 0.25
+      darkness-aura-pitch: 0.7
+      # Particles
+      idle-particle-type: DUST
+      idle-particle-color: 0x000000
+      idle-particle-size: 1.2
+      idle-particle-amount: 2
+      idle-particle-offset: 0.3
+      shadow-step-particle-type: PORTAL
+      shadow-step-particle-amount: 25
+      activate-particle-type: LARGE_SMOKE
+      activate-particle-amount: 40
+      # Light-level
+      max-light-level: 4
+    messages:
+      activate: "&8👤 &7You merged with the shadows."
+      deactivate: "&8👤 &7You emerged from the shadows."
+      force-remove: "&c&lYour cloak was ripped away!"
+      no-energy: "&cNot enough energy to maintain the cloak."
 
   stasis-field:
     display-name: "<#9400D3>Stasis Field"
+    description: "Creates a temporal field that freezes enemies in time"
+    type: CONTROL
     cooldown: 9000
-  values:
-    radius: 6.0
-    duration-ticks: 80
-  # Visual temporal bubble effects (purely cosmetic)
-    bubble-count: 5
-    bubble-radius: 1.2
-    sweep-interval-ticks: 20
+    values:
+      radius: 6.0
+      duration-ticks: 80
+      # Visual temporal bubble effects (purely cosmetic)
+      bubble-count: 5
+      bubble-radius: 1.2
+      sweep-interval-ticks: 20
 
   gust:
     display-name: "<#ADD8E6>Gust"
+    description: "Creates a powerful wind that knocks back enemies in a cone"
+    type: WEATHER
     cooldown: 3500
-  values:
-    range: 10.0
-    angle: 70.0
-    knockback: 1.2
-    damage: 2.0
+    values:
+      range: 10.0
+      angle: 70.0
+      knockback: 1.2
+      damage: 2.0
 
   arcane-orb:
     display-name: "<#7FFFD4>Arcane Orb"
+    description: "Launches a slow-moving orb of pure magic that damages enemies in its path"
+    type: PROJECTILE
     cooldown: 6000
-  values:
-    speed: 0.6
-    radius: 3.5
-    damage: 8.0
-    knockback: 0.6
-  # Visual halo + trail (purely cosmetic)
-    trail_length: 4
-    particle_count: 3
-    block_lifetime_ticks: 30
-    halo_particles: 8
-    halo_rotation_speed: 12.0
+    values:
+      speed: 0.6
+      radius: 3.5
+      damage: 8.0
+      knockback: 0.6
+      # Visual halo + trail (purely cosmetic)
+      trail_length: 4
+      particle_count: 3
+      block_lifetime_ticks: 30
+      halo_particles: 8
+      halo_rotation_speed: 12.0
 
   void-swap:
     display-name: "<#800080>Void Swap"
+    description: "Instantly swaps positions with your target through the void"
+    type: MOVEMENT
     cooldown: 8000
-  values:
-    range: 15.0
-  flags:
-    requires-los: true
+    values:
+      range: 15.0
+    flags:
+      requires-los: true
 
   shadow-step:
     display-name: "<#2F4F4F>Shadow Step"
+    description: "Teleports through shadows, leaving dark echoes in your wake"
+    type: DARK
     cooldown: 12000
-  values:
-    range: 10.0
-  visual:
-    echo-samples: 6
+    values:
+      range: 10.0
+    visual:
+      echo-samples: 6
 
   sandstorm:
     display-name: "<#DAA520>Sandstorm"
+    description: "Creates a swirling sandstorm that blinds and slows enemies"
+    type: WEATHER
     cooldown: 7000
-  values:
-    radius: 6.0
-    blind-duration-ticks: 80
-    slow-duration-ticks: 100
-    slow-amplifier: 1
-  # Visual sandstorm effects (purely cosmetic)
-    spiral-height: 6.0
-    spiral-density: 14
-    grit-pulse-interval-ticks: 8
-    haze-particle-multiplier: 1.0
+    values:
+      radius: 6.0
+      blind-duration-ticks: 80
+      slow-duration-ticks: 100
+      slow-amplifier: 1
+      # Visual sandstorm effects (purely cosmetic)
+      spiral-height: 6.0
+      spiral-density: 14
+      grit-pulse-interval-ticks: 8
+      haze-particle-multiplier: 1.0
 
   tornado:
     display-name: "<#00CED1>Tornado"
+    description: "Summons a tornado that lifts enemies into the air and damages them"
+    type: WEATHER
     cooldown: 12000
-  values:
-    radius: 6.0
-    lift-velocity: 0.9
-    levitation-duration-ticks: 40
-    levitation-amplifier: 0
-    damage: 4.0
+    values:
+      radius: 6.0
+      lift-velocity: 0.9
+      levitation-duration-ticks: 40
+      levitation-amplifier: 0
+      damage: 4.0

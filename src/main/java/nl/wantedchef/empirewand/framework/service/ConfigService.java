@@ -390,6 +390,13 @@ public class ConfigService {
     public void clearPerformanceMetrics() {
         performanceMonitor.clearMetrics();
     }
+    
+    /**
+     * Reloads all configurations safely.
+     */
+    public void reload() {
+        loadConfigs();
+    }
 }
 
 

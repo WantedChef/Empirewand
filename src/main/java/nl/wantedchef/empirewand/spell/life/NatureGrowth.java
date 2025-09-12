@@ -14,7 +14,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * NatureGrowth - Explosive nature growth
@@ -67,7 +67,7 @@ public class NatureGrowth extends Spell<Player> {
         double radius = spellConfig.getDouble("values.radius", DEFAULT_RADIUS);
         
         Location center = player.getLocation();
-        Random random = new Random();
+        ThreadLocalRandom random = ThreadLocalRandom.current();
         
         // Transform area into lush nature
         for (int x = (int) -radius; x <= radius; x++) {
@@ -103,11 +103,9 @@ public class NatureGrowth extends Spell<Player> {
         
         // Generate some trees
         for (int i = 0; i < 5; i++) {
-            Location treeLoc = center.clone().add(
-                random.nextInt((int)radius * 2) - radius,
-                0,
-                random.nextInt((int)radius * 2) - radius
-            );
+            int dx = random.nextInt((int) (radius * 2)) - (int) radius;
+            int dz = random.nextInt((int) (radius * 2)) - (int) radius;
+            Location treeLoc = center.clone().add(dx, 0, dz);
             Block ground = treeLoc.getBlock();
             if (ground.getType() == Material.GRASS_BLOCK || ground.getType() == Material.DIRT) {
                 treeLoc.getWorld().generateTree(treeLoc.add(0, 1, 0), org.bukkit.TreeType.BIG_TREE);
@@ -116,7 +114,7 @@ public class NatureGrowth extends Spell<Player> {
         
         // Effects
         center.getWorld().spawnParticle(Particle.SPORE_BLOSSOM_AIR, center, 200, radius/2, 3, radius/2, 0.1);
-        center.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, center, 100, radius/2, 3, radius/2, 0);
+        center.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, center, 100, radius/2, 3, radius/2, 0);
         context.fx().playSound(center, Sound.BLOCK_CHORUS_FLOWER_GROW, 2.0f, 0.8f);
         context.fx().playSound(center, Sound.ITEM_TRIDENT_THUNDER, 1.0f, 2.0f);
         

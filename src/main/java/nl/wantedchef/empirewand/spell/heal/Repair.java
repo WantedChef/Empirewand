@@ -106,7 +106,7 @@ public class Repair extends Spell<Player> {
         }
         
         // Visual effects
-        player.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, player.getLocation(), 15, 0.5, 0.5, 0.5, 0);
+        player.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, player.getLocation(), 15, 0.5, 0.5, 0.5, 0);
         player.getWorld().spawnParticle(Particle.HEART, player.getLocation(), 20, 0.5, 0.5, 0.5, 0);
         
         // Sound effects

@@ -1,13 +1,8 @@
 package nl.wantedchef.empirewand.spell;
 
 import nl.wantedchef.empirewand.api.EmpireWandAPI;
-<<<<<<< HEAD
 import nl.wantedchef.empirewand.EmpireWandPlugin;
-
-=======
-import nl.wantedchef.empirewand.api.event.SpellCastEvent;
 import nl.wantedchef.empirewand.api.service.CooldownService;
->>>>>>> origin/main
 import java.time.Duration;
 import java.util.logging.Level;
 import java.util.Objects;
@@ -17,6 +12,7 @@ import nl.wantedchef.empirewand.core.config.ReadableConfig;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -61,7 +57,21 @@ public abstract class Spell<T> {
     protected final SpellType spellType;
     protected final EmpireWandAPI api;
 
-    protected ReadableConfig spellConfig;
+    // Safe default config to avoid NPEs when a spell section is missing in spells.yml
+    protected ReadableConfig spellConfig = new ReadableConfig() {
+        @Override
+        public boolean getBoolean(@NotNull String path, boolean def) { return def; }
+        @Override
+        public int getInt(@NotNull String path, int def) { return def; }
+        @Override
+        public long getLong(@NotNull String path, long def) { return def; }
+        @Override
+        public double getDouble(@NotNull String path, double def) { return def; }
+        @Override
+        public String getString(@NotNull String path, String def) { return def; }
+        @Override
+        public ReadableConfig getConfigurationSection(@NotNull String path) { return null; }
+    };
 
     /**
      * Constructs a new Spell instance using the provided builder.
@@ -272,14 +282,9 @@ public abstract class Spell<T> {
      * @return the result of the cast attempt
      */
     @NotNull
-<<<<<<< HEAD
-    public CastResult cast(@NotNull SpellContext context) {
-        Objects.requireNonNull(context, "Spell context cannot be null");
-        
-=======
     public final CastResult cast(@NotNull SpellContext context) {
         PrereqInterface.CheckResult prereqResult = prereq().check(context);
-        if (!prereqResult.success()) {
+        if (!prereqResult.isSuccess()) {
             return CastResult.fail(prereqResult.reason());
         }
 
@@ -287,12 +292,10 @@ public abstract class Spell<T> {
         if (context.caster() instanceof Player player) {
             CooldownCheckResult cooldownResult = checkCooldown(player);
             if (!cooldownResult.isSuccess()) {
-                return CastResult.fail(cooldownResult.reason());
+                return CastResult.fail(Component.text(cooldownResult.reason()));
             }
             applyCooldown(player);
         }
-
->>>>>>> origin/main
         if (requiresAsyncExecution()) {
             return castAsync(context);
         } else {
@@ -426,7 +429,8 @@ public abstract class Spell<T> {
      */
     private void scheduleMainThreadTask(@NotNull SpellContext context, @NotNull BukkitRunnable task) {
         if (context.plugin() instanceof EmpireWandPlugin ewPlugin) {
-            ewPlugin.getTaskManager().registerTask(task.runTask(context.plugin()));
+            BukkitTask bukkitTask = task.runTask(context.plugin());
+            ewPlugin.getTaskManager().registerTask(bukkitTask);
         } else {
             task.runTask(context.plugin());
         }
@@ -440,7 +444,8 @@ public abstract class Spell<T> {
      */
     private void scheduleAsyncTask(@NotNull SpellContext context, @NotNull BukkitRunnable task) {
         if (context.plugin() instanceof EmpireWandPlugin ewPlugin) {
-            ewPlugin.getTaskManager().registerTask(task.runTaskAsynchronously(context.plugin()));
+            BukkitTask bukkitTask = task.runTaskAsynchronously(context.plugin());
+            ewPlugin.getTaskManager().registerTask(bukkitTask);
         } else {
             task.runTaskAsynchronously(context.plugin());
         }
@@ -496,12 +501,17 @@ public abstract class Spell<T> {
      * @return the cooldown result
      */
     protected CooldownCheckResult checkCooldown(@NotNull Player player) {
+        if (!EmpireWandAPI.isAvailable()) {
+            return CooldownCheckResult.success();
+        }
         CooldownService cooldownService = EmpireWandAPI.getService(CooldownService.class);
         if (cooldownService == null) {
             return CooldownCheckResult.success();
         }
         
-        return cooldownService.checkCooldown(player, key(), cooldown);
+        return cooldownService.isOnCooldown(player.getUniqueId(), key(), System.currentTimeMillis() / 50) ? 
+            CooldownCheckResult.fail("Spell is on cooldown") : 
+            CooldownCheckResult.success();
     }
     
     /**
@@ -510,9 +520,12 @@ public abstract class Spell<T> {
      * @param player the player to apply cooldown to
      */
     protected void applyCooldown(@NotNull Player player) {
+        if (!EmpireWandAPI.isAvailable()) {
+            return;
+        }
         CooldownService cooldownService = EmpireWandAPI.getService(CooldownService.class);
         if (cooldownService != null) {
-            cooldownService.setCooldown(player, key(), cooldown);
+            cooldownService.set(player.getUniqueId(), key(), System.currentTimeMillis() / 50 + cooldown.getSeconds() * 20);
         }
     }
     

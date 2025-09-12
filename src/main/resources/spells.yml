@@ -818,3 +818,1360 @@ spells:
       levitation-duration-ticks: 40
       levitation-amplifier: 0
       damage: 4.0
+
+  # Added: Bloodwave (LIFE)
+  bloodwave:
+    display-name: "<#AA0000>Bloodwave"
+    description: "Unleashes a wave of blood energy damaging nearby foes"
+    type: LIFE
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  # Added: Kajarrow (LIGHTNING projectile)
+  kajarrow:
+    display-name: "<#00FFFF>Kajarrow"
+    description: "Fires an electrified arrow that shocks enemies"
+    type: LIGHTNING
+    cooldown: 1500
+    range: 30.0
+    values:
+      damage: 6.0
+      speed: 2.0
+    flags:
+      requires-los: true
+
+  # Added: Shockwave (LIGHTNING wave)
+  shockwave:
+    display-name: "<#1E90FF>Shockwave"
+    description: "Emits a shockwave that damages and knocks back enemies"
+    type: LIGHTNING
+    cooldown: 2500
+    values:
+      damage: 4.0
+      radius: 5.0
+      knockback: 1.2
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  # Added: Kaj Cloud (MOVEMENT, toggle)
+  kaj-cloud:
+    display-name: "<#87CEFA>Kaj Cloud"
+    description: "Summons a cloud to glide upon"
+    type: MOVEMENT
+    cooldown: 0
+    values:
+      tick-interval: 10
+      speed: 0.2
+    flags:
+      toggle: true
+
+  chain-lightning:
+    display-name: "<#1E90FF>Chain Lightning"
+    description: "Auto-generated defaults for chain-lightning"
+    type: LIGHTNING
+    cooldown: 2500
+    values:
+      damage: 4.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  lightning-bolt:
+    display-name: "<#1E90FF>Lightning Bolt"
+    description: "Auto-generated defaults for lightning-bolt"
+    type: LIGHTNING
+    cooldown: 2500
+    values:
+      damage: 4.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  lightning-storm:
+    display-name: "<#1E90FF>Lightning Storm"
+    description: "Auto-generated defaults for lightning-storm"
+    type: LIGHTNING
+    cooldown: 2500
+    values:
+      damage: 4.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  thunder-blast:
+    display-name: "<#1E90FF>Thunder Blast"
+    description: "Auto-generated defaults for thunder-blast"
+    type: LIGHTNING
+    cooldown: 2500
+    values:
+      damage: 4.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  spark:
+    display-name: "<#1E90FF>Spark"
+    description: "Auto-generated defaults for spark"
+    type: LIGHTNING
+    cooldown: 2500
+    values:
+      damage: 4.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  little-spark:
+    display-name: "<#1E90FF>Little Spark"
+    description: "Auto-generated defaults for little-spark"
+    type: LIGHTNING
+    cooldown: 2500
+    values:
+      damage: 4.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  solar-lance:
+    display-name: "<#1E90FF>Solar Lance"
+    description: "Auto-generated defaults for solar-lance"
+    type: LIGHTNING
+    cooldown: 2500
+    values:
+      damage: 4.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  lightning-arrow:
+    display-name: "<#1E90FF>Lightning Arrow"
+    description: "Auto-generated defaults for lightning-arrow"
+    type: LIGHTNING
+    cooldown: 2500
+    values:
+      damage: 4.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  kajarrow:
+    display-name: "<#1E90FF>Kajarrow"
+    description: "Auto-generated defaults for kajarrow"
+    type: LIGHTNING
+    cooldown: 2500
+    values:
+      damage: 4.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  lightning-bolt-refactored:
+    display-name: "<#1E90FF>Lightning Bolt Refactored"
+    description: "Auto-generated defaults for lightning-bolt-refactored"
+    type: LIGHTNING
+    cooldown: 2500
+    values:
+      damage: 4.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  chain-lightning-enhanced:
+    display-name: "<#1E90FF>Chain Lightning Enhanced"
+    description: "Auto-generated defaults for chain-lightning-enhanced"
+    type: LIGHTNING
+    cooldown: 2500
+    values:
+      damage: 4.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  chain-lightning-refactored:
+    display-name: "<#1E90FF>Chain Lightning Refactored"
+    description: "Auto-generated defaults for chain-lightning-refactored"
+    type: LIGHTNING
+    cooldown: 2500
+    values:
+      damage: 4.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  blaze-launch:
+    display-name: "<#FF4500>Blaze Launch"
+    description: "Auto-generated defaults for blaze-launch"
+    type: FIRE
+    cooldown: 3000
+    values:
+      damage: 6.0
+      radius: 3.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+      sets-fire: false
+
+  fireball:
+    display-name: "<#FF4500>Fireball"
+    description: "Auto-generated defaults for fireball"
+    type: FIRE
+    cooldown: 3000
+    values:
+      damage: 6.0
+      radius: 3.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+      sets-fire: false
+
+  fireball-enhanced:
+    display-name: "<#FF4500>Fireball Enhanced"
+    description: "Auto-generated defaults for fireball-enhanced"
+    type: FIRE
+    cooldown: 3000
+    values:
+      damage: 6.0
+      radius: 3.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+      sets-fire: false
+
+  flamewalk:
+    display-name: "<#FF4500>Flamewalk"
+    description: "Auto-generated defaults for flamewalk"
+    type: FIRE
+    cooldown: 3000
+    values:
+      damage: 6.0
+      radius: 3.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+      sets-fire: false
+
+  flame-wave:
+    display-name: "<#FF4500>Flame Wave"
+    description: "Auto-generated defaults for flame-wave"
+    type: FIRE
+    cooldown: 3000
+    values:
+      damage: 6.0
+      radius: 3.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+      sets-fire: false
+
+  flame-wave-refactored:
+    display-name: "<#FF4500>Flame Wave Refactored"
+    description: "Auto-generated defaults for flame-wave-refactored"
+    type: FIRE
+    cooldown: 3000
+    values:
+      damage: 6.0
+      radius: 3.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+      sets-fire: false
+
+  inferno:
+    display-name: "<#FF4500>Inferno"
+    description: "Auto-generated defaults for inferno"
+    type: FIRE
+    cooldown: 3000
+    values:
+      damage: 6.0
+      radius: 3.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+      sets-fire: false
+
+  lava:
+    display-name: "<#FF4500>Lava"
+    description: "Auto-generated defaults for lava"
+    type: FIRE
+    cooldown: 3000
+    values:
+      damage: 6.0
+      radius: 3.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+      sets-fire: false
+
+  magma-wave:
+    display-name: "<#FF4500>Magma Wave"
+    description: "Auto-generated defaults for magma-wave"
+    type: FIRE
+    cooldown: 3000
+    values:
+      damage: 6.0
+      radius: 3.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+      sets-fire: false
+
+  dragons-breath:
+    display-name: "<#FF4500>Dragons Breath"
+    description: "Auto-generated defaults for dragons-breath"
+    type: FIRE
+    cooldown: 3000
+    values:
+      damage: 6.0
+      radius: 3.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+      sets-fire: false
+
+  explosion-trail:
+    display-name: "<#FF4500>Explosion Trail"
+    description: "Auto-generated defaults for explosion-trail"
+    type: FIRE
+    cooldown: 3000
+    values:
+      damage: 6.0
+      radius: 3.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+      sets-fire: false
+
+  explosive:
+    display-name: "<#FF4500>Explosive"
+    description: "Auto-generated defaults for explosive"
+    type: FIRE
+    cooldown: 3000
+    values:
+      damage: 6.0
+      radius: 3.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+      sets-fire: false
+
+  comet:
+    display-name: "<#9932CC>Comet"
+    description: "Auto-generated defaults for comet"
+    type: PROJECTILE
+    cooldown: 3000
+    range: 25.0
+    values:
+      damage: 6.0
+    flags:
+      requires-los: true
+
+  comet-enhanced:
+    display-name: "<#9932CC>Comet Enhanced"
+    description: "Auto-generated defaults for comet-enhanced"
+    type: PROJECTILE
+    cooldown: 3000
+    range: 25.0
+    values:
+      damage: 6.0
+    flags:
+      requires-los: true
+
+  comet-shower:
+    display-name: "<#9932CC>Comet Shower"
+    description: "Auto-generated defaults for comet-shower"
+    type: PROJECTILE
+    cooldown: 3000
+    range: 25.0
+    values:
+      damage: 6.0
+    flags:
+      requires-los: true
+
+  arctic-blast:
+    display-name: "<#00BFFF>Arctic Blast"
+    description: "Auto-generated defaults for arctic-blast"
+    type: ICE
+    cooldown: 2500
+    values:
+      slow-duration-ticks: 80
+      slow-amplifier: 1
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  freeze-ray:
+    display-name: "<#00BFFF>Freeze Ray"
+    description: "Auto-generated defaults for freeze-ray"
+    type: ICE
+    cooldown: 2500
+    values:
+      slow-duration-ticks: 80
+      slow-amplifier: 1
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  frost-nova:
+    display-name: "<#00BFFF>Frost Nova"
+    description: "Auto-generated defaults for frost-nova"
+    type: ICE
+    cooldown: 2500
+    values:
+      slow-duration-ticks: 80
+      slow-amplifier: 1
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  frostwalk:
+    display-name: "<#00BFFF>Frostwalk"
+    description: "Auto-generated defaults for frostwalk"
+    type: ICE
+    cooldown: 2500
+    values:
+      slow-duration-ticks: 80
+      slow-amplifier: 1
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  glacial-spike:
+    display-name: "<#00BFFF>Glacial Spike"
+    description: "Auto-generated defaults for glacial-spike"
+    type: ICE
+    cooldown: 2500
+    values:
+      slow-duration-ticks: 80
+      slow-amplifier: 1
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  ice-wall:
+    display-name: "<#00BFFF>Ice Wall"
+    description: "Auto-generated defaults for ice-wall"
+    type: ICE
+    cooldown: 2500
+    values:
+      slow-duration-ticks: 80
+      slow-amplifier: 1
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  petrify:
+    display-name: "<#00BFFF>Petrify"
+    description: "Auto-generated defaults for petrify"
+    type: ICE
+    cooldown: 2500
+    values:
+      slow-duration-ticks: 80
+      slow-amplifier: 1
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  earth-quake:
+    display-name: "<#228B22>Earth Quake"
+    description: "Auto-generated defaults for earth-quake"
+    type: EARTH
+    cooldown: 3000
+    values:
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  grasping-vines:
+    display-name: "<#228B22>Grasping Vines"
+    description: "Auto-generated defaults for grasping-vines"
+    type: EARTH
+    cooldown: 3000
+    values:
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  lightwall:
+    display-name: "<#228B22>Lightwall"
+    description: "Auto-generated defaults for lightwall"
+    type: EARTH
+    cooldown: 3000
+    values:
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  sandblast:
+    display-name: "<#228B22>Sandblast"
+    description: "Auto-generated defaults for sandblast"
+    type: EARTH
+    cooldown: 3000
+    values:
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  wall:
+    display-name: "<#228B22>Wall"
+    description: "Auto-generated defaults for wall"
+    type: EARTH
+    cooldown: 3000
+    values:
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  platform:
+    display-name: "<#228B22>Platform"
+    description: "Auto-generated defaults for platform"
+    type: EARTH
+    cooldown: 3000
+    values:
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  stash:
+    display-name: "<#228B22>Stash"
+    description: "Auto-generated defaults for stash"
+    type: EARTH
+    cooldown: 3000
+    values:
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  tremor:
+    display-name: "<#228B22>Tremor"
+    description: "Auto-generated defaults for tremor"
+    type: EARTH
+    cooldown: 3000
+    values:
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  stone-fortress:
+    display-name: "<#228B22>Stone Fortress"
+    description: "Auto-generated defaults for stone-fortress"
+    type: EARTH
+    cooldown: 3000
+    values:
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  blink-strike:
+    display-name: "<#00FA9A>Blink Strike"
+    description: "Auto-generated defaults for blink-strike"
+    type: MOVEMENT
+    cooldown: 1500
+    values:
+      velocity-multiplier: 1.2
+      vertical-boost: 0.0
+
+  empire-escape:
+    display-name: "<#00FA9A>Empire Escape"
+    description: "Auto-generated defaults for empire-escape"
+    type: MOVEMENT
+    cooldown: 1500
+    values:
+      velocity-multiplier: 1.2
+      vertical-boost: 0.0
+
+  leap:
+    display-name: "<#00FA9A>Leap"
+    description: "Auto-generated defaults for leap"
+    type: MOVEMENT
+    cooldown: 1500
+    values:
+      velocity-multiplier: 1.2
+      vertical-boost: 0.0
+
+  levitate:
+    display-name: "<#00FA9A>Levitate"
+    description: "Auto-generated defaults for levitate"
+    type: MOVEMENT
+    cooldown: 1500
+    values:
+      velocity-multiplier: 1.2
+      vertical-boost: 0.0
+
+  lift:
+    display-name: "<#00FA9A>Lift"
+    description: "Auto-generated defaults for lift"
+    type: MOVEMENT
+    cooldown: 1500
+    values:
+      velocity-multiplier: 1.2
+      vertical-boost: 0.0
+
+  phase:
+    display-name: "<#00FA9A>Phase"
+    description: "Auto-generated defaults for phase"
+    type: MOVEMENT
+    cooldown: 1500
+    values:
+      velocity-multiplier: 1.2
+      vertical-boost: 0.0
+
+  recall:
+    display-name: "<#00FA9A>Recall"
+    description: "Auto-generated defaults for recall"
+    type: MOVEMENT
+    cooldown: 1500
+    values:
+      velocity-multiplier: 1.2
+      vertical-boost: 0.0
+
+  rocket:
+    display-name: "<#00FA9A>Rocket"
+    description: "Auto-generated defaults for rocket"
+    type: MOVEMENT
+    cooldown: 1500
+    values:
+      velocity-multiplier: 1.2
+      vertical-boost: 0.0
+
+  sunburst-step:
+    display-name: "<#00FA9A>Sunburst Step"
+    description: "Auto-generated defaults for sunburst-step"
+    type: MOVEMENT
+    cooldown: 1500
+    values:
+      velocity-multiplier: 1.2
+      vertical-boost: 0.0
+
+  teleport:
+    display-name: "<#00FA9A>Teleport"
+    description: "Auto-generated defaults for teleport"
+    type: MOVEMENT
+    cooldown: 1500
+    values:
+      velocity-multiplier: 1.2
+      vertical-boost: 0.0
+
+  teleport-enhanced:
+    display-name: "<#00FA9A>Teleport Enhanced"
+    description: "Auto-generated defaults for teleport-enhanced"
+    type: MOVEMENT
+    cooldown: 1500
+    values:
+      velocity-multiplier: 1.2
+      vertical-boost: 0.0
+
+  empire-launch:
+    display-name: "<#00FA9A>Empire Launch"
+    description: "Auto-generated defaults for empire-launch"
+    type: MOVEMENT
+    cooldown: 1500
+    values:
+      velocity-multiplier: 1.2
+      vertical-boost: 0.0
+
+  empire-levitate:
+    display-name: "<#00FA9A>Empire Levitate"
+    description: "Auto-generated defaults for empire-levitate"
+    type: MOVEMENT
+    cooldown: 1500
+    values:
+      velocity-multiplier: 1.2
+      vertical-boost: 0.0
+
+  heal:
+    display-name: "<#ADFF2F>Heal"
+    description: "Auto-generated defaults for heal"
+    type: HEAL
+    cooldown: 2000
+    values:
+      heal-amount: 6.0
+
+  heal-enhanced:
+    display-name: "<#ADFF2F>Heal Enhanced"
+    description: "Auto-generated defaults for heal-enhanced"
+    type: HEAL
+    cooldown: 2000
+    values:
+      heal-amount: 6.0
+
+  divine-heal:
+    display-name: "<#ADFF2F>Divine Heal"
+    description: "Auto-generated defaults for divine-heal"
+    type: HEAL
+    cooldown: 2000
+    values:
+      heal-amount: 6.0
+
+  super-heal:
+    display-name: "<#ADFF2F>Super Heal"
+    description: "Auto-generated defaults for super-heal"
+    type: HEAL
+    cooldown: 2000
+    values:
+      heal-amount: 6.0
+
+  repair:
+    display-name: "<#ADFF2F>Repair"
+    description: "Auto-generated defaults for repair"
+    type: HEAL
+    cooldown: 2000
+    values:
+      heal-amount: 6.0
+
+  restoration:
+    display-name: "<#ADFF2F>Restoration"
+    description: "Auto-generated defaults for restoration"
+    type: HEAL
+    cooldown: 2000
+    values:
+      heal-amount: 6.0
+
+  radiant-beacon:
+    display-name: "<#ADFF2F>Radiant Beacon"
+    description: "Auto-generated defaults for radiant-beacon"
+    type: HEAL
+    cooldown: 2000
+    values:
+      heal-amount: 6.0
+
+  prayer:
+    display-name: "<#ADFF2F>Prayer"
+    description: "Auto-generated defaults for prayer"
+    type: HEAL
+    cooldown: 2000
+    values:
+      heal-amount: 6.0
+
+  regenerate:
+    display-name: "<#ADFF2F>Regenerate"
+    description: "Auto-generated defaults for regenerate"
+    type: HEAL
+    cooldown: 2000
+    values:
+      heal-amount: 6.0
+
+  blood-barrier:
+    display-name: "<#AA0000>Blood Barrier"
+    description: "Auto-generated defaults for blood-barrier"
+    type: LIFE
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  blood-block:
+    display-name: "<#AA0000>Blood Block"
+    description: "Auto-generated defaults for blood-block"
+    type: LIFE
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  blood-nova:
+    display-name: "<#AA0000>Blood Nova"
+    description: "Auto-generated defaults for blood-nova"
+    type: LIFE
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  blood-spam:
+    display-name: "<#AA0000>Blood Spam"
+    description: "Auto-generated defaults for blood-spam"
+    type: LIFE
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  blood-tap:
+    display-name: "<#AA0000>Blood Tap"
+    description: "Auto-generated defaults for blood-tap"
+    type: LIFE
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  life-reap:
+    display-name: "<#AA0000>Life Reap"
+    description: "Auto-generated defaults for life-reap"
+    type: LIFE
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  life-steal:
+    display-name: "<#AA0000>Life Steal"
+    description: "Auto-generated defaults for life-steal"
+    type: LIFE
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  lifewalk:
+    display-name: "<#AA0000>Lifewalk"
+    description: "Auto-generated defaults for lifewalk"
+    type: LIFE
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  tame:
+    display-name: "<#AA0000>Tame"
+    description: "Auto-generated defaults for tame"
+    type: LIFE
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  nature-growth:
+    display-name: "<#AA0000>Nature Growth"
+    description: "Auto-generated defaults for nature-growth"
+    type: LIFE
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  pollinate:
+    display-name: "<#AA0000>Pollinate"
+    description: "Auto-generated defaults for pollinate"
+    type: LIFE
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  hemorrhage:
+    display-name: "<#AA0000>Hemorrhage"
+    description: "Auto-generated defaults for hemorrhage"
+    type: LIFE
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  crimson-chains:
+    display-name: "<#7FFF00>Crimson Chains"
+    description: "Auto-generated defaults for crimson-chains"
+    type: POISON
+    cooldown: 3000
+    values:
+      damage: 3.0
+      duration: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  mephidic-reap:
+    display-name: "<#7FFF00>Mephidic Reap"
+    description: "Auto-generated defaults for mephidic-reap"
+    type: POISON
+    cooldown: 3000
+    values:
+      damage: 3.0
+      duration: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  poison-wave:
+    display-name: "<#7FFF00>Poison Wave"
+    description: "Auto-generated defaults for poison-wave"
+    type: POISON
+    cooldown: 3000
+    values:
+      damage: 3.0
+      duration: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  soul-sever:
+    display-name: "<#7FFF00>Soul Sever"
+    description: "Auto-generated defaults for soul-sever"
+    type: POISON
+    cooldown: 3000
+    values:
+      damage: 3.0
+      duration: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  confuse:
+    display-name: "<#FFDAB9>Confuse"
+    description: "Auto-generated defaults for confuse"
+    type: CONTROL
+    cooldown: 4000
+
+  polymorph:
+    display-name: "<#FFDAB9>Polymorph"
+    description: "Auto-generated defaults for polymorph"
+    type: CONTROL
+    cooldown: 4000
+
+  silence:
+    display-name: "<#FFDAB9>Silence"
+    description: "Auto-generated defaults for silence"
+    type: CONTROL
+    cooldown: 4000
+
+  zeist-chrono-anchor:
+    display-name: "<#FFDAB9>Zeist Chrono Anchor"
+    description: "Auto-generated defaults for zeist-chrono-anchor"
+    type: CONTROL
+    cooldown: 4000
+
+  gust:
+    display-name: "<#87CEEB>Gust"
+    description: "Auto-generated defaults for gust"
+    type: WEATHER
+    cooldown: 3000
+    values:
+      radius: 5.0
+
+  tornado:
+    display-name: "<#87CEEB>Tornado"
+    description: "Auto-generated defaults for tornado"
+    type: WEATHER
+    cooldown: 3000
+    values:
+      radius: 5.0
+
+  arcane-orb:
+    display-name: "<#9932CC>Arcane Orb"
+    description: "Auto-generated defaults for arcane-orb"
+    type: PROJECTILE
+    cooldown: 3000
+    range: 25.0
+    values:
+      damage: 6.0
+    flags:
+      requires-los: true
+
+  magic-missile:
+    display-name: "<#9932CC>Magic Missile"
+    description: "Auto-generated defaults for magic-missile"
+    type: PROJECTILE
+    cooldown: 3000
+    range: 25.0
+    values:
+      damage: 6.0
+    flags:
+      requires-los: true
+
+  empire-comet:
+    display-name: "<#9932CC>Empire Comet"
+    description: "Auto-generated defaults for empire-comet"
+    type: PROJECTILE
+    cooldown: 3000
+    range: 25.0
+    values:
+      damage: 6.0
+    flags:
+      requires-los: true
+
+  wither:
+    display-name: "<#8B008B>Wither"
+    description: "Auto-generated defaults for wither"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  soulburn:
+    display-name: "<#8B008B>Soulburn"
+    description: "Auto-generated defaults for soulburn"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  void-swap:
+    display-name: "<#8B008B>Void Swap"
+    description: "Auto-generated defaults for void-swap"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  ritual-of-unmaking:
+    display-name: "<#8B008B>Ritual Of Unmaking"
+    description: "Auto-generated defaults for ritual-of-unmaking"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  kill:
+    display-name: "<#8B008B>Kill"
+    description: "Auto-generated defaults for kill"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  super-kill:
+    display-name: "<#8B008B>Super Kill"
+    description: "Auto-generated defaults for super-kill"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  torture:
+    display-name: "<#8B008B>Torture"
+    description: "Auto-generated defaults for torture"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  vengeance:
+    display-name: "<#8B008B>Vengeance"
+    description: "Auto-generated defaults for vengeance"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  dark-circle:
+    display-name: "<#8B008B>Dark Circle"
+    description: "Auto-generated defaults for dark-circle"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  dark-pulse:
+    display-name: "<#8B008B>Dark Pulse"
+    description: "Auto-generated defaults for dark-pulse"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  pain:
+    display-name: "<#8B008B>Pain"
+    description: "Auto-generated defaults for pain"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  shadow-step:
+    display-name: "<#8B008B>Shadow Step"
+    description: "Auto-generated defaults for shadow-step"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  empower:
+    display-name: "<Empower>"
+    description: "Auto-generated defaults for empower"
+    type: MISC
+    cooldown: 2500
+
+  gate:
+    display-name: "<Gate>"
+    description: "Auto-generated defaults for gate"
+    type: MISC
+    cooldown: 2500
+
+  invulnerability:
+    display-name: "<Invulnerability>"
+    description: "Auto-generated defaults for invulnerability"
+    type: MISC
+    cooldown: 2500
+
+  mana:
+    display-name: "<Mana>"
+    description: "Auto-generated defaults for mana"
+    type: MISC
+    cooldown: 2500
+
+  magic-torch:
+    display-name: "<Magic Torch>"
+    description: "Auto-generated defaults for magic-torch"
+    type: MISC
+    cooldown: 2500
+
+  volley:
+    display-name: "<Volley>"
+    description: "Auto-generated defaults for volley"
+    type: MISC
+    cooldown: 2500
+
+  shuriken:
+    display-name: "<Shuriken>"
+    description: "Auto-generated defaults for shuriken"
+    type: MISC
+    cooldown: 2500
+
+  reflect:
+    display-name: "<Reflect>"
+    description: "Auto-generated defaults for reflect"
+    type: MISC
+    cooldown: 2500
+
+  shell:
+    display-name: "<Shell>"
+    description: "Auto-generated defaults for shell"
+    type: MISC
+    cooldown: 2500
+
+  absorb:
+    display-name: "<Absorb>"
+    description: "Auto-generated defaults for absorb"
+    type: MISC
+    cooldown: 2500
+
+  invincible:
+    display-name: "<Invincible>"
+    description: "Auto-generated defaults for invincible"
+    type: MISC
+    cooldown: 2500
+
+  energy-shield:
+    display-name: "<Energy Shield>"
+    description: "Auto-generated defaults for energy-shield"
+    type: MISC
+    cooldown: 2500
+
+  gravity-well:
+    display-name: "<Gravity Well>"
+    description: "Auto-generated defaults for gravity-well"
+    type: MISC
+    cooldown: 2500
+
+  homing-rockets:
+    display-name: "<#9932CC>Homing Rockets"
+    description: "Auto-generated defaults for homing-rockets"
+    type: PROJECTILE
+    cooldown: 3000
+    range: 25.0
+    values:
+      damage: 6.0
+    flags:
+      requires-los: true
+
+  black-hole:
+    display-name: "<#8B008B>Black Hole"
+    description: "Auto-generated defaults for black-hole"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  time-dilation:
+    display-name: "<#FFDAB9>Time Dilation"
+    description: "Auto-generated defaults for time-dilation"
+    type: CONTROL
+    cooldown: 4000
+
+  temporal-stasis:
+    display-name: "<#FFDAB9>Temporal Stasis"
+    description: "Auto-generated defaults for temporal-stasis"
+    type: CONTROL
+    cooldown: 4000
+
+  void-zone:
+    display-name: "<#8B008B>Void Zone"
+    description: "Auto-generated defaults for void-zone"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  divine-aura:
+    display-name: "<#EE82EE>Divine Aura"
+    description: "Auto-generated defaults for divine-aura"
+    type: AURA
+    cooldown: 0
+    flags:
+      toggle: true
+
+  blizzard:
+    display-name: "<#00BFFF>Blizzard"
+    description: "Auto-generated defaults for blizzard"
+    type: ICE
+    cooldown: 2500
+    values:
+      slow-duration-ticks: 80
+      slow-amplifier: 1
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  blizzard-enhanced:
+    display-name: "<#00BFFF>Blizzard Enhanced"
+    description: "Auto-generated defaults for blizzard-enhanced"
+    type: ICE
+    cooldown: 2500
+    values:
+      slow-duration-ticks: 80
+      slow-amplifier: 1
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  meteor-shower:
+    display-name: "<#9932CC>Meteor Shower"
+    description: "Auto-generated defaults for meteor-shower"
+    type: PROJECTILE
+    cooldown: 3000
+    range: 25.0
+    values:
+      damage: 6.0
+    flags:
+      requires-los: true
+
+  meteor-shower-enhanced:
+    display-name: "<#9932CC>Meteor Shower Enhanced"
+    description: "Auto-generated defaults for meteor-shower-enhanced"
+    type: PROJECTILE
+    cooldown: 3000
+    range: 25.0
+    values:
+      damage: 6.0
+    flags:
+      requires-los: true
+
+  summon-swarm:
+    display-name: "<#AA0000>Summon Swarm"
+    description: "Auto-generated defaults for summon-swarm"
+    type: LIFE
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true

@@ -100,7 +100,7 @@ public class IceWall extends Spell<Player> {
                 for (Block block : wallBlocks) {
                     if (block.getType() == Material.PACKED_ICE) {
                         block.setType(Material.AIR);
-                        block.getWorld().spawnParticle(Particle.BLOCK_DUST, block.getLocation(), 5, 0.2, 0.2, 0.2, 0, Material.ICE.createBlockData());
+                        block.getWorld().spawnParticle(Particle.DUST, block.getLocation(), 5, 0.2, 0.2, 0.2, 0, Material.ICE.createBlockData());
                     }
                 }
                 context.fx().playSound(start, Sound.BLOCK_GLASS_BREAK, 1.0f, 1.0f);

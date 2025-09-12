@@ -9,9 +9,6 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,7 +30,7 @@ public class Reflect extends Spell<Player> {
             this.name = "Reflect";
             this.description = "Reflect incoming projectiles and damage back to attackers";
             this.cooldown = Duration.ofSeconds(35);
-            this.spellType = SpellType.UTILITY;
+            this.spellType = SpellType.MISC;
         }
 
         @Override

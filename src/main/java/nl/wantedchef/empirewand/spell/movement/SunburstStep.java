@@ -109,7 +109,7 @@ public class SunburstStep extends Spell<Void> {
             if (entity instanceof Player) { // Simple ally check
                 if (!hitPlayers)
                     continue;
-                var maxAttr = entity.getAttribute(Attribute.MAX_HEALTH);
+                var maxAttr = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
                 double max = maxAttr != null ? maxAttr.getValue() : entity.getHealth();
                 entity.setHealth(Math.min(max, entity.getHealth() + allyHeal));
             } else if (hitMobs) {

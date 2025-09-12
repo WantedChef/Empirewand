@@ -91,7 +91,7 @@ public class Pollinate extends Spell<Player> {
                             growthCount++;
                             
                             // Particle effect
-                            block.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, 
+                            block.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, 
                                 block.getLocation().add(0.5, 0.5, 0.5), 3, 0.2, 0.2, 0.2, 0);
                         }
                         
@@ -109,7 +109,7 @@ public class Pollinate extends Spell<Player> {
         
         // Effects
         center.getWorld().spawnParticle(Particle.SPORE_BLOSSOM_AIR, center, 100, radius/2, 2, radius/2, 0.1);
-        center.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, center, 50, radius/2, 2, radius/2, 0);
+        center.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, center, 50, radius/2, 2, radius/2, 0);
         context.fx().playSound(center, Sound.ITEM_BONE_MEAL_USE, 2.0f, 1.0f);
         context.fx().playSound(center, Sound.BLOCK_GRASS_PLACE, 1.5f, 1.2f);
         

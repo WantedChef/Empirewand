@@ -26,7 +26,7 @@ public class Silence extends Spell<LivingEntity> {
             this.name = "Silence";
             this.description = "Silence your target, preventing them from using abilities";
             this.cooldown = Duration.ofSeconds(20);
-            this.spellType = SpellType.UTILITY;
+            this.spellType = SpellType.MISC;
         }
 
         @Override

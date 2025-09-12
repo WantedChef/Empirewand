@@ -85,7 +85,8 @@ class HelpCommandTest {
         @DisplayName("Should return correct aliases")
         void shouldReturnCorrectAliases() {
             List<String> aliases = helpCommand.getAliases();
-            assertEquals(1, aliases.size());
+            assertEquals(2, aliases.size());
+            assertTrue(aliases.contains("help"));
             assertTrue(aliases.contains("?"));
         }
 

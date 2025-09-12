@@ -1,0 +1,116 @@
+package nl.wantedchef.empirewand.spell.enhanced;
+
+import nl.wantedchef.empirewand.EmpireWandPlugin;
+import nl.wantedchef.empirewand.api.EmpireWandAPI;
+import nl.wantedchef.empirewand.core.config.ReadableConfig;
+import nl.wantedchef.empirewand.core.task.TaskManager;
+import nl.wantedchef.empirewand.spell.Spell;
+import nl.wantedchef.empirewand.spell.SpellContext;
+import nl.wantedchef.empirewand.spell.SpellType;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.PluginManager;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.MockitoAnnotations;
+
+import java.util.logging.Logger;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+class SummonSwarmTest {
+
+    private Spell<Void> summonSwarm;
+
+    @Mock
+    private EmpireWandAPI api;
+    @Mock
+    private SpellContext context;
+    @Mock
+    private Player player;
+    @Mock
+    private EmpireWandPlugin plugin;
+    @Mock
+    private TaskManager taskManager;
+    @Mock
+    private PluginManager pluginManager;
+    @Mock
+    private World world;
+    @Mock
+    private Location location;
+    @Mock
+    private ReadableConfig readableConfig;
+    @Mock
+    private Logger logger;
+
+    private MockedStatic<Bukkit> bukkitMock;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+        bukkitMock = mockStatic(Bukkit.class);
+        bukkitMock.when(Bukkit::getPluginManager).thenReturn(pluginManager);
+        bukkitMock.when(Bukkit::isPrimaryThread).thenReturn(true);
+
+        when(context.caster()).thenReturn(player);
+        when(context.plugin()).thenReturn(plugin);
+        when(plugin.getTaskManager()).thenReturn(taskManager);
+        when(plugin.getLogger()).thenReturn(logger);
+        when(player.getWorld()).thenReturn(world);
+        when(player.getLocation()).thenReturn(location);
+        when(location.getWorld()).thenReturn(world);
+        summonSwarm = new SummonSwarm.Builder(api).build();
+        summonSwarm.loadConfig(readableConfig);
+    }
+
+    @AfterEach
+    void tearDown() {
+        bukkitMock.close();
+    }
+
+    @Test
+    void testSpellKey() {
+        assertEquals("summon-swarm", summonSwarm.key());
+    }
+
+    @Test
+    void testSpellName() {
+        assertEquals("Summon Swarm", summonSwarm.getName());
+    }
+
+    @Test
+    void testSpellDescription() {
+        assertEquals("Summons a swarm of minions to fight for you.", summonSwarm.getDescription());
+    }
+
+    @Test
+    void testSpellType() {
+        assertEquals(SpellType.DARK, summonSwarm.type());
+    }
+
+    @Test
+    void testCooldown() {
+        assertEquals(java.time.Duration.ofSeconds(70), summonSwarm.getCooldown());
+    }
+
+    @Test
+    void testExecuteSpell() {
+        // This is a simplified test, as the actual logic is in a BukkitRunnable
+        // and requires a running server to test properly.
+        // We can at least verify that the spell executes without throwing an exception.
+        summonSwarm.cast(context);
+
+        // Verify that the task is scheduled
+        verify(taskManager).runTaskTimer(any(), anyLong(), anyLong());
+    }
+}

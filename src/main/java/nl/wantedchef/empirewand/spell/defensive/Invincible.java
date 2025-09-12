@@ -26,7 +26,7 @@ public class Invincible extends Spell<Player> {
             this.name = "Invincible";
             this.description = "Become completely invincible for a short time";
             this.cooldown = Duration.ofSeconds(180);
-            this.spellType = SpellType.UTILITY;
+            this.spellType = SpellType.MISC;
         }
 
         @Override
@@ -98,7 +98,7 @@ public class Invincible extends Spell<Player> {
                 
                 // Power aura
                 if (ticks % 10 == 0) {
-                    player.getWorld().spawnParticle(Particle.TOTEM, 
+                    player.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, 
                         player.getLocation().add(0, 1, 0), 15, 0.5, 0.5, 0.5, 0.1);
                     player.getWorld().spawnParticle(Particle.END_ROD, 
                         player.getLocation(), 10, 0.5, 0.5, 0.5, 0.05);
@@ -109,7 +109,7 @@ public class Invincible extends Spell<Player> {
         }.runTaskTimer(context.plugin(), 0L, 5L);
         
         // Initial effects
-        player.getWorld().spawnParticle(Particle.EXPLOSION_LARGE, 
+        player.getWorld().spawnParticle(Particle.EXPLOSION, 
             player.getLocation().add(0, 1, 0), 3, 0, 0, 0, 0);
         player.getWorld().spawnParticle(Particle.FIREWORK, 
             player.getLocation(), 100, 1, 1, 1, 0.2);
@@ -118,8 +118,5 @@ public class Invincible extends Spell<Player> {
         context.fx().playSound(player, Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f);
         
         player.sendMessage("§b§lINVINCIBLE §3MODE ACTIVATED for " + (duration/20) + " seconds!");
-    }
-}
-;
     }
 }

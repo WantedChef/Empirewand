@@ -83,7 +83,7 @@ public class Regenerate extends Spell<Player> {
                 // Healing particles
                 player.getWorld().spawnParticle(Particle.HEART, 
                     player.getLocation().add(0, 1, 0), 2, 0.3, 0.3, 0.3, 0);
-                player.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, 
+                player.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, 
                     player.getLocation(), 3, 0.5, 0.5, 0.5, 0);
                 
                 // Periodic extra healing
@@ -92,7 +92,7 @@ public class Regenerate extends Spell<Player> {
                     double maxHealth = player.getMaxHealth();
                     if (currentHealth < maxHealth) {
                         player.setHealth(Math.min(currentHealth + healAmount, maxHealth));
-                        player.getWorld().spawnParticle(Particle.TOTEM, 
+                        player.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, 
                             player.getLocation().add(0, 1, 0), 10, 0.3, 0.5, 0.3, 0.1);
                     }
                 }
@@ -104,7 +104,7 @@ public class Regenerate extends Spell<Player> {
         // Effects
         context.fx().playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.2f);
         context.fx().playSound(player, Sound.BLOCK_BEACON_ACTIVATE, 0.8f, 1.5f);
-        player.getWorld().spawnParticle(Particle.TOTEM, 
+        player.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, 
             player.getLocation().add(0, 1, 0), 30, 0.5, 1, 0.5, 0.1);
         
         player.sendMessage("§a§lRegenerate §2activated for " + (duration/20) + " seconds!");

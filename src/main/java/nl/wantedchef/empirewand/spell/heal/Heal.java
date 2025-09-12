@@ -48,7 +48,7 @@ public class Heal extends Spell<Void> {
     protected Void executeSpell(SpellContext context) {
         Player player = context.caster();
         double healAmount = spellConfig.getDouble("values.heal-amount", 8.0);
-        var maxAttr = player.getAttribute(Attribute.MAX_HEALTH);
+        var maxAttr = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
         double maxHealth = maxAttr != null ? maxAttr.getValue() : 20.0;
 
         player.setHealth(Math.min(maxHealth, player.getHealth() + healAmount));

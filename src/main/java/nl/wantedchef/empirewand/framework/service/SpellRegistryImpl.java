@@ -180,6 +180,9 @@ public class SpellRegistryImpl implements SpellRegistry {
     /**
      * Registers all the default spells.
      */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(
+        value = "REC_CATCH_EXCEPTION",
+        justification = "Intentional broad catch to ensure server stability; falls back to reduced spell set on any exception during registration.")
     private void registerAllSpells() {
         try (var timing = performanceMonitor.startTiming("SpellRegistryImpl.registerAllSpells", 100)) {
             timing.observe();
@@ -233,14 +236,17 @@ public class SpellRegistryImpl implements SpellRegistry {
                     () -> new BloodSpam.Builder(api),
                     () -> new BloodTap.Builder(api),
                     () -> new Hemorrhage.Builder(api),
+                    () -> new nl.wantedchef.empirewand.spell.life.Bloodwave.Builder(api),
                     () -> new LifeReap.Builder(api),
                     () -> new LifeSteal.Builder(api),
                     // Lightning
                     () -> new ChainLightning.Builder(api),
                     () -> new LightningArrow.Builder(api),
+                    () -> new nl.wantedchef.empirewand.spell.lightning.Kajarrow.Builder(api),
                     () -> new LightningBolt.Builder(api),
                     () -> new LightningStorm.Builder(api),
                     () -> new LittleSpark.Builder(api),
+                    () -> new nl.wantedchef.empirewand.spell.lightning.Shockwave.Builder(api),
                     () -> new SolarLance.Builder(api),
                     () -> new Spark.Builder(api),
                     () -> new ThunderBlast.Builder(api),
@@ -253,6 +259,7 @@ public class SpellRegistryImpl implements SpellRegistry {
                     () -> new BlinkStrike.Builder(api),
                     () -> new EmpireEscape.Builder(api),
                     () -> new Leap.Builder(api),
+                    () -> new nl.wantedchef.empirewand.spell.toggle.movement.KajCloud.Builder(api),
                     () -> new SunburstStep.Builder(api),
                     () -> new Teleport.Builder(api),
                     // Poison
@@ -371,9 +378,11 @@ public class SpellRegistryImpl implements SpellRegistry {
                 Spell.Builder<?> builder = builderSupplier.get();
                 Spell<?> spell = builder.build();
 
-                ReadableConfig spellCfg = bukkitSpells.getConfigurationSection(spell.key());
-                if (spellCfg != null) {
-                    spell.loadConfig(spellCfg);
+                if (bukkitSpells != null) {
+                    ReadableConfig spellCfg = bukkitSpells.getConfigurationSection(spell.key());
+                    if (spellCfg != null) {
+                        spell.loadConfig(spellCfg);
+                    }
                 }
 
                 spells.put(spell.key(), spell);
@@ -389,14 +398,12 @@ public class SpellRegistryImpl implements SpellRegistry {
                 spells.put(spell.key(), spell);
             }
             invalidateCaches();
-        } finally {
-            timing.complete(100); // Log if spell registration takes more than 100ms
         }
     }
 
     /**
-     * Fallback method for spell builder registration when reflection fails.
-     */
+   * Fallback method for spell builder registration when reflection fails.
+   */
     private Supplier<Spell.Builder<?>>[] getFallbackSpellBuilders() {
         final nl.wantedchef.empirewand.api.EmpireWandAPI api = null;
         @SuppressWarnings("unchecked")
@@ -441,14 +448,17 @@ public class SpellRegistryImpl implements SpellRegistry {
                 () -> new BloodSpam.Builder(api),
                 () -> new BloodTap.Builder(api),
                 () -> new Hemorrhage.Builder(api),
-                () -> new LifeReap.Builder(api),
+                    () -> new nl.wantedchef.empirewand.spell.life.Bloodwave.Builder(api),
+                    () -> new LifeReap.Builder(api),
                 () -> new LifeSteal.Builder(api),
                 // Lightning
                 () -> new ChainLightning.Builder(api),
                 () -> new LightningArrow.Builder(api),
+                    () -> new nl.wantedchef.empirewand.spell.lightning.Kajarrow.Builder(api),
                 () -> new LightningBolt.Builder(api),
                 () -> new LightningStorm.Builder(api),
                 () -> new LittleSpark.Builder(api),
+                    () -> new nl.wantedchef.empirewand.spell.lightning.Shockwave.Builder(api),
                 () -> new SolarLance.Builder(api),
                 () -> new Spark.Builder(api),
                 () -> new ThunderBlast.Builder(api),
@@ -461,7 +471,8 @@ public class SpellRegistryImpl implements SpellRegistry {
                 () -> new BlinkStrike.Builder(api),
                 () -> new EmpireEscape.Builder(api),
                 () -> new Leap.Builder(api),
-                () -> new SunburstStep.Builder(api),
+                () -> new nl.wantedchef.empirewand.spell.toggle.movement.KajCloud.Builder(api),
+                    () -> new SunburstStep.Builder(api),
                 () -> new Teleport.Builder(api),
                 // Poison
                 () -> new CrimsonChains.Builder(api),
@@ -473,132 +484,7 @@ public class SpellRegistryImpl implements SpellRegistry {
                 () -> new MagicMissile.Builder(api),
                 // Weather
                 () -> new Gust.Builder(api),
-                () -> new Tornado.Builder(api),
-                // Enhanced Spells
-                () -> new nl.wantedchef.empirewand.spell.enhanced.MeteorShower.Builder(api),
-                () -> new nl.wantedchef.empirewand.spell.enhanced.TemporalStasis.Builder(api),
-                () -> new nl.wantedchef.empirewand.spell.enhanced.LightningStorm.Builder(api),
-                () -> new nl.wantedchef.empirewand.spell.enhanced.StoneFortress.Builder(api),
-                () -> new nl.wantedchef.empirewand.spell.enhanced.Blizzard.Builder(api),
-                () -> new nl.wantedchef.empirewand.spell.enhanced.VoidZone.Builder(api),
-                () -> new nl.wantedchef.empirewand.spell.enhanced.DivineAura.Builder(api),
-                () -> new nl.wantedchef.empirewand.spell.enhanced.HomingRockets.Builder(api),
-                () -> new nl.wantedchef.empirewand.spell.enhanced.GravityWell.Builder(api),
-                () -> new nl.wantedchef.empirewand.spell.enhanced.BlackHole.Builder(api),
-                () -> new nl.wantedchef.empirewand.spell.enhanced.TimeDilation.Builder(api),
-                () -> new nl.wantedchef.empirewand.spell.enhanced.EnergyShield.Builder(api),
-                () -> new nl.wantedchef.empirewand.spell.enhanced.DragonsBreath.Builder(api),
-                () -> new nl.wantedchef.empirewand.spell.enhanced.SummonSwarm.Builder(api),
-                // Enhanced Spell Variants
-                () -> new nl.wantedchef.empirewand.spell.enhanced.MeteorShowerEnhanced.Builder(api),
-                () -> new nl.wantedchef.empirewand.spell.enhanced.BlizzardEnhanced.Builder(api),
-                () -> new nl.wantedchef.empirewand.spell.fire.FireballEnhanced.Builder(api),
-                () -> new nl.wantedchef.empirewand.spell.lightning.ChainLightningEnhanced.Builder(api),
-                () -> new nl.wantedchef.empirewand.spell.fire.CometEnhanced.Builder(api),
-                () -> new nl.wantedchef.empirewand.spell.heal.HealEnhanced.Builder(api),
-                () -> new nl.wantedchef.empirewand.spell.movement.TeleportEnhanced.Builder(api),
-                // Refactored Spells
-                () -> new nl.wantedchef.empirewand.spell.fire.FlameWaveRefactored.Builder(api),
-                () -> new nl.wantedchef.empirewand.spell.lightning.LightningBoltRefactored.Builder(api),
-                () -> new nl.wantedchef.empirewand.spell.lightning.ChainLightningRefactored.Builder(api)
-            };
-
-            // Register all spells
-            for (Supplier<Spell.Builder<?>> builderSupplier : spellBuilders) {
-                Spell.Builder<?> builder = builderSupplier.get();
-                Spell<?> spell = builder.build();
-
-                // Only load config if we have the spells section
-                if (bukkitSpells != null) {
-                    ReadableConfig spellCfg = bukkitSpells.getConfigurationSection(spell.key());
-                    if (spellCfg != null) {
-                        spell.loadConfig(spellCfg);
-                    }
-                }
-
-    }
-
-    spells.put(spell.key(), spell);
-}
-            () -> new CometShower.Builder(api),
-            () -> new EmpireComet.Builder(api),
-            () -> new Explosive.Builder(api),
-            () -> new ExplosionTrail.Builder(api),
-            () -> new Fireball.Builder(api),
-            () -> new FlameWave.Builder(api),
-            // Heal
-            () -> new Heal.Builder(api),
-            () -> new RadiantBeacon.Builder(api),
-            // Ice
-            () -> new FrostNova.Builder(api),
-            () -> new GlacialSpike.Builder(api),
-            // Life
-            () -> new BloodBarrier.Builder(api),
-            () -> new BloodBlock.Builder(api),
-            () -> new BloodNova.Builder(api),
-            () -> new BloodSpam.Builder(api),
-            () -> new BloodTap.Builder(api),
-            () -> new Hemorrhage.Builder(api),
-            () -> new LifeReap.Builder(api),
-            () -> new LifeSteal.Builder(api),
-            // Lightning
-            () -> new ChainLightning.Builder(api),
-            () -> new LightningArrow.Builder(api),
-            () -> new LightningBolt.Builder(api),
-            () -> new LightningStorm.Builder(api),
-            () -> new LittleSpark.Builder(api),
-            () -> new SolarLance.Builder(api),
-            () -> new Spark.Builder(api),
-            () -> new ThunderBlast.Builder(api),
-            // Misc
-            () -> new EmpireLaunch.Builder(api),
-            () -> new EmpireLevitate.Builder(api),
-            () -> new EtherealForm.Builder(api),
-            () -> new ExplosionWave.Builder(api),
-            // Movement
-            () -> new BlinkStrike.Builder(api),
-            () -> new EmpireEscape.Builder(api),
-            () -> new Leap.Builder(api),
-            () -> new SunburstStep.Builder(api),
-            () -> new Teleport.Builder(api),
-            // Poison
-            () -> new CrimsonChains.Builder(api),
-            () -> new MephidicReap.Builder(api),
-            () -> new PoisonWave.Builder(api),
-            () -> new SoulSever.Builder(api),
-            // Projectile
-            () -> new ArcaneOrb.Builder(api),
-            () -> new MagicMissile.Builder(api),
-            // Weather
-            () -> new Gust.Builder(api),
-            () -> new Tornado.Builder(api),
-            // Enhanced Spells
-            () -> new nl.wantedchef.empirewand.spell.enhanced.MeteorShower.Builder(api),
-            () -> new nl.wantedchef.empirewand.spell.enhanced.TemporalStasis.Builder(api),
-            () -> new nl.wantedchef.empirewand.spell.enhanced.LightningStorm.Builder(api),
-            () -> new nl.wantedchef.empirewand.spell.enhanced.StoneFortress.Builder(api),
-            () -> new nl.wantedchef.empirewand.spell.enhanced.Blizzard.Builder(api),
-            () -> new nl.wantedchef.empirewand.spell.enhanced.VoidZone.Builder(api),
-            () -> new nl.wantedchef.empirewand.spell.enhanced.DivineAura.Builder(api),
-            () -> new nl.wantedchef.empirewand.spell.enhanced.HomingRockets.Builder(api),
-            () -> new nl.wantedchef.empirewand.spell.enhanced.GravityWell.Builder(api),
-            () -> new nl.wantedchef.empirewand.spell.enhanced.BlackHole.Builder(api),
-            () -> new nl.wantedchef.empirewand.spell.enhanced.TimeDilation.Builder(api),
-            () -> new nl.wantedchef.empirewand.spell.enhanced.EnergyShield.Builder(api),
-            () -> new nl.wantedchef.empirewand.spell.enhanced.DragonsBreath.Builder(api),
-            () -> new nl.wantedchef.empirewand.spell.enhanced.SummonSwarm.Builder(api),
-            // Enhanced Spell Variants
-            () -> new nl.wantedchef.empirewand.spell.enhanced.MeteorShowerEnhanced.Builder(api),
-            () -> new nl.wantedchef.empirewand.spell.enhanced.BlizzardEnhanced.Builder(api),
-            () -> new nl.wantedchef.empirewand.spell.fire.FireballEnhanced.Builder(api),
-            () -> new nl.wantedchef.empirewand.spell.lightning.ChainLightningEnhanced.Builder(api),
-            () -> new nl.wantedchef.empirewand.spell.fire.CometEnhanced.Builder(api),
-            () -> new nl.wantedchef.empirewand.spell.heal.HealEnhanced.Builder(api),
-            () -> new nl.wantedchef.empirewand.spell.movement.TeleportEnhanced.Builder(api),
-            // Refactored Spells
-            () -> new nl.wantedchef.empirewand.spell.fire.FlameWaveRefactored.Builder(api),
-            () -> new nl.wantedchef.empirewand.spell.lightning.LightningBoltRefactored.Builder(api),
-            () -> new nl.wantedchef.empirewand.spell.lightning.ChainLightningRefactored.Builder(api)
+                () -> new Tornado.Builder(api)
         };
         return builders;
     }
@@ -1317,3 +1203,7 @@ public class SpellRegistryImpl implements SpellRegistry {
         }
     }
 }
+
+
+
+

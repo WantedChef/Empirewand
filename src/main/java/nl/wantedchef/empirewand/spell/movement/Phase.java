@@ -101,12 +101,10 @@ public class Phase extends Spell<Void> {
         return null;
     }
 
-    @Override
     protected void applyEffect(@NotNull SpellContext context, Void effect) {
         // No synchronous effect needed
     }
 
-    @Override
     protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
         // Effect handled in executeSpell
     }

@@ -293,16 +293,11 @@ public class DivineAura extends Spell<Void> {
             Objects.requireNonNull(entity, "Entity cannot be null");
             
             // Heal entity
-<<<<<<< HEAD
             var healthAttribute = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
             if (healthAttribute != null) {
                 double maxHealth = healthAttribute.getValue();
                 entity.setHealth(Math.min(maxHealth, entity.getHealth() + healAmount));
             }
-=======
-            double maxHealth = Objects.requireNonNull(entity.getAttribute(Attribute.MAX_HEALTH)).getValue();
-            entity.setHealth(Math.min(maxHealth, entity.getHealth() + healAmount));
->>>>>>> origin/main
             
             // Grant regeneration if enabled
             if (grantsRegeneration) {

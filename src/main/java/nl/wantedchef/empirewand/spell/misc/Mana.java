@@ -90,7 +90,7 @@ public class Mana extends Spell<Player> {
                     double z = Math.sin(angle) * radius;
                     double y = wave * 0.5;
                     
-                    player.getWorld().spawnParticle(Particle.ENCHANTMENT_TABLE, 
+                    player.getWorld().spawnParticle(Particle.ENCHANT, 
                         player.getLocation().add(x, y, z), 3, 0.1, 0.1, 0.1, 0);
                     player.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, 
                         player.getLocation().add(x, y, z), 1, 0.1, 0.1, 0.1, 0.02);
@@ -103,7 +103,7 @@ public class Mana extends Spell<Player> {
         // Main effects
         player.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, 
             player.getLocation().add(0, 1, 0), 30, 0.5, 1, 0.5, 0.05);
-        player.getWorld().spawnParticle(Particle.ENCHANTMENT_TABLE, 
+        player.getWorld().spawnParticle(Particle.ENCHANT, 
             player.getLocation(), 50, 1, 1, 1, 0.1);
         
         context.fx().playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.5f);

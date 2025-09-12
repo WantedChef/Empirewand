@@ -157,6 +157,11 @@ public class Comet extends ProjectileSpell<Fireball> {
                 }
             }
         }
+
+        // Always cleanup the projectile after impact to avoid lingering entities
+        if (projectile.isValid() && !projectile.isDead()) {
+            projectile.remove();
+        }
     }
 
 }

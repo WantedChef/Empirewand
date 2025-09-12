@@ -81,7 +81,7 @@ public class Tremor extends Spell<Player> {
                     
                     loc.getWorld().spawnParticle(Particle.DUST, loc, 3, 0.1, 0.1, 0.1, 0,
                         new Particle.DustOptions(org.bukkit.Color.fromRGB(139, 90, 43), 2.0f));
-                    loc.getWorld().spawnParticle(Particle.BLOCK_DUST, loc, 2, 0.1, 0.1, 0.1, 0,
+                    loc.getWorld().spawnParticle(Particle.DUST, loc, 2, 0.1, 0.1, 0.1, 0,
                         org.bukkit.Material.DIRT.createBlockData());
                 }
                 

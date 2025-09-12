@@ -23,7 +23,8 @@
       "Bash(gradle clean:*)",
       "Bash(rm:*)",
       "Bash(grep:*)",
-      "Bash(gradlew:*)"
+      "Bash(gradlew:*)",
+      "Bash(gradle.bat:*)"
     ],
     "deny": [],
     "ask": []

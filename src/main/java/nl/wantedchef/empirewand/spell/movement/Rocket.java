@@ -63,10 +63,12 @@ public class Rocket extends Spell<Player> {
         int duration = spellConfig.getInt("values.duration", DEFAULT_DURATION);
         
         // Launch the player
-        Vector direction = player.getLocation().getDirection();
+        final Vector direction = player.getLocation().getDirection().clone();
         if (player.isSneaking()) {
             // Launch upward if sneaking
-            direction = new Vector(0, 1, 0);
+            direction.setX(0);
+            direction.setY(1);
+            direction.setZ(0);
         }
         
         player.setVelocity(direction.multiply(power));
@@ -79,7 +81,7 @@ public class Rocket extends Spell<Player> {
             public void run() {
                 if (ticks >= duration || !player.isOnline() || player.isOnGround()) {
                     // Landing effect
-                    player.getWorld().spawnParticle(Particle.EXPLOSION_HUGE, 
+                    player.getWorld().spawnParticle(Particle.EXPLOSION, 
                         player.getLocation(), 1, 0, 0, 0, 0);
                     context.fx().playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 0.5f, 1.5f);
                     cancel();
@@ -89,9 +91,9 @@ public class Rocket extends Spell<Player> {
                 // Rocket trail
                 player.getWorld().spawnParticle(Particle.FLAME, 
                     player.getLocation(), 10, 0.2, 0.2, 0.2, 0.05);
-                player.getWorld().spawnParticle(Particle.SMOKE_NORMAL, 
+                player.getWorld().spawnParticle(Particle.SMOKE, 
                     player.getLocation(), 5, 0.1, 0.1, 0.1, 0.02);
-                player.getWorld().spawnParticle(Particle.FIREWORKS_SPARK, 
+                player.getWorld().spawnParticle(Particle.FIREWORK, 
                     player.getLocation(), 3, 0.3, 0.3, 0.3, 0.1);
                 
                 // Boost effect
@@ -109,7 +111,7 @@ public class Rocket extends Spell<Player> {
         }.runTaskTimer(context.plugin(), 0L, 2L);
         
         // Initial effects
-        player.getWorld().spawnParticle(Particle.EXPLOSION_HUGE, 
+        player.getWorld().spawnParticle(Particle.EXPLOSION, 
             player.getLocation(), 1, 0, 0, 0, 0);
         context.fx().playSound(player, Sound.ENTITY_FIREWORK_ROCKET_LARGE_BLAST, 1.5f, 0.8f);
         context.fx().playSound(player, Sound.ENTITY_ENDER_DRAGON_FLAP, 1.0f, 0.5f);

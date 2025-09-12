@@ -8,7 +8,6 @@ import nl.wantedchef.empirewand.spell.SpellType;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -73,7 +72,7 @@ public class DivineHeal extends Spell<Player> {
             context.plugin().getServer().getScheduler().runTaskLater(context.plugin(), () -> {
                 center.getWorld().spawnParticle(Particle.END_ROD, 
                     center.clone().add(0, height, 0), 10, 0.5, 0, 0.5, 0.05);
-                center.getWorld().spawnParticle(Particle.TOTEM, 
+                center.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, 
                     center.clone().add(0, height, 0), 5, 0.3, 0, 0.3, 0.02);
             }, y * 2L);
         }

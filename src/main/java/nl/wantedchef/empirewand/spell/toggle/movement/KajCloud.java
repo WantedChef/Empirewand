@@ -1,16 +1,10 @@
 package nl.wantedchef.empirewand.spell.toggle.movement;
 
 import java.time.Duration;
-<<<<<<< HEAD
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-=======
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.WeakHashMap;
->>>>>>> origin/main
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -18,12 +12,6 @@ import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
-<<<<<<< HEAD
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.Particle;
-=======
->>>>>>> origin/main
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,18 +27,11 @@ import nl.wantedchef.empirewand.spell.SpellType;
 
 public class KajCloud extends Spell<Void> implements ToggleableSpell {
 
-<<<<<<< HEAD
-    // Een map om de actieve taken per speler bij te houden.
-    // De UUID is de unieke identifier van de speler.
-    // BukkitTask is de taak die de deeltjes creëert.
-    private static final Map<UUID, BukkitTask> ACTIVE_TASKS = new HashMap<>();
-=======
     /* ---------------------------------------- */
     /* DATA */
     /* ---------------------------------------- */
     private final Map<UUID, CloudData> clouds = new WeakHashMap<>();
     private EmpireWandPlugin plugin;
->>>>>>> origin/main
 
     public static class Builder extends Spell.Builder<Void> {
         public Builder(EmpireWandAPI api) {
@@ -83,16 +64,12 @@ public class KajCloud extends Spell<Void> implements ToggleableSpell {
 
     @Override
     protected @Nullable Void executeSpell(@NotNull SpellContext context) {
-        // Deze methode roept automatisch activate() of deactivate() aan,
-        // afhankelijk van of de spreuk al actief is voor de speler.
         toggle(context.caster(), context);
         return null;
     }
 
     @Override
     protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
-        // Omdat dit een toggle-spreuk is, gebeurt de logica in activate/deactivate.
-        // Deze methode blijft dus leeg.
     }
 
     /**
@@ -102,12 +79,7 @@ public class KajCloud extends Spell<Void> implements ToggleableSpell {
      */
     @Override
     public boolean isActive(@NotNull Player player) {
-<<<<<<< HEAD
-        // We controleren of de UUID van de speler in onze map met actieve taken staat.
-        return ACTIVE_TASKS.containsKey(player.getUniqueId());
-=======
         return clouds.containsKey(player.getUniqueId());
->>>>>>> origin/main
     }
 
     /**
@@ -118,39 +90,10 @@ public class KajCloud extends Spell<Void> implements ToggleableSpell {
      */
     @Override
     public void activate(@NotNull Player player, @NotNull SpellContext context) {
-<<<<<<< HEAD
-        // Haal de plugin instance op om een taak te kunnen plannen.
-        JavaPlugin plugin = context.plugin();
-
-        // Maak een nieuwe herhalende taak (BukkitRunnable).
-        BukkitTask task = new BukkitRunnable() {
-            @Override
-            public void run() {
-                // Veiligheidscheck: als de speler niet meer online is, stop de taak.
-                if (!player.isOnline()) {
-                    deactivate(player, context); // Schakel de spreuk netjes uit.
-                    return;
-                }
-
-                // Toon deeltjes alleen als de speler vliegt.
-                if (player.isFlying()) {
-                    // Spawn wolk-deeltjes iets onder de voeten van de speler.
-                    // fx().spawnParticles(location, particle, count, offsetX, offsetY, offsetZ, speed)
-                    context.fx().spawnParticles(player.getLocation().subtract(0, 0.2, 0), Particle.CLOUD, 10, 0.3, 0.1, 0.3, 0.01);
-                }
-            }
-            // De taak start direct (0L) en herhaalt elke 4 ticks (ongeveer 5 keer per seconde).
-        }.runTaskTimer(plugin, 0L, 4L);
-
-        // Sla de taak op in de map, gekoppeld aan de speler zijn UUID.
-        ACTIVE_TASKS.put(player.getUniqueId(), task);
-        player.sendMessage("§aKaj Cloud is geactiveerd!");
-=======
         if (isActive(player))
             return;
         plugin = context.plugin();
         clouds.put(player.getUniqueId(), new CloudData(player, context));
->>>>>>> origin/main
     }
 
     /**
@@ -161,16 +104,6 @@ public class KajCloud extends Spell<Void> implements ToggleableSpell {
      */
     @Override
     public void deactivate(@NotNull Player player, @NotNull SpellContext context) {
-<<<<<<< HEAD
-        UUID playerUUID = player.getUniqueId();
-        // Controleer of er een actieve taak is voor deze speler.
-        if (ACTIVE_TASKS.containsKey(playerUUID)) {
-            // Haal de taak op en annuleer deze.
-            ACTIVE_TASKS.get(playerUUID).cancel();
-            // Verwijder de speler uit de map.
-            ACTIVE_TASKS.remove(playerUUID);
-            player.sendMessage("§cKaj Cloud is gedeactiveerd.");
-=======
         Optional.ofNullable(clouds.remove(player.getUniqueId())).ifPresent(CloudData::stop);
     }
 
@@ -242,7 +175,6 @@ public class KajCloud extends Spell<Void> implements ToggleableSpell {
             if (Math.random() < 0.2) {
                 world.spawnParticle(Particle.END_ROD, loc, 1, 0.2, 0.1, 0.2, 0.01);
             }
->>>>>>> origin/main
         }
     }
 }

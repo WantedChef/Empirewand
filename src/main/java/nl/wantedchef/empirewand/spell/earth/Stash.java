@@ -101,7 +101,7 @@ public class Stash extends Spell<Player> {
                     }
                     
                     block.setType(Material.AIR);
-                    block.getWorld().spawnParticle(Particle.BLOCK_DUST, block.getLocation().add(0.5, 0.5, 0.5), 10, 0.3, 0.3, 0.3, 0,
+                    block.getWorld().spawnParticle(Particle.DUST, block.getLocation().add(0.5, 0.5, 0.5), 10, 0.3, 0.3, 0.3, 0,
                         Material.CHEST.createBlockData());
                     context.fx().playSound(block.getLocation(), Sound.BLOCK_WOOD_BREAK, 0.8f, 1.0f);
                 }

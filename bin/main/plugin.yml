@@ -1,35 +1,45 @@
 name: ${name}
 version: ${version}
 main: nl.wantedchef.empirewand.EmpireWandPlugin
+<<<<<<< HEAD
 api-version: '1.20'
+authors: [ "ChefWanted" ]
+=======
+api-version: '1.21'
 authors: [ "YourName" ]
+>>>>>>> origin/main
 description: EmpireWand example plugin
 commands:
   ew:
     description: EmpireWand commands
-    usage: /ew <get|bind|unbind|bindall|bindtype|bindcat|set-spell|list|reload|migrate|spells|cd>
+    usage: /ew <get|bind|unbind|bindall|bindtype|bindcat|set-spell|list|reload|migrate|spells|toggle|stats|switcheffect|cd>
   mz:
     description: MephidantesZeist commands
-    usage: /mz <get|bind|unbind|bindall|bindtype|bindcat|set-spell|list|reload|migrate|spells|cd>
+    usage: /mz <get|bind|unbind|bindall|bindtype|bindcat|set-spell|list|reload|migrate|spells|toggle|stats|switcheffect|cd>
 permissions:
-  nl.wantedchef.empirewand.command.get: { default: op }
-  nl.wantedchef.empirewand.command.bind: { default: op }
-  nl.wantedchef.empirewand.command.unbind: { default: op }
-  nl.wantedchef.empirewand.command.bindall: { default: op }
-  nl.wantedchef.empirewand.command.bindtype: { default: op }
-  nl.wantedchef.empirewand.command.bindcat: { default: op }
-  nl.wantedchef.empirewand.command.set-spell: { default: op }
-  nl.wantedchef.empirewand.command.list: { default: true }
-  nl.wantedchef.empirewand.command.spells: { default: true }
-  nl.wantedchef.empirewand.command.reload: { default: op }
-  nl.wantedchef.empirewand.command.migrate: { default: op }
+  # Command permissions
+  empirewand.command.get: { default: op }
+  empirewand.command.bind: { default: op }
+  empirewand.command.unbind: { default: op }
+  empirewand.command.bindall: { default: op }
+  empirewand.command.bindtype: { default: op }
+  empirewand.command.bindcat: { default: op }
+  empirewand.command.set-spell: { default: op }
+  empirewand.command.list: { default: true }
+  empirewand.command.spells: { default: true }
+  empirewand.command.reload: { default: op }
+  empirewand.command.migrate: { default: op }
+  empirewand.command.toggle: { default: true }
+  empirewand.command.stats: { default: true }
+  empirewand.command.switcheffect: { default: true }
   
   # Cooldown permissions
-  nl.wantedchef.empirewand.command.cooldown.toggle: { default: true }
-  nl.wantedchef.empirewand.command.cooldown.clear: { default: op }
-  nl.wantedchef.empirewand.command.cooldown.status: { default: true }
-  nl.wantedchef.empirewand.command.cooldown.admin: { default: op }
+  empirewand.command.cooldown.toggle: { default: true }
+  empirewand.command.cooldown.clear: { default: op }
+  empirewand.command.cooldown.status: { default: true }
+  empirewand.command.cooldown.admin: { default: op }
   
+  # MephidantesZeist alias permissions (mirror empirewand permissions)
   mephidanteszeist.command.get: { default: op }
   mephidanteszeist.command.bind: { default: op }
   mephidanteszeist.command.unbind: { default: op }
@@ -41,135 +51,137 @@ permissions:
   mephidanteszeist.command.spells: { default: true }
   mephidanteszeist.command.reload: { default: op }
   mephidanteszeist.command.migrate: { default: op }
-  
-  # Cooldown permissions for MephidantesZeist
+  mephidanteszeist.command.toggle: { default: true }
+  mephidanteszeist.command.stats: { default: true }
+  mephidanteszeist.command.switcheffect: { default: true }
   mephidanteszeist.command.cooldown.toggle: { default: true }
   mephidanteszeist.command.cooldown.clear: { default: op }
   mephidanteszeist.command.cooldown.status: { default: true }
   mephidanteszeist.command.cooldown.admin: { default: op }
-  nl.wantedchef.empirewand.spell.use.*: { default: true }
-  nl.wantedchef.empirewand.spell.bind.*: { default: op }
+  # Spell permissions
+  empirewand.spell.use.*: { default: true }
+  empirewand.spell.bind.*: { default: op }
   
   # Individual spell permissions
-  nl.wantedchef.empirewand.spell.use.leap: { default: true }
-  nl.wantedchef.empirewand.spell.use.comet: { default: true }
-  nl.wantedchef.empirewand.spell.use.explosive: { default: true }
-  nl.wantedchef.empirewand.spell.use.magic-missile: { default: true }
-  nl.wantedchef.empirewand.spell.use.heal: { default: true }
-  nl.wantedchef.empirewand.spell.use.glacial-spike: { default: true }
-  nl.wantedchef.empirewand.spell.use.grasping-vines: { default: true }
-  nl.wantedchef.empirewand.spell.use.lifesteal: { default: true }
-  nl.wantedchef.empirewand.spell.use.polymorph: { default: true }
-  nl.wantedchef.empirewand.spell.use.ethereal-form: { default: true }
-  nl.wantedchef.empirewand.spell.use.frost-nova: { default: true }
-  nl.wantedchef.empirewand.spell.use.chain-lightning: { default: true }
-  nl.wantedchef.empirewand.spell.use.blink-strike: { default: true }
-  nl.wantedchef.empirewand.spell.use.shadow-cloak: { default: true }
-  nl.wantedchef.empirewand.spell.use.stasis-field: { default: true }
-  nl.wantedchef.empirewand.spell.use.gust: { default: true }
-  nl.wantedchef.empirewand.spell.use.arcane-orb: { default: true }
-  nl.wantedchef.empirewand.spell.use.void-swap: { default: true }
-  nl.wantedchef.empirewand.spell.use.sandstorm: { default: true }
-  nl.wantedchef.empirewand.spell.use.tornado: { default: true }
-  nl.wantedchef.empirewand.spell.use.aura: { default: true }
-  nl.wantedchef.empirewand.spell.use.blaze-launch: { default: true }
-  nl.wantedchef.empirewand.spell.use.blood-barrier: { default: true }
-  nl.wantedchef.empirewand.spell.use.blood-block: { default: true }
-  nl.wantedchef.empirewand.spell.use.blood-nova: { default: true }
-  nl.wantedchef.empirewand.spell.use.blood-spam: { default: true }
-  nl.wantedchef.empirewand.spell.use.blood-tap: { default: true }
-  nl.wantedchef.empirewand.spell.use.comet-shower: { default: true }
-  nl.wantedchef.empirewand.spell.use.confuse: { default: true }
-  nl.wantedchef.empirewand.spell.use.crimson-chains: { default: true }
-  nl.wantedchef.empirewand.spell.use.dark-circle: { default: true }
-  nl.wantedchef.empirewand.spell.use.dark-pulse: { default: true }
-  nl.wantedchef.empirewand.spell.use.earth-quake: { default: true }
-  nl.wantedchef.empirewand.spell.use.empire-aura: { default: true }
-  nl.wantedchef.empirewand.spell.use.empire-comet: { default: true }
-  nl.wantedchef.empirewand.spell.use.empire-escape: { default: true }
-  nl.wantedchef.empirewand.spell.use.empire-launch: { default: true }
-  nl.wantedchef.empirewand.spell.use.empire-levitate: { default: true }
-  nl.wantedchef.empirewand.spell.use.explosion-trail: { default: true }
-  nl.wantedchef.empirewand.spell.use.explosion-wave: { default: true }
-  nl.wantedchef.empirewand.spell.use.fireball: { default: true }
-  nl.wantedchef.empirewand.spell.use.flame-wave: { default: true }
-  nl.wantedchef.empirewand.spell.use.god-cloud: { default: true }
-  nl.wantedchef.empirewand.spell.use.hemorrhage: { default: true }
-  nl.wantedchef.empirewand.spell.use.life-reap: { default: true }
-  nl.wantedchef.empirewand.spell.use.lightning-arrow: { default: true }
-  nl.wantedchef.empirewand.spell.use.lightning-bolt: { default: true }
-  nl.wantedchef.empirewand.spell.use.lightning-storm: { default: true }
-  nl.wantedchef.empirewand.spell.use.lightwall: { default: true }
-  nl.wantedchef.empirewand.spell.use.little-spark: { default: true }
-  nl.wantedchef.empirewand.spell.use.mephidic-reap: { default: true }
-  nl.wantedchef.empirewand.spell.use.poison-wave: { default: true }
-  nl.wantedchef.empirewand.spell.use.radiant-beacon: { default: true }
-  nl.wantedchef.empirewand.spell.use.ritual-of-unmaking: { default: true }
-  nl.wantedchef.empirewand.spell.use.solar-lance: { default: true }
-  nl.wantedchef.empirewand.spell.use.soul-sever: { default: true }
-  nl.wantedchef.empirewand.spell.use.spark: { default: true }
-  nl.wantedchef.empirewand.spell.use.sunburst-step: { default: true }
-  nl.wantedchef.empirewand.spell.use.teleport: { default: true }
-  nl.wantedchef.empirewand.spell.use.thunder-blast: { default: true }
+  empirewand.spell.use.leap: { default: true }
+  empirewand.spell.use.comet: { default: true }
+  empirewand.spell.use.explosive: { default: true }
+  empirewand.spell.use.magic-missile: { default: true }
+  empirewand.spell.use.heal: { default: true }
+  empirewand.spell.use.glacial-spike: { default: true }
+  empirewand.spell.use.grasping-vines: { default: true }
+  empirewand.spell.use.lifesteal: { default: true }
+  empirewand.spell.use.polymorph: { default: true }
+  empirewand.spell.use.ethereal-form: { default: true }
+  empirewand.spell.use.frost-nova: { default: true }
+  empirewand.spell.use.chain-lightning: { default: true }
+  empirewand.spell.use.blink-strike: { default: true }
+  empirewand.spell.use.shadow-cloak: { default: true }
+  empirewand.spell.use.stasis-field: { default: true }
+  empirewand.spell.use.gust: { default: true }
+  empirewand.spell.use.arcane-orb: { default: true }
+  empirewand.spell.use.void-swap: { default: true }
+  empirewand.spell.use.sandstorm: { default: true }
+  empirewand.spell.use.tornado: { default: true }
+  empirewand.spell.use.aura: { default: true }
+  empirewand.spell.use.blaze-launch: { default: true }
+  empirewand.spell.use.blood-barrier: { default: true }
+  empirewand.spell.use.blood-block: { default: true }
+  empirewand.spell.use.blood-nova: { default: true }
+  empirewand.spell.use.blood-spam: { default: true }
+  empirewand.spell.use.blood-tap: { default: true }
+  empirewand.spell.use.comet-shower: { default: true }
+  empirewand.spell.use.confuse: { default: true }
+  empirewand.spell.use.crimson-chains: { default: true }
+  empirewand.spell.use.dark-circle: { default: true }
+  empirewand.spell.use.dark-pulse: { default: true }
+  empirewand.spell.use.earth-quake: { default: true }
+  empirewand.spell.use.empire-aura: { default: true }
+  empirewand.spell.use.empire-comet: { default: true }
+  empirewand.spell.use.empire-escape: { default: true }
+  empirewand.spell.use.empire-launch: { default: true }
+  empirewand.spell.use.empire-levitate: { default: true }
+  empirewand.spell.use.explosion-trail: { default: true }
+  empirewand.spell.use.explosion-wave: { default: true }
+  empirewand.spell.use.fireball: { default: true }
+  empirewand.spell.use.flame-wave: { default: true }
+  empirewand.spell.use.god-cloud: { default: true }
+  empirewand.spell.use.hemorrhage: { default: true }
+  empirewand.spell.use.life-reap: { default: true }
+  empirewand.spell.use.lightning-arrow: { default: true }
+  empirewand.spell.use.lightning-bolt: { default: true }
+  empirewand.spell.use.lightning-storm: { default: true }
+  empirewand.spell.use.lightwall: { default: true }
+  empirewand.spell.use.little-spark: { default: true }
+  empirewand.spell.use.mephidic-reap: { default: true }
+  empirewand.spell.use.poison-wave: { default: true }
+  empirewand.spell.use.radiant-beacon: { default: true }
+  empirewand.spell.use.ritual-of-unmaking: { default: true }
+  empirewand.spell.use.solar-lance: { default: true }
+  empirewand.spell.use.soul-sever: { default: true }
+  empirewand.spell.use.spark: { default: true }
+  empirewand.spell.use.sunburst-step: { default: true }
+  empirewand.spell.use.teleport: { default: true }
+  empirewand.spell.use.thunder-blast: { default: true }
   
   # Individual spell bind permissions
-  nl.wantedchef.empirewand.spell.bind.leap: { default: op }
-  nl.wantedchef.empirewand.spell.bind.comet: { default: op }
-  nl.wantedchef.empirewand.spell.bind.explosive: { default: op }
-  nl.wantedchef.empirewand.spell.bind.magic-missile: { default: op }
-  nl.wantedchef.empirewand.spell.bind.heal: { default: op }
-  nl.wantedchef.empirewand.spell.bind.glacial-spike: { default: op }
-  nl.wantedchef.empirewand.spell.bind.grasping-vines: { default: op }
-  nl.wantedchef.empirewand.spell.bind.lifesteal: { default: op }
-  nl.wantedchef.empirewand.spell.bind.polymorph: { default: op }
-  nl.wantedchef.empirewand.spell.bind.ethereal-form: { default: op }
-  nl.wantedchef.empirewand.spell.bind.frost-nova: { default: op }
-  nl.wantedchef.empirewand.spell.bind.chain-lightning: { default: op }
-  nl.wantedchef.empirewand.spell.bind.blink-strike: { default: op }
-  nl.wantedchef.empirewand.spell.bind.shadow-cloak: { default: op }
-  nl.wantedchef.empirewand.spell.bind.stasis-field: { default: op }
-  nl.wantedchef.empirewand.spell.bind.gust: { default: op }
-  nl.wantedchef.empirewand.spell.bind.arcane-orb: { default: op }
-  nl.wantedchef.empirewand.spell.bind.void-swap: { default: op }
-  nl.wantedchef.empirewand.spell.bind.sandstorm: { default: op }
-  nl.wantedchef.empirewand.spell.bind.tornado: { default: op }
-  nl.wantedchef.empirewand.spell.bind.aura: { default: op }
-  nl.wantedchef.empirewand.spell.bind.blaze-launch: { default: op }
-  nl.wantedchef.empirewand.spell.bind.blood-barrier: { default: op }
-  nl.wantedchef.empirewand.spell.bind.blood-block: { default: op }
-  nl.wantedchef.empirewand.spell.bind.blood-nova: { default: op }
-  nl.wantedchef.empirewand.spell.bind.blood-spam: { default: op }
-  nl.wantedchef.empirewand.spell.bind.blood-tap: { default: op }
-  nl.wantedchef.empirewand.spell.bind.comet-shower: { default: op }
-  nl.wantedchef.empirewand.spell.bind.confuse: { default: op }
-  nl.wantedchef.empirewand.spell.bind.crimson-chains: { default: op }
-  nl.wantedchef.empirewand.spell.bind.dark-circle: { default: op }
-  nl.wantedchef.empirewand.spell.bind.dark-pulse: { default: op }
-  nl.wantedchef.empirewand.spell.bind.earth-quake: { default: op }
-  nl.wantedchef.empirewand.spell.bind.empire-aura: { default: op }
-  nl.wantedchef.empirewand.spell.bind.empire-comet: { default: op }
-  nl.wantedchef.empirewand.spell.bind.empire-escape: { default: op }
-  nl.wantedchef.empirewand.spell.bind.empire-launch: { default: op }
-  nl.wantedchef.empirewand.spell.bind.empire-levitate: { default: op }
-  nl.wantedchef.empirewand.spell.bind.explosion-trail: { default: op }
-  nl.wantedchef.empirewand.spell.bind.explosion-wave: { default: op }
-  nl.wantedchef.empirewand.spell.bind.fireball: { default: op }
-  nl.wantedchef.empirewand.spell.bind.flame-wave: { default: op }
-  nl.wantedchef.empirewand.spell.bind.god-cloud: { default: op }
-  nl.wantedchef.empirewand.spell.bind.hemorrhage: { default: op }
-  nl.wantedchef.empirewand.spell.bind.life-reap: { default: op }
-  nl.wantedchef.empirewand.spell.bind.lightning-arrow: { default: op }
-  nl.wantedchef.empirewand.spell.bind.lightning-bolt: { default: op }
-  nl.wantedchef.empirewand.spell.bind.lightning-storm: { default: op }
-  nl.wantedchef.empirewand.spell.bind.lightwall: { default: op }
-  nl.wantedchef.empirewand.spell.bind.little-spark: { default: op }
-  nl.wantedchef.empirewand.spell.bind.mephidic-reap: { default: op }
-  nl.wantedchef.empirewand.spell.bind.poison-wave: { default: op }
-  nl.wantedchef.empirewand.spell.bind.radiant-beacon: { default: op }
-  nl.wantedchef.empirewand.spell.bind.ritual-of-unmaking: { default: op }
-  nl.wantedchef.empirewand.spell.bind.solar-lance: { default: op }
-  nl.wantedchef.empirewand.spell.bind.soul-sever: { default: op }
-  nl.wantedchef.empirewand.spell.bind.spark: { default: op }
-  nl.wantedchef.empirewand.spell.bind.sunburst-step: { default: op }
-  nl.wantedchef.empirewand.spell.bind.teleport: { default: op }
-  nl.wantedchef.empirewand.spell.bind.thunder-blast: { default: op }
+  empirewand.spell.bind.leap: { default: op }
+  empirewand.spell.bind.comet: { default: op }
+  empirewand.spell.bind.explosive: { default: op }
+  empirewand.spell.bind.magic-missile: { default: op }
+  empirewand.spell.bind.heal: { default: op }
+  empirewand.spell.bind.glacial-spike: { default: op }
+  empirewand.spell.bind.grasping-vines: { default: op }
+  empirewand.spell.bind.lifesteal: { default: op }
+  empirewand.spell.bind.polymorph: { default: op }
+  empirewand.spell.bind.ethereal-form: { default: op }
+  empirewand.spell.bind.frost-nova: { default: op }
+  empirewand.spell.bind.chain-lightning: { default: op }
+  empirewand.spell.bind.blink-strike: { default: op }
+  empirewand.spell.bind.shadow-cloak: { default: op }
+  empirewand.spell.bind.stasis-field: { default: op }
+  empirewand.spell.bind.gust: { default: op }
+  empirewand.spell.bind.arcane-orb: { default: op }
+  empirewand.spell.bind.void-swap: { default: op }
+  empirewand.spell.bind.sandstorm: { default: op }
+  empirewand.spell.bind.tornado: { default: op }
+  empirewand.spell.bind.aura: { default: op }
+  empirewand.spell.bind.blaze-launch: { default: op }
+  empirewand.spell.bind.blood-barrier: { default: op }
+  empirewand.spell.bind.blood-block: { default: op }
+  empirewand.spell.bind.blood-nova: { default: op }
+  empirewand.spell.bind.blood-spam: { default: op }
+  empirewand.spell.bind.blood-tap: { default: op }
+  empirewand.spell.bind.comet-shower: { default: op }
+  empirewand.spell.bind.confuse: { default: op }
+  empirewand.spell.bind.crimson-chains: { default: op }
+  empirewand.spell.bind.dark-circle: { default: op }
+  empirewand.spell.bind.dark-pulse: { default: op }
+  empirewand.spell.bind.earth-quake: { default: op }
+  empirewand.spell.bind.empire-aura: { default: op }
+  empirewand.spell.bind.empire-comet: { default: op }
+  empirewand.spell.bind.empire-escape: { default: op }
+  empirewand.spell.bind.empire-launch: { default: op }
+  empirewand.spell.bind.empire-levitate: { default: op }
+  empirewand.spell.bind.explosion-trail: { default: op }
+  empirewand.spell.bind.explosion-wave: { default: op }
+  empirewand.spell.bind.fireball: { default: op }
+  empirewand.spell.bind.flame-wave: { default: op }
+  empirewand.spell.bind.god-cloud: { default: op }
+  empirewand.spell.bind.hemorrhage: { default: op }
+  empirewand.spell.bind.life-reap: { default: op }
+  empirewand.spell.bind.lightning-arrow: { default: op }
+  empirewand.spell.bind.lightning-bolt: { default: op }
+  empirewand.spell.bind.lightning-storm: { default: op }
+  empirewand.spell.bind.lightwall: { default: op }
+  empirewand.spell.bind.little-spark: { default: op }
+  empirewand.spell.bind.mephidic-reap: { default: op }
+  empirewand.spell.bind.poison-wave: { default: op }
+  empirewand.spell.bind.radiant-beacon: { default: op }
+  empirewand.spell.bind.ritual-of-unmaking: { default: op }
+  empirewand.spell.bind.solar-lance: { default: op }
+  empirewand.spell.bind.soul-sever: { default: op }
+  empirewand.spell.bind.spark: { default: op }
+  empirewand.spell.bind.sunburst-step: { default: op }
+  empirewand.spell.bind.teleport: { default: op }
+  empirewand.spell.bind.thunder-blast: { default: op }

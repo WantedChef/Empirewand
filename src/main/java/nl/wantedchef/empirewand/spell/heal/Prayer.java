@@ -80,7 +80,7 @@ public class Prayer extends Spell<Player> {
         player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 200, 0));
         
         // Visual effects
-        player.getWorld().spawnParticle(Particle.TOTEM, 
+        player.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, 
             player.getLocation().add(0, 1, 0), 30, 0.5, 1, 0.5, 0.1);
         player.getWorld().spawnParticle(Particle.END_ROD, 
             player.getLocation().add(0, 2, 0), 20, 0.3, 0.3, 0.3, 0.05);

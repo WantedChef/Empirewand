@@ -95,7 +95,7 @@ public class Platform extends Spell<Player> {
                 for (Block block : platformBlocks) {
                     if (block.getType() == Material.STONE) {
                         block.setType(Material.AIR);
-                        block.getWorld().spawnParticle(Particle.BLOCK_DUST, block.getLocation(), 3, 0.2, 0.1, 0.2, 0,
+                        block.getWorld().spawnParticle(Particle.DUST, block.getLocation(), 3, 0.2, 0.1, 0.2, 0,
                             Material.STONE.createBlockData());
                     }
                 }

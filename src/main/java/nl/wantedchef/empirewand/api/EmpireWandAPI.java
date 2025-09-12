@@ -107,6 +107,14 @@ public final class EmpireWandAPI {
          * {@inheritDoc}
          */
         @Override
+        public @NotNull nl.wantedchef.empirewand.api.spell.toggle.SpellManager getSpellManager() {
+            throw new IllegalStateException("EmpireWand API provider not available (no-op)");
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
         public @NotNull Version getAPIVersion() {
             return API_VERSION;
         }
@@ -189,6 +197,9 @@ public final class EmpireWandAPI {
             return serviceClass.cast(provider.getEffectService());
         } else if (MetricsService.class.equals(serviceClass)) {
             return serviceClass.cast(provider.getMetricsService());
+        } else if (nl.wantedchef.empirewand.api.spell.toggle.SpellManager.class.equals(serviceClass)
+                || nl.wantedchef.empirewand.api.spell.SpellManager.class.equals(serviceClass)) {
+            return serviceClass.cast(provider.getSpellManager());
         }
 
         throw new IllegalArgumentException("Unsupported service type: " + serviceClass.getName());
@@ -385,6 +396,14 @@ public final class EmpireWandAPI {
          */
         @NotNull
         MetricsService getMetricsService();
+
+        /**
+         * Retrieves the manager for toggleable spells.
+         *
+         * @return The non-null SpellManager instance.
+         */
+        @NotNull
+        nl.wantedchef.empirewand.api.spell.toggle.SpellManager getSpellManager();
 
         /**
          * Gets the API version supported by this provider.

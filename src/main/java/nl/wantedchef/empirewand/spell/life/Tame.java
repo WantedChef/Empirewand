@@ -7,7 +7,13 @@ import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.entity.*;
+import org.bukkit.entity.Animals;
+import org.bukkit.entity.Cat;
+import org.bukkit.entity.Horse;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.Tameable;
+import org.bukkit.entity.Wolf;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -81,7 +87,7 @@ public class Tame extends Spell<Animals> {
             
             // Visual effects
             target.getWorld().spawnParticle(Particle.HEART, target.getLocation().add(0, 1, 0), 10, 0.3, 0.3, 0.3, 0);
-            target.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, target.getLocation(), 15, 0.5, 0.5, 0.5, 0);
+            target.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, target.getLocation(), 15, 0.5, 0.5, 0.5, 0);
             
             // Sound effects
             context.fx().playSound(target.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.5f);
