@@ -33,7 +33,7 @@ repositories {
 
 dependencies {
     // Paper API to compile against Bukkit/Spigot API (provided by server at runtime)
-    compileOnly("io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT")
     // Annotations (optional, compileOnly)
     compileOnly("org.jetbrains:annotations:24.1.0")
     // SpotBugs annotations used by @SuppressFBWarnings
@@ -44,7 +44,7 @@ dependencies {
     // Testing dependencies
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
     testImplementation("org.mockito:mockito-core:5.9.0")
-    testImplementation("io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT")
+    testImplementation("io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT")
     // Include bStats at test runtime to satisfy MetricsService dependencies
     testImplementation("org.bstats:bstats-bukkit:3.0.2")
 }

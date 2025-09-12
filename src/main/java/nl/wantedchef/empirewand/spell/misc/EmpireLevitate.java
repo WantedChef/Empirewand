@@ -93,7 +93,7 @@ public class EmpireLevitate extends Spell<Void> {
     }
 
     private boolean isBoss(LivingEntity entity, double healthThreshold) {
-        AttributeInstance maxHealthAttr = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        AttributeInstance maxHealthAttr = entity.getAttribute(Attribute.MAX_HEALTH);
         return maxHealthAttr != null && maxHealthAttr.getBaseValue() > healthThreshold;
     }
 }

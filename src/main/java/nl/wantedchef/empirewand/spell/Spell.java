@@ -1,8 +1,13 @@
 package nl.wantedchef.empirewand.spell;
 
 import nl.wantedchef.empirewand.api.EmpireWandAPI;
+<<<<<<< HEAD
 import nl.wantedchef.empirewand.EmpireWandPlugin;
 
+=======
+import nl.wantedchef.empirewand.api.event.SpellCastEvent;
+import nl.wantedchef.empirewand.api.service.CooldownService;
+>>>>>>> origin/main
 import java.time.Duration;
 import java.util.logging.Level;
 import java.util.Objects;
@@ -267,9 +272,27 @@ public abstract class Spell<T> {
      * @return the result of the cast attempt
      */
     @NotNull
+<<<<<<< HEAD
     public CastResult cast(@NotNull SpellContext context) {
         Objects.requireNonNull(context, "Spell context cannot be null");
         
+=======
+    public final CastResult cast(@NotNull SpellContext context) {
+        PrereqInterface.CheckResult prereqResult = prereq().check(context);
+        if (!prereqResult.success()) {
+            return CastResult.fail(prereqResult.reason());
+        }
+
+        // Check and apply cooldown
+        if (context.caster() instanceof Player player) {
+            CooldownCheckResult cooldownResult = checkCooldown(player);
+            if (!cooldownResult.isSuccess()) {
+                return CastResult.fail(cooldownResult.reason());
+            }
+            applyCooldown(player);
+        }
+
+>>>>>>> origin/main
         if (requiresAsyncExecution()) {
             return castAsync(context);
         } else {
@@ -463,6 +486,62 @@ public abstract class Spell<T> {
             task.run();
         } else {
             Bukkit.getScheduler().runTask(context.plugin(), task);
+        }
+    }
+
+    /**
+     * Checks if the spell is on cooldown for the given player.
+     *
+     * @param player the player to check
+     * @return the cooldown result
+     */
+    protected CooldownCheckResult checkCooldown(@NotNull Player player) {
+        CooldownService cooldownService = EmpireWandAPI.getService(CooldownService.class);
+        if (cooldownService == null) {
+            return CooldownCheckResult.success();
+        }
+        
+        return cooldownService.checkCooldown(player, key(), cooldown);
+    }
+    
+    /**
+     * Applies the cooldown for this spell to the given player.
+     *
+     * @param player the player to apply cooldown to
+     */
+    protected void applyCooldown(@NotNull Player player) {
+        CooldownService cooldownService = EmpireWandAPI.getService(CooldownService.class);
+        if (cooldownService != null) {
+            cooldownService.setCooldown(player, key(), cooldown);
+        }
+    }
+    
+    /**
+     * Result of a cooldown check.
+     */
+    protected static class CooldownCheckResult {
+        private final boolean success;
+        private final String reason;
+        
+        private CooldownCheckResult(boolean success, String reason) {
+            this.success = success;
+            this.reason = reason;
+        }
+        
+        public boolean isSuccess() {
+            return success;
+        }
+        
+        public String reason() {
+            return reason;
+        }
+        
+        public static CooldownCheckResult success() {
+            return new CooldownCheckResult(true, null);
+        }
+        
+        public static CooldownCheckResult fail(String reason) {
+            return new CooldownCheckResult(false, reason);
         }
     }
 

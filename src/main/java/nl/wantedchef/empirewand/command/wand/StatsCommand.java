@@ -102,20 +102,8 @@ public class StatsCommand implements SubCommand, CommandHelpProvider.HelpAwareCo
         stats.maxCastTime = debugMetrics.getSpellCastP95(); // Using P95 as max for now
 
         // Get wand usage stats
-        try {
-            var metrics = context.plugin().getMetricsService();
-            stats.wandsCreated = (metrics != null) ? metrics.getWandsCreatedCount() : 0;
-        } catch (Exception ignored) {
-            stats.wandsCreated = 0;
-        }
-        // Estimate active wands as players currently holding a wand in main hand
-        try {
-            stats.wandsActive = (int) context.plugin().getServer().getOnlinePlayers().stream()
-                    .filter(p -> context.wandService().isWand(p.getInventory().getItemInMainHand()))
-                    .count();
-        } catch (Exception ignored) {
-            stats.wandsActive = 0;
-        }
+        stats.wandsCreated = (int) debugMetrics.getTotalWandsCreated();
+        stats.wandsActive = debugMetrics.getActiveWandsCount();
 
         return stats;
     }

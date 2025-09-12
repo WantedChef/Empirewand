@@ -38,7 +38,7 @@ public class HelpCommand implements SubCommand, CommandHelpProvider.HelpAwareCom
 
     @Override
     public @NotNull List<String> getAliases() {
-        return List.of("?");
+        return List.of("help", "?");
     }
 
         @Override

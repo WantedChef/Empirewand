@@ -1,7 +1,10 @@
 package nl.wantedchef.empirewand.framework.service;
 
 import org.junit.jupiter.api.Test;
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class SpellSwitchServiceTest {

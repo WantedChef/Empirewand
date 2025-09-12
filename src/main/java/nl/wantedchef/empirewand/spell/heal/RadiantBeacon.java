@@ -150,7 +150,7 @@ public class RadiantBeacon extends Spell<Void> {
                         entity.damage(damageAmount, context.caster());
                     } else {
                         // FIX 3: Veilige null-check voor max health attribute
-                        AttributeInstance maxHealthAttribute = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+                        AttributeInstance maxHealthAttribute = entity.getAttribute(Attribute.MAX_HEALTH);
                         if (maxHealthAttribute != null) {
                             double maxHealth = maxHealthAttribute.getValue();
                             entity.setHealth(Math.min(maxHealth, entity.getHealth() + healAmount));

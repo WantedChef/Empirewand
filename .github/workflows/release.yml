@@ -22,10 +22,10 @@ jobs:
           java-version: '21'
           cache: gradle
 
-      - name: Build with Gradle 8.10.2
+      - name: Build with Gradle 9.0
         uses: gradle/gradle-build-action@v3
         with:
-          gradle-version: '8.10.2'
+          gradle-version: '9.0'
           arguments: build --stacktrace
 
       - name: Generate checksums

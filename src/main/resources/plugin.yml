@@ -1,8 +1,13 @@
 name: ${name}
 version: ${version}
 main: nl.wantedchef.empirewand.EmpireWandPlugin
+<<<<<<< HEAD
 api-version: '1.20'
 authors: [ "ChefWanted" ]
+=======
+api-version: '1.21'
+authors: [ "YourName" ]
+>>>>>>> origin/main
 description: EmpireWand example plugin
 commands:
   ew:

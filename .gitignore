@@ -29,11 +29,6 @@ gradle-*.zip
 *.class
 
 # Ignore most markdown and text files repo-wide except the root README
-**/*.md
-**/*.MD
-**/*.markdown
-**/*.txt
-**/*.TXT
 !/README.md
 !/CHANGELOG.md
 
