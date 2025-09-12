@@ -16,6 +16,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.List;
@@ -72,7 +73,7 @@ public class ZeistChronoAnchor extends Spell<Void> {
          * @param api the EmpireWandAPI instance
          * @throws NullPointerException if api is null
          */
-        public Builder(@NotNull EmpireWandAPI api) {
+        public Builder(@Nullable EmpireWandAPI api) {
             super(api);
             this.name = "Zeist Chrono Anchor";
             this.description = "Creates a time bubble that slows entities and projectiles within its radius.";

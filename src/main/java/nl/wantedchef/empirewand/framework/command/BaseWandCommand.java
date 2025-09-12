@@ -30,6 +30,7 @@ import nl.wantedchef.empirewand.command.wand.SpellsCommand;
 import nl.wantedchef.empirewand.command.wand.StatsCommand;
 import nl.wantedchef.empirewand.command.wand.SwitchEffectCommand;
 import nl.wantedchef.empirewand.command.wand.ToggleCommand;
+import nl.wantedchef.empirewand.command.wand.UnbindCommand;
 import nl.wantedchef.empirewand.framework.command.util.CommandErrorHandler;
 import nl.wantedchef.empirewand.framework.command.util.CommandHelpProvider;
 import nl.wantedchef.empirewand.framework.command.util.HelpCommand;

@@ -22,6 +22,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.Objects;
@@ -71,7 +72,7 @@ public class DragonsBreath extends ProjectileSpell<DragonFireball> {
          * @param api the EmpireWandAPI instance
          * @throws NullPointerException if api is null
          */
-        public Builder(@NotNull EmpireWandAPI api) {
+        public Builder(@Nullable EmpireWandAPI api) {
             super(api, DragonFireball.class);
             this.name = "Dragon's Breath";
             this.description = "Fires a cone of dragon's breath that deals massive damage and applies wither effect.";

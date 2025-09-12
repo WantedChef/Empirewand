@@ -19,6 +19,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 
@@ -66,7 +67,7 @@ public class DivineAura extends Spell<Void> {
          * @param api the EmpireWandAPI instance
          * @throws NullPointerException if api is null
          */
-        public Builder(@NotNull EmpireWandAPI api) {
+        public Builder(@Nullable EmpireWandAPI api) {
             super(api);
             this.name = "Divine Aura";
             this.description = "Creates a powerful healing aura that restores health and grants beneficial effects to allies.";

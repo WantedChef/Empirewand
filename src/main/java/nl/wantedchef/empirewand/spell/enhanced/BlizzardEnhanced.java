@@ -24,6 +24,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import nl.wantedchef.empirewand.api.EmpireWandAPI;
 import nl.wantedchef.empirewand.common.visual.RingRenderer;
@@ -82,7 +83,7 @@ public class BlizzardEnhanced extends Spell<Void> {
          * @param api the EmpireWandAPI instance
          * @throws NullPointerException if api is null
          */
-        public Builder(@NotNull EmpireWandAPI api) {
+        public Builder(@Nullable EmpireWandAPI api) {
             super(api);
             this.name = "Blizzard";
             this.description = "Creates a devastating blizzard that slows and damages enemies while covering the area in ice with enhanced visuals.";

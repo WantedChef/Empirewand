@@ -9,6 +9,7 @@ import nl.wantedchef.empirewand.api.service.WandService;
 import nl.wantedchef.empirewand.api.service.PermissionService;
 import nl.wantedchef.empirewand.api.spell.SpellRegistry;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -83,6 +84,11 @@ class BaseWandCommandTest {
         @Override
         protected String getWandDisplayName() {
             return "Test Wand";
+        }
+
+        @Override
+        protected Material getWandMaterial() {
+            return Material.STICK;
         }
     }
 

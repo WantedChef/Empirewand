@@ -17,6 +17,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -71,7 +72,7 @@ public class BlackHole extends Spell<Void> {
          * @param api the EmpireWandAPI instance
          * @throws NullPointerException if api is null
          */
-        public Builder(@NotNull EmpireWandAPI api) {
+        public Builder(@Nullable EmpireWandAPI api) {
             super(api);
             this.name = "Black Hole";
             this.description =

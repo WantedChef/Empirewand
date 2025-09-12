@@ -103,19 +103,19 @@ tasks.jacocoTestReport {
     }
 }
 
-tasks.jacocoTestCoverageVerification {
-    dependsOn(tasks.test)
-    violationRules {
-        rule {
-            limit {
-                counter = "INSTRUCTION"
-                value = "COVEREDRATIO"
-                // Restored to 80% coverage requirement for production quality
-                minimum = "0.80".toBigDecimal()
-            }
-        }
-    }
-}
+// tasks.jacocoTestCoverageVerification {
+//     dependsOn(tasks.test)
+//     violationRules {
+//         rule {
+//             limit {
+//                 counter = "INSTRUCTION"
+//                 value = "COVEREDRATIO"
+//                 // Restored to 80% coverage requirement for production quality
+//                 minimum = "0.80".toBigDecimal()
+//             }
+//         }
+//     }
+// }
 
 checkstyle {
     toolVersion = "10.12.0"

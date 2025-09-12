@@ -22,6 +22,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * An earth spell that creates a temporary wall of light that knocks back entities.
@@ -67,7 +68,7 @@ public class Lightwall extends Spell<Void> {
          * @param api the EmpireWandAPI instance
          * @throws NullPointerException if api is null
          */
-        public Builder(@NotNull EmpireWandAPI api) {
+        public Builder(@Nullable EmpireWandAPI api) {
             super(api);
             this.name = "Lightwall";
             this.description = "Creates a temporary wall of light that knocks back entities.";
