@@ -125,10 +125,11 @@ public class ListenerCoverageAnalyzer {
     public List<String> getRecommendations() {
         CoverageReport report = analyzeSpellCoverage();
         List<String> recommendations = new ArrayList<>();
-        
-        if (report.coveragePercentage() < 90.0) {
-            recommendations.add(String.format("Overall coverage is %.1f%% - aim for 90%+ coverage", 
-                    report.coveragePercentage()));
+
+        double coverage = report.coveragePercentage();
+        if (!Double.isNaN(coverage) && !Double.isInfinite(coverage) && coverage < 90.0) {
+            recommendations.add(String.format("Overall coverage is %.1f%% - aim for 90%% coverage",
+                    coverage));
         }
         
         if (!report.missingListeners().isEmpty()) {
@@ -165,9 +166,14 @@ public class ListenerCoverageAnalyzer {
      */
     public void printCoverageReport() {
         CoverageReport report = analyzeSpellCoverage();
-        
+
         plugin.getLogger().info("=== Spell Listener Coverage Analysis ===");
-        plugin.getLogger().info(String.format("Overall Coverage: %.1f%%", report.coveragePercentage()));
+        double coverage = report.coveragePercentage();
+        if (!Double.isNaN(coverage) && !Double.isInfinite(coverage)) {
+            plugin.getLogger().info(String.format("Overall Coverage: %.1f%%", coverage));
+        } else {
+            plugin.getLogger().info("Overall Coverage: 0.0%");
+        }
         plugin.getLogger().info(String.format("Total Spells Analyzed: %d", report.spellAnalyses().size()));
         
         if (!report.uncoveredSpellTypes().isEmpty()) {
@@ -195,8 +201,11 @@ public class ListenerCoverageAnalyzer {
             }
         }
         
-        if (report.coveragePercentage() >= 90.0) {
-            plugin.getLogger().info("Excellent listener coverage! All critical spell types are handled.");
+        if (!report.spellAnalyses().isEmpty()) {
+            double coverageCheck = report.coveragePercentage();
+            if (!Double.isNaN(coverageCheck) && !Double.isInfinite(coverageCheck) && coverageCheck >= 90.0) {
+                plugin.getLogger().info("Excellent listener coverage! All critical spell types are handled.");
+            }
         }
     }
     

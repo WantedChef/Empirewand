@@ -1,7 +1,6 @@
 package nl.wantedchef.empirewand.framework.service;
 
-import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
@@ -11,22 +10,19 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
 /**
  * A memory-optimized and high-performance service for managing spell cooldowns.
  * <p>
- * This implementation uses `fastutil` collections to reduce memory overhead and improve access speed.
+ * This implementation uses concurrent collections to ensure thread safety and improve access speed.
  * It features a periodic cleanup task to remove expired cooldowns, preventing long-term memory leaks.
  */
 public class OptimizedCooldownService {
     private static final long CLEANUP_INTERVAL_TICKS = 1200L; // 60 seconds
 
     private final Logger logger;
-    private final ReadWriteLock lock = new ReentrantReadWriteLock();
-    private final Object2ObjectOpenHashMap<UUID, Long2LongOpenHashMap> playerCooldowns = new Object2ObjectOpenHashMap<>();
+    private final ConcurrentHashMap<UUID, ConcurrentHashMap<String, Long>> playerCooldowns = new ConcurrentHashMap<>();
     private final Map<String, Boolean> disabledCooldowns = new ConcurrentHashMap<>();
     private final BukkitRunnable cleanupTask;
 
@@ -47,7 +43,7 @@ public class OptimizedCooldownService {
         };
         cleanupTask.runTaskTimer(plugin, CLEANUP_INTERVAL_TICKS, CLEANUP_INTERVAL_TICKS);
 
-        logger.info("OptimizedCooldownService initialized with fastutil collections");
+        logger.info("OptimizedCooldownService initialized with concurrent collections");
     }
 
     /**
@@ -63,17 +59,13 @@ public class OptimizedCooldownService {
             return false;
         }
 
-        lock.readLock().lock();
-        try {
-            Long2LongOpenHashMap playerMap = playerCooldowns.get(playerId);
-            if (playerMap == null)
-                return false;
-
-            long cooldownEnd = playerMap.getOrDefault(key.hashCode(), 0L);
-            return nowTicks < cooldownEnd;
-        } finally {
-            lock.readLock().unlock();
+        ConcurrentHashMap<String, Long> playerMap = playerCooldowns.get(playerId);
+        if (playerMap == null) {
+            return false;
         }
+
+        long cooldownEnd = playerMap.getOrDefault(key, 0L);
+        return nowTicks < cooldownEnd;
     }
 
     /**
@@ -110,17 +102,13 @@ public class OptimizedCooldownService {
             return 0L;
         }
 
-        lock.readLock().lock();
-        try {
-            Long2LongOpenHashMap playerMap = playerCooldowns.get(playerId);
-            if (playerMap == null)
-                return 0L;
-
-            long cooldownEnd = playerMap.getOrDefault(key.hashCode(), 0L);
-            return Math.max(0L, cooldownEnd - nowTicks);
-        } finally {
-            lock.readLock().unlock();
+        ConcurrentHashMap<String, Long> playerMap = playerCooldowns.get(playerId);
+        if (playerMap == null) {
+            return 0L;
         }
+
+        long cooldownEnd = playerMap.getOrDefault(key, 0L);
+        return Math.max(0L, cooldownEnd - nowTicks);
     }
 
     /**
@@ -156,14 +144,9 @@ public class OptimizedCooldownService {
             return;
         }
 
-        lock.writeLock().lock();
-        try {
-            Long2LongOpenHashMap playerMap = playerCooldowns.computeIfAbsent(playerId,
-                    k -> new Long2LongOpenHashMap());
-            playerMap.put(key.hashCode(), untilTicks);
-        } finally {
-            lock.writeLock().unlock();
-        }
+        ConcurrentHashMap<String, Long> playerMap = playerCooldowns.computeIfAbsent(playerId,
+                k -> new ConcurrentHashMap<>());
+        playerMap.put(key, untilTicks);
     }
 
     /**
@@ -176,14 +159,9 @@ public class OptimizedCooldownService {
             return;
         }
 
-        lock.writeLock().lock();
-        try {
-            playerCooldowns.remove(playerId);
-            // Also remove any cooldown disables for this player
-            disabledCooldowns.entrySet().removeIf(entry -> entry.getKey().startsWith(playerId.toString()));
-        } finally {
-            lock.writeLock().unlock();
-        }
+        playerCooldowns.remove(playerId);
+        // Also remove any cooldown disables for this player
+        disabledCooldowns.entrySet().removeIf(entry -> entry.getKey().startsWith(playerId.toString()));
     }
 
     /**
@@ -254,17 +232,12 @@ public class OptimizedCooldownService {
      * @return A snapshot of the current cooldown metrics.
      */
     public CooldownMetrics getMetrics() {
-        lock.readLock().lock();
-        try {
-            int totalPlayers = playerCooldowns.size();
-            int totalCooldowns = playerCooldowns.values().stream()
-                    .mapToInt(Long2LongOpenHashMap::size)
-                    .sum();
+        int totalPlayers = playerCooldowns.size();
+        int totalCooldowns = playerCooldowns.values().stream()
+                .mapToInt(ConcurrentHashMap::size)
+                .sum();
 
-            return new CooldownMetrics(totalPlayers, totalCooldowns, disabledCooldowns.size());
-        } finally {
-            lock.readLock().unlock();
-        }
+        return new CooldownMetrics(totalPlayers, totalCooldowns, disabledCooldowns.size());
     }
 
     /**
@@ -273,24 +246,18 @@ public class OptimizedCooldownService {
     private void cleanupExpiredCooldowns() {
         long currentTime = System.currentTimeMillis() / 50; // Convert to ticks
 
-        lock.writeLock().lock();
-        try {
-            // Remove expired cooldowns
-            playerCooldowns.values().forEach(map -> {
-                map.long2LongEntrySet().removeIf(entry -> currentTime >= entry.getLongValue());
-            });
+        // Remove expired cooldowns
+        playerCooldowns.values().forEach(map -> {
+            map.entrySet().removeIf(entry -> currentTime >= entry.getValue());
+        });
 
-            // Remove empty player maps
-            playerCooldowns.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+        // Remove empty player maps
+        playerCooldowns.entrySet().removeIf(entry -> entry.getValue().isEmpty());
 
-            // Clean up old disabled cooldowns (simple periodic cleanup)
-            if (disabledCooldowns.size() > 1000) {
-                disabledCooldowns.clear();
-                logger.info("Cleaned up disabled cooldowns cache");
-            }
-
-        } finally {
-            lock.writeLock().unlock();
+        // Clean up old disabled cooldowns (simple periodic cleanup)
+        if (disabledCooldowns.size() > 1000) {
+            disabledCooldowns.clear();
+            logger.info("Cleaned up disabled cooldowns cache");
         }
 
         CooldownMetrics metrics = getMetrics();
@@ -306,13 +273,8 @@ public class OptimizedCooldownService {
             cleanupTask.cancel();
         }
 
-        lock.writeLock().lock();
-        try {
-            playerCooldowns.clear();
-            disabledCooldowns.clear();
-        } finally {
-            lock.writeLock().unlock();
-        }
+        playerCooldowns.clear();
+        disabledCooldowns.clear();
 
         logger.info("OptimizedCooldownService shut down");
     }
