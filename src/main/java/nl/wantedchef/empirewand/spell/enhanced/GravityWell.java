@@ -163,6 +163,11 @@ public class GravityWell extends Spell<Void> {
             new GravityWellTask(context, targetLocation, radius, durationTicks, affectsPlayers, maxPullStrength),
             0L, 1L
         );
+        
+        // Inform player what the spell does
+        player.sendMessage("§5§lGRAVITY WELL §7- A gravitational anomaly pulls enemies toward the center!");
+        player.sendMessage("§7Entities too close to the center will be crushed by the intense gravity.");
+        
         return null;
     }
 
@@ -302,8 +307,8 @@ public class GravityWell extends Spell<Void> {
                 }
                 
                 // Visual effect for pulled entities
-                if (ticks % 5 == 0) {
-                    world.spawnParticle(Particle.PORTAL, entityLocation.add(0, 1, 0), 5, 0.3, 0.5, 0.3, 0.01);
+                if (ticks % 10 == 0) { // Reduced frequency from every 5 ticks to every 10 ticks
+                    world.spawnParticle(Particle.PORTAL, entityLocation.add(0, 1, 0), 3, 0.3, 0.5, 0.3, 0.01);
                 }
             }
         }
@@ -331,11 +336,11 @@ public class GravityWell extends Spell<Void> {
             }
             
             // Create vertical beam
-            if (ticks % 3 == 0) {
-                for (int i = 0; i < 20; i++) {
-                    double y = i * 0.5;
+            if (ticks % 5 == 0) {
+                for (int i = 0; i < 20; i += 2) { // Increased spacing from every 0.5 to every 1.0 blocks
+                    double y = i * 1.0;
                     Location beamLoc = center.clone().add(0, y, 0);
-                    world.spawnParticle(Particle.PORTAL, beamLoc, 3, 0.2, 0.2, 0.2, 0.01);
+                    world.spawnParticle(Particle.PORTAL, beamLoc, 2, 0.3, 0.3, 0.3, 0.01);
                 }
             }
             
@@ -347,7 +352,7 @@ public class GravityWell extends Spell<Void> {
                     double x = shockwaveRadius * Math.cos(angle);
                     double z = shockwaveRadius * Math.sin(angle);
                     Location particleLoc = center.clone().add(x, 0.1, z);
-                    world.spawnParticle(Particle.EXPLOSION, particleLoc, 1, 0, 0, 0, 0);
+                    world.spawnParticle(Particle.CRIT, particleLoc, 2, 0, 0, 0, 0);
                 }
                 
                 // Sound effect

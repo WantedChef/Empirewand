@@ -78,6 +78,9 @@ public enum SpellType {
     /** Spells that control or manipulate other entities or objects */
     CONTROL,
     
+    /** Enhanced versions of existing spells with improved effects */
+    ENHANCED,
+    
     /** Spells that don't fit into other categories or have unique effects */
     MISC;
 

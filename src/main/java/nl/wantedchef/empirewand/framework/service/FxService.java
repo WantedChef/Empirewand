@@ -705,4 +705,109 @@ public class FxService implements EffectService {
         // Flush any pending particle batches
         flushParticleBatch();
     }
+
+    // ---- String-based particle methods for backward compatibility ----
+    
+    /**
+     * Spawns particles using string particle names for backward compatibility.
+     * 
+     * @param particleName The name of the particle (e.g., "CLOUD", "SNOWFLAKE")
+     * @param location The location to spawn particles at
+     * @param count The number of particles
+     * @param offsetX The X offset
+     * @param offsetY The Y offset 
+     * @param offsetZ The Z offset
+     * @param speed The particle speed
+     */
+    public void spawnParticle(String particleName, Location location, int count, double offsetX, double offsetY, double offsetZ, double speed) {
+        try {
+            Particle particle = Particle.valueOf(particleName.toUpperCase());
+            spawnParticles(location, particle, count, offsetX, offsetY, offsetZ, speed);
+        } catch (IllegalArgumentException e) {
+            LOGGER.log(Level.WARNING, "Unknown particle type: " + particleName);
+            // Fallback to a default particle
+            spawnParticles(location, Particle.FLAME, count, offsetX, offsetY, offsetZ, speed);
+        }
+    }
+
+    /**
+     * Spawns particles using string particle names with additional data.
+     * 
+     * @param particleName The name of the particle
+     * @param location The location to spawn particles at
+     * @param count The number of particles
+     * @param offsetX The X offset
+     * @param offsetY The Y offset
+     * @param offsetZ The Z offset
+     * @param speed The particle speed
+     * @param data The particle data
+     */
+    public void spawnParticle(String particleName, Location location, int count, double offsetX, double offsetY, double offsetZ, double speed, Object data) {
+        try {
+            Particle particle = Particle.valueOf(particleName.toUpperCase());
+            spawnParticles(location, particle, count, offsetX, offsetY, offsetZ, speed, data);
+        } catch (IllegalArgumentException e) {
+            LOGGER.log(Level.WARNING, "Unknown particle type: " + particleName);
+            // Fallback to a default particle
+            spawnParticles(location, Particle.FLAME, count, offsetX, offsetY, offsetZ, speed, data);
+        }
+    }
+
+    // ---- String-based sound methods for backward compatibility ----
+
+    /**
+     * Plays a sound using string sound names for backward compatibility.
+     * 
+     * @param location The location to play the sound at
+     * @param soundName The name of the sound (e.g., "BLOCK_GLASS_BREAK")
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     */
+    public void playSound(Location location, String soundName, float volume, float pitch) {
+        try {
+            Sound sound = Sound.valueOf(soundName.toUpperCase());
+            playSound(location, sound, volume, pitch);
+        } catch (IllegalArgumentException e) {
+            LOGGER.log(Level.WARNING, "Unknown sound type: " + soundName);
+            // Fallback to a default sound
+            playSound(location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, volume, pitch);
+        }
+    }
+
+    /**
+     * Plays a sound to a player using string sound names for backward compatibility.
+     * 
+     * @param player The player to play the sound to
+     * @param soundName The name of the sound
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     */
+    public void playSound(Player player, String soundName, float volume, float pitch) {
+        try {
+            Sound sound = Sound.valueOf(soundName.toUpperCase());
+            playSound(player, sound, volume, pitch);
+        } catch (IllegalArgumentException e) {
+            LOGGER.log(Level.WARNING, "Unknown sound type: " + soundName);
+            // Fallback to a default sound
+            playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, volume, pitch);
+        }
+    }
+
+    // ---- Additional utility methods ----
+
+    /**
+     * Sends an action bar message to a player using string text.
+     * 
+     * @param player The player to send the message to
+     * @param message The message text (supports color codes)
+     */
+    public void sendActionBar(Player player, String message) {
+        if (message == null || message.trim().isEmpty()) {
+            return;
+        }
+        
+        // Convert color codes to components
+        String processedMessage = message.replace("&", "§");
+        actionBar(player, Component.text(processedMessage));
+    }
 }

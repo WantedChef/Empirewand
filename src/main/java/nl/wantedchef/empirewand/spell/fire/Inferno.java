@@ -56,11 +56,11 @@ public class Inferno extends Spell<Player> {
 
     @Override
     protected Player executeSpell(@NotNull SpellContext context) {
-        return context.caster();
-    }
+        Player player = context.caster();
+        if (player == null) {
+            return null;
+        }
 
-    @Override
-    protected void handleEffect(@NotNull SpellContext context, @NotNull Player player) {
         double radius = spellConfig.getDouble("values.radius", DEFAULT_RADIUS);
         double damage = spellConfig.getDouble("values.damage", DEFAULT_DAMAGE);
         int duration = spellConfig.getInt("values.duration_ticks", DEFAULT_DURATION_TICKS);
@@ -105,5 +105,12 @@ public class Inferno extends Spell<Player> {
                 ticks += 2;
             }
         }.runTaskTimer(context.plugin(), 0L, 2L);
+        
+        return player;
+    }
+
+    @Override
+    protected void handleEffect(@NotNull SpellContext context, @NotNull Player player) {
+        // Effects are applied in executeSpell for instant spells
     }
 }

@@ -1,6 +1,5 @@
 package nl.wantedchef.empirewand.framework.service;
 
-import nl.wantedchef.empirewand.core.config.ConfigValidator;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,8 +8,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.*;

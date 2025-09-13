@@ -12,7 +12,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Command to list all available spells.
@@ -81,28 +83,133 @@ public class SpellsCommand implements SubCommand, CommandHelpProvider.HelpAwareC
                             "SPELLS_NO_SPELLS_FOUND", typeArg);
                     }
 
-                    context.sendMessage(Component.text("Spells of type '" + typeArg + "':")
-                            .color(NamedTextColor.GREEN));
+                    // Enhanced spell list display with modern formatting
+                    Component header = Component.text()
+                        .append(Component.text("✨ ", NamedTextColor.GOLD))
+                        .append(Component.text("Spells of type '", NamedTextColor.WHITE))
+                        .append(Component.text(typeArg, NamedTextColor.AQUA))
+                        .append(Component.text("' (", NamedTextColor.WHITE))
+                        .append(Component.text(String.valueOf(filtered.size()), NamedTextColor.YELLOW))
+                        .append(Component.text(" found):", NamedTextColor.WHITE))
+                        .build();
+                    
+                    context.sendMessage(header);
+                    
+                    // Sort spells alphabetically for better UX
+                    filtered.sort(String::compareToIgnoreCase);
+                    
                     for (String key : filtered) {
                         String display = context.spellRegistry().getSpellDisplayName(key);
-                        context.sendMessage(Component.text(" - " + display + " (" + key + ")")
-                                .color(NamedTextColor.GRAY));
+                        Component spellEntry = Component.text()
+                            .append(Component.text("  ▶ ", NamedTextColor.GREEN))
+                            .append(Component.text(display, NamedTextColor.YELLOW))
+                            .append(Component.text(" (", NamedTextColor.GRAY))
+                            .append(Component.text(key, NamedTextColor.DARK_GRAY))
+                            .append(Component.text(")", NamedTextColor.GRAY))
+                            .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
+                                Component.text("Click to bind this spell")
+                                    .append(Component.newline())
+                                    .append(Component.text("/" + wandType + " bind " + key, NamedTextColor.GRAY))))
+                            .clickEvent(net.kyori.adventure.text.event.ClickEvent.suggestCommand(
+                                "/" + wandType + " bind " + key))
+                            .build();
+                        
+                        context.sendMessage(spellEntry);
                     }
                 }
             } else {
-                // List all spells
+                // Enhanced all spells display with categorization
                 var all = context.spellRegistry().getAllSpells();
-                context.sendMessage(Component.text("All available spells:").color(NamedTextColor.GREEN));
+                
+                Component header = Component.text()
+                    .append(Component.text("📖 ", NamedTextColor.GOLD))
+                    .append(Component.text("All Available Spells (", NamedTextColor.WHITE))
+                    .append(Component.text(String.valueOf(all.size()), NamedTextColor.YELLOW))
+                    .append(Component.text(" total)", NamedTextColor.WHITE))
+                    .build();
+                
+                context.sendMessage(header);
+                
+                // Group spells by type for better organization
+                Map<SpellType, List<String>> spellsByType = new HashMap<>();
                 for (var entry : all.entrySet()) {
                     String key = entry.getKey();
-                    String display = context.spellRegistry().getSpellDisplayName(key);
                     SpellType type = SpellTypes.resolveTypeFromKey(key);
-                    context.sendMessage(
-                            Component.text(" - " + display + " (" + key + ") [" + type.name().toLowerCase() + "]")
-                                    .color(NamedTextColor.GRAY));
+                    spellsByType.computeIfAbsent(type, k -> new ArrayList<>()).add(key);
                 }
+                
+                // Sort types and display
+                spellsByType.entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey((a, b) -> a.name().compareToIgnoreCase(b.name())))
+                    .forEach(typeEntry -> {
+                        SpellType type = typeEntry.getKey();
+                        List<String> spells = typeEntry.getValue();
+                        spells.sort(String::compareToIgnoreCase);
+                        
+                        // Type header
+                        Component typeHeader = Component.text()
+                            .append(Component.text("\n🔮 ", getTypeColor(type)))
+                            .append(Component.text(type.name().toUpperCase(), getTypeColor(type)))
+                            .append(Component.text(" (", NamedTextColor.GRAY))
+                            .append(Component.text(String.valueOf(spells.size()), NamedTextColor.WHITE))
+                            .append(Component.text(" spells)", NamedTextColor.GRAY))
+                            .build();
+                        
+                        context.sendMessage(typeHeader);
+                        
+                        // Spells in this type
+                        for (String key : spells) {
+                            String display = context.spellRegistry().getSpellDisplayName(key);
+                            Component spellEntry = Component.text()
+                                .append(Component.text("    • ", NamedTextColor.DARK_GRAY))
+                                .append(Component.text(display, NamedTextColor.WHITE))
+                                .append(Component.text(" (", NamedTextColor.GRAY))
+                                .append(Component.text(key, NamedTextColor.DARK_GRAY))
+                                .append(Component.text(")", NamedTextColor.GRAY))
+                                .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
+                                    Component.text("Click to bind this spell")
+                                        .append(Component.newline())
+                                        .append(Component.text("/" + wandType + " bind " + key, NamedTextColor.GRAY))))
+                                .clickEvent(net.kyori.adventure.text.event.ClickEvent.suggestCommand(
+                                    "/" + wandType + " bind " + key))
+                                .build();
+                            
+                            context.sendMessage(spellEntry);
+                        }
+                    });
+                    
+                // Footer with helpful tips
+                Component footer = Component.text()
+                    .append(Component.text("\n💡 Tip: ", NamedTextColor.YELLOW))
+                    .append(Component.text("Use ", NamedTextColor.GRAY))
+                    .append(Component.text("/" + wandType + " spells <type>", NamedTextColor.AQUA)
+                        .clickEvent(net.kyori.adventure.text.event.ClickEvent.suggestCommand("/" + wandType + " spells "))
+                        .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
+                            Component.text("Filter spells by type"))))
+                    .append(Component.text(" to filter by spell type", NamedTextColor.GRAY))
+                    .build();
+                
+                context.sendMessage(footer);
             }
         }
+    }
+    
+    /**
+     * Gets the color associated with a spell type for visual distinction.
+     */
+    private NamedTextColor getTypeColor(SpellType type) {
+        return switch (type.name().toLowerCase()) {
+            case "fire" -> NamedTextColor.RED;
+            case "water", "ice" -> NamedTextColor.BLUE;
+            case "earth" -> NamedTextColor.GREEN;
+            case "air", "lightning" -> NamedTextColor.YELLOW;
+            case "dark", "poison" -> NamedTextColor.DARK_PURPLE;
+            case "light", "heal" -> NamedTextColor.WHITE;
+            case "enhanced" -> NamedTextColor.GOLD;
+            case "utility" -> NamedTextColor.GRAY;
+            case "combat" -> NamedTextColor.DARK_RED;
+            default -> NamedTextColor.AQUA;
+        };
     }
 
     @Override

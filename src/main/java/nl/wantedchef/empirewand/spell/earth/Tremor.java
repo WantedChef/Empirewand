@@ -39,8 +39,8 @@ public class Tremor extends Spell<Player> {
     }
 
     private static final double DEFAULT_RADIUS = 8.0;
-    private static final double DEFAULT_DAMAGE = 10.0;
-    private static final double DEFAULT_KNOCKUP = 0.8;
+    private static final double DEFAULT_DAMAGE = 15.0;
+    private static final double DEFAULT_KNOCKUP = 1.2;
 
     private Tremor(Builder builder) {
         super(builder);
@@ -79,13 +79,15 @@ public class Tremor extends Spell<Player> {
                     double z = Math.sin(angle) * currentRadius;
                     Location loc = center.clone().add(x, 0, z);
                     
+                    loc.getWorld().spawnParticle(Particle.DUST, loc, 5, 0.1, 0.1, 0.1, 0,
+                        new Particle.DustOptions(org.bukkit.Color.fromRGB(139, 90, 43), 3.0f));
                     loc.getWorld().spawnParticle(Particle.DUST, loc, 3, 0.1, 0.1, 0.1, 0,
-                        new Particle.DustOptions(org.bukkit.Color.fromRGB(139, 90, 43), 2.0f));
-                    loc.getWorld().spawnParticle(Particle.DUST, loc, 2, 0.1, 0.1, 0.1, 0,
                         org.bukkit.Material.DIRT.createBlockData());
+                    loc.getWorld().spawnParticle(Particle.CRIT, loc, 2, 0.2, 0.2, 0.2, 0.1);
                 }
                 
                 // Damage and knock up entities in ring
+                int entitiesHit = 0;
                 for (var entity : center.getWorld().getNearbyEntities(center, currentRadius, 3, currentRadius)) {
                     if (entity instanceof LivingEntity living && !living.equals(player)) {
                         double distance = living.getLocation().distance(center);
@@ -93,8 +95,16 @@ public class Tremor extends Spell<Player> {
                             living.damage(damage, player);
                             living.setVelocity(new Vector(0, knockup, 0));
                             living.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 40, 1));
+                            entitiesHit++;
+                            
+                            // Visual feedback for hit
+                            living.getWorld().spawnParticle(Particle.DAMAGE_INDICATOR, living.getLocation().add(0, 1, 0), 5, 0.2, 0.2, 0.2, 0.1);
                         }
                     }
+                }
+                
+                if (entitiesHit > 0) {
+                    player.sendMessage("§6Tremor hit " + entitiesHit + " entities at radius " + String.format("%.1f", currentRadius));
                 }
                 
                 context.fx().playSound(center, Sound.BLOCK_STONE_BREAK, 1.5f, 0.5f + (float)(currentRadius / radius) * 0.5f);

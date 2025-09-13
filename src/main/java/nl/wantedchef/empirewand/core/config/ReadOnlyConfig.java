@@ -90,6 +90,31 @@ public final class ReadOnlyConfig implements ReadableConfig {
             return def;
         }
     }
+
+    @Override
+    public @Nullable Object get(@NotNull String path) {
+        if (path.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return delegate.get(path);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @Override
+    public @Nullable Object get(@NotNull String path, @Nullable Object def) {
+        if (path.trim().isEmpty()) {
+            return def;
+        }
+        try {
+            Object value = delegate.get(path);
+            return value == null ? def : value;
+        } catch (Exception e) {
+            return def;
+        }
+    }
 }
 
 

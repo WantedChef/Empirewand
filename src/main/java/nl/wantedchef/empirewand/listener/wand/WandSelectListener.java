@@ -30,15 +30,26 @@ public final class WandSelectListener implements Listener {
             return;
         }
 
-        ItemStack item = p.getInventory().getItemInMainHand();
-        if (!plugin.getWandService().isWand(item))
+        // We allow scrolling to switch spells while keeping the wand selected.
+        // Detect if the wand is in the previously held slot or currently in hand.
+        ItemStack prevItem = p.getInventory().getItem(event.getPreviousSlot());
+        ItemStack handItem = p.getInventory().getItemInMainHand();
+
+        boolean prevIsWand = plugin.getWandService().isWand(prevItem);
+        boolean handIsWand = plugin.getWandService().isWand(handItem);
+
+        // If neither previous nor current hand item is a wand, ignore.
+        if (!prevIsWand && !handIsWand)
             return;
 
-        List<String> spells = new ArrayList<>(plugin.getWandService().getSpells(item));
+        // Prefer the wand from the previous slot to maintain selection stability while scrolling.
+        ItemStack wandItem = prevIsWand ? prevItem : handItem;
+
+        List<String> spells = new ArrayList<>(plugin.getWandService().getSpells(wandItem));
         if (spells.isEmpty())
             return;
 
-        int cur = plugin.getWandService().getActiveIndex(item);
+        int cur = plugin.getWandService().getActiveIndex(wandItem);
 
         // Bounds check to prevent IndexOutOfBoundsException
         if (cur < 0 || cur >= spells.size()) {
@@ -64,7 +75,15 @@ public final class WandSelectListener implements Listener {
             return;
         }
 
-        plugin.getWandService().setActiveIndex(item, next);
+        // Cancel the hotbar slot change when we are using the wand to scroll spells,
+        // so the wand stays selected in the same slot.
+        if (prevIsWand) {
+            event.setCancelled(true);
+            // Ensure the held item slot remains the previous one visually.
+            p.getInventory().setHeldItemSlot(event.getPreviousSlot());
+        }
+
+        plugin.getWandService().setActiveIndex(wandItem, next);
         String display = plugin.getSpellRegistry().getSpellDisplayName(key);
 
         // Only show message if player is still online
@@ -73,8 +92,3 @@ public final class WandSelectListener implements Listener {
         }
     }
 }
-
-
-
-
-

@@ -148,6 +148,84 @@ public class TaskManager {
         registerTask(task);
         return task;
     }
+
+    /**
+     * Run a BukkitRunnable asynchronously as a timer and register it for tracking
+     * 
+     * @param runnable the runnable to execute
+     * @param delay delay before first execution (in ticks)
+     * @param period period between executions (in ticks)
+     * @return the created BukkitTask
+     */
+    public BukkitTask runTaskTimerAsynchronously(BukkitRunnable runnable, long delay, long period) {
+        BukkitTask task = runnable.runTaskTimerAsynchronously(plugin, delay, period);
+        registerTask(task);
+        return task;
+    }
+
+    /**
+     * Run a Runnable asynchronously as a timer and register it for tracking
+     * 
+     * @param runnable the runnable to execute
+     * @param delay delay before first execution (in ticks)  
+     * @param period period between executions (in ticks)
+     * @return the created BukkitTask
+     */
+    public BukkitTask runTaskTimerAsynchronously(Runnable runnable, long delay, long period) {
+        BukkitTask task = plugin.getServer().getScheduler().runTaskTimerAsynchronously(plugin, runnable, delay, period);
+        registerTask(task);
+        return task;
+    }
+
+    /**
+     * Run a BukkitRunnable asynchronously once with a delay and register it for tracking
+     * 
+     * @param runnable the runnable to execute
+     * @param delay delay before execution (in ticks)
+     * @return the created BukkitTask
+     */
+    public BukkitTask runTaskLaterAsynchronously(BukkitRunnable runnable, long delay) {
+        BukkitTask task = runnable.runTaskLaterAsynchronously(plugin, delay);
+        registerTask(task);
+        return task;
+    }
+
+    /**
+     * Run a Runnable asynchronously once with a delay and register it for tracking
+     * 
+     * @param runnable the runnable to execute
+     * @param delay delay before execution (in ticks)
+     * @return the created BukkitTask
+     */
+    public BukkitTask runTaskLaterAsynchronously(Runnable runnable, long delay) {
+        BukkitTask task = plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, runnable, delay);
+        registerTask(task);
+        return task;
+    }
+
+    /**
+     * Run a BukkitRunnable asynchronously immediately and register it for tracking
+     * 
+     * @param runnable the runnable to execute
+     * @return the created BukkitTask
+     */
+    public BukkitTask runTaskAsynchronously(BukkitRunnable runnable) {
+        BukkitTask task = runnable.runTaskAsynchronously(plugin);
+        registerTask(task);
+        return task;
+    }
+
+    /**
+     * Run a Runnable asynchronously immediately and register it for tracking
+     * 
+     * @param runnable the runnable to execute
+     * @return the created BukkitTask
+     */
+    public BukkitTask runTaskAsynchronously(Runnable runnable) {
+        BukkitTask task = plugin.getServer().getScheduler().runTaskAsynchronously(plugin, runnable);
+        registerTask(task);
+        return task;
+    }
 }
 
 

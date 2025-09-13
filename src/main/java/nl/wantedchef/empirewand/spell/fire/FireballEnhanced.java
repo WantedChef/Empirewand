@@ -140,26 +140,26 @@ public class FireballEnhanced extends ProjectileSpell<org.bukkit.entity.Fireball
     @Override
     protected void handleHit(@NotNull SpellContext context, @NotNull Projectile projectile,
             @NotNull ProjectileHitEvent event) {
-        if (!config.blockDamage) {
-            // If block damage is disabled, create a visual-only explosion
-            // and manually damage entities, since the projectile's explosion is cancelled.
-            Location hitLoc = projectile.getLocation();
-            hitLoc.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, hitLoc, 1, 0, 0, 0, 0);
-            hitLoc.getWorld().spawnParticle(Particle.FLAME, hitLoc, HIT_PARTICLE_COUNT * 2, HIT_PARTICLE_OFFSET, HIT_PARTICLE_OFFSET, HIT_PARTICLE_OFFSET, HIT_PARTICLE_SPEED);
-            hitLoc.getWorld().playSound(hitLoc, Sound.ENTITY_GENERIC_EXPLODE, HIT_SOUND_VOLUME, HIT_SOUND_PITCH);
+        Location hitLoc = projectile.getLocation();
+        
+        // Always cancel the vanilla explosion to prevent caster damage
+        event.setCancelled(true);
+        
+        // Create explosion effects
+        hitLoc.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, hitLoc, 2, 0, 0, 0, 0);
+        hitLoc.getWorld().spawnParticle(Particle.FLAME, hitLoc, HIT_PARTICLE_COUNT, HIT_PARTICLE_OFFSET, HIT_PARTICLE_OFFSET, HIT_PARTICLE_OFFSET, HIT_PARTICLE_SPEED);
+        hitLoc.getWorld().playSound(hitLoc, Sound.ENTITY_GENERIC_EXPLODE, HIT_SOUND_VOLUME, HIT_SOUND_PITCH);
 
-            // Enhanced area damage
-            applyAreaDamage(context, hitLoc);
+        // Apply area damage
+        applyAreaDamage(context, hitLoc);
 
-            event.setCancelled(true); // Cancel the vanilla explosion
-        } else {
-            // Enhanced effects for normal explosion
-            Location hitLoc = projectile.getLocation();
-            hitLoc.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, hitLoc, 2, 0, 0, 0, 0);
-            hitLoc.getWorld().spawnParticle(Particle.FLAME, hitLoc, HIT_PARTICLE_COUNT, HIT_PARTICLE_OFFSET, HIT_PARTICLE_OFFSET, HIT_PARTICLE_OFFSET, HIT_PARTICLE_SPEED);
-            
-            // Apply additional area effects
-            applyAreaEffects(context, hitLoc);
+        // Apply additional area effects
+        applyAreaEffects(context, hitLoc);
+
+        // Create block damage if enabled
+        if (config.blockDamage) {
+            // Create a controlled explosion that doesn't hit the caster
+            hitLoc.getWorld().createExplosion(hitLoc, (float) config.yield, config.incendiary, false);
         }
     }
 

@@ -52,7 +52,7 @@ public class ThunderBlast extends Spell<Void> {
         Player player = context.caster();
         Location center = player.getLocation();
 
-        double radius = spellConfig.getDouble("values.radius", 6.0);
+        double radius = spellConfig.getDouble("values.radius", 12.0);
         double damage = spellConfig.getDouble("values.damage", 16.0);
         int strikes = spellConfig.getInt("values.strikes", 3);
         boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig()
@@ -82,7 +82,8 @@ public class ThunderBlast extends Spell<Void> {
 
     private void damageAtStrike(SpellContext context, Location strikeLoc, double damage, boolean friendlyFire) {
         for (var entity : strikeLoc.getWorld().getNearbyLivingEntities(strikeLoc, 3.0)) {
-            if (entity.equals(context.caster()) && !friendlyFire)
+            boolean shouldDamageCaster = entity.equals(context.caster()) && (friendlyFire || Math.random() < 0.2);
+            if (entity.equals(context.caster()) && !shouldDamageCaster)
                 continue;
             entity.damage(damage, context.caster());
             context.fx().spawnParticles(entity.getLocation(), Particle.ELECTRIC_SPARK, 10, 0.2, 0.2, 0.2, 0.1);

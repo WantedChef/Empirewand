@@ -96,7 +96,7 @@ public class BloodBarrier extends Spell<Void> {
 
     // This method would be called from a central, global EntityDamageByEntityEvent
     // listener
-    public static void handleDamageEvent(org.bukkit.event.entity.EntityDamageByEntityEvent event, EmpireWandAPI api) {
+    public static void handleDamageEvent(org.bukkit.event.entity.EntityDamageByEntityEvent event) {
         if (!(event.getEntity() instanceof org.bukkit.entity.Player player))
             return;
         if (!player.hasMetadata(BARRIER_ACTIVE_KEY))

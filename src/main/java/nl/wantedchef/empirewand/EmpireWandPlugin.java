@@ -25,6 +25,7 @@ import nl.wantedchef.empirewand.framework.service.CooldownService;
 import nl.wantedchef.empirewand.framework.service.FxService;
 import nl.wantedchef.empirewand.framework.service.metrics.DebugMetricsService;
 import nl.wantedchef.empirewand.framework.service.metrics.MetricsService;
+import nl.wantedchef.empirewand.listener.combat.BloodBarrierDamageListener;
 import nl.wantedchef.empirewand.listener.combat.DeathSyncPolymorphListener;
 import nl.wantedchef.empirewand.listener.combat.ExplosionControlListener;
 import nl.wantedchef.empirewand.listener.combat.FallDamageEtherealListener;
@@ -32,6 +33,7 @@ import nl.wantedchef.empirewand.listener.combat.PolymorphCleanupListener;
 import nl.wantedchef.empirewand.listener.player.PlayerJoinQuitListener;
 import nl.wantedchef.empirewand.listener.player.SpellCleanupListener;
 import nl.wantedchef.empirewand.listener.projectile.ProjectileHitListener;
+
 import nl.wantedchef.empirewand.listener.wand.WandCastListener;
 import nl.wantedchef.empirewand.listener.wand.WandDropGuardListener;
 import nl.wantedchef.empirewand.listener.wand.WandSelectListener;
@@ -234,23 +236,47 @@ public final class EmpireWandPlugin extends JavaPlugin {
 
     private void registerListeners() {
         var pm = getServer().getPluginManager();
+        
+        // Core player and spell cleanup listeners
         pm.registerEvents(new PlayerJoinQuitListener(this), this);
         pm.registerEvents(new SpellCleanupListener(this), this);
+        
+        // Wand interaction listeners
         pm.registerEvents(new WandCastListener(this), this);
         pm.registerEvents(new nl.wantedchef.empirewand.listener.wand.WandSwingListener(this), this);
         pm.registerEvents(new WandSelectListener(this), this);
+        pm.registerEvents(new WandSwapHandListener(this), this);
+        pm.registerEvents(new WandDropGuardListener(this), this);
         
         // Store reference to WandStatusListener for proper shutdown
         this.wandStatusListener = new WandStatusListener(this);
         pm.registerEvents(this.wandStatusListener, this);
         
-        pm.registerEvents(new WandSwapHandListener(this), this);
-        pm.registerEvents(new WandDropGuardListener(this), this);
+        // Projectile and combat listeners
         pm.registerEvents(new ProjectileHitListener(this), this);
         pm.registerEvents(new FallDamageEtherealListener(this), this);
         pm.registerEvents(new ExplosionControlListener(this), this);
         pm.registerEvents(new DeathSyncPolymorphListener(this), this);
         pm.registerEvents(new PolymorphCleanupListener(this), this);
+        pm.registerEvents(new BloodBarrierDamageListener(this), this);
+        
+        // Enhanced spell effect listeners
+        pm.registerEvents(new nl.wantedchef.empirewand.listener.spell.StatusEffectListener(this), this);
+        pm.registerEvents(new nl.wantedchef.empirewand.listener.spell.LightningEffectListener(this), this);
+        pm.registerEvents(new nl.wantedchef.empirewand.listener.spell.MovementSpellListener(this), this);
+        pm.registerEvents(new nl.wantedchef.empirewand.listener.spell.EnvironmentalSpellListener(this), this);
+        pm.registerEvents(new nl.wantedchef.empirewand.listener.spell.WaveSpellListener(this), this);
+        pm.registerEvents(new nl.wantedchef.empirewand.listener.spell.AuraSpellListener(this), this);
+        
+        // Performance monitoring (always register last for accurate tracking)
+        pm.registerEvents(new nl.wantedchef.empirewand.listener.spell.PerformanceMonitoringListener(this), this);
+        
+        getLogger().info("Registered " + (14 + 6 + 1) + " spell listeners for comprehensive spell coverage");
+        
+        // Analyze and report listener coverage
+        nl.wantedchef.empirewand.listener.ListenerCoverageAnalyzer coverageAnalyzer = 
+                new nl.wantedchef.empirewand.listener.ListenerCoverageAnalyzer(this);
+        coverageAnalyzer.printCoverageReport();
     }
 
     private void registerCommands() {

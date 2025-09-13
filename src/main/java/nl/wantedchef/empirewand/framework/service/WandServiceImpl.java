@@ -947,7 +947,7 @@ public class WandServiceImpl implements WandService {
                     int idx = 0;
                     if (activeSpell != null) {
                         int found = spells.indexOf(activeSpell);
-                        idx = (found >= 0) ? found : 0;
+                        idx = Math.max(0, found);
                     }
                     pdc.set(Keys.WAND_ACTIVE_SPELL, PersistentDataType.INTEGER, idx);
                 }

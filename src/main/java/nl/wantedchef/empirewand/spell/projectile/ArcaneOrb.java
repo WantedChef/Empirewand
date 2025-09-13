@@ -9,11 +9,8 @@ import nl.wantedchef.empirewand.spell.ProjectileSpell;
 import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.block.Block;
-import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Snowball;
 import org.bukkit.event.entity.ProjectileHitEvent;
@@ -60,8 +57,6 @@ public class ArcaneOrb extends ProjectileSpell<Snowball> {
 
     @Override
     protected void launchProjectile(@NotNull SpellContext context) {
-        int trailLength = spellConfig.getInt("values.trail_length", 4);
-        int blockLifetime = spellConfig.getInt("values.block_lifetime_ticks", 30);
         int haloParticles = spellConfig.getInt("values.halo_particles", 8);
         double haloSpeedDeg = spellConfig.getDouble("values.halo_rotation_speed", 12.0);
 
@@ -71,7 +66,7 @@ public class ArcaneOrb extends ProjectileSpell<Snowball> {
                             key());
                     projectile.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, PersistentDataType.STRING,
                             context.caster().getUniqueId().toString());
-                    new OrbVisuals(projectile, trailLength, blockLifetime, haloParticles, haloSpeedDeg)
+                    new OrbVisuals(projectile, haloParticles, haloSpeedDeg)
                             .runTaskTimer(context.plugin(), 0L, 1L);
                 });
 
@@ -102,18 +97,13 @@ public class ArcaneOrb extends ProjectileSpell<Snowball> {
 
     private class OrbVisuals extends BukkitRunnable {
         private final Projectile orb;
-        private final int trailLength, blockLifetime, haloParticles;
+        private final int haloParticles;
         private final double haloSpeedRad;
         private double angle = 0.0;
         private int tick = 0;
-        private final java.util.Deque<TempBlock> queue = new java.util.ArrayDeque<>();
-        private final java.util.Set<Block> ours = new java.util.HashSet<>();
 
-        OrbVisuals(Projectile orb, int trailLength, int blockLifetime, int haloParticles,
-                double haloSpeedDeg) {
+        OrbVisuals(Projectile orb, int haloParticles, double haloSpeedDeg) {
             this.orb = orb;
-            this.trailLength = trailLength;
-            this.blockLifetime = blockLifetime;
             this.haloParticles = haloParticles;
             this.haloSpeedRad = Math.toRadians(haloSpeedDeg);
         }
@@ -121,7 +111,6 @@ public class ArcaneOrb extends ProjectileSpell<Snowball> {
         @Override
         public void run() {
             if (!orb.isValid() || orb.isDead()) {
-                cleanup();
                 cancel();
                 return;
             }
@@ -132,43 +121,13 @@ public class ArcaneOrb extends ProjectileSpell<Snowball> {
                 center.getWorld().spawnParticle(Particle.ENCHANT,
                         center.clone().add(Math.cos(theta) * 0.6, 0, Math.sin(theta) * 0.6), 1, 0, 0, 0, 0);
             }
+            // simple forward sparkle
+            Vector v = orb.getVelocity().clone().normalize();
+            center.getWorld().spawnParticle(Particle.END_ROD, center.clone().add(v.multiply(0.4)), 1, 0.02, 0.02, 0.02, 0.003);
             angle += haloSpeedRad;
 
-            Vector dir = orb.getVelocity().clone().normalize();
-            for (int i = 0; i < trailLength; i++) {
-                Block b = center.clone().add(dir.clone().multiply(-i)).getBlock();
-                if (!ours.contains(b) && b.getType().isAir()) {
-                    queue.addLast(new TempBlock(b, b.getBlockData(), tick + blockLifetime));
-                    b.setType(Material.SEA_LANTERN, false);
-                    ours.add(b);
-                }
-            }
-
-            queue.removeIf(tb -> {
-                if (tb.expireTick <= tick) {
-                    tb.revert();
-                    ours.remove(tb.block());
-                    return true;
-                }
-                return false;
-            });
-
             if (tick++ > 20 * 12) {
-                cleanup();
                 cancel();
-            }
-        }
-
-        private void cleanup() {
-            queue.forEach(TempBlock::revert);
-            queue.clear();
-            ours.clear();
-        }
-
-        private record TempBlock(Block block, BlockData previous, int expireTick) {
-            void revert() {
-                if (block.getType() == Material.SEA_LANTERN)
-                    block.setBlockData(previous, false);
             }
         }
     }

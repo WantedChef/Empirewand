@@ -24,7 +24,10 @@
       "Bash(rm:*)",
       "Bash(grep:*)",
       "Bash(gradlew:*)",
-      "Bash(gradle.bat:*)"
+      "Bash(gradle.bat:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

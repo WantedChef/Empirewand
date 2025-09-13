@@ -71,6 +71,10 @@ public abstract class Spell<T> {
         public String getString(@NotNull String path, String def) { return def; }
         @Override
         public ReadableConfig getConfigurationSection(@NotNull String path) { return null; }
+        @Override
+        public Object get(@NotNull String path) { return null; }
+        @Override
+        public Object get(@NotNull String path, Object def) { return def; }
     };
 
     /**

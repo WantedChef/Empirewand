@@ -61,12 +61,12 @@ public class Empower extends Spell<Player> {
     protected void handleEffect(@NotNull SpellContext context, @NotNull Player player) {
         int duration = spellConfig.getInt("values.duration", DEFAULT_DURATION);
         
-        // Apply empowerment effects
-        player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, duration, 1));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, duration, 1));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, duration, 1));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, duration, 1));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, duration, 0));
+        // Apply empowerment effects (stronger levels)
+        player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, duration, 2)); // Increased from 1 to 2
+        player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, duration, 2)); // Increased from 1 to 2
+        player.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, duration, 2)); // Increased from 1 to 2
+        player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, duration, 2)); // Increased from 1 to 2
+        player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, duration, 1)); // Increased from 0 to 1
         
         // Visual effect over time
         new BukkitRunnable() {
@@ -101,15 +101,19 @@ public class Empower extends Spell<Player> {
             }
         }.runTaskTimer(context.plugin(), 0L, 5L);
         
-        // Initial effects
-        player.getWorld().spawnParticle(Particle.EXPLOSION, 
+        // Initial effects (more noticeable)
+        player.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, 
             player.getLocation().add(0, 1, 0), 1, 0, 0, 0, 0);
         player.getWorld().spawnParticle(Particle.END_ROD, 
-            player.getLocation(), 50, 1, 1, 1, 0.1);
+            player.getLocation(), 100, 1.5, 1.5, 1.5, 0.2);
+        player.getWorld().spawnParticle(Particle.DRAGON_BREATH, 
+            player.getLocation().add(0, 1, 0), 50, 0.5, 1, 0.5, 0.1);
         
-        context.fx().playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 1.5f, 0.8f);
-        context.fx().playSound(player, Sound.ENTITY_EVOKER_PREPARE_SUMMON, 1.0f, 1.5f);
+        context.fx().playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 2.0f, 0.8f);
+        context.fx().playSound(player, Sound.ENTITY_EVOKER_PREPARE_SUMMON, 1.5f, 1.5f);
         
-        player.sendMessage("§6§lEmpower §eactivated for " + (duration/20) + " seconds!");
+        player.sendMessage("§6§l✨ EMPOWER ACTIVATED! ✨");
+        player.sendMessage("§eStrength, Speed, Haste, Jump Boost, and Resistance increased!");
+        player.sendMessage("§7Duration: " + (duration/20) + " seconds");
     }
 }

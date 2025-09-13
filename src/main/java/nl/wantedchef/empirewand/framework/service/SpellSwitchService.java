@@ -1,8 +1,12 @@
 package nl.wantedchef.empirewand.framework.service;
 
-import nl.wantedchef.empirewand.EmpireWandPlugin;
-import nl.wantedchef.empirewand.api.service.WandService;
-import nl.wantedchef.empirewand.core.wand.WandSettings;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.WeakHashMap;
+import java.util.function.Consumer;
+
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -12,12 +16,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.WeakHashMap;
-import java.util.function.Consumer;
+import nl.wantedchef.empirewand.EmpireWandPlugin;
+import nl.wantedchef.empirewand.api.service.WandService;
+import nl.wantedchef.empirewand.core.wand.WandSettings;
 
 /**
  * Service that manages spell switching effects and related functionality.
@@ -100,7 +101,11 @@ public class SpellSwitchService {
     }
 
     private void playColorDustEffect(Player player, Color color) {
-        Location loc = player.getLocation().add(0, 0.5, 0);
+        Location playerLoc = player.getLocation();
+        if (playerLoc == null) {
+            return;
+        }
+        Location loc = playerLoc.add(0, 0.5, 0);
         World world = player.getWorld();
         Particle.DustOptions dustOptions = new Particle.DustOptions(color, 1.5f);
         world.spawnParticle(Particle.DUST, loc, 50, 0.3, 0.3, 0.3, 0.15, dustOptions);
@@ -116,7 +121,11 @@ public class SpellSwitchService {
     }
 
     private void playSpiralEffect(Player player) {
-        Location loc = player.getLocation().add(0, 1, 0);
+        Location playerLoc = player.getLocation();
+        if (playerLoc == null) {
+            return;
+        }
+        Location loc = playerLoc.add(0, 1, 0);
         World world = player.getWorld();
 
         new BukkitRunnable() {
@@ -147,7 +156,11 @@ public class SpellSwitchService {
     }
 
     private void playExplosionEffect(Player player) {
-        Location loc = player.getLocation().add(0, 1, 0);
+        Location playerLoc = player.getLocation();
+        if (playerLoc == null) {
+            return;
+        }
+        Location loc = playerLoc.add(0, 1, 0);
         World world = player.getWorld();
 
         world.spawnParticle(Particle.EXPLOSION, loc, 3, 0, 0, 0, 0);
@@ -171,7 +184,11 @@ public class SpellSwitchService {
     }
 
     private void playPortalEffect(Player player) {
-        Location loc = player.getLocation().add(0, 1, 0);
+        Location playerLoc = player.getLocation();
+        if (playerLoc == null) {
+            return;
+        }
+        Location loc = playerLoc.add(0, 1, 0);
         World world = player.getWorld();
 
         for (int i = 0; i < 20; i++) {
@@ -186,19 +203,31 @@ public class SpellSwitchService {
     }
 
     private void playFireEffect(Player player) {
-        Location loc = player.getLocation().add(0, 1, 0);
+        Location playerLoc = player.getLocation();
+        if (playerLoc == null) {
+            return;
+        }
+        Location loc = playerLoc.add(0, 1, 0);
         spawnParticleCircle(loc, Particle.FLAME, 30, 0.7, 0.5);
         player.getWorld().playSound(loc, Sound.ENTITY_BLAZE_SHOOT, 0.6f, 1.2f);
     }
 
     private void playIceEffect(Player player) {
-        Location loc = player.getLocation().add(0, 1, 0);
+        Location playerLoc = player.getLocation();
+        if (playerLoc == null) {
+            return;
+        }
+        Location loc = playerLoc.add(0, 1, 0);
         spawnParticleCircle(loc, Particle.SNOWFLAKE, 25, 0.8, 0.3);
         player.getWorld().playSound(loc, Sound.BLOCK_GLASS_BREAK, 0.5f, 1.5f);
     }
 
     private void playLightningEffect(Player player) {
-        Location loc = player.getLocation().add(0, 1, 0);
+        Location playerLoc = player.getLocation();
+        if (playerLoc == null) {
+            return;
+        }
+        Location loc = playerLoc.add(0, 1, 0);
         World world = player.getWorld();
 
         for (int i = 0; i < 15; i++) {
@@ -211,7 +240,11 @@ public class SpellSwitchService {
     }
 
     private void playNetherEffect(Player player) {
-        Location loc = player.getLocation().add(0, 1, 0);
+        Location playerLoc = player.getLocation();
+        if (playerLoc == null) {
+            return;
+        }
+        Location loc = playerLoc.add(0, 1, 0);
         World world = player.getWorld();
 
         for (int i = 0; i < 20; i++) {
@@ -224,13 +257,21 @@ public class SpellSwitchService {
     }
 
     private void playEnchantEffect(Player player) {
-        Location loc = player.getLocation().add(0, 1, 0);
+        Location playerLoc = player.getLocation();
+        if (playerLoc == null) {
+            return;
+        }
+        Location loc = playerLoc.add(0, 1, 0);
         spawnParticleCircle(loc, Particle.ENCHANT, 35, 0.5 + (Math.random() * 0.8), 0.5);
         player.getWorld().playSound(loc, Sound.BLOCK_ENCHANTMENT_TABLE_USE, 0.7f, 1.3f);
     }
 
     private void playHeartsEffect(Player player) {
-        Location loc = player.getLocation().add(0, 1, 0);
+        Location playerLoc = player.getLocation();
+        if (playerLoc == null) {
+            return;
+        }
+        Location loc = playerLoc.add(0, 1, 0);
         World world = player.getWorld();
 
         for (int i = 0; i < 12; i++) {
@@ -243,7 +284,11 @@ public class SpellSwitchService {
     }
 
     private void playMusicEffect(Player player) {
-        Location loc = player.getLocation().add(0, 1, 0);
+        Location playerLoc = player.getLocation();
+        if (playerLoc == null) {
+            return;
+        }
+        Location loc = playerLoc.add(0, 1, 0);
         World world = player.getWorld();
 
         for (int i = 0; i < 18; i++) {
@@ -258,13 +303,21 @@ public class SpellSwitchService {
     }
 
     private void playEnderEffect(Player player) {
-        Location loc = player.getLocation().add(0, 1, 0);
+        Location playerLoc = player.getLocation();
+        if (playerLoc == null) {
+            return;
+        }
+        Location loc = playerLoc.add(0, 1, 0);
         spawnParticleCircle(loc, Particle.REVERSE_PORTAL, 22, 0.6 + (Math.random() * 0.5), 0.4);
         player.getWorld().playSound(loc, Sound.ENTITY_ENDERMAN_TELEPORT, 0.6f, 1.0f);
     }
 
     private void playDragonEffect(Player player) {
-        Location loc = player.getLocation().add(0, 1, 0);
+        Location playerLoc = player.getLocation();
+        if (playerLoc == null) {
+            return;
+        }
+        Location loc = playerLoc.add(0, 1, 0);
         World world = player.getWorld();
 
         for (int i = 0; i < 16; i++) {
@@ -277,7 +330,11 @@ public class SpellSwitchService {
     }
 
     private void playVoidEffect(Player player) {
-        Location loc = player.getLocation().add(0, 1, 0);
+        Location playerLoc = player.getLocation();
+        if (playerLoc == null) {
+            return;
+        }
+        Location loc = playerLoc.add(0, 1, 0);
         spawnParticleCircle(loc, Particle.SQUID_INK, 25, 0.4 + (Math.random() * 0.7), 0.6);
         player.getWorld().playSound(loc, Sound.AMBIENT_SOUL_SAND_VALLEY_LOOP, 0.6f, 0.7f);
     }

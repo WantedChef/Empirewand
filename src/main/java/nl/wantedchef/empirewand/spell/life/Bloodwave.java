@@ -1,51 +1,54 @@
 package nl.wantedchef.empirewand.spell.life;
 
 import nl.wantedchef.empirewand.api.EmpireWandAPI;
-import nl.wantedchef.empirewand.spell.SpellContext;
+import nl.wantedchef.empirewand.common.visual.WaveEffectType;
+import nl.wantedchef.empirewand.common.visual.WaveProjectile;
 import nl.wantedchef.empirewand.spell.SpellType;
-import nl.wantedchef.empirewand.spell.misc.WaveSpell;
+import nl.wantedchef.empirewand.spell.enhanced.EnhancedWaveSpell;
 import nl.wantedchef.empirewand.spell.PrereqInterface;
-import org.bukkit.Location;
-import org.bukkit.Particle;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 
 /**
- * Bloodwave - A wave of blood that damages enemies and applies bleeding
- * effects.
+ * Enhanced Bloodwave - A spectacular wave of blood projectiles that damages enemies,
+ * applies bleeding effects, and provides life steal to the caster.
+ * 
+ * Features:
+ * - Sine wave formation for maximum coverage and visual impact
+ * - Life drain mechanics (heals caster for damage dealt)
+ * - Blood particle trails and dramatic impact effects
+ * - Pierces through multiple enemies
+ * - Screen shake effects for immersive gameplay
  */
-public class Bloodwave extends WaveSpell {
+public class Bloodwave extends EnhancedWaveSpell {
 
-    public static class Builder extends WaveSpell.Builder {
+    public static class Builder extends EnhancedWaveSpell.Builder {
         public Builder(EmpireWandAPI api) {
             super(api);
             this.name = "Bloodwave";
-            this.description = "Unleashes a wave of blood that damages and bleeds enemies.";
-            this.cooldown = Duration.ofSeconds(15);
+            this.description = "Unleashes a devastating wave of blood projectiles that drain life from enemies.";
+            this.cooldown = Duration.ofSeconds(18);
             this.spellType = SpellType.LIFE;
 
-            // Configure wave properties
-            this.waveConfig = new WaveConfig(
-                    0.3, // wave speed
-                    8.0, // max radius
-                    6.0, // damage
-                    24, // particle count
-                    "REDSTONE", // particle type
-                    "ENTITY_ZOMBIE_ATTACK_IRON_DOOR", // sound
-                    0.8f, // volume
-                    1.0f, // pitch
-                    60, // duration ticks (3 seconds)
-                    1.5 // entity effect radius
-            );
+            // Configure enhanced wave properties for blood magic
+            this.formation = WaveProjectile.WaveFormation.SINE_WAVE;
+            this.effectType = WaveEffectType.BLOOD;
+            this.speed = 1.0; // Moderate speed for dramatic effect
+            this.maxDistance = 22.0; // Good range for life magic
+            this.projectileCount = 5; // Focused wave
+            this.damage = 8.0; // High damage for life drain
+            this.lifetimeTicks = 110; // 5.5 seconds
+            this.hitRadius = 2.8; // Large hit radius
+            this.pierceEntities = true; // Pierce through enemies
+            this.maxPierces = 2; // Can hit up to 3 enemies per projectile
+            this.particleDensity = 1.2; // Rich blood effects
+            this.enableScreenShake = true; // Dramatic impact
+            this.screenShakeIntensity = 0.7; // Strong shake for dark magic
         }
 
         @Override
-        public @NotNull WaveSpell build() {
+        public @NotNull EnhancedWaveSpell build() {
             return new Bloodwave(this);
         }
     }
@@ -62,53 +65,5 @@ public class Bloodwave extends WaveSpell {
     @Override
     public PrereqInterface prereq() {
         return new PrereqInterface.NonePrereq();
-    }
-
-    @Override
-    protected void applyWaveEffectToEntity(@NotNull SpellContext context, @NotNull LivingEntity entity,
-            double distance) {
-        // Skip friendly entities - check if it's the caster or friendly fire is
-        // disabled
-        if (entity instanceof Player && entity.equals(context.caster())) {
-            return;
-        }
-
-        // Apply damage
-        entity.damage(config.damage, context.caster());
-
-        // Apply bleeding effect (wither)
-        entity.addPotionEffect(new PotionEffect(
-                PotionEffectType.WITHER,
-                100, // 5 seconds
-                0, // Level 1
-                false,
-                true));
-
-        // Apply weakness
-        entity.addPotionEffect(new PotionEffect(
-                PotionEffectType.WEAKNESS,
-                120, // 6 seconds
-                0, // Level 1
-                false,
-                true));
-
-        // Create blood particle effect on the entity
-        context.fx().spawnParticles(entity.getLocation(), Particle.CLOUD, 8, 0.3, 0.3, 0.3, 0.1);
-    }
-
-    @Override
-    protected void createWaveParticles(@NotNull SpellContext context, @NotNull Location center, double radius) {
-        // Create blood-red particles
-        for (int i = 0; i < config.particleCount; i++) {
-            double angle = 2 * Math.PI * i / config.particleCount;
-            double x = center.getX() + Math.cos(angle) * radius;
-            double z = center.getZ() + Math.sin(angle) * radius;
-
-            // Create particles at ground level and slightly above
-            for (int y = 0; y <= 2; y++) {
-                Location particleLoc = new Location(center.getWorld(), x, center.getY() + y, z);
-                context.fx().spawnParticles(particleLoc, Particle.CLOUD, 2, 0.1, 0.1, 0.1, 0.01);
-            }
-        }
     }
 }

@@ -12,8 +12,7 @@ import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
+// Removed slow falling imports; spell now launches a target entity without applying effects
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
@@ -58,16 +57,22 @@ public class EmpireLaunch extends Spell<Void> {
     protected Void executeSpell(SpellContext context) {
         Player caster = context.caster();
 
-        double power = spellConfig.getDouble("values.power", 1.8);
-        int slowFallingDuration = spellConfig.getInt("values.slow-falling-duration", 80);
+        double powerUp = spellConfig.getDouble("values.power", 1.8);
+        double forwardMult = spellConfig.getDouble("values.forward-multiplier", 0.6);
+        int range = spellConfig.getInt("values.range", 25);
 
-        Vector launchVector = caster.getEyeLocation().getDirection().normalize().multiply(0.4).setY(power);
-        caster.setVelocity(launchVector);
-        caster.addPotionEffect(
-                new PotionEffect(PotionEffectType.SLOW_FALLING, slowFallingDuration, 0, false, true, true));
+        var target = caster.getTargetEntity(range);
+        if (target == null || target.equals(caster)) {
+            context.fx().fizzle(caster);
+            return null;
+        }
 
-        Location launchLocation = caster.getLocation().add(0, 0.5, 0);
-        context.fx().spawnParticles(launchLocation, Particle.CAMPFIRE_COSY_SMOKE, 30, 0.5, 0.5, 0.5, 0.2);
+        Vector dir = caster.getEyeLocation().getDirection().normalize();
+        Vector launchVector = dir.multiply(forwardMult).setY(powerUp);
+        target.setVelocity(launchVector);
+
+        Location launchLocation = target.getLocation().add(0, 0.5, 0);
+        context.fx().spawnParticles(launchLocation, Particle.CLOUD, 18, 0.6, 0.4, 0.6, 0.02);
         context.fx().playSound(launchLocation, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, 0.8f);
         return null;
     }

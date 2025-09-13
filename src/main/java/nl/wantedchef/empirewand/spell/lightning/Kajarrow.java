@@ -108,6 +108,7 @@ public class Kajarrow extends ProjectileSpell<Arrow> {
         int thunderCount = spellConfig.getInt("values.thunder_count", 3);
         double thunderRadius = spellConfig.getDouble("values.thunder_radius", 5.0);
         double thunderDamage = spellConfig.getDouble("values.thunder_damage", 4.0);
+        double smiteBonus = spellConfig.getDouble("values.smite_bonus", 2.5);
         boolean blockDamage = spellConfig.getBoolean("flags.block_damage", false);
         boolean applyGlowing = spellConfig.getBoolean("flags.glowing", true);
         int glowingDuration = spellConfig.getInt("values.glowing_duration_ticks", 100);
@@ -147,7 +148,13 @@ public class Kajarrow extends ProjectileSpell<Arrow> {
                     continue;
                 }
 
-                living.damage(thunderDamage, caster);
+                // Calculate damage with smite bonus for undead
+                double finalDamage = thunderDamage;
+                if (isUndead(living)) {
+                    finalDamage += smiteBonus;
+                }
+
+                living.damage(finalDamage, caster);
 
                 // Apply glowing effect
                 if (applyGlowing) {
@@ -184,5 +191,20 @@ public class Kajarrow extends ProjectileSpell<Arrow> {
             context.fx().spawnParticles(hitLoc, Particle.EXPLOSION, 20, 0.3, 0.3, 0.3, 0.1);
             context.fx().playSound(hitLoc, Sound.ENTITY_GENERIC_EXPLODE, 0.8f, 1.2f);
         }
+    }
+
+    /**
+     * Checks if a living entity is an undead mob (receives bonus damage from smite).
+     *
+     * @param entity the entity to check
+     * @return true if the entity is undead, false otherwise
+     */
+    private boolean isUndead(@NotNull LivingEntity entity) {
+        return switch (entity.getType()) {
+            case ZOMBIE, SKELETON, WITHER_SKELETON, ZOMBIE_VILLAGER, HUSK, DROWNED,
+                 PHANTOM, WITHER, SKELETON_HORSE, ZOMBIE_HORSE, STRAY, ZOMBIFIED_PIGLIN,
+                 ZOGLIN, PIGLIN_BRUTE -> true;
+            default -> false;
+        };
     }
 }

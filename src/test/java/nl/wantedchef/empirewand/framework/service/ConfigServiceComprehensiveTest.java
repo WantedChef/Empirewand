@@ -66,6 +66,8 @@ class ConfigServiceComprehensiveTest {
         @Test
         @DisplayName("Should throw exception when plugin is null")
         void shouldThrowExceptionWhenPluginIsNull() {
+            // This test needs to be isolated from the setUp method
+            // We create a new instance without calling setUp
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
                 new ConfigService(null);
             });

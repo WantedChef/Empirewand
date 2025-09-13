@@ -22,7 +22,7 @@ import java.util.UUID;
  */
 public class Recall extends Spell<Player> {
 
-    private static final Map<UUID, Location> savedLocations = new HashMap<>();
+    
     private static final Map<UUID, Location> deathLocations = new HashMap<>();
 
     public static class Builder extends Spell.Builder<Player> {
@@ -70,8 +70,7 @@ public class Recall extends Spell<Player> {
     protected void handleEffect(@NotNull SpellContext context, @NotNull Player player) {
         int castTime = spellConfig.getInt("values.cast_time", DEFAULT_CAST_TIME);
         
-        // Save current location
-        savedLocations.put(player.getUniqueId(), player.getLocation());
+        
         
         // Determine recall location
         Location recallLocation;

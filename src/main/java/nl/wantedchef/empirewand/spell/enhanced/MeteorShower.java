@@ -19,7 +19,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Nullable;
+
 
 import java.time.Duration;
 import java.util.HashSet;
@@ -106,7 +106,7 @@ public class MeteorShower extends Spell<Void> {
     private record Config(double range, int meteorCount, double damage,
                          int craterRadius, int durationTicks) {}
 
-    private Config config = new Config(25.0, 25, 12.0, 3, 100);
+    private Config config = new Config(25.0, 15, 12.0, 3, 80);
 
     /**
      * Constructs a new MeteorShower spell instance.
@@ -266,7 +266,7 @@ public class MeteorShower extends Spell<Void> {
             }
 
             // Spawn meteors at random locations around the center
-            if (ticks % 5 == 0 && meteorsSpawned < meteorCount) {
+            if (ticks % 6 == 0 && meteorsSpawned < meteorCount) {
                 double offsetX = (random.nextDouble() - 0.5) * 20;
                 double offsetZ = (random.nextDouble() - 0.5) * 20;
                 Location meteorLocation = center.clone().add(offsetX, 30, offsetZ);
@@ -302,8 +302,8 @@ public class MeteorShower extends Spell<Void> {
             meteor.setVelocity(new Vector(0, -1.5, 0));
 
             // Visual effects
-            world.spawnParticle(Particle.FLAME, location, 20, 0.5, 0.5, 0.5, 0.1);
-            world.spawnParticle(Particle.LAVA, location, 10, 0.3, 0.3, 0.3, 0.05);
+            world.spawnParticle(Particle.FLAME, location, 10, 0.5, 0.5, 0.5, 0.1);
+            world.spawnParticle(Particle.LAVA, location, 5, 0.3, 0.3, 0.3, 0.05);
 
             // Track meteor impact
             BukkitRunnable meteorTrackingTask = new BukkitRunnable() {
@@ -348,8 +348,8 @@ public class MeteorShower extends Spell<Void> {
             createCrater(impactLocation);
 
             // Visual effects
-            world.spawnParticle(Particle.EXPLOSION, impactLocation, 10, 0, 0, 0, 0);
-            world.spawnParticle(Particle.LAVA, impactLocation, 30, 1, 1, 1, 0.1);
+            world.spawnParticle(Particle.EXPLOSION, impactLocation, 5, 0, 0, 0, 0);
+            world.spawnParticle(Particle.LAVA, impactLocation, 15, 1, 1, 1, 0.1);
             world.playSound(impactLocation, Sound.ENTITY_GENERIC_EXPLODE, 1.5f, 0.8f);
         }
 
@@ -405,7 +405,7 @@ public class MeteorShower extends Spell<Void> {
                 return;
 
             // Create a massive explosion at the center
-            world.createExplosion(center, 5.0f, false, false);
+            world.createExplosion(center, 5.0f, true, false);
             world.spawnParticle(Particle.EXPLOSION_EMITTER, center, 3, 2, 2, 2, 0);
             world.playSound(center, Sound.ENTITY_GENERIC_EXPLODE, 3.0f, 0.5f);
 

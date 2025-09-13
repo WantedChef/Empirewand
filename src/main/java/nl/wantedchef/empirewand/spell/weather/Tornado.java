@@ -1,8 +1,6 @@
 package nl.wantedchef.empirewand.spell.weather;
 
 import nl.wantedchef.empirewand.api.EmpireWandAPI;
-
-import nl.wantedchef.empirewand.api.service.ConfigService;
 import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.SpellContext;
@@ -54,22 +52,24 @@ public class Tornado extends Spell<Void> {
 
         double radius = spellConfig.getDouble("values.radius", 6.0);
         double lift = spellConfig.getDouble("values.lift-velocity", 0.9);
-        int levitationDur = spellConfig.getInt("values.levitation-duration-ticks", 40);
+        int levitationDur = spellConfig.getInt("values.levitation-duration-ticks", 100); // Extended from 40 to 100 ticks (5 seconds)
         int levitationAmp = spellConfig.getInt("values.levitation-amplifier", 0);
         double damage = spellConfig.getDouble("values.damage", 4.0);
-        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig()
-                .getBoolean("features.friendly-fire", false);
 
         for (var e : player.getWorld().getNearbyLivingEntities(player.getLocation(), radius)) {
-            if (e.equals(player) && !friendlyFire)
+            // Never affect the caster
+            if (e.equals(player))
                 continue;
 
             e.setVelocity(e.getVelocity().add(new Vector(0, lift, 0)));
             e.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, levitationDur, levitationAmp, false, true));
             e.damage(damage, player);
 
-            context.fx().spawnParticles(e.getLocation(), Particle.CLOUD, 20, 0.3, 0.6, 0.3, 0.01);
-            context.fx().spawnParticles(e.getLocation(), Particle.SWEEP_ATTACK, 5, 0.2, 0.2, 0.2, 0.0);
+            // Enhanced visuals
+            context.fx().spawnParticles(e.getLocation(), Particle.CLOUD, 30, 0.5, 1.0, 0.5, 0.02);
+            context.fx().spawnParticles(e.getLocation(), Particle.SWEEP_ATTACK, 10, 0.3, 0.3, 0.3, 0.0);
+            context.fx().spawnParticles(e.getLocation(), Particle.CRIT, 15, 0.4, 0.8, 0.4, 0.1);
+            context.fx().spawnParticles(e.getLocation(), Particle.SMOKE, 20, 0.3, 0.6, 0.3, 0.01);
         }
 
         context.fx().playSound(player, Sound.ENTITY_PHANTOM_FLAP, 1.0f, 0.7f);

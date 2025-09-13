@@ -115,8 +115,7 @@ public class ConfigValidator {
                             ConfigurationSection category = categories.getConfigurationSection(categoryName);
                             if (category != null) {
                                 Object spellsObj = category.get("spells");
-                                if (spellsObj instanceof List) {
-                                    List<?> spellsList = (List<?>) spellsObj;
+                                if (spellsObj instanceof List<?> spellsList) {
                                     for (int i = 0; i < spellsList.size(); i++) {
                                         Object spell = spellsList.get(i);
                                         if (!(spell instanceof String)) {
@@ -305,10 +304,7 @@ public class ConfigValidator {
                 errors.add("Spell '" + spellKey + "' missing required field: type");
             } else {
                 Object type = spell.get("type");
-                if (!(type instanceof String)) {
-                    errors.add("Spell '" + spellKey + "' type must be a string");
-                } else {
-                    String typeStr = (String) type;
+                if (type instanceof String typeStr) {
                     if (typeStr.trim().isEmpty()) {
                         errors.add("Spell '" + spellKey + "' type cannot be empty");
                     }
@@ -318,10 +314,7 @@ public class ConfigValidator {
             // Validate category
             if (spell.contains("category")) {
                 Object category = spell.get("category");
-                if (!(category instanceof String)) {
-                    errors.add("Spell '" + spellKey + "' category must be a string");
-                } else {
-                    String categoryStr = (String) category;
+                if (category instanceof String categoryStr) {
                     if (categoryStr.trim().isEmpty()) {
                         errors.add("Spell '" + spellKey + "' category cannot be empty");
                     }

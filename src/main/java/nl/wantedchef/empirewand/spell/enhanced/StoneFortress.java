@@ -19,11 +19,14 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Nullable;
 
 import nl.wantedchef.empirewand.api.EmpireWandAPI;
 import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.spell.Spell;
+import nl.wantedchef.empirewand.spell.SpellContext;
+import nl.wantedchef.empirewand.spell.SpellType;
+
+import java.time.Duration;
 import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
 
@@ -148,10 +151,10 @@ public class StoneFortress extends Spell<Void> {
         Player player = context.caster();
 
         // Configuration
-        int wallRadius = spellConfig.getInt("values.wall-radius", 5);
-        int wallHeight = spellConfig.getInt("values.wall-height", 4);
-        double damage = spellConfig.getDouble("values.damage", 6.0);
-        int durationTicks = spellConfig.getInt("values.duration-ticks", 200);
+        int wallRadius = spellConfig.getInt("values.wall-radius", 8);
+        int wallHeight = spellConfig.getInt("values.wall-height", 6);
+        double damage = spellConfig.getDouble("values.damage", 8.0);
+        int durationTicks = spellConfig.getInt("values.duration-ticks", 300);
         boolean includeRoof = spellConfig.getBoolean("flags.include-roof", true);
 
         // Create fortress structure
@@ -249,7 +252,7 @@ public class StoneFortress extends Spell<Void> {
 
             // Periodic effects while fortress exists
             if (isBuilt && ticks % 20 == 0) {
-                // Particle effects
+                // Enhanced particle effects around walls
                 for (int i = 0; i < 36; i++) {
                     double angle = 2 * Math.PI * i / 36;
                     double x = wallRadius * Math.cos(angle);
@@ -257,6 +260,18 @@ public class StoneFortress extends Spell<Void> {
                     Location particleLoc = center.clone().add(x, 1, z);
                     world.spawnParticle(Particle.BLOCK, particleLoc, 3, 0.1, 0.1, 0.1, 0.01,
                             Material.STONE.createBlockData());
+                    // Add CRIT particles for more impressive effect
+                    world.spawnParticle(Particle.CRIT, particleLoc, 2, 0.2, 0.2, 0.2, 0.1);
+                }
+
+                // Enchantment table particles inside fortress for magical atmosphere
+                for (int i = 0; i < 8; i++) {
+                    double angle = 2 * Math.PI * Math.random();
+                    double distance = wallRadius * 0.7 * Math.random();
+                    double x = distance * Math.cos(angle);
+                    double z = distance * Math.sin(angle);
+                    Location magicLoc = center.clone().add(x, 1.5, z);
+                    world.spawnParticle(Particle.ENCHANT, magicLoc, 1, 0.1, 0.1, 0.1, 0.02);
                 }
 
                 // Occasional damage

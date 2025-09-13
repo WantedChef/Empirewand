@@ -101,7 +101,7 @@ class ConfigServiceTest {
         @DisplayName("Test ConfigService implements expected service interfaces")
         void testConfigServiceInterfaces() {
             // ConfigService doesn't explicitly implement interfaces, but we can check its structure
-            assertTrue(ConfigService.class.isAssignableFrom(ConfigService.class));
+            assertInstanceOf(ConfigService.class, new ConfigService(plugin));
         }
         
         @Test

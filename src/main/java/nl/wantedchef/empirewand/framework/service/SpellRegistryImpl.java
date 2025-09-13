@@ -54,7 +54,6 @@ import nl.wantedchef.empirewand.spell.lightning.ThunderBlast;
 import nl.wantedchef.empirewand.spell.misc.EmpireLaunch;
 import nl.wantedchef.empirewand.spell.misc.EmpireLevitate;
 import nl.wantedchef.empirewand.spell.misc.EtherealForm;
-import nl.wantedchef.empirewand.spell.misc.ExplosionWave;
 import nl.wantedchef.empirewand.spell.movement.BlinkStrike;
 import nl.wantedchef.empirewand.spell.movement.EmpireEscape;
 import nl.wantedchef.empirewand.spell.movement.Leap;
@@ -68,6 +67,15 @@ import nl.wantedchef.empirewand.spell.projectile.ArcaneOrb;
 import nl.wantedchef.empirewand.spell.projectile.MagicMissile;
 import nl.wantedchef.empirewand.spell.toggle.aura.Aura;
 import nl.wantedchef.empirewand.spell.toggle.aura.EmpireAura;
+import nl.wantedchef.empirewand.spell.toggle.movement.KajCloud;
+import nl.wantedchef.empirewand.spell.toggle.movement.MephiCloud;
+import nl.wantedchef.empirewand.spell.toggle.movement.ShadowCloak;
+import nl.wantedchef.empirewand.spell.toggle.movement.AngelWings;
+import nl.wantedchef.empirewand.spell.toggle.movement.CrystalGlide;
+import nl.wantedchef.empirewand.spell.toggle.movement.DragonFury;
+import nl.wantedchef.empirewand.spell.toggle.movement.PhoenixRise;
+import nl.wantedchef.empirewand.spell.toggle.movement.StormRider;
+import nl.wantedchef.empirewand.spell.toggle.movement.VoidWalk;
 import nl.wantedchef.empirewand.spell.weather.Gust;
 import nl.wantedchef.empirewand.spell.weather.Tornado;
 // New spell imports - 50 amazing spells from real Empirewand
@@ -246,7 +254,6 @@ public class SpellRegistryImpl implements SpellRegistry {
                     () -> new LightningBolt.Builder(api),
                     () -> new LightningStorm.Builder(api),
                     () -> new LittleSpark.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.lightning.Shockwave.Builder(api),
                     () -> new SolarLance.Builder(api),
                     () -> new Spark.Builder(api),
                     () -> new ThunderBlast.Builder(api),
@@ -254,12 +261,19 @@ public class SpellRegistryImpl implements SpellRegistry {
                     () -> new EmpireLaunch.Builder(api),
                     () -> new EmpireLevitate.Builder(api),
                     () -> new EtherealForm.Builder(api),
-                    () -> new ExplosionWave.Builder(api),
                     // Movement
                     () -> new BlinkStrike.Builder(api),
                     () -> new EmpireEscape.Builder(api),
                     () -> new Leap.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.toggle.movement.KajCloud.Builder(api),
+                    () -> new KajCloud.Builder(api),
+                    () -> new MephiCloud.Builder(api),
+                    () -> new ShadowCloak.Builder(api),
+                    () -> new AngelWings.Builder(api),
+                    () -> new CrystalGlide.Builder(api),
+                    () -> new DragonFury.Builder(api),
+                    () -> new PhoenixRise.Builder(api),
+                    () -> new StormRider.Builder(api),
+                    () -> new VoidWalk.Builder(api),
                     () -> new SunburstStep.Builder(api),
                     () -> new Teleport.Builder(api),
                     // Poison
@@ -297,7 +311,6 @@ public class SpellRegistryImpl implements SpellRegistry {
                     () -> new nl.wantedchef.empirewand.spell.heal.HealEnhanced.Builder(api),
                     () -> new nl.wantedchef.empirewand.spell.movement.TeleportEnhanced.Builder(api),
                     // Refactored Spells
-                    () -> new nl.wantedchef.empirewand.spell.fire.FlameWaveRefactored.Builder(api),
                     () -> new nl.wantedchef.empirewand.spell.lightning.LightningBoltRefactored.Builder(api),
                     () -> new nl.wantedchef.empirewand.spell.lightning.ChainLightningRefactored.Builder(api),
                     
@@ -458,7 +471,6 @@ public class SpellRegistryImpl implements SpellRegistry {
                 () -> new LightningBolt.Builder(api),
                 () -> new LightningStorm.Builder(api),
                 () -> new LittleSpark.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.lightning.Shockwave.Builder(api),
                 () -> new SolarLance.Builder(api),
                 () -> new Spark.Builder(api),
                 () -> new ThunderBlast.Builder(api),
@@ -466,13 +478,14 @@ public class SpellRegistryImpl implements SpellRegistry {
                 () -> new EmpireLaunch.Builder(api),
                 () -> new EmpireLevitate.Builder(api),
                 () -> new EtherealForm.Builder(api),
-                () -> new ExplosionWave.Builder(api),
                 // Movement
                 () -> new BlinkStrike.Builder(api),
                 () -> new EmpireEscape.Builder(api),
                 () -> new Leap.Builder(api),
-                () -> new nl.wantedchef.empirewand.spell.toggle.movement.KajCloud.Builder(api),
-                    () -> new SunburstStep.Builder(api),
+                () -> new KajCloud.Builder(api),
+                () -> new MephiCloud.Builder(api),
+                () -> new ShadowCloak.Builder(api),
+                () -> new SunburstStep.Builder(api),
                 () -> new Teleport.Builder(api),
                 // Poison
                 () -> new CrimsonChains.Builder(api),

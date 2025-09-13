@@ -53,9 +53,18 @@ public class HealEnhanced extends Spell<Void> {
         double healAmount = spellConfig.getDouble("values.heal-amount", 10.0);
         var maxAttr = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
         double maxHealth = maxAttr != null ? maxAttr.getValue() : 20.0;
+        double oldHealth = player.getHealth();
 
         // Heal the player
-        player.setHealth(Math.min(maxHealth, player.getHealth() + healAmount));
+        double newHealth = Math.min(maxHealth, oldHealth + healAmount);
+        player.setHealth(newHealth);
+
+        // Show healing message
+        double actualHeal = newHealth - oldHealth;
+        if (actualHeal > 0) {
+            context.fx().showSuccess(player, "spell.effect.heal", 
+                java.util.Map.of("amount", String.format("%.1f", actualHeal)));
+        }
 
         // Start enhanced healing effect
         new HealingEffect(context, player).runTaskTimer(context.plugin(), 0L, 1L);

@@ -56,21 +56,45 @@ public class Soulburn extends Spell<LivingEntity> {
     @Override
     protected LivingEntity executeSpell(@NotNull SpellContext context) {
         Player player = context.caster();
+        if (player == null) {
+            return null;
+        }
+
         double range = spellConfig.getDouble("values.range", DEFAULT_RANGE);
         
+        // First try to get the player's targeted entity
         var target = player.getTargetEntity((int) range);
-        if (target instanceof LivingEntity living) {
+        if (target instanceof LivingEntity living && !living.equals(player)) {
+            // Apply the soulburn effect immediately
+            applySoulburnEffect(context, living);
             return living;
         }
         
-        player.sendMessage("§cNo valid target found!");
+        // If no direct target, find the closest living entity in range
+        LivingEntity closest = null;
+        double closestDistance = range;
+        
+        for (var entity : player.getWorld().getNearbyEntities(player.getLocation(), range, range, range)) {
+            if (entity instanceof LivingEntity living && !living.equals(player) && living.isValid() && !living.isDead()) {
+                double distance = player.getLocation().distance(living.getLocation());
+                if (distance < closestDistance) {
+                    closest = living;
+                    closestDistance = distance;
+                }
+            }
+        }
+        
+        if (closest != null) {
+            // Apply the soulburn effect immediately
+            applySoulburnEffect(context, closest);
+            return closest;
+        }
+        
+        player.sendMessage("§cNo valid target found within range!");
         return null;
     }
 
-    @Override
-    protected void handleEffect(@NotNull SpellContext context, @NotNull LivingEntity target) {
-        if (target == null) return;
-        
+    private void applySoulburnEffect(@NotNull SpellContext context, @NotNull LivingEntity target) {
         Player player = context.caster();
         double totalDamage = spellConfig.getDouble("values.damage", DEFAULT_DAMAGE);
         int duration = spellConfig.getInt("values.duration_ticks", DEFAULT_DURATION_TICKS);
@@ -102,5 +126,10 @@ public class Soulburn extends Spell<LivingEntity> {
                 ticks += 10;
             }
         }.runTaskTimer(context.plugin(), 0L, 10L);
+    }
+
+    @Override
+    protected void handleEffect(@NotNull SpellContext context, @NotNull LivingEntity target) {
+        // Effects are applied in executeSpell for instant spells
     }
 }

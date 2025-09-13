@@ -76,7 +76,9 @@ public final class WandCastListener implements Listener {
         if (isRightClick) {
             // Right-click: cycle to next spell with visual effect
             // Shift+right-click: cycle to previous spell with visual effect
+            // Always cancel the event to ensure spell selection works everywhere
             event.setCancelled(true);
+            
             if (player.isSneaking()) {
                 cycleToPreviousSpell(player, item, spells);
             } else {

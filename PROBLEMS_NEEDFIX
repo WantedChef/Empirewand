@@ -1,0 +1,642 @@
+C:\Users\Joep\IdeaProjects\Empirewand\build.gradle.kts
+Warning:(1, 1) Unused import directive
+Warning:(2, 1) Unused import directive
+Error:(18, 1) Unresolved reference. None of the following candidates is applicable because of a receiver type mismatch:
+val PluginDependenciesSpec.java: PluginDependencySpec
+Error:(19, 5) Unresolved reference 'toolchain'.
+Error:(20, 9) Unresolved reference 'languageVersion'.
+Error:(37, 1) Unresolved reference 'testing'.
+Error:(38, 5) Unresolved reference 'suites'.
+Warning:(39, 13) Property "test" is never used
+Error:(39, 21) None of the following candidates is applicable:
+fun <T : Any, U : T> NamedDomainObjectContainer<T>.getting(type: KClass<U>): PolymorphicDomainObjectContainerGettingDelegateProvider<T, U>
+fun <T : Any, U : T> NamedDomainObjectContainer<T>.getting(type: KClass<U>, configuration: U.() -> Unit): PolymorphicDomainObjectContainerGettingDelegateProvider<T, U>
+fun <T : Any, U : NamedDomainObjectCollection<T>> U.getting(configuration: T.() -> Unit): NamedDomainObjectCollectionDelegateProvider<T>
+Warning:(39, 29) 'org.gradle.api.plugins.jvm.JvmTestSuite' is marked unstable with @Incubating
+Error:(40, 13) Unresolved reference 'useJUnitJupiter'.
+Error:(47, 5) Unresolved reference 'compileOnly'.
+Error:(49, 5) Unresolved reference 'compileOnly'.
+Error:(51, 5) Unresolved reference 'compileOnly'.
+Error:(53, 5) Unresolved reference 'implementation'.
+Error:(57, 5) Unresolved reference 'testImplementation'.
+Error:(58, 5) Unresolved reference 'testRuntimeOnly'.
+Error:(60, 5) Unresolved reference 'testImplementation'.
+Error:(61, 5) Unresolved reference 'testImplementation'.
+Warning:(61, 24)  Provides transitive vulnerable dependency maven:org.apache.commons:commons-lang3:3.12.0 CVE-2025-48924 5.3 Insufficient Information  Results powered by Mend.io
+Error:(63, 5) Unresolved reference 'testImplementation'.
+Error:(66, 7) Unresolved reference 'shadowJar'.
+Error:(68, 5) Unresolved reference 'archiveClassifier'.
+Error:(71, 5) Unresolved reference 'relocate'.
+Error:(73, 5) Unresolved reference 'manifest'.
+Error:(74, 9) None of the following candidates is applicable:
+fun Manifest.attributes(vararg attributes: Pair<String, Any?>): Manifest
+fun Manifest.attributes(sectionName: String, vararg attributes: Pair<String, Any?>): Manifest
+Error:(99, 7) Unresolved reference 'jar'.
+Error:(100, 5) Unresolved reference 'enabled'.
+Error:(103, 7) Unresolved reference 'build'.
+Error:(104, 5) Unresolved reference 'dependsOn'.
+Error:(104, 21) Unresolved reference 'shadowJar'.
+Error:(107, 1) Unresolved reference. None of the following candidates is applicable because of a receiver type mismatch:
+val PluginDependenciesSpec.jacoco: PluginDependencySpec
+Error:(108, 5) Unresolved reference 'toolVersion'.
+Error:(111, 7) Unresolved reference 'jacocoTestReport'.
+Error:(112, 5) Unresolved reference 'dependsOn'.
+Error:(112, 21) Unresolved reference 'test'.
+Error:(113, 5) Unresolved reference 'reports'.
+Error:(114, 9) Unresolved reference 'xml'.
+Error:(115, 9) Unresolved reference 'html'.
+Error:(116, 9) Unresolved reference 'csv'.
+Error:(120, 7) Unresolved reference 'jacocoTestCoverageVerification'.
+Error:(121, 5) Unresolved reference 'dependsOn'.
+Error:(121, 21) Unresolved reference 'test'.
+Error:(122, 5) Unresolved reference 'violationRules'.
+Error:(123, 9) Unresolved reference 'rule'.
+Error:(124, 13) Unresolved reference 'limit'.
+Error:(125, 17) Unresolved reference 'counter'.
+Error:(126, 17) Unresolved reference 'value'.
+Error:(128, 17) Unresolved reference 'minimum'.
+Error:(134, 1) Unresolved reference. None of the following candidates is applicable because of a receiver type mismatch:
+val PluginDependenciesSpec.checkstyle: PluginDependencySpec
+Error:(135, 5) Unresolved reference 'toolVersion'.
+Error:(136, 5) Unresolved reference 'configFile'.
+Error:(137, 5) Unresolved reference 'isIgnoreFailures'.
+Error:(138, 5) Unresolved reference 'maxWarnings'.
+Error:(148, 1) Unresolved reference 'spotbugs'.
+Error:(149, 5) Unresolved reference 'excludeFilter'.
+Error:(150, 5) Unresolved reference 'reportLevel'.
+Error:(154, 28) Cannot infer type for type parameter 'S'. Specify it explicitly.
+Error:(162, 7) Unresolved reference 'spotbugsMain'.
+Error:(163, 5) Unresolved reference 'enabled'.
+Error:(166, 7) Unresolved reference 'spotbugsTest'.
+Error:(167, 5) Unresolved reference 'enabled'.
+Error:(171, 7) Unresolved reference 'compileTestJava'.
+Error:(172, 5) Unresolved reference 'enabled'.
+Error:(174, 7) Unresolved reference 'test'.
+Error:(175, 5) Unresolved reference 'enabled'.
+Error:(176, 5) Unresolved reference 'useJUnitPlatform'.
+Error:(179, 5) Unresolved reference 'jvmArgs'.
+Error:(183, 5) Unresolved reference 'finalizedBy'.
+Error:(183, 23) Unresolved reference 'jacocoTestReport'.
+Error:(186, 7) Unresolved reference 'check'.
+Error:(187, 5) Unresolved reference 'dependsOn'.
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\resources\plugin.yml
+Warning:(1, 7) Schema validation: String violates the pattern: '^[A-Za-z0-9_\.-]+$'
+C:\Users\Joep\IdeaProjects\Empirewand\bin\main\plugin.yml
+Warning:(1, 7) Schema validation: String violates the pattern: '^[A-Za-z0-9_\.-]+$'
+Error:(4, 1) Invalid child element in a block mapping
+Error:(5, 1) Key 'api-version' is duplicated
+Error:(6, 1) Key 'authors' is duplicated
+Error:(8, 1) Key 'api-version' is duplicated
+Error:(9, 1) Key 'authors' is duplicated
+Error:(10, 2) Invalid block scalar header
+C:\Users\Joep\IdeaProjects\Empirewand\src\test\java\nl\wantedchef\empirewand\framework\service\ConfigServiceValidationTest.java
+Warning:(3, 1) Unused import statement
+Warning:(12, 1) Unused import statement
+Warning:(13, 1) Unused import statement
+Warning:(21, 20) Field can be converted to a local variable
+Warning:(22, 31) Field can be converted to a local variable
+C:\Users\Joep\IdeaProjects\Empirewand\src\test\java\nl\wantedchef\empirewand\framework\service\ConfigServiceErrorHandlingTest.java
+Warning:(3, 1) Unused import statement
+C:\Users\Joep\IdeaProjects\Empirewand\.claude\agents\minecraft-particle-effects-specialist.md
+Error:(3, 14) It is forbidden to specify block composed value at the same line as key
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\resources\spells.yml
+Error:(6, 3) Key 'comet' is duplicated
+Error:(22, 3) Key 'explosive' is duplicated
+Error:(34, 3) Key 'magic-missile' is duplicated
+Error:(52, 3) Key 'glacial-spike' is duplicated
+Error:(83, 3) Key 'leap' is duplicated
+Error:(92, 3) Key 'heal' is duplicated
+Error:(104, 3) Key 'grasping-vines' is duplicated
+Error:(116, 3) Key 'polymorph' is duplicated
+Error:(125, 3) Key 'dark-circle' is duplicated
+Error:(141, 3) Key 'dark-pulse' is duplicated
+Error:(167, 3) Key 'empire-launch' is duplicated
+Error:(176, 3) Key 'confuse' is duplicated
+Error:(187, 3) Key 'zeist-chrono-anchor' is duplicated
+Error:(198, 3) Key 'teleport' is duplicated
+Error:(208, 3) Key 'thunder-blast' is duplicated
+Error:(218, 3) Key 'lightning-bolt' is duplicated
+Error:(227, 3) Key 'fireball' is duplicated
+Error:(243, 3) Key 'explosion-trail' is duplicated
+Error:(253, 3) Key 'blaze-launch' is duplicated
+Error:(262, 3) Key 'lightning-storm' is duplicated
+Error:(273, 3) Key 'little-spark' is duplicated
+Error:(284, 3) Key 'spark' is duplicated
+Error:(295, 3) Key 'lightning-arrow' is duplicated
+Error:(311, 3) Key 'poison-wave' is duplicated
+Error:(337, 3) Key 'flame-wave' is duplicated
+Error:(359, 3) Key 'empire-levitate' is duplicated
+Error:(368, 3) Key 'blood-block' is duplicated
+Error:(377, 3) Key 'empire-comet' is duplicated
+Error:(386, 3) Key 'blood-spam' is duplicated
+Error:(396, 3) Key 'earth-quake' is duplicated
+Error:(406, 3) Key 'empire-escape' is duplicated
+Error:(415, 3) Key 'comet-shower' is duplicated
+Error:(451, 3) Key 'life-reap' is duplicated
+Error:(465, 3) Key 'ritual-of-unmaking' is duplicated
+Error:(477, 3) Key 'soul-sever' is duplicated
+Error:(493, 3) Key 'blood-tap' is duplicated
+Error:(504, 3) Key 'blood-barrier' is duplicated
+Error:(514, 3) Key 'hemorrhage' is duplicated
+Error:(529, 3) Key 'blood-nova' is duplicated
+Error:(544, 3) Key 'radiant-beacon' is duplicated
+Error:(560, 3) Key 'lightwall' is duplicated
+Error:(575, 3) Key 'solar-lance' is duplicated
+Error:(591, 3) Key 'sunburst-step' is duplicated
+Error:(605, 3) Key 'crimson-chains' is duplicated
+Error:(619, 3) Key 'mephidic-reap' is duplicated
+Error:(635, 3) Key 'frost-nova' is duplicated
+Error:(652, 3) Key 'chain-lightning' is duplicated
+Error:(667, 3) Key 'blink-strike' is duplicated
+Error:(746, 3) Key 'gust' is duplicated
+Error:(757, 3) Key 'arcane-orb' is duplicated
+Error:(774, 3) Key 'void-swap' is duplicated
+Error:(784, 3) Key 'shadow-step' is duplicated
+Error:(810, 3) Key 'tornado' is duplicated
+Error:(836, 3) Key 'kajarrow' is duplicated
+Error:(874, 3) Key 'chain-lightning' is duplicated
+Error:(886, 3) Key 'lightning-bolt' is duplicated
+Error:(898, 3) Key 'lightning-storm' is duplicated
+Error:(910, 3) Key 'thunder-blast' is duplicated
+Error:(922, 3) Key 'spark' is duplicated
+Error:(934, 3) Key 'little-spark' is duplicated
+Error:(946, 3) Key 'solar-lance' is duplicated
+Error:(958, 3) Key 'lightning-arrow' is duplicated
+Error:(970, 3) Key 'kajarrow' is duplicated
+Error:(1018, 3) Key 'blaze-launch' is duplicated
+Error:(1031, 3) Key 'fireball' is duplicated
+Error:(1070, 3) Key 'flame-wave' is duplicated
+Error:(1148, 3) Key 'explosion-trail' is duplicated
+Error:(1161, 3) Key 'explosive' is duplicated
+Error:(1174, 3) Key 'comet' is duplicated
+Error:(1196, 3) Key 'comet-shower' is duplicated
+Error:(1231, 3) Key 'frost-nova' is duplicated
+Error:(1255, 3) Key 'glacial-spike' is duplicated
+Error:(1291, 3) Key 'earth-quake' is duplicated
+Error:(1302, 3) Key 'grasping-vines' is duplicated
+Error:(1313, 3) Key 'lightwall' is duplicated
+Error:(1390, 3) Key 'blink-strike' is duplicated
+Error:(1399, 3) Key 'empire-escape' is duplicated
+Error:(1408, 3) Key 'leap' is duplicated
+Error:(1462, 3) Key 'sunburst-step' is duplicated
+Error:(1471, 3) Key 'teleport' is duplicated
+Error:(1489, 3) Key 'empire-launch' is duplicated
+Error:(1498, 3) Key 'empire-levitate' is duplicated
+Error:(1507, 3) Key 'heal' is duplicated
+Error:(1555, 3) Key 'radiant-beacon' is duplicated
+Error:(1579, 3) Key 'blood-barrier' is duplicated
+Error:(1591, 3) Key 'blood-block' is duplicated
+Error:(1603, 3) Key 'blood-nova' is duplicated
+Error:(1615, 3) Key 'blood-spam' is duplicated
+Error:(1627, 3) Key 'blood-tap' is duplicated
+Error:(1639, 3) Key 'life-reap' is duplicated
+Error:(1711, 3) Key 'hemorrhage' is duplicated
+Error:(1723, 3) Key 'crimson-chains' is duplicated
+Error:(1735, 3) Key 'mephidic-reap' is duplicated
+Error:(1747, 3) Key 'poison-wave' is duplicated
+Error:(1759, 3) Key 'soul-sever' is duplicated
+Error:(1771, 3) Key 'confuse' is duplicated
+Error:(1777, 3) Key 'polymorph' is duplicated
+Error:(1789, 3) Key 'zeist-chrono-anchor' is duplicated
+Error:(1795, 3) Key 'gust' is duplicated
+Error:(1803, 3) Key 'tornado' is duplicated
+Error:(1811, 3) Key 'arcane-orb' is duplicated
+Error:(1822, 3) Key 'magic-missile' is duplicated
+Error:(1833, 3) Key 'empire-comet' is duplicated
+Error:(1868, 3) Key 'void-swap' is duplicated
+Error:(1880, 3) Key 'ritual-of-unmaking' is duplicated
+Error:(1940, 3) Key 'dark-circle' is duplicated
+Error:(1952, 3) Key 'dark-pulse' is duplicated
+Error:(1976, 3) Key 'shadow-step' is duplicated
+C:\Users\Joep\IdeaProjects\Empirewand\src\test\java\nl\wantedchef\empirewand\framework\service\ConfigServiceTest.java
+Warning:(4, 1) Unused import statement
+Warning:(5, 1) Unused import statement
+Warning:(6, 1) Unused import statement
+Warning:(8, 1) Unused import statement
+Warning:(37, 28) 'AutoCloseable' used without 'try'-with-resources statement
+Warning:(54, 97) Statement lambda can be replaced with expression lambda
+Warning:(104, 24) Result of 'ConfigService.class.isAssignableFrom(ConfigService.class)' is always 'true'
+C:\Users\Joep\IdeaProjects\Empirewand\src\test\java\nl\wantedchef\empirewand\core\ConfigServiceMigrationTest.java
+Warning:(5, 1) Unused import statement
+Warning:(31, 31) Private field 'spellsConfig' is never used
+Warning:(37, 29) Private field 'validator' is assigned but never accessed
+Warning:(37, 29) Field can be converted to a local variable
+Warning:(38, 36) Private field 'migrationService' is never used
+Warning:(42, 28) 'AutoCloseable' used without 'try'-with-resources statement
+Warning:(87, 13) 'assertTrue()' can be simplified to 'assertInstanceOf()'
+Warning:(87, 24) Condition 'migrationService instanceof ConfigMigrationService' is redundant and can be replaced with a null check
+C:\Users\Joep\IdeaProjects\Empirewand\src\test\java\nl\wantedchef\empirewand\framework\service\ConfigServiceIntegrationTest.java
+Warning:(5, 1) Unused import statement
+Warning:(9, 1) Unused import statement
+Warning:(33, 31) Field can be converted to a local variable
+Warning:(37, 28) 'AutoCloseable' used without 'try'-with-resources statement
+C:\Users\Joep\IdeaProjects\Empirewand\src\test\java\nl\wantedchef\empirewand\framework\service\ConfigServiceMockTest.java
+Warning:(5, 1) Unused import statement
+Warning:(37, 28) 'AutoCloseable' used without 'try'-with-resources statement
+Warning:(51, 101) Statement lambda can be replaced with expression lambda
+C:\Users\Joep\IdeaProjects\Empirewand\src\test\java\nl\wantedchef\empirewand\framework\service\ConfigServiceCachingTest.java
+Warning:(12, 1) Unused import statement
+Warning:(22, 20) Field can be converted to a local variable
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\framework\service\SpellRegistryImpl.java
+Warning:(9, 1) Unused import statement
+Warning:(144, 2) Blank line will be ignored
+Warning:(189, 20) Condition 'timing != null' is always 'true'
+Warning:(509, 20) Condition 'timing != null' is always 'true'
+Warning:(542, 20) Condition 'timing != null' is always 'true'
+Warning:(564, 20) Condition 'timing != null' is always 'true'
+Warning:(578, 20) Condition 'timing != null' is always 'true'
+Warning:(599, 20) Condition 'timing != null' is always 'true'
+Warning:(627, 20) Condition 'timing != null' is always 'true'
+Warning:(642, 13) Condition 'category == null' is always 'false'
+Warning:(654, 20) Condition 'timing != null' is always 'true'
+Warning:(687, 20) Condition 'timing != null' is always 'true'
+Warning:(804, 20) Condition 'timing != null' is always 'true'
+Warning:(817, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(822, 20) Not annotated method overrides method annotated with @NotNull
+Warning:(832, 26) Not annotated method overrides method annotated with @NotNull
+Warning:(840, 20) Condition 'timing != null' is always 'true'
+Warning:(854, 20) Condition 'timing != null' is always 'true'
+Warning:(865, 19) Method 'getPerformanceMetrics()' is never used
+Warning:(872, 17) Method 'clearPerformanceMetrics()' is never used
+Warning:(882, 20) Condition 'timing != null' is always 'true'
+Warning:(909, 20) Condition 'timing != null' is always 'true'
+Warning:(937, 20) Condition 'timing != null' is always 'true'
+Warning:(953, 20) Condition 'timing != null' is always 'true'
+Warning:(963, 20) Condition 'timing != null' is always 'true'
+Warning:(974, 6) Blank line will be ignored
+Warning:(994, 23) Not annotated method overrides method annotated with @NotNull
+Warning:(999, 26) Not annotated method overrides method annotated with @NotNull
+Warning:(1004, 26) Not annotated method overrides method annotated with @NotNull
+Warning:(1009, 23) Not annotated method overrides method annotated with @NotNull
+Warning:(1014, 28) Not annotated method overrides method annotated with @NotNull
+Warning:(1039, 23) Not annotated method overrides method annotated with @NotNull
+Warning:(1044, 42) Not annotated parameter overrides @NotNull parameter
+Warning:(1052, 6) Blank line will be ignored
+Warning:(1070, 35) Not annotated method overrides method annotated with @NotNull
+Warning:(1070, 51) Not annotated parameter overrides @NotNull parameter
+Warning:(1076, 35) Not annotated method overrides method annotated with @NotNull
+Warning:(1076, 46) Not annotated parameter overrides @NotNull parameter
+Warning:(1082, 35) Not annotated method overrides method annotated with @NotNull
+Warning:(1082, 55) Not annotated parameter overrides @NotNull parameter
+Warning:(1088, 35) Not annotated method overrides method annotated with @NotNull
+Warning:(1094, 35) Not annotated method overrides method annotated with @NotNull
+Warning:(1101, 35) Not annotated method overrides method annotated with @NotNull
+Warning:(1107, 35) Not annotated method overrides method annotated with @NotNull
+Warning:(1113, 35) Not annotated method overrides method annotated with @NotNull
+Warning:(1113, 63) Not annotated parameter overrides @NotNull parameter
+Warning:(1119, 35) Not annotated method overrides method annotated with @NotNull
+Warning:(1119, 66) Not annotated parameter overrides @NotNull parameter
+Warning:(1125, 35) Not annotated method overrides method annotated with @NotNull
+Warning:(1131, 27) Not annotated method overrides method annotated with @NotNull
+Warning:(1138, 6) Blank line will be ignored
+C:\Users\Joep\IdeaProjects\Empirewand\src\test\java\nl\wantedchef\empirewand\core\ConfigServiceComprehensiveTest.java
+Warning:(9, 1) Unused import statement
+Warning:(38, 31) Private field 'spellsConfig' is never used
+Warning:(44, 36) Private field 'migrationService' is never used
+Warning:(47, 29) Private field 'validator' is assigned but never accessed
+Warning:(47, 29) Field can be converted to a local variable
+Warning:(51, 28) 'AutoCloseable' used without 'try'-with-resources statement
+Warning:(98, 101) Statement lambda can be replaced with expression lambda
+Warning:(132, 27) Variable 'service' is never used
+Warning:(141, 63) Exception 'java.io.IOException' is never thrown in the method
+Warning:(158, 27) Variable 'service' is never used
+Warning:(180, 27) Variable 'service' is never used
+Warning:(210, 26) Variable 'emptyErrors' is never used
+Warning:(213, 27) Variable 'service' is never used
+Warning:(271, 13) 'assertTrue()' can be simplified to 'assertInstanceOf()'
+Warning:(279, 13) 'assertTrue()' can be simplified to 'assertInstanceOf()'
+Warning:(615, 28) Variable 'configBefore' is never used
+C:\Users\Joep\IdeaProjects\Empirewand\src\test\java\nl\wantedchef\empirewand\framework\service\ConfigServiceMigrationTest.java
+Warning:(19, 20) Field can be converted to a local variable
+Warning:(20, 31) Field can be converted to a local variable
+C:\Users\Joep\IdeaProjects\Empirewand\src\test\java\nl\wantedchef\empirewand\spell\fire\FireballTest.java
+Warning:(22, 9) 'AutoCloseable' used without 'try'-with-resources statement
+C:\Users\Joep\IdeaProjects\Empirewand\src\test\java\nl\wantedchef\empirewand\framework\service\ConfigServiceUtilityMethodsTest.java
+Warning:(22, 20) Field can be converted to a local variable
+C:\Users\Joep\IdeaProjects\Empirewand\src\test\java\nl\wantedchef\empirewand\framework\service\FxServiceTest.java
+Warning:(22, 1) Unused import statement
+Warning:(55, 28) 'AutoCloseable' used without 'try'-with-resources statement
+Warning:(77, 20) Result of 'EffectService.class.isAssignableFrom(FxService.class)' is always 'true'
+Warning:(93, 101) Statement lambda can be replaced with expression lambda
+Warning:(103, 101) Statement lambda can be replaced with expression lambda
+C:\Users\Joep\IdeaProjects\Empirewand\src\test\java\nl\wantedchef\empirewand\framework\service\ConfigServiceComprehensiveTest.java
+Warning:(22, 31) Field can be converted to a local variable
+Warning:(70, 33) Statement lambda can be replaced with expression lambda
+Warning:(117, 51) 'assertTrue()' can be simplified to 'assertInstanceOf()'
+Warning:(119, 25) 'assertTrue()' can be simplified to 'assertInstanceOf()'
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\movement\Recall.java
+Warning:(25, 46) Contents of collection 'savedLocations' are updated, but never queried
+Warning:(51, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(56, 28) Not annotated method overrides method annotated with @NotNull
+Warning:(65, 24) Method 'recordDeath(org.bukkit.entity.Player)' is never used
+Warning:(81, 27) 'getBedSpawnLocation()' is deprecated
+Warning:(82, 37) 'getBedSpawnLocation()' is deprecated
+Warning:(92, 22) Field 'startLoc' may be 'final'
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\enhanced\DivineAura.java
+Warning:(22, 1) Unused import statement
+Warning:(151, 13) Condition 'world != null' is always 'true'
+Warning:(187, 27) Private field 'durationTicks' is assigned but never accessed
+Warning:(187, 27) Field can be converted to a local variable
+Warning:(279, 21) 'continue' is unnecessary as the last statement in a loop
+Warning:(314, 34) Condition 'entityLocation != null' is always 'true' when reached
+C:\Users\Joep\IdeaProjects\Empirewand\src\test\java\nl\wantedchef\empirewand\core\ConfigServiceValidationTest.java
+Warning:(31, 29) Private field 'validator' is assigned but never accessed
+Warning:(31, 29) Field can be converted to a local variable
+Warning:(35, 28) 'AutoCloseable' used without 'try'-with-resources statement
+Warning:(68, 38) Lambda can be replaced with method reference
+Warning:(90, 38) Lambda can be replaced with method reference
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\earth\Lightwall.java
+Warning:(25, 1) Unused import statement
+Warning:(283, 53) Can be replaced with 'getFirst()' call
+Warning:(293, 21) Condition 'world == null' is always 'false'
+Warning:(317, 52) Can be replaced with 'getFirst()' call
+Warning:(320, 21) Condition 'direction != null' is always 'true'
+C:\Users\Joep\IdeaProjects\Empirewand\src\test\java\nl\wantedchef\empirewand\core\ConfigServiceCachingTest.java
+Warning:(34, 28) 'AutoCloseable' used without 'try'-with-resources statement
+Warning:(116, 28) Variable 'configBefore' is never used
+Warning:(135, 49) Passing 'null' argument to parameter annotated as @NotNull
+Warning:(152, 13) 'assertTrue()' can be simplified to 'assertInstanceOf()'
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\command\wand\SwitchEffectCommand.java
+Warning:(25, 12) Constructor 'SwitchEffectCommand(nl.wantedchef.empirewand.EmpireWandPlugin)' is never used
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\framework\service\ConfigService.java
+Warning:(24, 2) Blank line will be ignored
+Warning:(74, 18) Variable 'timing' is never used
+Warning:(117, 18) Variable 'timing' is never used
+Warning:(212, 18) Variable 'timing' is never used
+Warning:(240, 18) Variable 'timing' is never used
+Warning:(272, 18) Variable 'timing' is never used
+Warning:(301, 18) Variable 'timing' is never used
+Warning:(303, 17) Condition 'list == null' is always 'false'
+Warning:(327, 18) Variable 'timing' is never used
+Warning:(357, 18) Variable 'timing' is never used
+Warning:(382, 19) Method 'getPerformanceMetrics()' is never used
+Warning:(390, 17) Method 'clearPerformanceMetrics()' is never used
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\listener\wand\WandCastListener.java
+Warning:(27, 1) Dangling Javadoc comment
+Warning:(89, 13) Condition 'isLeftClick' is always 'true'
+Warning:(268, 17) Method 'playSpellSwitchEffect(org.bukkit.entity.Player, org.bukkit.inventory.ItemStack)' is never used
+C:\Users\Joep\IdeaProjects\Empirewand\src\test\java\nl\wantedchef\empirewand\core\ConfigServiceErrorHandlingTest.java
+Warning:(38, 28) 'AutoCloseable' used without 'try'-with-resources statement
+Warning:(53, 49) Passing 'null' argument to parameter annotated as @NotNull
+Warning:(184, 49) Passing 'null' argument to parameter annotated as @NotNull
+Warning:(199, 13) 'assertTrue()' can be simplified to 'assertInstanceOf()'
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\heal\RadiantBeacon.java
+Warning:(32, 17) Field can be converted to a local variable
+Warning:(63, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(68, 22) Not annotated method overrides method annotated with @NotNull
+Warning:(73, 28) Not annotated method overrides method annotated with @NotNull
+Warning:(145, 22) 'collect(toList())' can be replaced with 'toList()'
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\heal\Heal.java
+Warning:(38, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(43, 28) Not annotated method overrides method annotated with @NotNull
+C:\Users\Joep\IdeaProjects\Empirewand\src\test\java\nl\wantedchef\empirewand\core\ConfigServiceUtilityMethodsTest.java
+Warning:(40, 28) 'AutoCloseable' used without 'try'-with-resources statement
+Warning:(194, 80) Passing 'null' argument to parameter annotated as @NotNull
+Warning:(245, 13) 'assertTrue()' can be simplified to 'assertInstanceOf()'
+Warning:(253, 13) 'assertTrue()' can be simplified to 'assertInstanceOf()'
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\heal\HealEnhanced.java
+Warning:(41, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(46, 28) Not annotated method overrides method annotated with @NotNull
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\movement\Phase.java
+Warning:(45, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(50, 28) Not annotated method overrides method annotated with @NotNull
+Warning:(104, 20) Method 'applyEffect(nl.wantedchef.empirewand.spell.SpellContext, java.lang.Void)' is never used
+Warning:(104, 54) Parameter 'context' is never used
+Warning:(104, 68) Parameter 'effect' is never used
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\movement\Rocket.java
+Warning:(46, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(51, 28) Not annotated method overrides method annotated with @NotNull
+Warning:(82, 71) 'isOnGround()' is deprecated
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\misc\Empower.java
+Warning:(46, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(51, 28) Not annotated method overrides method annotated with @NotNull
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\heal\Prayer.java
+Warning:(46, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(51, 28) Not annotated method overrides method annotated with @NotNull
+Warning:(67, 35) 'getMaxHealth()' is deprecated
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\life\Pollinate.java
+Warning:(47, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(52, 28) Not annotated method overrides method annotated with @NotNull
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\defensive\Invincible.java
+Warning:(46, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(51, 28) Not annotated method overrides method annotated with @NotNull
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\earth\Stash.java
+Warning:(48, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(53, 28) Not annotated method overrides method annotated with @NotNull
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\life\Tame.java
+Warning:(49, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(54, 28) Not annotated method overrides method annotated with @NotNull
+Warning:(64, 13) Condition 'target instanceof Animals animal' covered by subsequent condition 'target instanceof Tameable'
+Warning:(74, 13) Condition 'target == null' is always 'false'
+Warning:(84, 17) Condition 'target instanceof LivingEntity living' is always 'true'
+Warning:(85, 41) 'getMaxHealth()' is deprecated
+Warning:(96, 13) 'if' statement can be replaced with 'switch' statement
+Warning:(99, 46) Pattern variable 'cat' is never used
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\misc\Invulnerability.java
+Warning:(46, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(51, 28) Not annotated method overrides method annotated with @NotNull
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\defensive\Shell.java
+Warning:(47, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(52, 28) Not annotated method overrides method annotated with @NotNull
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\heal\Repair.java
+Warning:(46, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(51, 28) Not annotated method overrides method annotated with @NotNull
+Warning:(83, 17) Unnecessary 'null' check before 'repairItem()' call
+Warning:(102, 21) Unnecessary 'null' check before 'repairItem()' call
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\movement\SunburstStep.java
+Warning:(45, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(50, 28) Not annotated method overrides method annotated with @NotNull
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\misc\Mana.java
+Warning:(47, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(52, 28) Not annotated method overrides method annotated with @NotNull
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\defensive\Absorb.java
+Warning:(47, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(52, 28) Not annotated method overrides method annotated with @NotNull
+Warning:(105, 92) 'getMaxHealth()' is deprecated
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\defensive\Silence.java
+Warning:(47, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(52, 28) Not annotated method overrides method annotated with @NotNull
+Warning:(72, 13) Condition 'target == null' is always 'false'
+Warning:(101, 58) Casting 'target' to 'Player' is redundant
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\heal\Restoration.java
+Warning:(47, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(52, 28) Not annotated method overrides method annotated with @NotNull
+Warning:(72, 13) Condition 'target == null' is always 'false'
+Warning:(79, 37) 'getMaxHealth()' is deprecated
+Warning:(81, 71) 'getMaxHealth()' is deprecated
+Warning:(121, 58) Casting 'target' to 'Player' is redundant
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\heal\DivineHeal.java
+Warning:(48, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(53, 28) Not annotated method overrides method annotated with @NotNull
+Warning:(103, 100) 'getMaxHealth()' is deprecated
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\life\Regenerate.java
+Warning:(48, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(53, 28) Not annotated method overrides method annotated with @NotNull
+Warning:(92, 47) 'getMaxHealth()' is deprecated
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\misc\EmpireLevitate.java
+Warning:(46, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(51, 22) Not annotated method overrides method annotated with @NotNull
+Warning:(56, 28) Not annotated method overrides method annotated with @NotNull
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\earth\Platform.java
+Warning:(50, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(55, 28) Not annotated method overrides method annotated with @NotNull
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\offensive\Wound.java
+Warning:(48, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(53, 28) Not annotated method overrides method annotated with @NotNull
+Warning:(73, 13) Condition 'target == null' is always 'false'
+Warning:(100, 58) Casting 'target' to 'Player' is redundant
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\ice\Petrify.java
+Warning:(49, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(54, 28) Not annotated method overrides method annotated with @NotNull
+Warning:(74, 13) Condition 'target == null' is always 'false'
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\earth\Tremor.java
+Warning:(50, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(55, 28) Not annotated method overrides method annotated with @NotNull
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\ice\ArcticBlast.java
+Warning:(49, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(54, 28) Not annotated method overrides method annotated with @NotNull
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\ice\IceWall.java
+Warning:(52, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(57, 28) Not annotated method overrides method annotated with @NotNull
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\earth\Wall.java
+Warning:(52, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(57, 28) Not annotated method overrides method annotated with @NotNull
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\defensive\Reflect.java
+Warning:(51, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(56, 28) Not annotated method overrides method annotated with @NotNull
+Warning:(65, 27) Method 'isReflecting(org.bukkit.entity.Player)' is never used
+Warning:(115, 54) Method invocation 'equals' may produce 'NullPointerException'
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\framework\service\WandServiceImpl.java
+Warning:(41, 2) Blank line will be ignored
+Warning:(49, 33) Field can be converted to a local variable
+Warning:(83, 20) Condition 'timing != null' is always 'true'
+Warning:(136, 20) Condition 'timing != null' is always 'true'
+Warning:(152, 20) Condition 'timing != null' is always 'true'
+Warning:(180, 22) Method 'createBasicWand()' is never used
+Warning:(209, 20) Condition 'timing != null' is always 'true'
+Warning:(251, 20) Condition 'timing != null' is always 'true'
+Warning:(280, 35) Unnecessary boxing
+Warning:(307, 20) Condition 'timing != null' is always 'true'
+Warning:(330, 20) Condition 'timing != null' is always 'true'
+Warning:(354, 20) Condition 'timing != null' is always 'true'
+Warning:(400, 20) Condition 'timing != null' is always 'true'
+Warning:(457, 20) Condition 'timing != null' is always 'true'
+Warning:(498, 20) Condition 'timing != null' is always 'true'
+Warning:(533, 20) Condition 'timing != null' is always 'true'
+Warning:(544, 20) Condition 'timing != null' is always 'true'
+Warning:(563, 20) Condition 'timing != null' is always 'true'
+Warning:(568, 34) Method invocation 'getItemMeta' may produce 'NullPointerException'
+Warning:(583, 20) Condition 'timing != null' is always 'true'
+Warning:(596, 20) Condition 'timing != null' is always 'true'
+Warning:(633, 20) Condition 'timing != null' is always 'true'
+Warning:(646, 20) Condition 'timing != null' is always 'true'
+Warning:(658, 20) Condition 'timing != null' is always 'true'
+Warning:(667, 20) Condition 'timing != null' is always 'true'
+Warning:(695, 20) Condition 'timing != null' is always 'true'
+Warning:(723, 20) Condition 'timing != null' is always 'true'
+Warning:(758, 20) Condition 'timing != null' is always 'true'
+Warning:(807, 20) Condition 'timing != null' is always 'true'
+Warning:(808, 13) 'if' statement can be simplified
+Warning:(821, 19) Method 'getPerformanceMetrics()' is never used
+Warning:(828, 17) Method 'clearPerformanceMetrics()' is never used
+Warning:(835, 6) Blank line will be ignored
+Warning:(914, 24) Condition 'timing != null' is always 'true'
+Warning:(950, 31) Can be replaced with 'Math.max()' call
+Warning:(982, 6) Blank line will be ignored
+Warning:(1246, 47) Not annotated parameter overrides @NotNull parameter
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\life\NatureGrowth.java
+Warning:(51, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(56, 28) Not annotated method overrides method annotated with @NotNull
+C:\Users\Joep\IdeaProjects\Empirewand\src\test\java\nl\wantedchef\empirewand\spell\enhanced\SummonSwarmTest.java
+Warning:(60, 28) 'AutoCloseable' used without 'try'-with-resources statement
+C:\Users\Joep\IdeaProjects\Empirewand\src\test\java\nl\wantedchef\empirewand\spell\enhanced\EnergyShieldTest.java
+Warning:(60, 28) 'AutoCloseable' used without 'try'-with-resources statement
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\poison\CrimsonChains.java
+Warning:(51, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(56, 28) Not annotated method overrides method annotated with @NotNull
+Warning:(95, 19) Inner class 'ChainVisual' may be 'static'
+C:\Users\Joep\IdeaProjects\Empirewand\src\test\java\nl\wantedchef\empirewand\framework\command\util\AsyncCommandExecutorTest.java
+Warning:(54, 28) 'AutoCloseable' used without 'try'-with-resources statement
+Warning:(87, 42) Unchecked assignment: 'java.util.function.Consumer' to 'java.util.function.Consumer<java.lang.Object>'
+Warning:(88, 43) Unchecked assignment: 'java.util.function.Consumer' to 'java.util.function.Consumer<java.lang.Exception>'
+Warning:(103, 42) Unchecked assignment: 'java.util.function.Consumer' to 'java.util.function.Consumer<java.lang.Object>'
+Warning:(104, 43) Unchecked assignment: 'java.util.function.Consumer' to 'java.util.function.Consumer<java.lang.Exception>'
+Warning:(164, 71) Statement lambda can be replaced with expression lambda
+Warning:(165, 17) Lambda can be replaced with method reference
+C:\Users\Joep\IdeaProjects\Empirewand\src\test\java\nl\wantedchef\empirewand\framework\command\util\HelpCommandTest.java
+Warning:(42, 37) Field can be converted to a local variable
+Warning:(52, 28) 'AutoCloseable' used without 'try'-with-resources statement
+Warning:(148, 85) Statement lambda can be replaced with expression lambda
+Warning:(173, 53) Can be replaced with 'getFirst()' call
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\life\Lifewalk.java
+Warning:(56, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(61, 28) Not annotated method overrides method annotated with @NotNull
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\listener\wand\WandSwingListener.java
+Warning:(49, 43) Lambda can be replaced with method reference
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\core\config\ConfigValidator.java
+Warning:(60, 25) Condition 'keys != null' is always 'true'
+Warning:(82, 25) Condition 'keys != null' is always 'true'
+Warning:(109, 25) Condition 'categoryKeys != null' is always 'true'
+Warning:(119, 45) Variable 'spellsList' can be replaced with pattern variable
+Warning:(159, 17) Condition 'keys == null' is always 'false'
+Warning:(214, 25) Condition 'spellKeys == null' is always 'false'
+Warning:(311, 28) Variable 'typeStr' can be replaced with pattern variable
+Warning:(324, 28) Variable 'categoryStr' can be replaced with pattern variable
+Warning:(477, 17) Condition 'valueKeys != null' is always 'true'
+Warning:(532, 17) Condition 'flagKeys != null' is always 'true'
+Warning:(653, 21) Calls to boolean method 'isValidKebabCase()' are always inverted
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\enhanced\EnergyShield.java
+Warning:(79, 13) Condition 'world == null' is always 'false'
+Warning:(165, 17) 'if' statement has empty body
+Warning:(281, 21) Method 'handleProjectileHit(org.bukkit.entity.Projectile, org.bukkit.entity.LivingEntity)' is never used
+Warning:(310, 52) Parameter 'absorptionHearts' is never used
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\fire\Comet.java
+Warning:(85, 19) Not annotated method overrides method annotated with @NotNull
+Warning:(105, 28) Not annotated method overrides method annotated with @NotNull
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\toggle\movement\KajCloud.java
+Warning:(106, 52) Parameter annotated @NotNull should not receive 'null' as an argument
+Warning:(113, 28) Passing 'null' argument to parameter annotated as @NotNull
+Warning:(123, 47) Parameter 'context' is never used
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\dark\Mephidrain.java
+Warning:(126, 46) Not annotated parameter overrides @NotNull parameter
+Warning:(138, 13) Condition 'world == null' is always 'false'
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\spell\Spell.java
+Warning:(103, 5) Overriding methods are not annotated
+Warning:(118, 5) Overriding methods are not annotated
+Warning:(136, 5) Overriding methods are not annotated
+Warning:(216, 20) Calls to boolean method 'canCast()' are always inverted
+Warning:(237, 39) Overriding method parameters are not annotated
+Warning:(288, 36) Argument 'prereqResult.reason()' might be null
+Warning:(435, 26) Passing 'null' argument to parameter annotated as @NotNull
+Warning:(435, 26) Result of 'context.plugin()' is always 'null'
+Warning:(450, 40) Passing 'null' argument to parameter annotated as @NotNull
+Warning:(450, 40) Result of 'context.plugin()' is always 'null'
+Warning:(460, 88) Parameter 'result' is never used
+Warning:(482, 83) Value of parameter 'reason' is always 'FailReason.OTHER'
+Warning:(508, 13) Condition 'cooldownService == null' is always 'false'
+Warning:(527, 13) Condition 'cooldownService != null' is always 'true'
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\api\EmpireWandAPI.java
+Warning:(218, 61) Method 'getServiceOptional(java.lang.Class<T>)' is never used
+Warning:(275, 27) Method 'getAPIVersion()' is never used
+Warning:(294, 27) Method 'isCompatible(nl.wantedchef.empirewand.api.Version)' is never used
+Warning:(328, 9) Overriding methods are not annotated
+Warning:(340, 9) Overriding methods are not annotated
+Warning:(351, 9) Overriding methods are not annotated
+Warning:(363, 9) Overriding methods are not annotated
+Warning:(374, 9) Overriding methods are not annotated
+Warning:(386, 9) Overriding methods are not annotated
+Warning:(397, 9) Overriding methods are not annotated
+Warning:(405, 9) Overriding methods are not annotated
+Warning:(413, 9) Overriding methods are not annotated
+Warning:(414, 17) Method 'getAPIVersion()' is never used
+Warning:(422, 30) Overriding method parameters are not annotated
+C:\Users\Joep\IdeaProjects\Empirewand\src\main\java\nl\wantedchef\empirewand\EmpireWandPlugin.java
+Warning:(391, 26) Not annotated method overrides method annotated with @NotNull
+Warning:(396, 24) Not annotated method overrides method annotated with @NotNull
+Warning:(401, 30) Not annotated method overrides method annotated with @NotNull
+Warning:(406, 63) Not annotated method overrides method annotated with @NotNull
+Warning:(411, 65) Not annotated method overrides method annotated with @NotNull
+Warning:(416, 63) Not annotated method overrides method annotated with @NotNull
+Warning:(421, 64) Not annotated method overrides method annotated with @NotNull
+Warning:(428, 67) Not annotated method overrides method annotated with @NotNull
+Warning:(433, 49) Not annotated method overrides method annotated with @NotNull

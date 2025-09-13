@@ -31,9 +31,13 @@ import nl.wantedchef.empirewand.command.wand.StatsCommand;
 import nl.wantedchef.empirewand.command.wand.SwitchEffectCommand;
 import nl.wantedchef.empirewand.command.wand.ToggleCommand;
 import nl.wantedchef.empirewand.command.wand.UnbindCommand;
+import nl.wantedchef.empirewand.framework.command.util.CommandCache;
 import nl.wantedchef.empirewand.framework.command.util.CommandErrorHandler;
-import nl.wantedchef.empirewand.framework.command.util.CommandHelpProvider;
+
+import nl.wantedchef.empirewand.framework.command.util.CommandPerformanceMonitor;
 import nl.wantedchef.empirewand.framework.command.util.HelpCommand;
+import nl.wantedchef.empirewand.framework.command.util.InteractiveHelpProvider;
+import nl.wantedchef.empirewand.framework.command.util.SmartTabCompleter;
 
 /**
  * Base class for all wand command executors. Handles common functionality like subcommand
@@ -44,11 +48,18 @@ public abstract class BaseWandCommand implements CommandExecutor, TabCompleter {
 
     protected final EmpireWandPlugin plugin;
     private final CommandErrorHandler errorHandler;
+    private final CommandCache commandCache;
+    private final CommandPerformanceMonitor performanceMonitor;
+    private final SmartTabCompleter smartTabCompleter;
     private final Map<String, SubCommand> subcommands = new LinkedHashMap<>();
     private final Map<String, SubCommand> aliases = new HashMap<>();
 
     protected BaseWandCommand(EmpireWandPlugin plugin) {
         this.plugin = plugin;
+        this.commandCache = new CommandCache();
+        this.performanceMonitor = new CommandPerformanceMonitor(plugin);
+        this.smartTabCompleter = new SmartTabCompleter(commandCache, plugin.getSpellRegistry());
+        // Initialize error handler with basic constructor first, will update after initialization
         this.errorHandler = new CommandErrorHandler(plugin);
         // Defer initialization to avoid calling overridable methods in constructor
         this.isInitialized = false;
@@ -187,15 +198,28 @@ public abstract class BaseWandCommand implements CommandExecutor, TabCompleter {
             // Create context with performance monitoring
             CommandContext context = createContext(sender, args);
 
-            // Start timing for performance monitoring
-            long startTime = System.nanoTime();
+            // Start performance monitoring
+            CommandPerformanceMonitor.ExecutionContext perfContext = 
+                performanceMonitor.startExecution(subCommandName, sender.getName());
             boolean success = false;
+            String errorType = "none";
 
             try {
-                // Check permission
+                // Check permission with caching
                 String permission = subCommand.getPermission();
                 if (permission != null) {
-                    context.requirePermission(permission);
+                    Boolean cachedPermission = commandCache.getCachedPermission(sender, permission);
+                    if (cachedPermission != null) {
+                        if (!cachedPermission) {
+                            throw new CommandException("No permission", "NO_PERMISSION");
+                        }
+                    } else {
+                        boolean hasPermission = context.hasPermission(permission);
+                        commandCache.cachePermission(sender, permission, hasPermission);
+                        if (!hasPermission) {
+                            throw new CommandException("No permission", "NO_PERMISSION");
+                        }
+                    }
                 }
 
                 // Check player requirement
@@ -207,14 +231,19 @@ public abstract class BaseWandCommand implements CommandExecutor, TabCompleter {
                 subCommand.execute(context);
 
                 success = true;
+            } catch (CommandException e) {
+                errorType = e.getErrorCode() != null ? e.getErrorCode() : "command_exception";
+                throw e;
+            } catch (Exception e) {
+                errorType = "unexpected_exception";
+                throw e;
             } finally {
-                // Log execution metrics
-                long executionTimeMs = (System.nanoTime() - startTime) / 1_000_000;
-                context.logCommandExecution(subCommandName, executionTimeMs, success);
+                // Record performance metrics
+                performanceMonitor.recordExecution(perfContext, success, errorType);
             }
 
         } catch (CommandException e) {
-            errorHandler.handleCommandException(sender, e, subCommandName);
+            errorHandler.handleCommandException(sender, e, subCommandName, args);
         } catch (Exception e) {
             errorHandler.handleUnexpectedException(sender, e, subCommandName, args);
         }
@@ -229,18 +258,42 @@ public abstract class BaseWandCommand implements CommandExecutor, TabCompleter {
         ensureInitialized();
 
         if (args.length == 1) {
-            // Complete subcommand names
+            // Complete subcommand names with smart completion
             String partial = args[0].toLowerCase();
-            return subcommands.keySet().stream().filter(name -> name.startsWith(partial))
-                    .filter(name -> {
-                        SubCommand sub = subcommands.get(name);
-                        String perm = sub.getPermission();
-                        return perm == null || plugin.getPermissionService().has(sender, perm);
-                    }).collect(Collectors.toList());
+            
+            // Check cache first
+            List<String> cached = commandCache.getCachedTabCompletion(partial, args);
+            if (cached != null) {
+                return cached;
+            }
+            
+            List<String> completions = subcommands.keySet().stream()
+                .filter(name -> {
+                    SubCommand sub = subcommands.get(name);
+                    String perm = sub.getPermission();
+                    // Use cached permission if available
+                    Boolean cachedPerm = commandCache.getCachedPermission(sender, perm);
+                    if (cachedPerm != null) {
+                        return perm == null || cachedPerm;
+                    } else {
+                        boolean hasPermission = perm == null || plugin.getPermissionService().has(sender, perm);
+                        if (perm != null) {
+                            commandCache.cachePermission(sender, perm, hasPermission);
+                        }
+                        return hasPermission;
+                    }
+                })
+                .filter(name -> name.toLowerCase().startsWith(partial))
+                .sorted()
+                .collect(Collectors.toList());
+                
+            // Cache the results
+            commandCache.cacheTabCompletion(partial, args, completions);
+            return completions;
         }
 
         if (args.length > 1) {
-            // Delegate to subcommand
+            // Delegate to smart tab completer
             String subCommandName = args[0].toLowerCase();
             SubCommand subCommand = subcommands.get(subCommandName);
 
@@ -250,9 +303,21 @@ public abstract class BaseWandCommand implements CommandExecutor, TabCompleter {
 
             if (subCommand != null) {
                 try {
-                    CommandContext context = createContext(sender, args);
-                    return subCommand.tabComplete(context);
+                    // Use smart tab completion
+                    String currentArg = args.length > 0 ? args[args.length - 1] : "";
+                    List<String> smartCompletions = smartTabCompleter.getSmartCompletions(
+                        sender, subCommand, args, currentArg);
+                    
+                    // Fall back to subcommand's own completion if smart completer returns nothing
+                    if (smartCompletions.isEmpty()) {
+                        CommandContext context = createContext(sender, args);
+                        return subCommand.tabComplete(context);
+                    }
+                    
+                    return smartCompletions;
                 } catch (Exception e) {
+                    // Log the error but don't break tab completion
+                    plugin.getLogger().warning("Tab completion error for " + subCommandName + ": " + e.getMessage());
                     return List.of();
                 }
             }
@@ -268,8 +333,15 @@ public abstract class BaseWandCommand implements CommandExecutor, TabCompleter {
     }
 
     private void sendUsage(CommandSender sender) {
-        Component helpMessage = CommandHelpProvider.generateHelpOverview(sender, subcommands,
-                getPermissionPrefix(), getWandDisplayName());
+        Component helpMessage = InteractiveHelpProvider.generateInteractiveHelp(
+            sender, 
+            subcommands, 
+            aliases,
+            getPermissionPrefix(), 
+            getWandDisplayName(),
+            1, // Default to page 1
+            "" // No search term
+        );
         sender.sendMessage(helpMessage);
     }
 
@@ -298,6 +370,79 @@ public abstract class BaseWandCommand implements CommandExecutor, TabCompleter {
      */
     public CommandErrorHandler getErrorHandler() {
         return errorHandler;
+    }
+    
+    /**
+     * Gets the command cache for performance optimization.
+     * 
+     * @return The command cache
+     */
+    public CommandCache getCommandCache() {
+        return commandCache;
+    }
+    
+    /**
+     * Gets the performance monitor for tracking command metrics.
+     * 
+     * @return The performance monitor
+     */
+    public CommandPerformanceMonitor getPerformanceMonitor() {
+        return performanceMonitor;
+    }
+    
+    /**
+     * Gets the smart tab completer for enhanced completions.
+     * 
+     * @return The smart tab completer
+     */
+    public SmartTabCompleter getSmartTabCompleter() {
+        return smartTabCompleter;
+    }
+    
+    /**
+     * Invalidates all caches. Useful when permissions change or plugin reloads.
+     */
+    public void invalidateCaches() {
+        commandCache.invalidateAll();
+    }
+    
+    /**
+     * Invalidates cached permissions for a specific sender.
+     * 
+     * @param sender The command sender
+     */
+    public void invalidatePermissions(@NotNull CommandSender sender) {
+        commandCache.invalidatePermissions(sender);
+    }
+    
+    /**
+     * Gets performance statistics for command execution.
+     * 
+     * @return Performance report as formatted string
+     */
+    @NotNull
+    public String getPerformanceReport() {
+        return performanceMonitor.generatePerformanceReport();
+    }
+    
+    /**
+     * Gets cache statistics for monitoring cache effectiveness.
+     * 
+     * @return Cache statistics
+     */
+    @NotNull
+    public CommandCache.CacheStats getCacheStats() {
+        return commandCache.getStats();
+    }
+    
+    /**
+     * Records a user's tab completion selection for learning.
+     * 
+     * @param playerName The player name
+     * @param selection The completion they selected
+     */
+    public void recordTabCompletionSelection(@NotNull String playerName, @NotNull String selection) {
+        smartTabCompleter.recordUserSelection(playerName, selection);
     }
 }
 

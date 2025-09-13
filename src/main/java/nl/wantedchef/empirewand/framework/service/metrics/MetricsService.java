@@ -291,6 +291,25 @@ public class MetricsService {
     }
 
     /**
+     * Records system metrics for monitoring purposes.
+     *
+     * @param totalSpellsCast Total number of spells cast
+     * @param totalSpellsFailed Total number of spells that failed
+     */
+    public void recordSystemMetrics(long totalSpellsCast, long totalSpellsFailed) {
+        try {
+            if (isEnabled()) {
+                // These could be sent to external monitoring systems
+                // For now, we just update our internal counters
+                getLoggerSafely().info("System metrics - Spells cast: " + totalSpellsCast + 
+                                     ", Failed: " + totalSpellsFailed);
+            }
+        } catch (Exception e) {
+            getLoggerSafely().log(Level.WARNING, "Error recording system metrics", e);
+        }
+    }
+
+    /**
      * Controleert of de statistiekenverzameling is ingeschakeld.
      *
      * @return {@code true} als statistieken zijn ingeschakeld, anders

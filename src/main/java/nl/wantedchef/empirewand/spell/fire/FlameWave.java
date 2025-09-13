@@ -1,62 +1,58 @@
 package nl.wantedchef.empirewand.spell.fire;
 
 import nl.wantedchef.empirewand.api.EmpireWandAPI;
-import nl.wantedchef.empirewand.api.service.ConfigService;
-import nl.wantedchef.empirewand.spell.PrereqInterface;
-import nl.wantedchef.empirewand.spell.Spell;
-import nl.wantedchef.empirewand.spell.SpellContext;
+import nl.wantedchef.empirewand.common.visual.WaveEffectType;
+import nl.wantedchef.empirewand.common.visual.WaveProjectile;
 import nl.wantedchef.empirewand.spell.SpellType;
-import java.util.ArrayList;
-import java.util.List;
-import org.bukkit.Location;
-import org.bukkit.Particle;
-import org.bukkit.Sound;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
-import org.bukkit.util.Vector;
+import nl.wantedchef.empirewand.spell.enhanced.EnhancedWaveSpell;
+import nl.wantedchef.empirewand.spell.PrereqInterface;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * A spell that unleashes a wave of fire in a cone in front of the caster.
- */
-public class FlameWave extends Spell<Void> {
+import java.time.Duration;
 
-    /**
-     * The builder for the FlameWave spell.
-     */
-    public static class Builder extends Spell.Builder<Void> {
-        /**
-         * Creates a new builder for the FlameWave spell.
-         *
-         * @param api The EmpireWandAPI instance.
-         */
+/**
+ * Enhanced Flame Wave - A spectacular spiral of fire that creates intense visual effects
+ * and ignites the battlefield while dealing high damage to enemies.
+ * 
+ * Features:
+ * - Spiral formation for maximum visual impact and dramatic flair
+ * - Fire effects with ember trails and heat shimmer
+ * - Sets enemies on fire for persistent damage
+ * - Can ignite nearby flammable blocks (respects protection)
+ * - High damage output with moderate piercing
+ * - Intense screen shake for dramatic impact
+ */
+public class FlameWave extends EnhancedWaveSpell {
+
+    public static class Builder extends EnhancedWaveSpell.Builder {
         public Builder(EmpireWandAPI api) {
             super(api);
             this.name = "Flame Wave";
-            this.description = "Unleashes a wave of fire in a cone.";
-            this.cooldown = java.time.Duration.ofSeconds(6);
+            this.description = "Unleashes a devastating spiral of fire that ignites enemies and the battlefield.";
+            this.cooldown = Duration.ofSeconds(16);
             this.spellType = SpellType.FIRE;
+
+            // Configure enhanced wave properties for flame magic
+            this.formation = WaveProjectile.WaveFormation.SPIRAL;
+            this.effectType = WaveEffectType.FLAME;
+            this.speed = 1.3; // Fast and aggressive
+            this.maxDistance = 25.0; // Long range for area control
+            this.projectileCount = 8; // Dense spiral
+            this.damage = 9.0; // High fire damage
+            this.lifetimeTicks = 120; // 6 seconds for full spiral
+            this.hitRadius = 3.0; // Large blast radius
+            this.pierceEntities = true; // Pierce through enemies
+            this.maxPierces = 1; // Moderate piercing
+            this.particleDensity = 1.4; // Rich fire effects
+            this.enableScreenShake = true; // Dramatic explosions
+            this.screenShakeIntensity = 0.8; // Intense shake for fire magic
         }
 
         @Override
-        @NotNull
-        public Spell<Void> build() {
+        public @NotNull EnhancedWaveSpell build() {
             return new FlameWave(this);
         }
     }
-
-    private static final double DEFAULT_RANGE = 6.0;
-    private static final double DEFAULT_CONE_ANGLE_DEGREES = 60.0;
-    private static final double DEFAULT_DAMAGE = 4.0;
-    private static final int DEFAULT_FIRE_TICKS = 80;
-    private static final int FLAME_PARTICLE_COUNT = 10;
-    private static final double FLAME_PARTICLE_OFFSET = 0.2;
-    private static final double FLAME_PARTICLE_SPEED = 0.05;
-    private static final int SMOKE_PARTICLE_COUNT = 5;
-    private static final double SMOKE_PARTICLE_OFFSET = 0.2;
-    private static final double SMOKE_PARTICLE_SPEED = 0.1;
-    private static final float SOUND_VOLUME = 0.8f;
-    private static final float SOUND_PITCH = 0.8f;
 
     private FlameWave(Builder builder) {
         super(builder);
@@ -70,71 +66,5 @@ public class FlameWave extends Spell<Void> {
     @Override
     public PrereqInterface prereq() {
         return new PrereqInterface.NonePrereq();
-    }
-
-    @Override
-    protected Void executeSpell(SpellContext context) {
-        Player player = context.caster();
-
-        double range = spellConfig.getDouble("values.range", DEFAULT_RANGE);
-        double coneAngle = spellConfig.getDouble("values.cone-angle-degrees", DEFAULT_CONE_ANGLE_DEGREES);
-        double damage = spellConfig.getDouble("values.damage", DEFAULT_DAMAGE);
-        int fireTicks = spellConfig.getInt("values.fire-ticks", DEFAULT_FIRE_TICKS);
-        boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig()
-                .getBoolean("features.friendly-fire", false);
-
-        List<LivingEntity> targets = getEntitiesInCone(player, range, coneAngle);
-
-        for (LivingEntity target : targets) {
-            if (target.equals(player) && !friendlyFire)
-                continue;
-            if (target.isDead() || !target.isValid())
-                continue;
-
-            target.damage(damage, player);
-            target.setFireTicks(fireTicks);
-
-            context.fx().spawnParticles(target.getLocation(), Particle.FLAME, FLAME_PARTICLE_COUNT,
-                    FLAME_PARTICLE_OFFSET, FLAME_PARTICLE_OFFSET, FLAME_PARTICLE_OFFSET, FLAME_PARTICLE_SPEED);
-            context.fx().spawnParticles(target.getLocation(), Particle.FLAME, FLAME_PARTICLE_COUNT,
-                    FLAME_PARTICLE_OFFSET, FLAME_PARTICLE_OFFSET, FLAME_PARTICLE_OFFSET, FLAME_PARTICLE_SPEED);
-            context.fx().spawnParticles(target.getLocation(), Particle.SMOKE, SMOKE_PARTICLE_COUNT,
-                    SMOKE_PARTICLE_OFFSET, SMOKE_PARTICLE_OFFSET, SMOKE_PARTICLE_OFFSET, SMOKE_PARTICLE_SPEED);
-        }
-
-        context.fx().playSound(player, Sound.ENTITY_BLAZE_SHOOT, SOUND_VOLUME, SOUND_PITCH);
-        return null;
-    }
-
-    @Override
-    protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
-        // Instant effect.
-    }
-
-    /**
-     * Gets all living entities within a cone in front of the player.
-     *
-     * @param player    The player.
-     * @param range     The range of the cone.
-     * @param coneAngle The angle of the cone in degrees.
-     * @return A list of living entities within the cone.
-     */
-    private List<LivingEntity> getEntitiesInCone(Player player, double range, double coneAngle) {
-        List<LivingEntity> targets = new ArrayList<>();
-        Location playerLoc = player.getEyeLocation();
-        Vector playerDir = playerLoc.getDirection().normalize();
-
-        for (var entity : player.getWorld().getNearbyEntities(playerLoc, range, range, range)) {
-            if (entity instanceof LivingEntity living) {
-                Vector toEntity = living.getEyeLocation().toVector().subtract(playerLoc.toVector());
-                if (toEntity.lengthSquared() > range * range)
-                    continue;
-
-                if (playerDir.angle(toEntity.normalize()) < Math.toRadians(coneAngle / 2.0)) {
-                    targets.add(living);
-                }
-            }
-        }
-        return targets;
     }
 }

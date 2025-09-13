@@ -7,6 +7,7 @@ import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.spell.ProjectileSpell;
 import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
+import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
@@ -25,6 +26,7 @@ public class LittleSpark extends ProjectileSpell<Snowball> {
             this.description = "Fires a small, fast spark.";
             this.cooldown = java.time.Duration.ofMillis(500);
             this.spellType = SpellType.LIGHTNING;
+            this.speed = 1.8; // Set speed to 1.8 as requested
             this.trailParticle = null; // Custom trail
             this.hitSound = Sound.ENTITY_BLAZE_HURT;
         }
@@ -54,6 +56,34 @@ public class LittleSpark extends ProjectileSpell<Snowball> {
     protected void launchProjectile(@NotNull SpellContext context) {
         super.launchProjectile(context);
         context.fx().playSound(context.caster(), Sound.ENTITY_BLAZE_SHOOT, 0.5f, 1.5f);
+        
+        // Add launch effect to make the snowball more noticeable
+        Location launchLoc = context.caster().getEyeLocation();
+        launchLoc.getWorld().spawnParticle(Particle.FLAME, launchLoc, 10, 0.2, 0.2, 0.2, 0.1);
+        launchLoc.getWorld().spawnParticle(Particle.CRIT, launchLoc, 5, 0.1, 0.1, 0.1, 0.05);
+    }
+    
+    @Override
+    protected void startTrailEffect(@NotNull Snowball projectile) {
+        // Custom firework spark trail
+        new org.bukkit.scheduler.BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!projectile.isValid() || projectile.isDead()) {
+                    this.cancel();
+                    return;
+                }
+                
+                try {
+                    Location loc = projectile.getLocation();
+                    // Create firework spark-like trail
+                    projectile.getWorld().spawnParticle(Particle.FLAME, loc, 3, 0.1, 0.1, 0.1, 0.02);
+                    projectile.getWorld().spawnParticle(Particle.CRIT, loc, 2, 0.05, 0.05, 0.05, 0.01);
+                } catch (Exception e) {
+                    this.cancel();
+                }
+            }
+        }.runTaskTimer(projectile.getServer().getPluginManager().getPlugin("EmpireWand"), 0L, 1L);
     }
 
     @Override

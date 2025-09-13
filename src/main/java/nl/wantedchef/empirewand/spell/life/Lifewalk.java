@@ -7,11 +7,12 @@ import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
@@ -89,9 +90,28 @@ public class Lifewalk extends Spell<Player> {
                 
                 Location loc = player.getLocation();
                 
-                // Nature particles
-                loc.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, loc, 5, 0.5, 0.1, 0.5, 0);
-                loc.getWorld().spawnParticle(Particle.SPORE_BLOSSOM_AIR, loc, 3, 0.3, 0.1, 0.3, 0);
+                // Spawn fake flower drops
+                if (random.nextInt(3) == 0) { // 33% chance each tick
+                    Material flowerType = FLOWERS[random.nextInt(FLOWERS.length)];
+                    ItemStack flowerItem = new ItemStack(flowerType);
+                    
+                    // Spawn the item slightly above the ground
+                    Location dropLoc = loc.clone().add(
+                        (random.nextDouble() - 0.5) * 2, // Random X offset
+                        0.5, // Above ground
+                        (random.nextDouble() - 0.5) * 2  // Random Z offset
+                    );
+                    
+                    Item droppedItem = loc.getWorld().dropItem(dropLoc, flowerItem);
+                    droppedItem.setPickupDelay(Integer.MAX_VALUE); // Make it unpickable
+                    
+                    // Remove the item after 3 seconds
+                    context.plugin().getTaskManager().runTaskLater(() -> {
+                        if (droppedItem.isValid()) {
+                            droppedItem.remove();
+                        }
+                    }, 60L); // 60 ticks = 3 seconds
+                }
                 
                 // Grow plants around player
                 for (double x = -radius; x <= radius; x += 0.5) {

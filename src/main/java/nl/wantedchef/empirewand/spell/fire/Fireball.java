@@ -156,6 +156,14 @@ public class Fireball extends ProjectileSpell<org.bukkit.entity.Fireball> {
             }
             event.setCancelled(true); // Cancel the vanilla explosion
         }
+        
+        // Self-explosion effect at caster location
+        Player caster = context.caster();
+        Location casterLoc = caster.getLocation();
+        casterLoc.getWorld().createExplosion(casterLoc, 2.0f, false, false); // Small explosion at caster
+        casterLoc.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, casterLoc, 1, 0, 0, 0, 0);
+        casterLoc.getWorld().spawnParticle(Particle.FLAME, casterLoc, 30, 1.0, 1.0, 1.0, 0.1);
+        casterLoc.getWorld().playSound(casterLoc, Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 0.8f);
     }
 
 }

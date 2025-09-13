@@ -8,6 +8,7 @@ import nl.wantedchef.empirewand.spell.SpellContext;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
+import org.bukkit.metadata.MetadataValue;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerAnimationEvent;
 import org.bukkit.event.player.PlayerAnimationType;
@@ -46,7 +47,7 @@ public final class WandSwingListener implements Listener {
         // If Interact already processed a wand click very recently, skip to avoid double-cast
         if (player.hasMetadata(META_LAST_WAND_CLICK_TICK)) {
             long last = player.getMetadata(META_LAST_WAND_CLICK_TICK).stream()
-                    .findFirst().map(m -> m.asLong()).orElse(0L);
+                    .findFirst().map(MetadataValue::asLong).orElse(0L);
             if (now - last <= 2) return; // within ~2 ticks, Interact took it
         }
 

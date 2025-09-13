@@ -248,6 +248,9 @@ public class EarthQuake extends Spell<Void> {
         final double leapFwd = config.leapForward;
         final double leapUp = config.leapUp; // ~12–15 block high
 
+        // Store launch location for earthquake center
+        final Location launchLocation = location.clone();
+
         // Launch in look direction
         Vector dir = location.getDirection().normalize();
         Vector launch = dir.multiply(leapFwd);
@@ -279,11 +282,8 @@ public class EarthQuake extends Spell<Void> {
                 }
 
                 if (leftGround && isGrounded(caster)) {
-                    Location impact = caster.getLocation();
-
-                    // Small correction so player lands just outside the crater:
-                    // move the crater center point slightly behind the player.
-                    Location center = impact.clone().subtract(dir.clone().setY(0).normalize().multiply(2.0));
+                    // Use launch location as earthquake center (not impact location)
+                    Location center = launchLocation.clone();
 
                     quakeSmash(center, caster, radius, minDepth, maxDepth, kbOut, kbUp, rng);
                     cancel();
@@ -367,7 +367,13 @@ public class EarthQuake extends Spell<Void> {
                             BlockData data = b.getBlockData();
 
                             // Outward velocity + slight random lift
-                            Vector out = new Vector(x, 0, z).normalize();
+                            Vector out = new Vector(x, 0, z);
+                            if (out.lengthSquared() > 0) {
+                                out = out.normalize();
+                            } else {
+                                // If at center, use random direction
+                                out = new Vector(rng.nextDouble() - 0.5, 0, rng.nextDouble() - 0.5).normalize();
+                            }
                             double speed = 0.25 + rng.nextDouble() * 0.45; // 0.25..0.7
                             Vector vel = out.multiply(speed).add(new Vector(0, 0.25 + rng.nextDouble() * 0.4, 0));
 

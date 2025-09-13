@@ -54,10 +54,16 @@ public class MagicMissile extends Spell<Void> {
         int missiles = spellConfig.getInt("values.missile-count", 3);
         int delay = spellConfig.getInt("values.delay-ticks", 7);
         boolean requiresLos = spellConfig.getBoolean("flags.requires-los", true);
+        int visualRange = spellConfig.getInt("values.visual-range", 12);
 
         Entity lookedAt = player.getTargetEntity(20);
         if (!(lookedAt instanceof LivingEntity target) || target.isDead() || !target.isValid()) {
-            context.fx().fizzle(player);
+            // No valid target: just show a forward particle beam (cosmetic only)
+            var eye = player.getEyeLocation();
+            var end = eye.clone().add(eye.getDirection().normalize().multiply(visualRange));
+            context.fx().trail(eye, end, Particle.CRIT, 2);
+            context.fx().trail(eye, end, Particle.END_ROD, 1);
+            context.fx().playSound(player, Sound.ENTITY_ILLUSIONER_CAST_SPELL, 0.9f, 1.4f);
             return null;
         }
 

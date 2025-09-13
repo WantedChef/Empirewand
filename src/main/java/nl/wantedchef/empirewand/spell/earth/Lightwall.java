@@ -22,7 +22,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * An earth spell that creates a temporary wall of light that knocks back entities.
@@ -280,7 +279,7 @@ public class Lightwall extends Spell<Void> {
          */
         @Override
         public void run() {
-            if (wallStands.isEmpty() || !wallStands.get(0).isValid()) {
+            if (wallStands.isEmpty() || !wallStands.getFirst().isValid()) {
                 this.cancel();
                 return;
             }
@@ -314,7 +313,7 @@ public class Lightwall extends Spell<Void> {
             });
 
             if (System.currentTimeMillis() % 1000 < 50) { // Roughly every second
-                ArmorStand firstStand = wallStands.get(0);
+                ArmorStand firstStand = wallStands.getFirst();
                 Location center = firstStand.getLocation(); // Approximate center
                 Vector direction = firstStand.getLocation().getDirection();
                 if (direction != null) {

@@ -5,6 +5,7 @@ import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -87,10 +88,13 @@ public class EmpireComet extends Spell<Void> {
         var blockLifetime = config.getInt("values.block_lifetime_ticks", DEFAULT_BLOCK_LIFETIME_TICKS);
         var burstInterval = config.getInt("values.burst_interval_ticks", DEFAULT_BURST_INTERVAL_TICKS);
 
-        var comet = caster.launchProjectile(LargeFireball.class);
+        // Spawn comet above caster and make it fall straight down
+        Location spawnLocation = caster.getLocation().clone().add(0, 8, 0); // 8 blocks above caster
+        var comet = spawnLocation.getWorld().spawn(spawnLocation, LargeFireball.class);
         comet.setYield((float) explosionYield);
         comet.setIsIncendiary(false);
-        comet.setDirection(caster.getEyeLocation().getDirection().multiply(speed));
+        comet.setDirection(new org.bukkit.util.Vector(0, -speed, 0)); // Straight down with configurable speed
+        comet.setShooter(caster);
 
         context.fx().spawnParticles(caster.getEyeLocation(), Particle.FLAME, LAUNCH_PARTICLE_COUNT, LAUNCH_PARTICLE_OFFSET, LAUNCH_PARTICLE_OFFSET, LAUNCH_PARTICLE_OFFSET, LAUNCH_PARTICLE_SPEED);
         context.fx().playSound(caster.getLocation(), Sound.ENTITY_BLAZE_SHOOT, LAUNCH_SOUND_VOLUME, LAUNCH_SOUND_PITCH);

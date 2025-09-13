@@ -55,13 +55,17 @@ class ConfigServiceCachingTest {
             when(config.getString("messages." + key, "")).thenReturn(value);
             String result1 = configService.getMessage(key);
             assertEquals(value, result1);
-            verify(config, atLeastOnce()).getString("messages." + key, "");
+            // Verify config.getString was called exactly once
+            verify(config).getString("messages." + key, "");
+            
+            // Clear the verification to avoid counting previous calls
+            clearInvocations(config);
             
             // Second call - should use cache
             String result2 = configService.getMessage(key);
             assertEquals(value, result2);
-            // Verify config.getString was called at least once (may be called more during initialization)
-            verify(config, atLeastOnce()).getString("messages." + key, "");
+            // Verify config.getString was NOT called again (cached)
+            verify(config, never()).getString("messages." + key, "");
         }
         
         @Test
@@ -74,13 +78,17 @@ class ConfigServiceCachingTest {
             when(config.getBoolean("features." + key, false)).thenReturn(value);
             boolean result1 = configService.getFeatureFlag(key);
             assertEquals(value, result1);
-            verify(config, atLeastOnce()).getBoolean("features." + key, false);
+            // Verify config.getBoolean was called exactly once
+            verify(config).getBoolean("features." + key, false);
+            
+            // Clear the verification to avoid counting previous calls
+            clearInvocations(config);
             
             // Second call - should use cache
             boolean result2 = configService.getFeatureFlag(key);
             assertEquals(value, result2);
-            // Verify config.getBoolean was called at least once (may be called more during initialization)
-            verify(config, atLeastOnce()).getBoolean("features." + key, false);
+            // Verify config.getBoolean was NOT called again (cached)
+            verify(config, never()).getBoolean("features." + key, false);
         }
         
         @Test
@@ -92,13 +100,17 @@ class ConfigServiceCachingTest {
             when(config.getLong("cooldowns.default", 500)).thenReturn(value);
             long result1 = configService.getDefaultCooldown();
             assertEquals(value, result1);
-            verify(config, atLeastOnce()).getLong("cooldowns.default", 500);
+            // Verify config.getLong was called exactly once
+            verify(config).getLong("cooldowns.default", 500);
+            
+            // Clear the verification to avoid counting previous calls
+            clearInvocations(config);
             
             // Second call - should use cache
             long result2 = configService.getDefaultCooldown();
             assertEquals(value, result2);
-            // Verify config.getLong was called at least once (may be called more during initialization)
-            verify(config, atLeastOnce()).getLong("cooldowns.default", 500);
+            // Verify config.getLong was NOT called again (cached)
+            verify(config, never()).getLong("cooldowns.default", 500);
         }
         
         @Test
@@ -111,13 +123,17 @@ class ConfigServiceCachingTest {
             when(config.getStringList("categories." + categoryName + ".spells")).thenReturn(spells);
             List<String> result1 = configService.getCategorySpells(categoryName);
             assertEquals(spells, result1);
-            verify(config, atLeastOnce()).getStringList("categories." + categoryName + ".spells");
+            // Verify config.getStringList was called exactly once
+            verify(config).getStringList("categories." + categoryName + ".spells");
+            
+            // Clear the verification to avoid counting previous calls
+            clearInvocations(config);
             
             // Second call - should use cache
             List<String> result2 = configService.getCategorySpells(categoryName);
             assertEquals(spells, result2);
-            // Verify config.getStringList was called at least once (may be called more during initialization)
-            verify(config, atLeastOnce()).getStringList("categories." + categoryName + ".spells");
+            // Verify config.getStringList was NOT called again (cached)
+            verify(config, never()).getStringList("categories." + categoryName + ".spells");
         }
         
         @Test
@@ -151,18 +167,31 @@ class ConfigServiceCachingTest {
         @Test
         @DisplayName("Should clear caches on config reload")
         void shouldClearCachesOnConfigReload() {
-            // Cache some values
-            when(config.getString("messages.test", "")).thenReturn("test");
-            configService.getMessage("test");
+            String key = "test.message";
+            String value1 = "test";
+            String value2 = "test2";
+            
+            // Cache a value
+            when(config.getString("messages." + key, "")).thenReturn(value1);
+            String result1 = configService.getMessage(key);
+            assertEquals(value1, result1);
+            // Verify config.getString was called exactly once
+            verify(config).getString("messages." + key, "");
+            
+            // Clear the verification to avoid counting previous calls
+            clearInvocations(config);
+            
+            // Change the value in the config
+            when(config.getString("messages." + key, "")).thenReturn(value2);
             
             // Reload configs - this should clear caches
             configService.loadConfigs();
             
-            // Access cached value again - cache should be cleared
-            configService.getMessage("test");
-            // If caching is implemented, we might expect getString to be called again
-            // For now, we're just testing that loadConfigs doesn't throw an exception
-            assertDoesNotThrow(() -> configService.loadConfigs());
+            // Access cached value again - cache should be cleared, so config should be called again
+            String result2 = configService.getMessage(key);
+            assertEquals(value2, result2);
+            // Verify config.getString was called again after reload
+            verify(config).getString("messages." + key, "");
         }
     }
 }

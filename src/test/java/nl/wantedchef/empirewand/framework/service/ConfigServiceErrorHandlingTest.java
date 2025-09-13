@@ -1,6 +1,6 @@
 package nl.wantedchef.empirewand.framework.service;
 
-import nl.wantedchef.empirewand.core.config.ReadOnlyConfig;
+
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,12 +42,26 @@ class ConfigServiceErrorHandlingTest {
     @DisplayName("Constructor Error Handling Tests")
     class ConstructorErrorHandlingTests {
         
-            @Test
-    @DisplayName("Test ConfigService handles exceptions in constructor")
-    void testConfigServiceHandlesExceptionsInConstructor() {
-        // Test that we can create a ConfigService instance
-        assertDoesNotThrow(() -> new ConfigService(plugin));
-    }
+        @Test
+        @DisplayName("Test ConfigService handles exceptions in constructor")
+        void testConfigServiceHandlesExceptionsInConstructor() {
+            // This test needs to be isolated from the setUp method
+            // We need to create a new instance with proper mocking
+            Plugin plugin = mock(Plugin.class);
+            FileConfiguration config = mock(FileConfiguration.class);
+            
+            // Mock plugin methods that will be called during constructor
+            when(plugin.getLogger()).thenReturn(mock(Logger.class));
+            when(plugin.getConfig()).thenReturn(config);
+            when(plugin.getDataFolder()).thenReturn(new File("test"));
+            
+            // Mock methods that will be called during loadConfigs
+            doNothing().when(plugin).saveDefaultConfig();
+            doNothing().when(plugin).reloadConfig();
+            
+            // Test that we can create a ConfigService instance
+            assertDoesNotThrow(() -> new ConfigService(plugin));
+        }
     }
 
     @Nested
@@ -58,6 +72,9 @@ class ConfigServiceErrorHandlingTest {
         @DisplayName("Should handle exception in getMessage gracefully")
         void shouldHandleExceptionInGetMessageGracefully() {
             String key = "test.message";
+            
+            // Clear any previous invocations
+            clearInvocations(config);
             
             // Simulate exception
             when(config.getString("messages." + key, "")).thenThrow(new RuntimeException("Test exception"));
@@ -70,6 +87,9 @@ class ConfigServiceErrorHandlingTest {
         void shouldHandleExceptionInGetFeatureFlagGracefully() {
             String key = "test.feature";
             
+            // Clear any previous invocations
+            clearInvocations(config);
+            
             // Simulate exception
             when(config.getBoolean("features." + key, false)).thenThrow(new RuntimeException("Test exception"));
             boolean result = configService.getFeatureFlag(key);
@@ -79,6 +99,9 @@ class ConfigServiceErrorHandlingTest {
         @Test
         @DisplayName("Should handle exception in getDefaultCooldown gracefully")
         void shouldHandleExceptionInGetDefaultCooldownGracefully() {
+            // Clear any previous invocations
+            clearInvocations(config);
+            
             // Simulate exception
             when(config.getLong("cooldowns.default", 500)).thenThrow(new RuntimeException("Test exception"));
             long result = configService.getDefaultCooldown();
@@ -90,6 +113,9 @@ class ConfigServiceErrorHandlingTest {
         void shouldHandleExceptionInGetCategorySpellsGracefully() {
             String categoryName = "testCategory";
             
+            // Clear any previous invocations
+            clearInvocations(config);
+            
             // Simulate exception
             when(config.getStringList("categories." + categoryName + ".spells")).thenThrow(new RuntimeException("Test exception"));
             var result = configService.getCategorySpells(categoryName);
@@ -100,6 +126,9 @@ class ConfigServiceErrorHandlingTest {
         @Test
         @DisplayName("Should handle exception in getCategoryNames gracefully")
         void shouldHandleExceptionInGetCategoryNamesGracefully() {
+            // Clear any previous invocations
+            clearInvocations(config);
+            
             // Simulate exception in getting configuration section
             when(config.getConfigurationSection("categories")).thenThrow(new RuntimeException("Test exception"));
             var result = configService.getCategoryNames();

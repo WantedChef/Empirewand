@@ -45,10 +45,40 @@ public class Leap extends Spell<Void> {
     @Override
     protected Void executeSpell(SpellContext context) {
         Player player = context.caster();
+        
+        // Track consecutive leaps (max 3)
+        String leapCountKey = "leap_consecutive_count";
+        int consecutiveLeaps = player.getMetadata(leapCountKey).stream()
+            .filter(meta -> meta.getOwningPlugin() == context.plugin())
+            .mapToInt(meta -> meta.asInt())
+            .findFirst()
+            .orElse(0);
+        
+        if (consecutiveLeaps >= 3) {
+            context.fx().fizzle(player);
+            player.sendMessage("§cYou cannot leap again so soon!");
+            return null;
+        }
+        
         double multiplier = spellConfig.getDouble("values.velocity-multiplier", 1.5);
-        double verticalBoost = spellConfig.getDouble("values.vertical-boost", 0.0);
+        double verticalBoost = spellConfig.getDouble("values.vertical-boost", 1.0);
 
         player.setVelocity(player.getLocation().getDirection().normalize().multiply(multiplier).setY(verticalBoost));
+
+        // Update consecutive leap count
+        player.setMetadata(leapCountKey, new org.bukkit.metadata.FixedMetadataValue(context.plugin(), consecutiveLeaps + 1));
+        
+        // Reset count after 5 seconds
+        context.plugin().getServer().getScheduler().runTaskLater(context.plugin(), () -> {
+            int currentCount = player.getMetadata(leapCountKey).stream()
+                .filter(meta -> meta.getOwningPlugin() == context.plugin())
+                .mapToInt(meta -> meta.asInt())
+                .findFirst()
+                .orElse(0);
+            if (currentCount > 0) {
+                player.setMetadata(leapCountKey, new org.bukkit.metadata.FixedMetadataValue(context.plugin(), currentCount - 1));
+            }
+        }, 100L); // 5 seconds
 
         context.fx().spawnParticles(player.getLocation(), Particle.CLOUD, 16, 0.3, 0.1, 0.3, 0.02);
         context.fx().playSound(player, Sound.ENTITY_RABBIT_JUMP, 0.8f, 1.2f);

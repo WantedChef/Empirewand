@@ -89,6 +89,79 @@ spells:
       velocity-multiplier: 1.5
       vertical-boost: 0.0       # Optional extra lift
 
+  # Toggle Movement Spells
+  angel-wings:
+    display-name: "<#FFD700>Angel Wings"
+    description: "Manifest blazing wings of sacred fire and soar through the heavens with divine flames."
+    type: MOVEMENT
+    cooldown: 5000
+    values:
+      max-duration-ticks: 2400
+      divine-energy-regen: 1.0
+      flight-speed: 1.2
+    flags:
+      toggleable: true
+
+  crystal-glide:
+    display-name: "<#00FFFF>Crystal Glide"
+    description: "Glide through the air with crystalline wings that refract light beautifully."
+    type: MOVEMENT
+    cooldown: 3000
+    values:
+      max-duration-ticks: 1800
+      glide-speed: 1.5
+      crystal-trail-intensity: 2.0
+    flags:
+      toggleable: true
+
+  dragon-fury:
+    display-name: "<#8B0000>Dragon Fury"
+    description: "Channel the fury of dragons to fly with powerful wing beats and fiery breath."
+    type: MOVEMENT
+    cooldown: 6000
+    values:
+      max-duration-ticks: 3000
+      dragon-strength: 2.5
+      fire-damage: 3.0
+    flags:
+      toggleable: true
+
+  phoenix-rise:
+    display-name: "<#FF4500>Phoenix Rise"
+    description: "Rise from the ashes with phoenix wings that grant rebirth and flame immunity."
+    type: MOVEMENT
+    cooldown: 8000
+    values:
+      max-duration-ticks: 3600
+      rebirth-cooldown: 12000
+      flame-immunity: true
+    flags:
+      toggleable: true
+
+  storm-rider:
+    display-name: "<#4169E1>Storm Rider"
+    description: "Ride the storm winds with lightning-infused wings that control weather."
+    type: MOVEMENT
+    cooldown: 7000
+    values:
+      max-duration-ticks: 2800
+      lightning-strikes: 3
+      wind-control: true
+    flags:
+      toggleable: true
+
+  void-walk:
+    display-name: "<#800080>Void Walk"
+    description: "Walk through the void with shadow wings that allow teleportation and invisibility."
+    type: MOVEMENT
+    cooldown: 10000
+    values:
+      max-duration-ticks: 2000
+      teleport-range: 15.0
+      invisibility-duration: 100
+    flags:
+      toggleable: true
+
   heal:
     display-name: "<#ADFF2F>Heal"
     description: "Restores your health instantly"
@@ -199,11 +272,115 @@ spells:
     display-name: "<#00CED1>Teleport"
     description: "Instantly teleports you to your target location within line of sight"
     type: MOVEMENT
-    cooldown: 2000
+    cooldown: 3000
     values:
-      range: 15.0
+      range: 25.0
+
+  # ===== ADVANCED WAVE SPELLS =====
+  # Spectacular projectile-based wave spells with sophisticated 3D particle effects
+  
+  blood-wave:
+    display-name: "<#8B0000>Blood Wave"
+    description: "Unleashes a wave of crimson projectiles that drain life from enemies"
+    type: DARK
+    cooldown: 8000
+    values:
+      damage: 6.0               # Base damage per projectile
+      range: 25.0               # Maximum travel distance
+      projectile-count: 6       # Number of projectiles in formation
+      formation-radius: 1.8     # Radius of projectile formation
+      speed: 1.2                # Projectile travel speed
+    fx:
+      # Crimson particle trails with blood drip effects
+      core-particles: "DUST"    # Deep red core particles
+      trail-particles: "REDSTONE" # Blood trail particles
+      ambient-particles: "DUST" # Dark crimson ambient
+      impact-sound: "ENTITY_PLAYER_HURT"
+      cast-sound: "ENTITY_ZOMBIE_VILLAGER_CONVERTED"
+      travel-sound: "BLOCK_HONEY_BLOCK_BREAK"
     flags:
-      requires-los: true
+      life-drain: true          # Heals caster for 30% of damage dealt
+      intimidating: true        # Enhanced visual/audio effects
+  
+  poison-wave:
+    display-name: "<#32CD32>Poison Wave"
+    description: "Releases a toxic wave that creates lingering poison clouds"
+    type: DARK
+    cooldown: 10000
+    values:
+      damage: 4.0               # Base damage per projectile
+      range: 28.0               # Maximum travel distance
+      projectile-count: 8       # Number of projectiles in formation
+      formation-radius: 2.2     # Radius of projectile formation
+      speed: 1.0                # Projectile travel speed
+      poison-duration-ticks: 160 # Poison effect duration (8 seconds)
+      nausea-duration-ticks: 100 # Nausea effect duration (5 seconds)
+    fx:
+      # Toxic green particles with bubbling effects
+      core-particles: "DUST"    # Toxic green core
+      trail-particles: "VILLAGER_HAPPY" # Bubbling poison trail
+      ambient-particles: "DUST" # Sickly green mist
+      impact-sound: "ENTITY_WITCH_HURT"
+      cast-sound: "ENTITY_WITCH_AMBIENT"
+      travel-sound: "BLOCK_BUBBLE_COLUMN_BUBBLE_POP"
+    flags:
+      area-denial: true         # Creates lingering poison clouds
+      expanding-formation: true # Uses expanding arc pattern
+      toxic-effects: true       # Applies poison, nausea, weakness
+
+  flame-wave-enhanced:
+    display-name: "<#FF4500>Enhanced Flame Wave"
+    description: "Unleashes a blazing spiral of fire that ignites everything in its path"
+    type: FIRE
+    cooldown: 12000
+    values:
+      damage: 7.0               # Base damage per projectile
+      range: 30.0               # Maximum travel distance
+      projectile-count: 10      # Number of projectiles in formation
+      formation-radius: 2.5     # Radius of projectile formation
+      speed: 1.8                # Projectile travel speed
+      fire-ticks: 100           # Fire duration on enemies (5 seconds)
+      ignite-blocks: true       # Whether to ignite flammable blocks
+    fx:
+      # Intense fire particles with ember trails
+      core-particles: "FLAME"   # Intense fire core
+      trail-particles: "SMOKE"  # Ember trails with smoke
+      ambient-particles: "LAVA" # Floating fire sparks
+      impact-sound: "ENTITY_GENERIC_BURN"
+      cast-sound: "ENTITY_BLAZE_SHOOT"
+      travel-sound: "BLOCK_FIRE_AMBIENT"
+    flags:
+      spiral-formation: true    # Uses spiral wave pattern
+      fire-spread: true         # Creates fire on impact
+      heat-shimmer: true        # Enhanced visual effects
+      explosive-impact: true    # Multi-layered explosion effects
+
+  ice-wave:
+    display-name: "<#87CEEB>Ice Wave"
+    description: "Unleashes a wave of frost that slows enemies and creates ice barriers"
+    type: ICE
+    cooldown: 9000
+    values:
+      damage: 5.0               # Base damage per projectile
+      range: 26.0               # Maximum travel distance
+      projectile-count: 7       # Number of projectiles in formation
+      formation-radius: 2.0     # Radius of projectile formation
+      speed: 1.3                # Projectile travel speed
+      slowness-duration-ticks: 120 # Slowness effect duration (6 seconds)
+      mining-fatigue-duration-ticks: 80 # Mining fatigue duration (4 seconds)
+      create-ice-blocks: true   # Whether to create temporary ice structures
+    fx:
+      # Ice crystal particles with frost effects
+      core-particles: "DUST"    # Ice crystal core
+      trail-particles: "SNOWFLAKE" # Frost trail with snow
+      ambient-particles: "DUST" # Freezing mist
+      impact-sound: "BLOCK_GLASS_PLACE"
+      cast-sound: "BLOCK_GLASS_BREAK"
+      travel-sound: "BLOCK_POWDER_SNOW_STEP"
+    flags:
+      battlefield-control: true # Creates temporary ice structures
+      frost-effects: true       # Applies slowness, mining fatigue, weakness
+      crystalline-visuals: true # Beautiful ice crystal effects
 
   thunder-blast:
     display-name: "<#FFFF00>Thunder Blast"
@@ -818,3 +995,911 @@ spells:
       levitation-duration-ticks: 40
       levitation-amplifier: 0
       damage: 4.0
+
+  # Enhanced Wave Spells - Projectile-based wave magic with spectacular effects
+  bloodwave:
+    display-name: "<#8B0000>Bloodwave"
+    description: "Unleashes a devastating wave of blood projectiles that drain life from enemies"
+    type: LIFE
+    cooldown: 18000 # 18 seconds
+    range: 22.0
+    fx:
+      particles: "REDSTONE"
+      sound: "ENTITY_ZOMBIE_ATTACK_IRON_DOOR"
+    wave:
+      formation: "SINE_WAVE"
+      speed: 1.0
+      max_distance: 22.0
+      projectile_count: 5
+      damage: 8.0 # 4 hearts
+      lifetime_ticks: 110
+      hit_radius: 2.8
+      pierce_entities: true
+      max_pierces: 2
+      particle_density: 1.2
+      enable_screen_shake: true
+      screen_shake_intensity: 0.7
+    values:
+      life_steal_percentage: 30 # Heals caster for 30% of damage dealt
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  poison-wave:
+    display-name: "<#32CD32>Poison Wave"
+    description: "Unleashes a toxic wave that poisons enemies and creates lingering poison clouds"
+    type: POISON
+    cooldown: 14000 # 14 seconds
+    range: 20.0
+    fx:
+      particles: "SLIME"
+      sound: "ENTITY_SPIDER_HURT"
+    wave:
+      formation: "ARC"
+      speed: 1.1
+      max_distance: 20.0
+      projectile_count: 6
+      damage: 6.0 # 3 hearts
+      lifetime_ticks: 100
+      hit_radius: 2.5
+      pierce_entities: true
+      max_pierces: 1
+      particle_density: 1.3
+      enable_screen_shake: false
+      screen_shake_intensity: 0.3
+    values:
+      poison_duration_ticks: 140 # 7 seconds
+      poison_amplifier: 1 # Level 2 poison
+    flags:
+      creates_lingering_cloud: true
+      hit-players: true
+      hit-mobs: true
+
+  flame-wave:
+    display-name: "<#FF4500>Flame Wave"
+    description: "Unleashes a devastating spiral of fire that ignites enemies and the battlefield"
+    type: FIRE
+    cooldown: 16000 # 16 seconds
+    range: 25.0
+    fx:
+      particles: "FLAME"
+      sound: "ENTITY_BLAZE_SHOOT"
+    wave:
+      formation: "SPIRAL"
+      speed: 1.3
+      max_distance: 25.0
+      projectile_count: 8
+      damage: 9.0 # 4.5 hearts
+      lifetime_ticks: 120
+      hit_radius: 3.0
+      pierce_entities: true
+      max_pierces: 1
+      particle_density: 1.4
+      enable_screen_shake: true
+      screen_shake_intensity: 0.8
+    values:
+      fire_duration_ticks: 100 # 5 seconds
+      ignite_blocks: true
+    flags:
+      sets-fire: true
+      hit-players: true
+      hit-mobs: true
+
+  ice-wave:
+    display-name: "<#87CEEB>Ice Wave"
+    description: "Launches a precise line of frost that slows enemies and creates ice structures"
+    type: ICE
+    cooldown: 13000 # 13 seconds
+    range: 28.0
+    fx:
+      particles: "SNOWFLAKE"
+      sound: "BLOCK_GLASS_BREAK"
+    wave:
+      formation: "LINE"
+      speed: 0.9
+      max_distance: 28.0
+      projectile_count: 4
+      damage: 5.0 # 2.5 hearts
+      lifetime_ticks: 140
+      hit_radius: 2.2
+      pierce_entities: true
+      max_pierces: 3
+      particle_density: 1.1
+      enable_screen_shake: false
+      screen_shake_intensity: 0.2
+    values:
+      slowness_duration_ticks: 160 # 8 seconds
+      slowness_amplifier: 2 # Level 3 slowness
+      mining_fatigue_duration_ticks: 120 # 6 seconds
+      creates_ice_structures: true
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  lightning-wave:
+    display-name: "<#FFD700>Lightning Wave"
+    description: "Unleashes an explosive burst of lightning that chains between enemies"
+    type: LIGHTNING
+    cooldown: 15000 # 15 seconds
+    range: 18.0
+    fx:
+      particles: "ELECTRIC_SPARK"
+      sound: "ENTITY_LIGHTNING_BOLT_THUNDER"
+    wave:
+      formation: "BURST"
+      speed: 1.8
+      max_distance: 18.0
+      projectile_count: 10
+      damage: 7.5 # 3.75 hearts
+      lifetime_ticks: 60
+      hit_radius: 2.0
+      pierce_entities: false
+      max_pierces: 0
+      particle_density: 1.5
+      enable_screen_shake: true
+      screen_shake_intensity: 0.9
+    values:
+      chain_range: 5.0
+      max_chain_targets: 3
+      chain_damage_multiplier: 0.4 # Chain targets take 40% damage
+      glowing_duration_ticks: 120 # 6 seconds
+    flags:
+      chains_lightning: true
+      hit-players: true
+      hit-mobs: true
+
+  # Added: Kajarrow (LIGHTNING projectile)
+  kajarrow:
+    display-name: "<#00FFFF>Kajarrow"
+    description: "Fires an electrified arrow that shocks enemies"
+    type: LIGHTNING
+    cooldown: 1500
+    range: 30.0
+    values:
+      damage: 6.0
+      speed: 2.0
+    flags:
+      requires-los: true
+
+  # Added: Shockwave (LIGHTNING wave)
+  shockwave:
+    display-name: "<#1E90FF>Shockwave"
+    description: "Emits a shockwave that damages and knocks back enemies"
+    type: LIGHTNING
+    cooldown: 2500
+    values:
+      damage: 4.0
+      radius: 5.0
+      knockback: 1.2
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  # Added: Kaj Cloud (MOVEMENT, toggle)
+  kaj-cloud:
+    display-name: "<#87CEFA>Kaj Cloud"
+    description: "Summons a cloud to glide upon"
+    type: MOVEMENT
+    cooldown: 0
+    values:
+      tick-interval: 10
+      speed: 0.2
+    flags:
+      toggle: true
+
+  lightning-bolt-refactored:
+    display-name: "<#1E90FF>Lightning Bolt Refactored"
+    description: "Auto-generated defaults for lightning-bolt-refactored"
+    type: LIGHTNING
+    cooldown: 2500
+    values:
+      damage: 4.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  chain-lightning-enhanced:
+    display-name: "<#1E90FF>Chain Lightning Enhanced"
+    description: "Auto-generated defaults for chain-lightning-enhanced"
+    type: LIGHTNING
+    cooldown: 2500
+    values:
+      damage: 4.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  chain-lightning-refactored:
+    display-name: "<#1E90FF>Chain Lightning Refactored"
+    description: "Auto-generated defaults for chain-lightning-refactored"
+    type: LIGHTNING
+    cooldown: 2500
+    values:
+      damage: 4.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  fireball-enhanced:
+    display-name: "<#FF4500>Fireball Enhanced"
+    description: "Auto-generated defaults for fireball-enhanced"
+    type: FIRE
+    cooldown: 3000
+    values:
+      damage: 6.0
+      radius: 3.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+      sets-fire: false
+
+  flamewalk:
+    display-name: "<#FF4500>Flamewalk"
+    description: "Auto-generated defaults for flamewalk"
+    type: FIRE
+    cooldown: 3000
+    values:
+      damage: 6.0
+      radius: 3.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+      sets-fire: false
+
+  flame-wave-refactored:
+    display-name: "<#FF4500>Flame Wave Refactored"
+    description: "Auto-generated defaults for flame-wave-refactored"
+    type: FIRE
+    cooldown: 3000
+    values:
+      damage: 6.0
+      radius: 3.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+      sets-fire: false
+
+  inferno:
+    display-name: "<#FF4500>Inferno"
+    description: "Auto-generated defaults for inferno"
+    type: FIRE
+    cooldown: 3000
+    values:
+      damage: 6.0
+      radius: 3.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+      sets-fire: false
+
+  lava:
+    display-name: "<#FF4500>Lava"
+    description: "Auto-generated defaults for lava"
+    type: FIRE
+    cooldown: 3000
+    values:
+      damage: 6.0
+      radius: 3.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+      sets-fire: false
+
+  magma-wave:
+    display-name: "<#FF4500>Magma Wave"
+    description: "Auto-generated defaults for magma-wave"
+    type: FIRE
+    cooldown: 3000
+    values:
+      damage: 6.0
+      radius: 3.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+      sets-fire: false
+
+  dragons-breath:
+    display-name: "<#FF4500>Dragons Breath"
+    description: "Auto-generated defaults for dragons-breath"
+    type: FIRE
+    cooldown: 3000
+    values:
+      damage: 6.0
+      radius: 3.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+      sets-fire: false
+
+  comet-enhanced:
+    display-name: "<#9932CC>Comet Enhanced"
+    description: "Auto-generated defaults for comet-enhanced"
+    type: PROJECTILE
+    cooldown: 3000
+    range: 25.0
+    values:
+      damage: 6.0
+    flags:
+      requires-los: true
+
+  arctic-blast:
+    display-name: "<#00BFFF>Arctic Blast"
+    description: "Auto-generated defaults for arctic-blast"
+    type: ICE
+    cooldown: 2500
+    values:
+      slow-duration-ticks: 80
+      slow-amplifier: 1
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  freeze-ray:
+    display-name: "<#00BFFF>Freeze Ray"
+    description: "Auto-generated defaults for freeze-ray"
+    type: ICE
+    cooldown: 2500
+    values:
+      slow-duration-ticks: 80
+      slow-amplifier: 1
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  frostwalk:
+    display-name: "<#00BFFF>Frostwalk"
+    description: "Auto-generated defaults for frostwalk"
+    type: ICE
+    cooldown: 2500
+    values:
+      slow-duration-ticks: 80
+      slow-amplifier: 1
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  ice-wall:
+    display-name: "<#00BFFF>Ice Wall"
+    description: "Auto-generated defaults for ice-wall"
+    type: ICE
+    cooldown: 2500
+    values:
+      slow-duration-ticks: 80
+      slow-amplifier: 1
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  petrify:
+    display-name: "<#00BFFF>Petrify"
+    description: "Auto-generated defaults for petrify"
+    type: ICE
+    cooldown: 2500
+    values:
+      slow-duration-ticks: 80
+      slow-amplifier: 1
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  sandblast:
+    display-name: "<#228B22>Sandblast"
+    description: "Auto-generated defaults for sandblast"
+    type: EARTH
+    cooldown: 3000
+    values:
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  wall:
+    display-name: "<#228B22>Wall"
+    description: "Auto-generated defaults for wall"
+    type: EARTH
+    cooldown: 3000
+    values:
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  platform:
+    display-name: "<#228B22>Platform"
+    description: "Auto-generated defaults for platform"
+    type: EARTH
+    cooldown: 3000
+    values:
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  stash:
+    display-name: "<#228B22>Stash"
+    description: "Auto-generated defaults for stash"
+    type: EARTH
+    cooldown: 3000
+    values:
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  tremor:
+    display-name: "<#228B22>Tremor"
+    description: "Auto-generated defaults for tremor"
+    type: EARTH
+    cooldown: 3000
+    values:
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  stone-fortress:
+    display-name: "<#228B22>Stone Fortress"
+    description: "Auto-generated defaults for stone-fortress"
+    type: EARTH
+    cooldown: 3000
+    values:
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  levitate:
+    display-name: "<#00FA9A>Levitate"
+    description: "Auto-generated defaults for levitate"
+    type: MOVEMENT
+    cooldown: 1500
+    values:
+      velocity-multiplier: 1.2
+      vertical-boost: 0.0
+
+  lift:
+    display-name: "<#00FA9A>Lift"
+    description: "Auto-generated defaults for lift"
+    type: MOVEMENT
+    cooldown: 1500
+    values:
+      velocity-multiplier: 1.2
+      vertical-boost: 0.0
+
+  phase:
+    display-name: "<#00FA9A>Phase"
+    description: "Auto-generated defaults for phase"
+    type: MOVEMENT
+    cooldown: 1500
+    values:
+      velocity-multiplier: 1.2
+      vertical-boost: 0.0
+
+  recall:
+    display-name: "<#00FA9A>Recall"
+    description: "Auto-generated defaults for recall"
+    type: MOVEMENT
+    cooldown: 1500
+    values:
+      velocity-multiplier: 1.2
+      vertical-boost: 0.0
+
+  rocket:
+    display-name: "<#00FA9A>Rocket"
+    description: "Auto-generated defaults for rocket"
+    type: MOVEMENT
+    cooldown: 1500
+    values:
+      velocity-multiplier: 1.2
+      vertical-boost: 0.0
+
+  teleport-enhanced:
+    display-name: "<#00FA9A>Teleport Enhanced"
+    description: "Auto-generated defaults for teleport-enhanced"
+    type: MOVEMENT
+    cooldown: 1500
+    values:
+      velocity-multiplier: 1.2
+      vertical-boost: 0.0
+
+  heal-enhanced:
+    display-name: "<#ADFF2F>Heal Enhanced"
+    description: "Auto-generated defaults for heal-enhanced"
+    type: HEAL
+    cooldown: 2000
+    values:
+      heal-amount: 6.0
+
+  divine-heal:
+    display-name: "<#ADFF2F>Divine Heal"
+    description: "Auto-generated defaults for divine-heal"
+    type: HEAL
+    cooldown: 2000
+    values:
+      heal-amount: 6.0
+
+  super-heal:
+    display-name: "<#ADFF2F>Super Heal"
+    description: "Auto-generated defaults for super-heal"
+    type: HEAL
+    cooldown: 2000
+    values:
+      heal-amount: 6.0
+
+  repair:
+    display-name: "<#ADFF2F>Repair"
+    description: "Auto-generated defaults for repair"
+    type: HEAL
+    cooldown: 2000
+    values:
+      heal-amount: 6.0
+
+  restoration:
+    display-name: "<#ADFF2F>Restoration"
+    description: "Auto-generated defaults for restoration"
+    type: HEAL
+    cooldown: 2000
+    values:
+      heal-amount: 6.0
+
+  prayer:
+    display-name: "<#ADFF2F>Prayer"
+    description: "Auto-generated defaults for prayer"
+    type: HEAL
+    cooldown: 2000
+    values:
+      heal-amount: 6.0
+
+  regenerate:
+    display-name: "<#ADFF2F>Regenerate"
+    description: "Auto-generated defaults for regenerate"
+    type: HEAL
+    cooldown: 2000
+    values:
+      heal-amount: 6.0
+
+  life-steal:
+    display-name: "<#AA0000>Life Steal"
+    description: "Auto-generated defaults for life-steal"
+    type: LIFE
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  lifewalk:
+    display-name: "<#AA0000>Lifewalk"
+    description: "Auto-generated defaults for lifewalk"
+    type: LIFE
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  tame:
+    display-name: "<#AA0000>Tame"
+    description: "Auto-generated defaults for tame"
+    type: LIFE
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  nature-growth:
+    display-name: "<#AA0000>Nature Growth"
+    description: "Auto-generated defaults for nature-growth"
+    type: LIFE
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  pollinate:
+    display-name: "<#AA0000>Pollinate"
+    description: "Auto-generated defaults for pollinate"
+    type: LIFE
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  silence:
+    display-name: "<#FFDAB9>Silence"
+    description: "Auto-generated defaults for silence"
+    type: CONTROL
+    cooldown: 4000
+
+  wither:
+    display-name: "<#8B008B>Wither"
+    description: "Auto-generated defaults for wither"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  soulburn:
+    display-name: "<#8B008B>Soulburn"
+    description: "Auto-generated defaults for soulburn"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  kill:
+    display-name: "<#8B008B>Kill"
+    description: "Auto-generated defaults for kill"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  super-kill:
+    display-name: "<#8B008B>Super Kill"
+    description: "Auto-generated defaults for super-kill"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  torture:
+    display-name: "<#8B008B>Torture"
+    description: "Auto-generated defaults for torture"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  vengeance:
+    display-name: "<#8B008B>Vengeance"
+    description: "Auto-generated defaults for vengeance"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  pain:
+    display-name: "<#8B008B>Pain"
+    description: "Auto-generated defaults for pain"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  empower:
+    display-name: "<Empower>"
+    description: "Auto-generated defaults for empower"
+    type: MISC
+    cooldown: 2500
+
+  gate:
+    display-name: "<Gate>"
+    description: "Auto-generated defaults for gate"
+    type: MISC
+    cooldown: 2500
+
+  invulnerability:
+    display-name: "<Invulnerability>"
+    description: "Auto-generated defaults for invulnerability"
+    type: MISC
+    cooldown: 2500
+
+  mana:
+    display-name: "<Mana>"
+    description: "Auto-generated defaults for mana"
+    type: MISC
+    cooldown: 2500
+
+  magic-torch:
+    display-name: "<Magic Torch>"
+    description: "Auto-generated defaults for magic-torch"
+    type: MISC
+    cooldown: 2500
+
+  volley:
+    display-name: "<Volley>"
+    description: "Auto-generated defaults for volley"
+    type: MISC
+    cooldown: 2500
+
+  shuriken:
+    display-name: "<Shuriken>"
+    description: "Auto-generated defaults for shuriken"
+    type: MISC
+    cooldown: 2500
+
+  reflect:
+    display-name: "<Reflect>"
+    description: "Auto-generated defaults for reflect"
+    type: MISC
+    cooldown: 2500
+
+  shell:
+    display-name: "<Shell>"
+    description: "Auto-generated defaults for shell"
+    type: MISC
+    cooldown: 2500
+
+  absorb:
+    display-name: "<Absorb>"
+    description: "Auto-generated defaults for absorb"
+    type: MISC
+    cooldown: 2500
+
+  invincible:
+    display-name: "<Invincible>"
+    description: "Auto-generated defaults for invincible"
+    type: MISC
+    cooldown: 2500
+
+  energy-shield:
+    display-name: "<Energy Shield>"
+    description: "Auto-generated defaults for energy-shield"
+    type: MISC
+    cooldown: 2500
+
+  gravity-well:
+    display-name: "<Gravity Well>"
+    description: "Auto-generated defaults for gravity-well"
+    type: MISC
+    cooldown: 2500
+
+  homing-rockets:
+    display-name: "<#9932CC>Homing Rockets"
+    description: "Auto-generated defaults for homing-rockets"
+    type: PROJECTILE
+    cooldown: 3000
+    range: 25.0
+    values:
+      damage: 6.0
+    flags:
+      requires-los: true
+
+  black-hole:
+    display-name: "<#8B008B>Black Hole"
+    description: "Auto-generated defaults for black-hole"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  time-dilation:
+    display-name: "<#FFDAB9>Time Dilation"
+    description: "Auto-generated defaults for time-dilation"
+    type: CONTROL
+    cooldown: 4000
+
+  temporal-stasis:
+    display-name: "<#FFDAB9>Temporal Stasis"
+    description: "Auto-generated defaults for temporal-stasis"
+    type: CONTROL
+    cooldown: 4000
+
+  void-zone:
+    display-name: "<#8B008B>Void Zone"
+    description: "Auto-generated defaults for void-zone"
+    type: DARK
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 3.5
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  divine-aura:
+    display-name: "<#EE82EE>Divine Aura"
+    description: "Auto-generated defaults for divine-aura"
+    type: AURA
+    cooldown: 0
+    flags:
+      toggle: true
+
+blizzard:
+  values:
+    radius: 25.0
+    damage: 2.5
+    slow-duration-ticks: 80
+    slow-amplifier: 4
+    duration-ticks: 180
+    ice-growth-attempts: 25
+    particle-density: 50
+    wind-force: 1.2
+  flags:
+    create-ice: true
+    pulse-lightning: true
+
+  blizzard-enhanced:
+    display-name: "<#00BFFF>Blizzard Enhanced"
+    description: "Auto-generated defaults for blizzard-enhanced"
+    type: ICE
+    cooldown: 2500
+    values:
+      slow-duration-ticks: 80
+      slow-amplifier: 1
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  meteor-shower:
+    display-name: "<#9932CC>Meteor Shower"
+    description: "Auto-generated defaults for meteor-shower"
+    type: PROJECTILE
+    cooldown: 3000
+    range: 25.0
+    values:
+      damage: 6.0
+    flags:
+      requires-los: true
+
+  meteor-shower-enhanced:
+    display-name: "<#9932CC>Meteor Shower Enhanced"
+    description: "Auto-generated defaults for meteor-shower-enhanced"
+    type: PROJECTILE
+    cooldown: 3000
+    range: 25.0
+    values:
+      damage: 6.0
+    flags:
+      requires-los: true
+
+  summon-swarm:
+    display-name: "<#AA0000>Summon Swarm"
+    description: "Auto-generated defaults for summon-swarm"
+    type: LIFE
+    cooldown: 3000
+    values:
+      damage: 5.0
+      radius: 4.0
+    flags:
+      hit-players: true
+      hit-mobs: true

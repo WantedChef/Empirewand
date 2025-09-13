@@ -74,14 +74,46 @@ public class ChainLightningEnhanced extends Spell<Void> {
         int arcSteps = spellConfig.getInt("values.arc_steps", 16);
         double maxArcLength = spellConfig.getDouble("values.max_arc_length", 20.0);
 
-        var first = player.getTargetEntity((int) range);
-        if (!(first instanceof LivingEntity current) || current.isDead() || !current.isValid()) {
+        LivingEntity firstTarget = null;
+        
+        // Try to find a target entity first
+        var targetEntity = player.getTargetEntity((int) range);
+        if (targetEntity instanceof LivingEntity living && living.isValid() && !living.isDead()) {
+            firstTarget = living;
+        }
+        
+        // If no entity target, try to find entities near the target block
+        if (firstTarget == null) {
+            var targetBlock = player.getTargetBlock(null, (int) range);
+            if (targetBlock != null) {
+                Location blockLoc = targetBlock.getLocation();
+                // Find nearest living entity to the block (within 3 blocks)
+                firstTarget = blockLoc.getWorld().getNearbyLivingEntities(blockLoc, 3.0).stream()
+                    .filter(entity -> entity.isValid() && !entity.isDead())
+                    .filter(entity -> !entity.equals(player) || friendlyFire)
+                    .min(Comparator.comparingDouble(entity -> entity.getLocation().distanceSquared(blockLoc)))
+                    .orElse(null);
+                
+                // If still no target, create a dummy strike at the block location
+                if (firstTarget == null) {
+                    // Strike the block location and find nearby entities to chain to
+                    blockLoc.getWorld().strikeLightning(blockLoc);
+                    firstTarget = blockLoc.getWorld().getNearbyLivingEntities(blockLoc, jumpRadius).stream()
+                        .filter(entity -> entity.isValid() && !entity.isDead())
+                        .filter(entity -> !entity.equals(player) || friendlyFire)
+                        .min(Comparator.comparingDouble(entity -> entity.getLocation().distanceSquared(blockLoc)))
+                        .orElse(null);
+                }
+            }
+        }
+
+        if (firstTarget == null) {
             context.fx().fizzle(player);
             return null;
         }
 
         // Start enhanced chain lightning effect
-        new EnhancedChainEffect(context, player, current, jumps, jumpRadius, damage, friendlyFire,
+        new EnhancedChainEffect(context, player, firstTarget, jumps, jumpRadius, damage, friendlyFire,
                 arcParticleCount, arcSteps, maxArcLength).runTaskTimer(context.plugin(), 0L, 2L);
         return null;
     }

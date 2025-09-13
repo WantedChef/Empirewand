@@ -80,7 +80,7 @@ public class Repair extends Spell<Player> {
         
         // Repair armor
         for (ItemStack armor : player.getInventory().getArmorContents()) {
-            if (armor != null && repairItem(armor)) {
+            if (repairItem(armor)) {
                 repairedCount++;
             }
         }
@@ -99,7 +99,7 @@ public class Repair extends Spell<Player> {
         // Repair entire inventory if enabled
         if (repairAll && repairInventory) {
             for (ItemStack item : player.getInventory().getContents()) {
-                if (item != null && repairItem(item)) {
+                if (repairItem(item)) {
                     repairedCount++;
                 }
             }

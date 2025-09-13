@@ -58,9 +58,42 @@ public class SuperKill extends Spell<LivingEntity> {
         Player player = context.caster();
         double range = spellConfig.getDouble("values.range", DEFAULT_RANGE);
         
+        // First try to get the targeted entity
         var target = player.getTargetEntity((int) range);
-        if (target instanceof LivingEntity living) {
+        if (target instanceof LivingEntity living && !living.equals(player)) {
             return living;
+        }
+        
+        // If no direct target, find nearest living entity in cone in front of player
+        Location playerLoc = player.getLocation();
+        Vector direction = playerLoc.getDirection();
+        
+        LivingEntity nearest = null;
+        double nearestDistance = range;
+        
+        for (var entity : player.getWorld().getNearbyLivingEntities(playerLoc, range)) {
+            if (entity.equals(player)) continue;
+            
+            Vector toEntity = entity.getLocation().toVector().subtract(playerLoc.toVector());
+            double distance = toEntity.length();
+            
+            if (distance > range) continue;
+            
+            // Check if entity is in front of player (within 60 degree cone)
+            Vector toEntityNormalized = toEntity.normalize();
+            double dotProduct = direction.dot(toEntityNormalized);
+            double angle = Math.acos(Math.max(-1, Math.min(1, dotProduct)));
+            
+            if (angle <= Math.PI / 3) { // 60 degrees
+                if (distance < nearestDistance) {
+                    nearest = (LivingEntity) entity;
+                    nearestDistance = distance;
+                }
+            }
+        }
+        
+        if (nearest != null) {
+            return nearest;
         }
         
         player.sendMessage("§cNo valid target found!");

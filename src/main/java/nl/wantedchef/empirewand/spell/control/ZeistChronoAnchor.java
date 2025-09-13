@@ -16,7 +16,6 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.List;
@@ -50,15 +49,6 @@ import java.util.Objects;
  * @since 1.0.0
  */
 public class ZeistChronoAnchor extends Spell<Void> {
-
-    /** Default radius of the time bubble */
-    private static final double EFFECT_RADIUS = 5.0;
-    
-    /** Default duration of the time bubble */
-    private static final Duration EFFECT_DURATION = Duration.ofSeconds(8);
-    
-    /** Slowness effect amplifier */
-    private static final int SLOWNESS_AMPLIFIER = 2;
 
     /**
      * Builder for creating ZeistChronoAnchor spell instances.
@@ -94,6 +84,13 @@ public class ZeistChronoAnchor extends Spell<Void> {
     }
 
     /**
+     * Configuration for the ZeistChronoAnchor spell.
+     */
+    private record Config(double radius, int durationTicks, int slownessAmplifier) {}
+
+    private Config config = new Config(5.0, 100, 2);
+
+    /**
      * Constructs a new ZeistChronoAnchor spell instance.
      *
      * @param builder the builder containing spell configuration
@@ -114,6 +111,16 @@ public class ZeistChronoAnchor extends Spell<Void> {
     @NotNull
     public String key() {
         return "zeist-chrono-anchor";
+    }
+
+    @Override
+    public void loadConfig(@NotNull nl.wantedchef.empirewand.core.config.ReadableConfig spellConfig) {
+        super.loadConfig(spellConfig);
+        this.config = new Config(
+                spellConfig.getDouble("values.radius", 5.0),
+                spellConfig.getInt("values.duration-ticks", 100),
+                spellConfig.getInt("values.slowness-amplifier", 2)
+        );
     }
 
     /**
@@ -176,7 +183,7 @@ public class ZeistChronoAnchor extends Spell<Void> {
         }
 
         // Get all entities within radius
-        List<Entity> nearbyEntities = world.getNearbyEntities(location, EFFECT_RADIUS, EFFECT_RADIUS, EFFECT_RADIUS)
+        List<Entity> nearbyEntities = world.getNearbyEntities(location, config.radius, config.radius, config.radius)
             .stream()
             .filter(entity -> entity instanceof LivingEntity && entity != context.caster())
             .toList();
@@ -186,8 +193,8 @@ public class ZeistChronoAnchor extends Spell<Void> {
             LivingEntity livingEntity = (LivingEntity) entity;
             livingEntity.addPotionEffect(new PotionEffect(
                 PotionEffectType.SLOWNESS,
-                (int) (EFFECT_DURATION.getSeconds() * 20), // Convert to ticks
-                SLOWNESS_AMPLIFIER,
+                config.durationTicks,
+                config.slownessAmplifier,
                 false, // Not ambient
                 true,  // Show particles
                 true   // Show icon
@@ -219,8 +226,8 @@ public class ZeistChronoAnchor extends Spell<Void> {
         // Create particle ring effect
         for (int i = 0; i < 360; i += 10) {
             double angle = Math.toRadians(i);
-            double x = Math.cos(angle) * EFFECT_RADIUS;
-            double z = Math.sin(angle) * EFFECT_RADIUS;
+            double x = Math.cos(angle) * config.radius;
+            double z = Math.sin(angle) * config.radius;
             
             Location particleLocation = location.clone().add(x, 0, z);
             location.getWorld().spawnParticle(
@@ -235,3 +242,4 @@ public class ZeistChronoAnchor extends Spell<Void> {
         }
     }
 }
+

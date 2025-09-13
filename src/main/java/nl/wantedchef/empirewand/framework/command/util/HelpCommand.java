@@ -9,6 +9,7 @@ import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -58,18 +59,48 @@ public class HelpCommand implements SubCommand, CommandHelpProvider.HelpAwareCom
 
     @Override
     public void execute(@NotNull CommandContext context) throws CommandException {
-        if (context.args().length <= 1) {
-            // Show general help
-            Component helpMessage = CommandHelpProvider.generateHelpOverview(
+        String[] args = context.args();
+        
+        if (args.length <= 1) {
+            // Show interactive paginated help
+            Component helpMessage = InteractiveHelpProvider.generateInteractiveHelp(
                 context.sender(), 
-                availableCommands, 
+                availableCommands,
+                commandAliases,
                 permissionPrefix, 
-                wandType.equals("empirewand") ? "Empire Wand" : "Mephidantes Zeist Wand"
+                wandType.equals("empirewand") ? "Empire Wand" : "Mephidantes Zeist Wand",
+                1, // Default to page 1
+                "" // No search term
             );
             context.sendMessage(helpMessage);
-        } else {
+        } else if (args.length == 2) {
+            String secondArg = args[1].toLowerCase();
+            
+            // Check if it's a page number
+            try {
+                int page = Integer.parseInt(secondArg);
+                Component helpMessage = InteractiveHelpProvider.generateInteractiveHelp(
+                    context.sender(), 
+                    availableCommands,
+                    commandAliases,
+                    permissionPrefix, 
+                    wandType.equals("empirewand") ? "Empire Wand" : "Mephidantes Zeist Wand",
+                    page,
+                    ""
+                );
+                context.sendMessage(helpMessage);
+                return;
+            } catch (NumberFormatException ignored) {
+                // Not a page number, treat as command name
+            }
+            
+            // Check if it's the search subcommand
+            if ("search".equals(secondArg)) {
+                throw new CommandException("Please specify a search term", "MISSING_SEARCH_TERM");
+            }
+            
             // Show specific command help
-            String commandName = context.args()[1].toLowerCase();
+            String commandName = secondArg;
             SubCommand command = availableCommands.get(commandName);
             
             if (command == null) {
@@ -86,8 +117,43 @@ public class HelpCommand implements SubCommand, CommandHelpProvider.HelpAwareCom
                 throw new CommandException("No permission", "NO_PERMISSION");
             }
             
-            Component helpMessage = CommandHelpProvider.generateCommandHelp(context.sender(), command, permissionPrefix);
+            Component helpMessage = InteractiveHelpProvider.generateDetailedCommandHelp(
+                context.sender(), command, permissionPrefix);
             context.sendMessage(helpMessage);
+            
+        } else if (args.length >= 3) {
+            String secondArg = args[1].toLowerCase();
+            
+            if ("search".equals(secondArg)) {
+                // Search functionality
+                String searchTerm = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
+                Component searchResults = InteractiveHelpProvider.generateSearchResults(
+                    context.sender(),
+                    availableCommands,
+                    permissionPrefix,
+                    searchTerm,
+                    10 // Max 10 results
+                );
+                context.sendMessage(searchResults);
+            } else {
+                // Try parsing as page number with search
+                try {
+                    int page = Integer.parseInt(secondArg);
+                    String searchTerm = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
+                    Component helpMessage = InteractiveHelpProvider.generateInteractiveHelp(
+                        context.sender(), 
+                        availableCommands,
+                        commandAliases,
+                        permissionPrefix, 
+                        wandType.equals("empirewand") ? "Empire Wand" : "Mephidantes Zeist Wand",
+                        page,
+                        searchTerm
+                    );
+                    context.sendMessage(helpMessage);
+                } catch (NumberFormatException e) {
+                    throw new CommandException("Invalid page number or unknown command format", "INVALID_HELP_FORMAT");
+                }
+            }
         }
     }
 

@@ -21,6 +21,25 @@ public interface ReadableConfig {
 
     @Nullable
     ReadableConfig getConfigurationSection(@NotNull String path);
+    
+    /**
+     * Gets a value at the specified path as an Object.
+     * 
+     * @param path The path to get the value from
+     * @return The value at the path, or null if not found
+     */
+    @Nullable
+    Object get(@NotNull String path);
+    
+    /**
+     * Gets a value at the specified path as an Object with a default value.
+     * 
+     * @param path The path to get the value from
+     * @param def The default value to return if not found
+     * @return The value at the path, or the default value if not found
+     */
+    @Nullable
+    Object get(@NotNull String path, @Nullable Object def);
 }
 
 

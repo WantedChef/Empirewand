@@ -55,11 +55,11 @@ public class Levitate extends Spell<Player> {
 
     @Override
     protected Player executeSpell(@NotNull SpellContext context) {
-        return context.caster();
-    }
+        Player player = context.caster();
+        if (player == null) {
+            return null;
+        }
 
-    @Override
-    protected void handleEffect(@NotNull SpellContext context, @NotNull Player player) {
         int duration = spellConfig.getInt("values.duration", DEFAULT_DURATION);
         int amplifier = spellConfig.getInt("values.amplifier", DEFAULT_AMPLIFIER);
         
@@ -93,5 +93,12 @@ public class Levitate extends Spell<Player> {
         context.fx().playSound(player, Sound.ENTITY_ENDER_DRAGON_FLAP, 0.5f, 2.0f);
         
         player.sendMessage("§f§lLevitate §7activated for " + (duration/20) + " seconds!");
+        
+        return player;
+    }
+
+    @Override
+    protected void handleEffect(@NotNull SpellContext context, @NotNull Player player) {
+        // Effects are applied in executeSpell for instant spells
     }
 }

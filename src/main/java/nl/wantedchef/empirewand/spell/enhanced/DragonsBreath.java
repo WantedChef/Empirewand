@@ -18,6 +18,9 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.NamespacedKey;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
@@ -59,6 +62,11 @@ import java.util.Objects;
  * @since 1.0.0
  */
 public class DragonsBreath extends ProjectileSpell<DragonFireball> {
+
+    // Namespaced keys for persistent data storage
+    private static final NamespacedKey DAMAGE_KEY = new NamespacedKey("empirewand", "dragons_breath_damage");
+    private static final NamespacedKey WITHER_DURATION_KEY = new NamespacedKey("empirewand", "dragons_breath_wither_duration");
+    private static final NamespacedKey WITHER_AMPLIFIER_KEY = new NamespacedKey("empirewand", "dragons_breath_wither_amplifier");
 
     /**
      * Builder for creating DragonsBreath spell instances.
@@ -169,8 +177,11 @@ public class DragonsBreath extends ProjectileSpell<DragonFireball> {
             
             DragonFireball fireball = player.launchProjectile(DragonFireball.class, spreadDirection.multiply(speed));
             
-            // Store damage information in the fireball
-            fireball.setCustomName("dragons_breath_" + damage + "_" + witherDuration + "_" + witherAmplifier);
+            // Store damage information in the fireball's persistent data
+            PersistentDataContainer data = fireball.getPersistentDataContainer();
+            data.set(DAMAGE_KEY, PersistentDataType.DOUBLE, damage);
+            data.set(WITHER_DURATION_KEY, PersistentDataType.INTEGER, witherDuration);
+            data.set(WITHER_AMPLIFIER_KEY, PersistentDataType.INTEGER, witherAmplifier);
             
             // Visual trail
             context.fx().followParticles(context.plugin(), fireball, Particle.DRAGON_BREATH, 8, 0.1, 0.1, 0.1, 0.02, null, 1L);
@@ -198,21 +209,11 @@ public class DragonsBreath extends ProjectileSpell<DragonFireball> {
         World world = hitLocation.getWorld();
         if (world == null) return;
 
-        // Parse damage information from custom name
-        double damage = 7.0;
-        int witherDuration = 100;
-        int witherAmplifier = 1;
-        
-        if (projectile.getCustomName() != null && projectile.getCustomName().startsWith("dragons_breath_")) {
-            String[] parts = projectile.getCustomName().split("_");
-            if (parts.length >= 4) {
-                try {
-                    damage = Double.parseDouble(parts[2]);
-                    witherDuration = Integer.parseInt(parts[3]);
-                    witherAmplifier = Integer.parseInt(parts[4]);
-                } catch (NumberFormatException ignored) {}
-            }
-        }
+        // Parse damage information from persistent data
+        PersistentDataContainer data = projectile.getPersistentDataContainer();
+        double damage = data.getOrDefault(DAMAGE_KEY, PersistentDataType.DOUBLE, 7.0);
+        int witherDuration = data.getOrDefault(WITHER_DURATION_KEY, PersistentDataType.INTEGER, 100);
+        int witherAmplifier = data.getOrDefault(WITHER_AMPLIFIER_KEY, PersistentDataType.INTEGER, 1);
 
         // Create area effect cloud for lingering dragon breath
         AreaEffectCloud cloud = world.spawn(hitLocation, AreaEffectCloud.class);
@@ -228,7 +229,7 @@ public class DragonsBreath extends ProjectileSpell<DragonFireball> {
             if (entity.equals(context.caster())) continue;
             if (entity instanceof LivingEntity living) {
                 living.damage(damage, context.caster());
-                living.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, witherDuration, witherAmplifier, false, true));
+                living.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, witherDuration, witherAmplifier));
                 
                 // Visual effect
                 var entityLocation = entity.getLocation();
