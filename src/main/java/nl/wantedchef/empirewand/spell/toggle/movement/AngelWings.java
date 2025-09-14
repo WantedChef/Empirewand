@@ -32,7 +32,7 @@ import nl.wantedchef.empirewand.spell.SpellType;
 
 /**
  * AngelWings 4.0 - Revolutionary divine flight spell with blazing fire wings.
- * 
+ *
  * Revolutionary Fire Wing Features:
  * - Magnificent blazing fire wings that form behind the player
  * - Dynamic wing-flapping animations with flame particle physics
@@ -42,6 +42,8 @@ import nl.wantedchef.empirewand.spell.SpellType;
  * - Angelic fire harmonics and divine sound orchestration
  * - Divine energy management with fire-based regeneration
  * - Fully configurable fire wing intensity and sacred flame effects
+ *
+ * @author WantedChef
  */
 public final class AngelWings extends Spell<Void> implements ToggleableSpell {
 
@@ -53,7 +55,16 @@ public final class AngelWings extends Spell<Void> implements ToggleableSpell {
     /* ---------------------------------------- */
     /* BUILDER */
     /* ---------------------------------------- */
+    /**
+     * Builder for creating {@link AngelWings} instances.
+     */
     public static class Builder extends Spell.Builder<Void> {
+
+        /**
+         * Creates a new builder for the AngelWings spell.
+         *
+         * @param api the plugin API
+         */
         public Builder(EmpireWandAPI api) {
             super(api);
             name = "Angel Wings";
@@ -62,12 +73,22 @@ public final class AngelWings extends Spell<Void> implements ToggleableSpell {
             spellType = SpellType.MOVEMENT;
         }
 
+        /**
+         * Builds the AngelWings spell.
+         *
+         * @return the constructed spell
+         */
         @Override
         public @NotNull Spell<Void> build() {
             return new AngelWings(this);
         }
     }
 
+    /**
+     * Constructs the spell from its builder.
+     *
+     * @param builder the spell builder
+     */
     private AngelWings(Builder builder) {
         super(builder);
     }
@@ -75,22 +96,45 @@ public final class AngelWings extends Spell<Void> implements ToggleableSpell {
     /* ---------------------------------------- */
     /* SPELL API */
     /* ---------------------------------------- */
+
+    /**
+     * Gets the configuration key for this spell.
+     *
+     * @return "angel-wings"
+     */
     @Override
     public @NotNull String key() {
         return "angel-wings";
     }
 
+    /**
+     * Returns the casting prerequisites.
+     *
+     * @return a no-op prerequisite
+     */
     @Override
     public @NotNull PrereqInterface prereq() {
         return new PrereqInterface.NonePrereq();
     }
 
+    /**
+     * Toggles the spell for the caster.
+     *
+     * @param context the spell context
+     * @return always {@code null}
+     */
     @Override
     protected @Nullable Void executeSpell(@NotNull SpellContext context) {
         toggle(context.caster(), context);
         return null;
     }
 
+    /**
+     * No additional effect handling is required.
+     *
+     * @param context the spell context
+     * @param result  unused
+     */
     @Override
     protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
         // Instant effect
@@ -99,28 +143,58 @@ public final class AngelWings extends Spell<Void> implements ToggleableSpell {
     /* ---------------------------------------- */
     /* TOGGLE API */
     /* ---------------------------------------- */
+
+    /**
+     * Checks whether the wings are active for the player.
+     *
+     * @param player the player to check
+     * @return {@code true} if active
+     */
     @Override
     public boolean isActive(@NotNull Player player) {
         return wings.containsKey(player.getUniqueId());
     }
 
+    /**
+     * Activates the wings for a player.
+     *
+     * @param player  the player
+     * @param context the spell context
+     */
     @Override
     public void activate(@NotNull Player player, @NotNull SpellContext context) {
-        if (isActive(player))
+        if (isActive(player)) {
             return;
+        }
         wings.put(player.getUniqueId(), new WingData(player, context));
     }
 
+    /**
+     * Deactivates the wings for a player.
+     *
+     * @param player  the player
+     * @param context the spell context
+     */
     @Override
     public void deactivate(@NotNull Player player, @NotNull SpellContext context) {
         Optional.ofNullable(wings.remove(player.getUniqueId())).ifPresent(WingData::stop);
     }
 
+    /**
+     * Forcefully deactivates the wings.
+     *
+     * @param player the player
+     */
     @Override
     public void forceDeactivate(@NotNull Player player) {
         Optional.ofNullable(wings.remove(player.getUniqueId())).ifPresent(WingData::stop);
     }
 
+    /**
+     * Gets the maximum duration of the wings in ticks.
+     *
+     * @return max duration
+     */
     @Override
     public int getMaxDuration() {
         return cfgInt("max-duration-ticks", 2400); // 2 minutes default

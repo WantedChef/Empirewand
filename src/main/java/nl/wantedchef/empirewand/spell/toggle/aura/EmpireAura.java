@@ -10,11 +10,14 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.Particle;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -25,10 +28,12 @@ import java.util.WeakHashMap;
 
 /**
  * EmpireAura – Configurable toggleable aura granting strength & resistance with
- * particle ring.
+ * particle ring and a damaging defensive field.
  * <p>
  * All gameplay values are driven through {@code spells.yml} under the prefix:
  * <pre>spells.empire-aura.*</pre>
+ *
+ * @author WantedChef
  */
 public final class EmpireAura extends Spell<Void> implements ToggleableSpell {
 
@@ -40,8 +45,16 @@ public final class EmpireAura extends Spell<Void> implements ToggleableSpell {
     /* ---------------------------------------- */
  /* BUILDER */
  /* ---------------------------------------- */
+    /**
+     * Builder for creating {@link EmpireAura} instances.
+     */
     public static class Builder extends Spell.Builder<Void> {
 
+        /**
+         * Creates a new builder for the Empire Aura spell.
+         *
+         * @param api the plugin API
+         */
         public Builder(EmpireWandAPI api) {
             super(api);
             name = "Empire Aura";
@@ -50,13 +63,22 @@ public final class EmpireAura extends Spell<Void> implements ToggleableSpell {
             spellType = SpellType.AURA;
         }
 
+        /**
+         * Builds the Empire Aura spell.
+         *
+         * @return the constructed spell
+         */
         @Override
-        public @NotNull
-        Spell<Void> build() {
+        public @NotNull Spell<Void> build() {
             return new EmpireAura(this);
         }
     }
 
+    /**
+     * Constructs the spell from its builder.
+     *
+     * @param builder the spell builder
+     */
     private EmpireAura(Builder builder) {
         super(builder);
     }
@@ -64,23 +86,44 @@ public final class EmpireAura extends Spell<Void> implements ToggleableSpell {
     /* ---------------------------------------- */
  /* SPELL API */
  /* ---------------------------------------- */
+    /**
+     * Gets the configuration key for this spell.
+     *
+     * @return "empire-aura"
+     */
     @Override
     public String key() {
         return "empire-aura";
     }
 
+    /**
+     * Returns the casting prerequisites.
+     *
+     * @return a no-op prerequisite
+     */
     @Override
     public PrereqInterface prereq() {
         return new PrereqInterface.NonePrereq();
     }
 
+    /**
+     * Toggles the aura for the caster.
+     *
+     * @param context the spell context
+     * @return always {@code null}
+     */
     @Override
     protected Void executeSpell(SpellContext context) {
-        // Use local toggle implementation; framework SpellManager will track state
         toggle(context.caster(), context);
         return null;
     }
 
+    /**
+     * No additional effect handling is required.
+     *
+     * @param context the spell context
+     * @param result  unused
+     */
     @Override
     protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
         // Instant effect not required
@@ -89,11 +132,23 @@ public final class EmpireAura extends Spell<Void> implements ToggleableSpell {
     /* ---------------------------------------- */
  /* TOGGLE API */
  /* ---------------------------------------- */
+    /**
+     * Checks whether the aura is currently active for a player.
+     *
+     * @param player the player to check
+     * @return {@code true} if active
+     */
     @Override
     public boolean isActive(Player player) {
         return auras.containsKey(player.getUniqueId());
     }
 
+    /**
+     * Activates the aura for a player.
+     *
+     * @param player  the player
+     * @param context the spell context
+     */
     @Override
     public void activate(Player player, SpellContext context) {
         if (isActive(player)) {
@@ -102,21 +157,35 @@ public final class EmpireAura extends Spell<Void> implements ToggleableSpell {
         auras.put(player.getUniqueId(), new AuraData(player, context));
     }
 
+    /**
+     * Deactivates the aura for a player.
+     *
+     * @param player  the player
+     * @param context the spell context
+     */
     @Override
     public void deactivate(Player player, SpellContext context) {
         Optional.ofNullable(auras.remove(player.getUniqueId())).ifPresent(AuraData::stop);
     }
 
+    /**
+     * Forcefully deactivates the aura without context.
+     *
+     * @param player the player
+     */
     @Override
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
     public void forceDeactivate(Player player) {
-        // Context-less cleanup
         deactivate(player, null);
     }
 
+    /**
+     * Gets the maximum duration of the aura in ticks.
+     *
+     * @return max duration or -1 for infinite
+     */
     @Override
     public int getMaxDuration() {
-        // Optional max duration (ticks); -1 infinite by default
         return cfgInt("max-duration-ticks", -1);
     }
 
@@ -127,9 +196,19 @@ public final class EmpireAura extends Spell<Void> implements ToggleableSpell {
 
         private final Player player;
         private final BukkitTask ticker;
+        private final double radius;
+        private final double damage;
+        private final int confDur;
+        private final double push;
+        private final PotionEffectType confusion;
 
         AuraData(Player player, SpellContext context) {
             this.player = player;
+            this.radius = cfgDouble("particles.radius", 9.0d);
+            this.damage = cfgDouble("effects.aoe-damage", 3.0d);
+            this.confDur = cfgInt("effects.confusion-duration-ticks", 100);
+            this.push = cfgDouble("effects.push-strength", 1.8d);
+            this.confusion = effectType("CONFUSION", "NAUSEA");
             applyEffects();
             sendMessage(cfgString("messages.activate", "&a⚔ Empire Aura geactiveerd."));
             spawnActivationBurst();
@@ -156,30 +235,32 @@ public final class EmpireAura extends Spell<Void> implements ToggleableSpell {
                 return;
             }
             spawnRingParticles();
-        }
 
-        private PotionEffectType resolveEffect(String primary, String... fallbacks) {
-            PotionEffectType type = PotionEffectType.getByName(primary);
-            if (type != null) {
-                return type;
+            World world = player.getWorld();
+            if (world == null) {
+                forceDeactivate(player);
+                return;
             }
-            if (fallbacks != null) {
-                for (String fb : fallbacks) {
-                    type = PotionEffectType.getByName(fb);
-                    if (type != null) {
-                        return type;
-                    }
+            Location playerLoc = player.getLocation();
+            Vector playerVec = playerLoc.toVector();
+            for (LivingEntity entity : world.getNearbyLivingEntities(playerLoc, radius, e -> !e.equals(player))) {
+                entity.damage(damage, player);
+                if (confusion != null) {
+                    entity.addPotionEffect(new PotionEffect(confusion, confDur, 0, false, false, true));
                 }
+                Vector vec = entity.getLocation().toVector().subtract(playerVec).normalize();
+                vec.setY(0.4);
+                vec.multiply(push);
+                entity.setVelocity(vec);
             }
-            return null;
         }
 
         private void applyEffects() {
             int dur = Integer.MAX_VALUE; // Long-lived until toggle off
             int strengthAmp = Math.max(0, cfgInt("effects.strength-amplifier", 0));
             int resistAmp = Math.max(0, cfgInt("effects.resistance-amplifier", 0));
-            PotionEffectType strength = resolveEffect("STRENGTH", "INCREASE_DAMAGE");
-            PotionEffectType resistance = resolveEffect("RESISTANCE", "DAMAGE_RESISTANCE");
+            PotionEffectType strength = effectType("STRENGTH", "INCREASE_DAMAGE");
+            PotionEffectType resistance = effectType("RESISTANCE", "DAMAGE_RESISTANCE");
             if (strength != null) {
                 player.addPotionEffect(new PotionEffect(strength, dur, strengthAmp, false, false, true));
             }
@@ -188,7 +269,7 @@ public final class EmpireAura extends Spell<Void> implements ToggleableSpell {
             }
             if (cfgBool("effects.regeneration.enable", false)) {
                 int regenAmp = Math.max(0, cfgInt("effects.regeneration.amplifier", 0));
-                PotionEffectType regen = resolveEffect("REGENERATION");
+                PotionEffectType regen = effectType("REGENERATION");
                 if (regen != null) {
                     player.addPotionEffect(new PotionEffect(regen, dur, regenAmp, false, false, true));
                 }
@@ -196,9 +277,9 @@ public final class EmpireAura extends Spell<Void> implements ToggleableSpell {
         }
 
         private void removeEffects() {
-            PotionEffectType strength = resolveEffect("STRENGTH", "INCREASE_DAMAGE");
-            PotionEffectType resistance = resolveEffect("RESISTANCE", "DAMAGE_RESISTANCE");
-            PotionEffectType regen = resolveEffect("REGENERATION");
+            PotionEffectType strength = effectType("STRENGTH", "INCREASE_DAMAGE");
+            PotionEffectType resistance = effectType("RESISTANCE", "DAMAGE_RESISTANCE");
+            PotionEffectType regen = effectType("REGENERATION");
             if (strength != null) {
                 player.removePotionEffect(strength);
             }
@@ -213,7 +294,7 @@ public final class EmpireAura extends Spell<Void> implements ToggleableSpell {
         private void spawnRingParticles() {
             Location loc = player.getLocation();
             int points = Math.max(4, cfgInt("particles.ring-points", 10));
-            double radius = cfgDouble("particles.radius", 0.8d);
+            double radius = cfgDouble("particles.radius", 9.0d);
             String particleName = cfgString("particles.type", "CRIT");
             Particle particle;
             try {
@@ -233,9 +314,9 @@ public final class EmpireAura extends Spell<Void> implements ToggleableSpell {
 
             // Optional colored dust core
             if (cfgBool("particles.core-dust.enable", false)) {
-                int r = cfgInt("particles.core-dust.r", 255);
-                int g = cfgInt("particles.core-dust.g", 255);
-                int b = cfgInt("particles.core-dust.b", 255);
+                int r = cfgInt("particles.core-dust.r", 20);
+                int g = cfgInt("particles.core-dust.g", 20);
+                int b = cfgInt("particles.core-dust.b", 20);
                 float size = (float) cfgDouble("particles.core-dust.size", 1.2);
                 if (loc.getWorld() != null) {
                     loc.getWorld().spawnParticle(Particle.DUST, loc.clone().add(0, 1, 0), 3, 0.2, 0.2, 0.2, 0,

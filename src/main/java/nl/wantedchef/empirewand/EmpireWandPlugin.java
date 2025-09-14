@@ -27,6 +27,7 @@ import nl.wantedchef.empirewand.framework.service.metrics.DebugMetricsService;
 import nl.wantedchef.empirewand.framework.service.metrics.MetricsService;
 import nl.wantedchef.empirewand.listener.combat.BloodBarrierDamageListener;
 import nl.wantedchef.empirewand.listener.combat.DeathSyncPolymorphListener;
+import nl.wantedchef.empirewand.listener.combat.ElementosgodDamageListener;
 import nl.wantedchef.empirewand.listener.combat.ExplosionControlListener;
 import nl.wantedchef.empirewand.listener.combat.FallDamageEtherealListener;
 import nl.wantedchef.empirewand.listener.combat.PolymorphCleanupListener;
@@ -259,6 +260,7 @@ public final class EmpireWandPlugin extends JavaPlugin {
         pm.registerEvents(new DeathSyncPolymorphListener(this), this);
         pm.registerEvents(new PolymorphCleanupListener(this), this);
         pm.registerEvents(new BloodBarrierDamageListener(this), this);
+        pm.registerEvents(new ElementosgodDamageListener(this), this);
         
         // Enhanced spell effect listeners
         pm.registerEvents(new nl.wantedchef.empirewand.listener.spell.StatusEffectListener(this), this);

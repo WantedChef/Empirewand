@@ -15,11 +15,25 @@ import org.jetbrains.annotations.NotNull;
 import java.time.Duration;
 
 /**
- * Soulburn - Burns the soul directly from real Empirewand
+ * A dark curse that ignites an enemy's soul, causing damage over time.
+ *
+ * <p>The spell locks onto a nearby target and burns their essence with
+ * purple flames and ghastly screams.</p>
+ *
+ * @author WantedChef
  */
 public class Soulburn extends Spell<LivingEntity> {
 
+    /**
+     * Builder for creating {@link Soulburn} instances.
+     */
     public static class Builder extends Spell.Builder<LivingEntity> {
+
+        /**
+         * Creates a new builder for the Soulburn spell.
+         *
+         * @param api the plugin API
+         */
         public Builder(EmpireWandAPI api) {
             super(api);
             this.name = "Soulburn";
@@ -28,6 +42,11 @@ public class Soulburn extends Spell<LivingEntity> {
             this.spellType = SpellType.DARK;
         }
 
+        /**
+         * Builds the Soulburn spell.
+         *
+         * @return the constructed spell
+         */
         @Override
         @NotNull
         public Spell<LivingEntity> build() {
@@ -39,20 +58,41 @@ public class Soulburn extends Spell<LivingEntity> {
     private static final double DEFAULT_DAMAGE = 25.0;
     private static final int DEFAULT_DURATION_TICKS = 60;
 
+    /**
+     * Constructs the spell from its builder.
+     *
+     * @param builder the spell builder
+     */
     private Soulburn(Builder builder) {
         super(builder);
     }
 
+    /**
+     * Gets the configuration key for this spell.
+     *
+     * @return "soulburn"
+     */
     @Override
     public String key() {
         return "soulburn";
     }
 
+    /**
+     * Gets the prerequisites for casting the spell.
+     *
+     * @return level prerequisite requiring level 25
+     */
     @Override
     public PrereqInterface prereq() {
         return new PrereqInterface.LevelPrereq(25);
     }
 
+    /**
+     * Searches for a target and applies the soulburn effect.
+     *
+     * @param context the spell context
+     * @return the targeted entity or {@code null} if none
+     */
     @Override
     protected LivingEntity executeSpell(@NotNull SpellContext context) {
         Player player = context.caster();
@@ -65,7 +105,6 @@ public class Soulburn extends Spell<LivingEntity> {
         // First try to get the player's targeted entity
         var target = player.getTargetEntity((int) range);
         if (target instanceof LivingEntity living && !living.equals(player)) {
-            // Apply the soulburn effect immediately
             applySoulburnEffect(context, living);
             return living;
         }
@@ -85,7 +124,6 @@ public class Soulburn extends Spell<LivingEntity> {
         }
         
         if (closest != null) {
-            // Apply the soulburn effect immediately
             applySoulburnEffect(context, closest);
             return closest;
         }
@@ -94,6 +132,12 @@ public class Soulburn extends Spell<LivingEntity> {
         return null;
     }
 
+    /**
+     * Applies the burning effect over time to the target.
+     *
+     * @param context the spell context
+     * @param target  the entity whose soul is burning
+     */
     private void applySoulburnEffect(@NotNull SpellContext context, @NotNull LivingEntity target) {
         Player player = context.caster();
         double totalDamage = spellConfig.getDouble("values.damage", DEFAULT_DAMAGE);
@@ -128,8 +172,14 @@ public class Soulburn extends Spell<LivingEntity> {
         }.runTaskTimer(context.plugin(), 0L, 10L);
     }
 
+    /**
+     * No additional handling is required; damage occurs during execution.
+     *
+     * @param context the spell context
+     * @param target  the affected entity
+     */
     @Override
     protected void handleEffect(@NotNull SpellContext context, @NotNull LivingEntity target) {
-        // Effects are applied in executeSpell for instant spells
+        // Effects are applied in executeSpell
     }
 }
