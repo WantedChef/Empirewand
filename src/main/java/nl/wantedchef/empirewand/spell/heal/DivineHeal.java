@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.attribute.Attribute;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -100,7 +101,8 @@ public class DivineHeal extends Spell<Player> {
                 for (var entity : center.getWorld().getNearbyEntities(center, radius, radius, radius)) {
                     if (entity instanceof Player targetPlayer) {
                         // Heal
-                        targetPlayer.setHealth(Math.min(targetPlayer.getHealth() + 1, targetPlayer.getMaxHealth()));
+                        double max = getMaxHealth(targetPlayer);
+                        targetPlayer.setHealth(Math.min(targetPlayer.getHealth() + 1, max));
                         
                         // Apply divine protection
                         if (ticks % 40 == 0) {
@@ -138,5 +140,10 @@ public class DivineHeal extends Spell<Player> {
         context.fx().playSound(center, Sound.ENTITY_EVOKER_CAST_SPELL, 1.0f, 1.5f);
         
         player.sendMessage("§6§lDivine Heal §echanneled! Blessing area for " + (duration/20) + " seconds!");
+    }
+    
+    private double getMaxHealth(org.bukkit.entity.LivingEntity entity) {
+        var attr = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        return attr != null ? attr.getValue() : 20.0;
     }
 }

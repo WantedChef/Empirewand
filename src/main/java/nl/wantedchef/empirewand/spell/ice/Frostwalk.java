@@ -95,9 +95,9 @@ public class Frostwalk extends Spell<Player> {
                 
                 Location loc = player.getLocation();
                 
-                // Frost particles
-                loc.getWorld().spawnParticle(Particle.FALLING_DUST, loc, 8, 0.5, 0.1, 0.5, 0.02);
-                loc.getWorld().spawnParticle(Particle.FALLING_DUST, loc, 5, 0.3, 0.1, 0.3, 0.01);
+                // Frost particles - provide BlockData for FALLING_DUST in 1.20.6
+                loc.getWorld().spawnParticle(Particle.FALLING_DUST, loc, 8, 0.5, 0.1, 0.5, 0.02, Material.ICE.createBlockData());
+                loc.getWorld().spawnParticle(Particle.FALLING_DUST, loc, 5, 0.3, 0.1, 0.3, 0.01, Material.SNOW_BLOCK.createBlockData());
                 
                 // Freeze water blocks around player
                 for (int x = -2; x <= 2; x++) {
@@ -116,7 +116,7 @@ public class Frostwalk extends Spell<Player> {
                 for (var entity : loc.getWorld().getNearbyEntities(loc, radius, radius, radius)) {
                     if (entity instanceof LivingEntity living && !living.equals(player)) {
                         living.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 40, slowAmplifier));
-                        living.getWorld().spawnParticle(Particle.FALLING_DUST, living.getLocation(), 3, 0.2, 0.2, 0.2, 0);
+                        living.getWorld().spawnParticle(Particle.FALLING_DUST, living.getLocation(), 3, 0.2, 0.2, 0.2, 0, Material.SNOW_BLOCK.createBlockData());
                     }
                 }
                 

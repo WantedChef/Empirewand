@@ -79,13 +79,13 @@ public final class StellarDash extends Spell<StellarDash.DashEffect> {
         Location targetLoc = getTargetLocation(player, range);
         
         if (targetLoc == null) {
-            player.sendMessage(Component.text("§c✦ No valid dash target found within range!"));
+            player.sendMessage(Component.text("\u00A7c✦ No valid dash target found within range!"));
             return null;
         }
         
         // Check if path is clear
         if (!isPathClear(player.getLocation(), targetLoc)) {
-            player.sendMessage(Component.text("§c✦ Your path through the stars is blocked!"));
+            player.sendMessage(Component.text("\u00A7c✦ Your path through the stars is blocked!"));
             return null;
         }
         
@@ -110,7 +110,7 @@ public final class StellarDash extends Spell<StellarDash.DashEffect> {
         player.playSound(effect.destination, Sound.BLOCK_BEACON_ACTIVATE, 0.6f, 2.2f);
         
         // Show success message
-        player.sendMessage(Component.text("§b✦ §7You dash through the cosmic void! §b✦"));
+        player.sendMessage(Component.text("\u00A7b✦ \u00A77You dash through the cosmic void! \u00A7b✦"));
         
         // Create spectacular visual effects
         createStellarTrail(context, effect);

@@ -48,8 +48,7 @@ import java.lang.reflect.Proxy;
  */
 public class OptimizedServiceRegistry {
     
-    private final Plugin plugin;
-    private final Logger logger;
+    private static final Logger logger = Logger.getLogger(OptimizedServiceRegistry.class.getName());
     private final AdvancedPerformanceMonitor performanceMonitor;
     private final EventBusSystem eventBus;
     
@@ -64,7 +63,6 @@ public class OptimizedServiceRegistry {
     private final DependencyResolver dependencyResolver;
     
     // Service lifecycle
-    private final Map<Class<?>, ServiceLifecycle> serviceLifecycles = new ConcurrentHashMap<>();
     private final ScheduledExecutorService lifecycleExecutor;
     private volatile boolean registryStarted = false;
     
@@ -188,7 +186,6 @@ public class OptimizedServiceRegistry {
         public void incrementCallCount() { callCount.increment(); this.lastUsed = Instant.now(); }
         public Instant getLastUsed() { return lastUsed; }
         public String getVersion() { return version; }
-        public void setVersion(String version) { this.version = version; }
     }
     
     /**
@@ -403,6 +400,7 @@ public class OptimizedServiceRegistry {
             }
         }
         
+        @SuppressWarnings("unused")
         private List<Class<?>> findCycle(Map<Class<?>, Set<Class<?>>> graph) {
             // Implementation would find and return the cyclic dependency chain
             return Collections.emptyList();
@@ -433,7 +431,7 @@ public class OptimizedServiceRegistry {
                 Object instance = registration.getInstance();
                 if (instance instanceof ServiceLifecycle lifecycle) {
                     if (!lifecycle.isHealthy()) {
-                        logger.warning("Service health check failed: " + registration.getServiceType().getSimpleName());
+                        logger.log(Level.WARNING, "Service health check failed: {0}", registration.getServiceType().getSimpleName());
                         
                         // Trigger health check failed event
                         eventBus.publish("service.health.failed", Map.of(
@@ -454,13 +452,14 @@ public class OptimizedServiceRegistry {
             }
         }
         
+        @SuppressWarnings("unused")
         private boolean shouldRestartUnhealthyService(ServiceRegistration<?> registration) {
             // Implement logic to determine if service should be automatically restarted
             return false; // Conservative default
         }
         
         private void restartService(ServiceRegistration<?> registration) {
-            logger.info("Attempting to restart unhealthy service: " + registration.getServiceType().getSimpleName());
+            logger.log(Level.INFO, "Attempting to restart unhealthy service: {0}", registration.getServiceType().getSimpleName());
             
             lifecycleExecutor.submit(() -> {
                 try {
@@ -473,11 +472,13 @@ public class OptimizedServiceRegistry {
                     // Start the service again
                     startService(registration);
                     
-                    logger.info("Successfully restarted service: " + registration.getServiceType().getSimpleName());
+                    logger.log(Level.INFO, "Successfully restarted service: {0}", registration.getServiceType().getSimpleName());
                     
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    logger.log(Level.SEVERE, "Service restart interrupted: {0}", registration.getServiceType().getSimpleName());
                 } catch (Exception e) {
-                    logger.log(Level.SEVERE, "Failed to restart service: " + 
-                              registration.getServiceType().getSimpleName(), e);
+                    logger.log(Level.SEVERE, "Failed to restart service: " + registration.getServiceType().getSimpleName(), e);
                 }
             });
         }
@@ -522,9 +523,8 @@ public class OptimizedServiceRegistry {
     }
     
     public OptimizedServiceRegistry(Plugin plugin, EventBusSystem eventBus) {
-        this.plugin = Objects.requireNonNull(plugin);
+        Objects.requireNonNull(plugin);
         this.eventBus = Objects.requireNonNull(eventBus);
-        this.logger = plugin.getLogger();
         this.performanceMonitor = new AdvancedPerformanceMonitor(plugin, logger);
         
         // Initialize components
@@ -579,8 +579,7 @@ public class OptimizedServiceRegistry {
                 namedServices.put(name, registration);
             }
             
-            logger.info("Registered service: " + serviceType.getSimpleName() + 
-                       " with scope: " + scope);
+            logger.log(Level.INFO, "Registered service: {0} with scope: {1}", new Object[]{serviceType.getSimpleName(), scope});
             
             // Publish registration event
             eventBus.publish("service.registered", Map.of(
@@ -738,7 +737,7 @@ public class OptimizedServiceRegistry {
                 }
                 
                 registryStarted = true;
-                logger.info("Service registry started successfully with " + services.size() + " services");
+                logger.log(Level.INFO, "Service registry started successfully with {0} services", services.size());
                 
                 // Publish startup complete event
                 eventBus.publish("service.registry.started", Map.of(
@@ -819,11 +818,9 @@ public class OptimizedServiceRegistry {
         // Handle different scopes
         switch (registration.getScope()) {
             case SINGLETON -> {
-                if (registration.getInstance() == null) {
-                    synchronized (registration) {
-                        if (registration.getInstance() == null) {
-                            createServiceInstance(registration);
-                        }
+                synchronized (registration) {
+                    if (registration.getInstance() == null) {
+                        createServiceInstance(registration);
                     }
                 }
                 return applyInterceptors(registration);
@@ -868,7 +865,6 @@ public class OptimizedServiceRegistry {
         }
     }
     
-    @SuppressWarnings("unchecked")
     private <T> T applyInterceptors(ServiceRegistration<T> registration) {
         T instance = registration.getInstance();
         if (instance == null) {
@@ -883,16 +879,19 @@ public class OptimizedServiceRegistry {
         return instance;
     }
     
+    @SuppressWarnings("unused")
     private void performDependencyInjection(Object instance) {
         // Implementation would scan fields and methods for @Inject annotations
         // and inject appropriate services
     }
     
+    @SuppressWarnings("unused")
     private void invokePostConstructMethods(Object instance) {
         // Implementation would scan methods for @PostConstruct annotation
         // and invoke them after dependency injection
     }
     
+    @SuppressWarnings("unused")
     private void invokePreDestroyMethods(Object instance) {
         // Implementation would scan methods for @PreDestroy annotation
         // and invoke them before destruction
@@ -908,8 +907,7 @@ public class OptimizedServiceRegistry {
             
         } catch (Exception e) {
             registration.setState(ServiceState.FAILED);
-            logger.log(Level.SEVERE, "Failed to start service: " + 
-                      registration.getServiceType().getSimpleName(), e);
+            logger.log(Level.SEVERE, "Failed to start service: " + registration.getServiceType().getSimpleName(), e);
         }
     }
     
@@ -930,11 +928,11 @@ public class OptimizedServiceRegistry {
             
         } catch (Exception e) {
             registration.setState(ServiceState.FAILED);
-            logger.log(Level.WARNING, "Error stopping service: " + 
-                      registration.getServiceType().getSimpleName(), e);
+            logger.log(Level.WARNING, "Error stopping service: " + registration.getServiceType().getSimpleName(), e);
         }
     }
     
+    @SuppressWarnings("unused")
     private void recreateServiceProxy(ServiceRegistration<?> registration) {
         // Implementation would recreate proxy with new interceptors
     }
@@ -955,12 +953,30 @@ public class OptimizedServiceRegistry {
     private void registerBuiltinServices() {
         // Register the registry itself as a service
         registerServiceInstance(OptimizedServiceRegistry.class, this);
-        
+
         // Register event bus
         registerServiceInstance(EventBusSystem.class, eventBus);
-        
+
         // Register performance monitor
         registerServiceInstance(AdvancedPerformanceMonitor.class, performanceMonitor);
+    }
+
+    /**
+     * Registers GUI-related services for the wand settings system.
+     * Called after initialization to register GUI services.
+     */
+    public void registerGuiServices(Plugin plugin) {
+        // Register WandSettingsService
+        registerService(
+                nl.wantedchef.empirewand.core.config.WandSettingsService.class,
+                context -> new nl.wantedchef.empirewand.core.config.WandSettingsService(plugin)
+        );
+
+        // Register WandSessionManager
+        registerService(
+                nl.wantedchef.empirewand.gui.session.WandSessionManager.class,
+                context -> new nl.wantedchef.empirewand.gui.session.WandSessionManager(plugin.getLogger())
+        );
     }
     
     // Data structures for reporting

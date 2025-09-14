@@ -16,8 +16,8 @@ public class Leap extends Spell<Void> {
         public Builder(EmpireWandAPI api) {
             super(api);
             this.name = "Leap";
-            this.description = "Leaps you forward.";
-            this.cooldown = java.time.Duration.ofSeconds(2);
+            this.description = "Launch yourself forward and upward with jetpack-like power.";
+            this.cooldown = java.time.Duration.ZERO; // No cooldown
             this.spellType = SpellType.MOVEMENT;
         }
 
@@ -45,43 +45,39 @@ public class Leap extends Spell<Void> {
     @Override
     protected Void executeSpell(SpellContext context) {
         Player player = context.caster();
-        
-        // Track consecutive leaps (max 3)
-        String leapCountKey = "leap_consecutive_count";
-        int consecutiveLeaps = player.getMetadata(leapCountKey).stream()
-            .filter(meta -> meta.getOwningPlugin() == context.plugin())
-            .mapToInt(meta -> meta.asInt())
-            .findFirst()
-            .orElse(0);
-        
-        if (consecutiveLeaps >= 3) {
-            context.fx().fizzle(player);
-            player.sendMessage("§cYou cannot leap again so soon!");
-            return null;
+
+        // Get configuration values
+        double forwardMultiplier = spellConfig.getDouble("leap.forward-multiplier", 2.0);
+        double verticalBoost = spellConfig.getDouble("leap.vertical-boost", 1.2);
+        double maxVerticalVelocity = spellConfig.getDouble("leap.max-vertical-velocity", 3.0);
+
+        // Get player's current direction and velocity
+        org.bukkit.util.Vector direction = player.getLocation().getDirection().normalize();
+        org.bukkit.util.Vector currentVelocity = player.getVelocity();
+
+        // Create jetpack-style launch vector
+        org.bukkit.util.Vector launchVector = direction.multiply(forwardMultiplier);
+
+        // Add vertical boost - more if player is already in the air (jetpack effect)
+        double verticalComponent = verticalBoost;
+        if (!player.isOnGround() && currentVelocity.getY() < maxVerticalVelocity) {
+            // Jetpack mode - add extra vertical boost when already airborne
+            verticalComponent += spellConfig.getDouble("leap.jetpack-boost", 0.8);
         }
-        
-        double multiplier = spellConfig.getDouble("values.velocity-multiplier", 1.5);
-        double verticalBoost = spellConfig.getDouble("values.vertical-boost", 1.0);
 
-        player.setVelocity(player.getLocation().getDirection().normalize().multiply(multiplier).setY(verticalBoost));
+        launchVector.setY(Math.min(verticalComponent, maxVerticalVelocity));
 
-        // Update consecutive leap count
-        player.setMetadata(leapCountKey, new org.bukkit.metadata.FixedMetadataValue(context.plugin(), consecutiveLeaps + 1));
-        
-        // Reset count after 5 seconds
-        context.plugin().getServer().getScheduler().runTaskLater(context.plugin(), () -> {
-            int currentCount = player.getMetadata(leapCountKey).stream()
-                .filter(meta -> meta.getOwningPlugin() == context.plugin())
-                .mapToInt(meta -> meta.asInt())
-                .findFirst()
-                .orElse(0);
-            if (currentCount > 0) {
-                player.setMetadata(leapCountKey, new org.bukkit.metadata.FixedMetadataValue(context.plugin(), currentCount - 1));
-            }
-        }, 100L); // 5 seconds
+        // Apply the launch vector
+        player.setVelocity(launchVector);
 
-        context.fx().spawnParticles(player.getLocation(), Particle.CLOUD, 16, 0.3, 0.1, 0.3, 0.02);
-        context.fx().playSound(player, Sound.ENTITY_RABBIT_JUMP, 0.8f, 1.2f);
+        // Enhanced visual and audio effects
+        context.fx().spawnParticles(player.getLocation(), Particle.CLOUD, 20, 0.5, 0.2, 0.5, 0.05);
+        context.fx().spawnParticles(player.getLocation(), Particle.CRIT, 8, 0.3, 0.1, 0.3, 0.1);
+
+        // Jetpack-style sounds
+        context.fx().playSound(player, Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, 0.6f, 1.4f);
+        context.fx().playSound(player, Sound.ENTITY_ENDER_DRAGON_FLAP, 0.3f, 1.8f);
+
         return null;
     }
 

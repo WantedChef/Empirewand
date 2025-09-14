@@ -49,7 +49,7 @@ public class FreezeRay extends Spell<Player> {
 
     @Override
     public String key() {
-        return "freezeray";
+        return "freeze-ray";
     }
 
     @Override

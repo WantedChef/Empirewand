@@ -86,7 +86,7 @@ public class ToggleCommand implements SubCommand {
         // Validate command name
         if (!isValidToggleCommand(toggleCommand)) {
             throw new CommandException("Invalid toggle command: " + toggleCommand +
-                    ". Valid toggle commands: kajcloud, mephicloud, shadowcloak");
+                    ". Use '/ew toggle' to see available toggle commands.");
         }
 
         // If only command specified, show current status
@@ -132,30 +132,44 @@ public class ToggleCommand implements SubCommand {
     @Override
     @NotNull
     public List<String> tabComplete(@NotNull CommandContext context) {
-        if (context.args().length == 2) {
-            String arg = context.getArgOrNull(1);
-            final String searchArg = (arg == null ? "" : arg).toLowerCase();
+        try {
+            // Null safety check for args array
+            String[] args = context.args();
+            if (args == null) {
+                return Collections.emptyList();
+            }
 
-            // Return matching toggle commands
-            List<String> commands = Arrays.asList("kajcloud", "mephicloud", "shadowcloak");
+            if (args.length == 2) {
+                String arg = context.getArgOrNull(1);
+                final String searchArg = (arg == null ? "" : arg).toLowerCase();
 
-            return commands.stream()
-                    .filter(command -> command.startsWith(searchArg))
-                    .sorted()
-                    .collect(Collectors.toList());
-        }
+                // Return matching toggle commands - include all available toggleable spells
+                List<String> commands = Arrays.asList("aura", "empireavura", "kajcloud", "mephicloud", "shadowcloak",
+                                                     "angelwings", "crystalglide", "dragonfury", "phoenixrise",
+                                                     "stormrider", "voidwalk", "elementosgod");
 
-        if (context.args().length == 3) {
-            String arg = context.getArgOrNull(2);
-            final String searchArg = (arg == null ? "" : arg).toLowerCase();
+                return commands.stream()
+                        .filter(command -> command.startsWith(searchArg))
+                        .sorted()
+                        .collect(Collectors.toList());
+            }
 
-            // Return on/off options
-            List<String> options = Arrays.asList("on", "off");
+            if (args.length == 3) {
+                String arg = context.getArgOrNull(2);
+                final String searchArg = (arg == null ? "" : arg).toLowerCase();
 
-            return options.stream()
-                    .filter(option -> option.startsWith(searchArg))
-                    .sorted()
-                    .collect(Collectors.toList());
+                // Return on/off options
+                List<String> options = Arrays.asList("on", "off");
+
+                return options.stream()
+                        .filter(option -> option.startsWith(searchArg))
+                        .sorted()
+                        .collect(Collectors.toList());
+            }
+        } catch (Exception e) {
+            // Log error and return empty list to prevent tab completion crashes
+            context.plugin().getLogger().warning("Error in toggle command tab completion: " + e.getMessage());
+            return Collections.emptyList();
         }
 
         return Collections.emptyList();
@@ -185,8 +199,17 @@ public class ToggleCommand implements SubCommand {
     }
 
     private boolean isValidToggleCommand(String command) {
-        return command.equals("kajcloud") ||
+        return command.equals("aura") ||
+                command.equals("empireavura") ||
+                command.equals("kajcloud") ||
                 command.equals("mephicloud") ||
-                command.equals("shadowcloak");
+                command.equals("shadowcloak") ||
+                command.equals("angelwings") ||
+                command.equals("crystalglide") ||
+                command.equals("dragonfury") ||
+                command.equals("phoenixrise") ||
+                command.equals("stormrider") ||
+                command.equals("voidwalk") ||
+                command.equals("elementosgod");
     }
 }

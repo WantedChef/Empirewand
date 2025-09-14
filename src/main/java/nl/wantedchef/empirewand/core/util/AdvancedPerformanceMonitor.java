@@ -40,8 +40,7 @@ import org.bukkit.plugin.Plugin;
  */
 public class AdvancedPerformanceMonitor {
     
-    private final Logger logger;
-    private final Plugin plugin;
+    private static final Logger logger = Logger.getLogger(AdvancedPerformanceMonitor.class.getName());
     private final MemoryMXBean memoryBean;
     private final ThreadMXBean threadBean;
     private final ScheduledExecutorService metricsExecutor;
@@ -65,7 +64,6 @@ public class AdvancedPerformanceMonitor {
     
     // System health monitoring
     private volatile boolean monitoring = false;
-    private volatile Instant lastHealthCheck = Instant.now();
     private final AtomicLong healthCheckInterval = new AtomicLong(30000); // 30 seconds
     
     // Adaptive sampling for high-frequency operations
@@ -78,8 +76,6 @@ public class AdvancedPerformanceMonitor {
      * @param logger Logger instance for output
      */
     public AdvancedPerformanceMonitor(Plugin plugin, Logger logger) {
-        this.plugin = plugin;
-        this.logger = logger;
         this.memoryBean = ManagementFactory.getMemoryMXBean();
         this.threadBean = ManagementFactory.getThreadMXBean();
         this.performanceHistory = new CircularBuffer<>(1000); // Keep last 1000 snapshots
@@ -162,7 +158,7 @@ public class AdvancedPerformanceMonitor {
         
         // Handle overflow gracefully
         if (durationNanos < 0) {
-            logger.warning("Timer overflow detected for operation: " + operationName);
+            logger.warning(String.format("Timer overflow detected for operation: %s", operationName));
             return;
         }
         
@@ -263,8 +259,8 @@ public class AdvancedPerformanceMonitor {
         this.predictiveAlertsEnabled = config.predictiveAlertsEnabled();
         this.healthCheckInterval.set(config.healthCheckIntervalMs());
         
-        logger.info("Performance thresholds updated: slow=" + slowOperationThresholdMs + 
-                   "ms, critical=" + criticalOperationThresholdMs + "ms");
+        logger.info(String.format("Performance thresholds updated: slow=%dms, critical=%dms", 
+                   slowOperationThresholdMs, criticalOperationThresholdMs));
     }
     
     /**
@@ -282,7 +278,6 @@ public class AdvancedPerformanceMonitor {
         } finally {
             historyLock.writeLock().unlock();
         }
-        
         logger.info("Performance metrics reset");
     }
     
@@ -347,16 +342,14 @@ public class AdvancedPerformanceMonitor {
                 historyLock.writeLock().unlock();
             }
             
-            lastHealthCheck = now;
-            
             // Log health status if significant changes detected
             if (snapshot.operationCount() > 0 && snapshot.operationCount() % 10000 == 0) {
-                logger.info("Health check: " + snapshot.operationCount() + " operations processed, " +
-                           "heap: " + String.format("%.1f%%", snapshot.heapUtilization() * 100));
+                logger.info(String.format("Health check: %d operations processed, heap: %.1f%%", 
+                           snapshot.operationCount(), snapshot.heapUtilization() * 100));
             }
             
         } catch (Exception e) {
-            logger.warning("Error during health check: " + e.getMessage());
+            logger.warning(String.format("Error during health check: %s", e.getMessage()));
         }
     }
     
@@ -376,7 +369,7 @@ public class AdvancedPerformanceMonitor {
             }
             
         } catch (Exception e) {
-            logger.warning("Error checking memory pressure: " + e.getMessage());
+            logger.warning(String.format("Error checking memory pressure: %s", e.getMessage()));
         }
     }
     
@@ -396,8 +389,8 @@ public class AdvancedPerformanceMonitor {
         
         // Limit total metrics count
         if (operationMetrics.size() > maxMetricsRetention) {
-            logger.warning("Metrics count (" + operationMetrics.size() + 
-                          ") exceeds retention limit, cleaning up oldest entries");
+            logger.warning(String.format("Metrics count (%d) exceeds retention limit, cleaning up oldest entries", 
+                          operationMetrics.size()));
             
             // Remove oldest entries (simple cleanup strategy)
             operationMetrics.entrySet().stream()
@@ -434,8 +427,7 @@ public class AdvancedPerformanceMonitor {
         logger.severe(String.format("[MEMORY-CRITICAL] Heap utilization at %.1f%% (threshold: %.1f%%)",
             utilization * 100, criticalMemoryThreshold * 100));
         
-        // Suggest garbage collection
-        System.gc();
+        // Avoid forcing GC; external systems or JVM should manage GC. Consider surfacing this via metrics.
     }
     
     private void analyzePerformanceTrends(String operationName, OperationMetrics metrics) {
@@ -521,7 +513,13 @@ public class AdvancedPerformanceMonitor {
         
         @Override
         public void close() {
+            long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
             recordExecutionTime(operationName, startTime, context);
+            // Warn if operation exceeds threshold
+            if (thresholdMs > 0 && durationMs > thresholdMs) {
+                logger.warning(String.format("Operation '%s' exceeded threshold: %dms > %dms", 
+                              operationName, durationMs, thresholdMs));
+            }
         }
         
         public void addContext(String additionalContext) {

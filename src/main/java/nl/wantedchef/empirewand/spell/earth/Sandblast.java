@@ -78,10 +78,12 @@ public class Sandblast extends Spell<Player> {
                 (Math.random() - 0.5) * 0.3
             )).multiply(1.5);
             
-            FallingBlock sand = player.getWorld().spawnFallingBlock(start, Material.SAND.createBlockData());
+            FallingBlock sand = player.getWorld().spawn(start, FallingBlock.class, fb -> {
+                fb.setBlockData(Material.SAND.createBlockData());
+                fb.setDropItem(false);
+                fb.setHurtEntities(true);
+            });
             sand.setVelocity(velocity);
-            sand.setDropItem(false);
-            sand.setHurtEntities(true);
         }
         
         // Particle and sound effects

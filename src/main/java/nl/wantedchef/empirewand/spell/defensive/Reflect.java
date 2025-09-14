@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
+import java.util.Objects;
 
 import java.time.Duration;
 import java.util.HashSet;
@@ -54,7 +55,7 @@ public class Reflect extends Spell<Player> {
 
     @Override
     public PrereqInterface prereq() {
-        return new PrereqInterface.LevelPrereq(25);
+        return new PrereqInterface.NonePrereq();
     }
 
     @Override
@@ -77,6 +78,7 @@ public class Reflect extends Spell<Player> {
         // Visual effect - mirror shield
         new BukkitRunnable() {
             int ticks = 0;
+            final org.bukkit.World world = Objects.requireNonNull(player.getWorld(), "world");
             
             @Override
             public void run() {
@@ -86,6 +88,7 @@ public class Reflect extends Spell<Player> {
                     cancel();
                     return;
                 }
+                final var baseNow = Objects.requireNonNull(player.getLocation(), "location");
                 
                 // Mirror shield particles
                 for (double angle = 0; angle < Math.PI * 2; angle += Math.PI / 8) {
@@ -95,24 +98,28 @@ public class Reflect extends Spell<Player> {
                         double z = Math.sin(angle) * radius;
                         
                         if (Math.random() < 0.3) {
-                            player.getWorld().spawnParticle(Particle.END_ROD, 
-                                player.getLocation().add(x, y, z), 1, 0, 0, 0, 0);
+                            final var loc = baseNow.clone().add(x, y, z);
+                            world.spawnParticle(Particle.END_ROD,
+                                loc, 1, 0, 0, 0, 0);
                         }
                     }
                 }
                 
                 // Reflection gleam
                 if (ticks % 20 == 0) {
-                    player.getWorld().spawnParticle(Particle.FLASH, 
-                        player.getLocation().add(0, 1, 0), 1, 0, 0, 0, 0);
-                    player.getWorld().spawnParticle(Particle.ENCHANT, 
-                        player.getLocation(), 15, 1, 1, 1, 0.05);
+                    final var head = baseNow.clone().add(0, 1, 0);
+                    world.spawnParticle(Particle.FLASH,
+                        head, 1, 0, 0, 0, 0);
+                    final var base = baseNow;
+                    world.spawnParticle(Particle.ENCHANT,
+                        base, 15, 1, 1, 1, 0.05);
                 }
                 
                 // Check for nearby projectiles to reflect
                 player.getNearbyEntities(3, 3, 3).forEach(entity -> {
                     if (entity instanceof Projectile projectile && Math.random() < reflectChance) {
-                        if (!projectile.getShooter().equals(player)) {
+                        final var shooter = projectile.getShooter();
+                        if (!(shooter instanceof Player shooterPlayer && shooterPlayer.equals(player))) {
                             // Reflect the projectile
                             projectile.setVelocity(projectile.getVelocity().multiply(-1.5));
                             projectile.setShooter(player);
@@ -130,8 +137,12 @@ public class Reflect extends Spell<Player> {
         }.runTaskTimer(context.plugin(), 0L, 5L);
         
         // Initial effects
-        player.getWorld().spawnParticle(Particle.FIREWORK, 
-            player.getLocation(), 50, 1, 1, 1, 0.1);
+        {
+            final var world = Objects.requireNonNull(player.getWorld(), "world");
+            final var base = Objects.requireNonNull(player.getLocation(), "location");
+            world.spawnParticle(Particle.FIREWORK,
+                base, 50, 1, 1, 1, 0.1);
+        }
         context.fx().playSound(player, Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 2.0f);
         context.fx().playSound(player, Sound.ITEM_SHIELD_BLOCK, 1.5f, 1.0f);
         

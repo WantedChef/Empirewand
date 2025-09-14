@@ -3,7 +3,6 @@ package nl.wantedchef.empirewand.core.event;
 import nl.wantedchef.empirewand.core.util.AdvancedPerformanceMonitor;
 import org.bukkit.plugin.Plugin;
 
-import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -47,8 +46,7 @@ import java.time.Duration;
  */
 public class EventBusSystem {
     
-    private final Plugin plugin;
-    private final Logger logger;
+    private static final Logger logger = Logger.getLogger(EventBusSystem.class.getName());
     private final AdvancedPerformanceMonitor performanceMonitor;
     
     // Core event handling
@@ -189,7 +187,7 @@ public class EventBusSystem {
                 invocationCount.increment();
                 method.invoke(listener, event);
                 
-            } catch (Exception e) {
+            } catch (java.lang.reflect.InvocationTargetException | IllegalAccessException e) {
                 failureCount.increment();
                 throw e;
             } finally {
@@ -204,8 +202,6 @@ public class EventBusSystem {
         }
         
         // Getters
-        public Object getListener() { return listener; }
-        public Method getMethod() { return method; }
         public Class<?> getEventType() { return eventType; }
         public EventPriority getPriority() { return priority; }
         public boolean isAsync() { return async; }
@@ -415,8 +411,7 @@ public class EventBusSystem {
     }
     
     public EventBusSystem(Plugin plugin) {
-        this.plugin = Objects.requireNonNull(plugin);
-        this.logger = plugin.getLogger();
+        Objects.requireNonNull(plugin);
         this.performanceMonitor = new AdvancedPerformanceMonitor(plugin, logger);
         
         // Initialize executors
@@ -450,7 +445,7 @@ public class EventBusSystem {
         performanceMonitor.startMonitoring();
         startMaintenanceTasks();
         
-        logger.info("EventBusSystem initialized with enterprise features");
+        logger.log(Level.INFO, "EventBusSystem initialized with enterprise features");
     }
     
     /**
@@ -469,7 +464,7 @@ public class EventBusSystem {
                     EventHandler handler = new EventHandler(listener, method, annotation);
                     registerHandler(handler);
                     
-                    logger.fine("Registered event handler: " + handler.getHandlerId() + 
+                    logger.log(Level.FINE, () -> "Registered event handler: " + handler.getHandlerId() + 
                               " for event type: " + handler.getEventType().getSimpleName());
                 } catch (Exception e) {
                     logger.log(Level.WARNING, "Failed to register event handler: " + method, e);
@@ -488,24 +483,25 @@ public class EventBusSystem {
     /**
      * Registers a lambda-based event handler with priority and async options.
      */
-    public <T> void register(Class<T> eventType, Consumer<T> handler, EventPriority priority, boolean async) {
+    public <T> void register(final Class<T> eventType, final Consumer<T> handler, final EventPriority priority, final boolean async) {
         Objects.requireNonNull(eventType);
         Objects.requireNonNull(handler);
-        
+
         // Create a wrapper handler
-        EventHandler eventHandler = new EventHandler(handler, createLambdaMethod(handler), 
-                                                     createSubscribeAnnotation(priority, async)) {
+        final EventHandler eventHandler = new EventHandler(handler, this.createLambdaMethod(),
+                                                     this.createSubscribeAnnotation(priority, async)) {
             @Override
-            public void invoke(Object event) throws Exception {
+            public void invoke(final Object event) throws Exception {
                 if (eventType.isInstance(event)) {
                     @SuppressWarnings("unchecked")
+                    final
                     T typedEvent = (T) event;
                     handler.accept(typedEvent);
                 }
             }
         };
-        
-        registerHandler(eventHandler);
+
+        this.registerHandler(eventHandler);
     }
     
     /**
@@ -519,23 +515,23 @@ public class EventBusSystem {
     /**
      * Registers a string-based event handler with priority and async options.
      */
-    public void register(String eventName, Consumer<Object> handler, EventPriority priority, boolean async) {
+    public void register(final String eventName, final Consumer<Object> handler, final EventPriority priority, final boolean async) {
         Objects.requireNonNull(eventName);
         Objects.requireNonNull(handler);
-        
+
         // Create a wrapper handler for named events
-        EventHandler eventHandler = new EventHandler(handler, createLambdaMethod(handler), 
-                                                     createSubscribeAnnotation(priority, async)) {
+        final EventHandler eventHandler = new EventHandler(handler, this.createLambdaMethod(),
+                                                     this.createSubscribeAnnotation(priority, async)) {
             @Override
-            public void invoke(Object event) throws Exception {
+            public void invoke(final Object event) throws Exception {
                 handler.accept(event);
             }
         };
-        
+
         // Add to named event handlers
-        namedEventHandlers.computeIfAbsent(eventName, k -> new CopyOnWriteArrayList<>()).add(eventHandler);
-        
-        logger.info("Registered handler for named event: " + eventName);
+        this.namedEventHandlers.computeIfAbsent(eventName, k -> new CopyOnWriteArrayList<>()).add(eventHandler);
+
+        logger.log(Level.INFO, () -> "Registered handler for named event: " + eventName);
     }
     
     /**
@@ -613,7 +609,6 @@ public class EventBusSystem {
      * Adds an event transformer for a specific event type.
      */
     public <T> void addTransformer(Class<T> eventType, EventTransformer<T> transformer) {
-        @SuppressWarnings("unchecked")
         List<EventTransformer<?>> transformerList = transformers.computeIfAbsent(eventType, 
             k -> new CopyOnWriteArrayList<>());
         transformerList.add(transformer);
@@ -660,7 +655,7 @@ public class EventBusSystem {
      */
     public void startEventCapture() {
         replaySystem.startCapture();
-        logger.info("Event capture started");
+        logger.log(Level.INFO, "Event capture started");
     }
     
     /**
@@ -669,7 +664,7 @@ public class EventBusSystem {
     public Map<String, Object> stopEventCapture() {
         replaySystem.stopCapture();
         Map<String, Object> captured = replaySystem.getCapturedEvents();
-        logger.info("Event capture stopped. Captured " + captured.size() + " events");
+        logger.log(Level.INFO, () -> "Event capture stopped. Captured " + captured.size() + " events");
         return captured;
     }
     
@@ -684,7 +679,7 @@ public class EventBusSystem {
      * Shuts down the event bus system.
      */
     public void shutdown() {
-        logger.info("Shutting down EventBusSystem...");
+        logger.log(Level.INFO, "Shutting down EventBusSystem...");
         
         try {
             // Shutdown executors
@@ -712,10 +707,13 @@ public class EventBusSystem {
             globalHandlers.clear();
             circuitBreakers.clear();
             
-            logger.info("EventBusSystem shutdown complete");
+            logger.log(Level.INFO, "EventBusSystem shutdown complete");
             
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Error during EventBusSystem shutdown", e);
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.log(Level.WARNING, "EventBusSystem shutdown interrupted", e);
+        } catch (final Exception e) {
+            logger.log(Level.SEVERE, "Unexpected error during EventBusSystem shutdown", e);
         }
     }
     
@@ -740,6 +738,12 @@ public class EventBusSystem {
         
         // Initialize circuit breaker
         circuitBreakers.put(handler, new CircuitBreaker(10, Duration.ofMinutes(5)));
+        
+        // Debug registration message lazily to avoid concat cost
+        if (logger.isLoggable(Level.FINE)) {
+            logger.log(Level.FINE, () -> "Registered event handler: " + handler.getHandlerId() +
+                    " for type " + handler.getEventType().getSimpleName());
+        }
     }
     
     private boolean applyFilters(Object event) {
@@ -855,14 +859,20 @@ public class EventBusSystem {
         
         // Wait for all handlers to complete
         try {
-            CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+            CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+                    futures.toArray(CompletableFuture[]::new));
             allFutures.get(handlerTimeout.toMillis(), TimeUnit.MILLISECONDS);
-            
-        } catch (Exception e) {
+        } catch (final java.util.concurrent.TimeoutException | java.util.concurrent.ExecutionException e) {
             successful = false;
             errorMessage = e.getMessage();
-            totalHandlerFailures.increment();
+            this.totalHandlerFailures.increment();
             logger.log(Level.WARNING, "Error processing event handlers", e);
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            successful = false;
+            errorMessage = e.getMessage();
+            this.totalHandlerFailures.increment();
+            logger.log(Level.WARNING, "Error processing event handlers (interrupted)", e);
         }
         
         long processingTime = System.nanoTime() - startTime;
@@ -915,8 +925,8 @@ public class EventBusSystem {
             }
         }
         
-        logger.fine("Dead event: " + deadEvent.reason() + " for event: " + 
-                   deadEvent.originalEvent().getClass().getSimpleName());
+        logger.log(Level.FINE, () -> "Dead event: " + deadEvent.reason() + " for event: " +
+                deadEvent.originalEvent().getClass().getSimpleName());
     }
     
     private void startMaintenanceTasks() {
@@ -929,7 +939,7 @@ public class EventBusSystem {
                     return cb.getState() == CircuitBreaker.State.CLOSED && cb.getFailureCount() == 0;
                 });
                 
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 logger.log(Level.WARNING, "Error during EventBus maintenance", e);
             }
         }, 5, 5, TimeUnit.MINUTES);
@@ -938,49 +948,40 @@ public class EventBusSystem {
         scheduledExecutor.scheduleWithFixedDelay(() -> {
             if (metricsEnabled && logger.isLoggable(Level.FINE)) {
                 EventBusMetrics metrics = getMetrics();
-                logger.fine("EventBus Metrics: " + metrics);
+                logger.log(Level.FINE, () -> "EventBus Metrics: " + metrics);
             }
         }, 60, 60, TimeUnit.SECONDS);
     }
     
     // Helper methods for lambda registration
     
-    private Method createLambdaMethod(Consumer<?> handler) {
+    private Method createLambdaMethod() {
         // Create a dummy method for lambda handlers
         try {
             return Consumer.class.getMethod("accept", Object.class);
-        } catch (NoSuchMethodException e) {
+        } catch (final NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
     }
     
     private Subscribe createSubscribeAnnotation(EventPriority priority, boolean async) {
-        return new Subscribe() {
-            @Override
-            public Class<? extends Annotation> annotationType() {
-                return Subscribe.class;
-            }
-            
-            @Override
-            public EventPriority priority() {
-                return priority;
-            }
-            
-            @Override
-            public boolean async() {
-                return async;
-            }
-            
-            @Override
-            public String[] eventNames() {
-                return new String[0];
-            }
-            
-            @Override
-            public boolean ignoreCancelled() {
-                return false;
-            }
-        };
+        // Use reflection proxy to create annotation instance
+        return (Subscribe) java.lang.reflect.Proxy.newProxyInstance(
+            Subscribe.class.getClassLoader(),
+            new Class<?>[] { Subscribe.class },
+            (proxy, method, args) -> {
+                return switch (method.getName()) {
+                    case "priority" -> priority;
+                    case "async" -> async;
+                    case "eventNames" -> new String[0];
+                    case "ignoreCancelled" -> false;
+                    case "annotationType" -> Subscribe.class;
+                    case "toString" -> "@Subscribe(priority=" + priority + ", async=" + async + ")";
+                    case "hashCode" -> priority.hashCode() * 31 + Boolean.hashCode(async);
+                    case "equals" -> proxy == args[0];
+                    default -> throw new UnsupportedOperationException("Unsupported method: " + method.getName());
+                };
+            });
     }
     
     // Event types

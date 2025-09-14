@@ -10,6 +10,7 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.attribute.Attribute;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -64,9 +65,9 @@ public class SuperHeal extends Spell<Void> {
         for (var entity : center.getWorld().getNearbyEntities(center, radius, radius, radius)) {
             if (entity instanceof Player targetPlayer) {
                 if (healFull) {
-                    targetPlayer.setHealth(targetPlayer.getMaxHealth());
+                    targetPlayer.setHealth(getMaxHealth(targetPlayer));
                 } else {
-                    targetPlayer.setHealth(Math.min(targetPlayer.getHealth() + 20, targetPlayer.getMaxHealth()));
+                    targetPlayer.setHealth(Math.min(targetPlayer.getHealth() + 20, getMaxHealth(targetPlayer)));
                 }
                 targetPlayer.setFoodLevel(20);
                 targetPlayer.setSaturation(20);
@@ -85,7 +86,7 @@ public class SuperHeal extends Spell<Void> {
                 
                 healedCount++;
             } else if (entity instanceof LivingEntity living && isAlly(player, living)) {
-                living.setHealth(living.getMaxHealth());
+                living.setHealth(getMaxHealth(living));
                 living.setFireTicks(0);
                 healedCount++;
             }
@@ -135,6 +136,11 @@ public class SuperHeal extends Spell<Void> {
                    tameable.getOwner().getUniqueId().equals(player.getUniqueId());
         }
         return false;
+    }
+
+    private double getMaxHealth(LivingEntity entity) {
+        var attr = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        return attr != null ? attr.getValue() : 20.0;
     }
 
     protected void applyEffect(@NotNull SpellContext context, Void effect) {

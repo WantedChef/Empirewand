@@ -40,11 +40,15 @@ public final class WandCastListener implements Listener {
         this.spellSwitchService = new SpellSwitchService(plugin, EmpireWandAPI.getService(WandService.class));
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    // Handle even if other plugins cancel, and as early as possible
+    @EventHandler(ignoreCancelled = false, priority = EventPriority.HIGHEST)
     public void onInteract(PlayerInteractEvent event) {
         // Early exit conditions for maximum performance
-        if (event.getHand() != EquipmentSlot.HAND) {
-            return; // Prevent double triggers
+        // Process both hands for reliability; prefer main hand interactions
+        boolean isMainHand = event.getHand() == EquipmentSlot.HAND;
+        boolean isOffHand = event.getHand() == EquipmentSlot.OFF_HAND;
+        if (!isMainHand && !isOffHand) {
+            return;
         }
 
         Action action = event.getAction();
@@ -55,7 +59,7 @@ public final class WandCastListener implements Listener {
             return;
         }
 
-        ItemStack item = player.getInventory().getItemInMainHand();
+        ItemStack item = isMainHand ? player.getInventory().getItemInMainHand() : player.getInventory().getItemInOffHand();
         if (!plugin.getWandService().isWand(item)) {
             return;
         }
@@ -78,6 +82,8 @@ public final class WandCastListener implements Listener {
             // Shift+right-click: cycle to previous spell with visual effect
             // Always cancel the event to ensure spell selection works everywhere
             event.setCancelled(true);
+            event.setUseInteractedBlock(org.bukkit.event.Event.Result.DENY);
+            event.setUseItemInHand(org.bukkit.event.Event.Result.DENY);
             
             if (player.isSneaking()) {
                 cycleToPreviousSpell(player, item, spells);
@@ -245,18 +251,14 @@ public final class WandCastListener implements Listener {
 
                 plugin.getMetricsService().recordSpellCast(spellKey, (System.nanoTime() - start) / 1_000_000);
             } else {
-                // Failure: show error if player is online and record metrics
-                if (player.isOnline()) {
-                    fx.showError(player, "wand.cast-error");
-                }
+                // Failure: log error and record metrics (don't show error message to player)
+                plugin.getLogger().info(String.format("Spell cast failed for '%s' by player %s",
+                    spellKey, player.getName()));
                 plugin.getMetricsService().recordFailedCast();
             }
         } catch (Exception e) {
-            // Base Spell.cast handles failure events; as a safety net, log and show error
-            if (player.isOnline()) {
-                fx.showError(player, "wand.cast-error");
-            }
-            plugin.getLogger().warning(String.format("Spell cast error for '%s' by player %s: %s", 
+            // Base Spell.cast handles failure events; as a safety net, log the error
+            plugin.getLogger().warning(String.format("Spell cast exception for '%s' by player %s: %s",
                 spellKey, player.getName(), e.getMessage()));
             plugin.getMetricsService().recordFailedCast();
         }

@@ -16,6 +16,7 @@ import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.attribute.Attribute;
 
 import java.util.Comparator;
 import java.util.HashSet;
@@ -199,7 +200,8 @@ public class WaveSpellListener implements Listener {
             // Heal caster
             plugin.getTaskManager().runTask(() -> {
                 if (caster.isOnline() && caster.isValid()) {
-                    caster.setHealth(Math.min(caster.getMaxHealth(), caster.getHealth() + healAmount));
+                    double max = getMaxHealth(caster);
+                    caster.setHealth(Math.min(max, caster.getHealth() + healAmount));
                     
                     // Healing particles
                     fxService.spawnParticle("HEART", caster.getLocation().add(0, 2, 0), 
@@ -529,4 +531,9 @@ public class WaveSpellListener implements Listener {
      * Data record for lingering wave effects
      */
     private record LingeringWaveEffect(String effectType, UUID casterUUID, long expiryTime, double radius) {}
+    
+    private double getMaxHealth(org.bukkit.entity.LivingEntity entity) {
+        var attr = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        return attr != null ? attr.getValue() : 20.0;
+    }
 }

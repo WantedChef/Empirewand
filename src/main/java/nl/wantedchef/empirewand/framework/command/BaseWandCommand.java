@@ -24,6 +24,8 @@ import nl.wantedchef.empirewand.command.wand.BindCategoryCommand;
 import nl.wantedchef.empirewand.command.wand.BindCommand;
 import nl.wantedchef.empirewand.command.wand.BindTypeCommand;
 import nl.wantedchef.empirewand.command.wand.GetCommand;
+import nl.wantedchef.empirewand.command.wand.GiveCommand;
+import nl.wantedchef.empirewand.command.wand.GuiCommand;
 import nl.wantedchef.empirewand.command.wand.ListCommand;
 import nl.wantedchef.empirewand.command.wand.SetSpellCommand;
 import nl.wantedchef.empirewand.command.wand.SpellsCommand;
@@ -58,7 +60,7 @@ public abstract class BaseWandCommand implements CommandExecutor, TabCompleter {
         this.plugin = plugin;
         this.commandCache = new CommandCache();
         this.performanceMonitor = new CommandPerformanceMonitor(plugin);
-        this.smartTabCompleter = new SmartTabCompleter(commandCache, plugin.getSpellRegistry());
+    this.smartTabCompleter = new SmartTabCompleter(commandCache, plugin.getSpellRegistry(), plugin);
         // Initialize error handler with basic constructor first, will update after initialization
         this.errorHandler = new CommandErrorHandler(plugin);
         // Defer initialization to avoid calling overridable methods in constructor
@@ -105,6 +107,7 @@ public abstract class BaseWandCommand implements CommandExecutor, TabCompleter {
 
         // Core wand management commands
         register(new GetCommand(prefix, displayName, wandMaterial));
+        register(new GiveCommand(prefix, displayName, wandMaterial));
         register(new BindCommand(prefix));
         register(new UnbindCommand(prefix));
         register(new BindAllCommand(prefix));
@@ -112,6 +115,9 @@ public abstract class BaseWandCommand implements CommandExecutor, TabCompleter {
         register(new SetSpellCommand(prefix));
         register(new ToggleCommand(prefix));
         register(new SwitchEffectCommand(plugin, prefix));
+
+        // GUI commands
+        register(new GuiCommand(prefix));
 
         // Advanced binding commands
         register(new BindTypeCommand(prefix));
@@ -271,15 +277,19 @@ public abstract class BaseWandCommand implements CommandExecutor, TabCompleter {
                 .filter(name -> {
                     SubCommand sub = subcommands.get(name);
                     String perm = sub.getPermission();
+
+                    // If no permission is required, allow access
+                    if (perm == null) {
+                        return true;
+                    }
+
                     // Use cached permission if available
                     Boolean cachedPerm = commandCache.getCachedPermission(sender, perm);
                     if (cachedPerm != null) {
-                        return perm == null || cachedPerm;
+                        return cachedPerm;
                     } else {
-                        boolean hasPermission = perm == null || plugin.getPermissionService().has(sender, perm);
-                        if (perm != null) {
-                            commandCache.cachePermission(sender, perm, hasPermission);
-                        }
+                        boolean hasPermission = plugin.getPermissionService().has(sender, perm);
+                        commandCache.cachePermission(sender, perm, hasPermission);
                         return hasPermission;
                     }
                 })
@@ -317,7 +327,7 @@ public abstract class BaseWandCommand implements CommandExecutor, TabCompleter {
                     return smartCompletions;
                 } catch (Exception e) {
                     // Log the error but don't break tab completion
-                    plugin.getLogger().warning("Tab completion error for " + subCommandName + ": " + e.getMessage());
+                    plugin.getLogger().log(java.util.logging.Level.WARNING, "Tab completion error for {0}", subCommandName);
                     return List.of();
                 }
             }

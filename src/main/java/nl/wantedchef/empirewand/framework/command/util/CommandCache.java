@@ -57,10 +57,14 @@ public class CommandCache {
      * @return Cached permission result or null if not cached
      */
     @Nullable
-    public Boolean getCachedPermission(@NotNull CommandSender sender, @NotNull String permission) {
+    public Boolean getCachedPermission(@NotNull CommandSender sender, @Nullable String permission) {
+        if (permission == null) {
+            return null;
+        }
+
         String senderKey = sender.getName();
         Map<String, Boolean> senderPermissions = permissionCache.get(senderKey);
-        
+
         if (senderPermissions != null) {
             Boolean result = senderPermissions.get(permission);
             if (result != null) {
@@ -71,7 +75,7 @@ public class CommandCache {
                 return result;
             }
         }
-        
+
         permissionCacheMisses++;
         return null;
     }
@@ -83,7 +87,10 @@ public class CommandCache {
      * @param permission The permission that was checked
      * @param result The permission check result
      */
-    public void cachePermission(@NotNull CommandSender sender, @NotNull String permission, boolean result) {
+    public void cachePermission(@NotNull CommandSender sender, @Nullable String permission, boolean result) {
+        if (permission == null) {
+            return;
+        }
         String senderKey = sender.getName();
         String cacheKey = senderKey + ":" + permission;
         

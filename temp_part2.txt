@@ -1,0 +1,216 @@
+                world.spawnParticle(Particle.CLOUD, cloudLoc, 1, 0.2, 0.1, 0.2, 0.01);
+
+                // Electric activity in clouds
+                if (Math.random() < 0.3 * stormIntensity) {
+                    world.spawnParticle(Particle.ELECTRIC_SPARK, cloudLoc, 1, 0.2, 0.2, 0.2, 0.02);
+
+                    // Dark storm cloud color
+                    Color stormColor = Color.fromRGB(60, 60, 90);
+                    world.spawnParticle(Particle.DUST, cloudLoc, 1, 0.15, 0.15, 0.15, 0,
+                        new Particle.DustOptions(stormColor, 1.2f));
+                }
+            }
+
+            // Inner storm swirl
+            int innerParticles = cfgInt("aura.inner-particles", 20);
+            for (int i = 0; i < innerParticles; i++) {
+                double angle = auraPhase * 2 + i * 0.4;
+                double radius = (innerParticles - i) * 0.3;
+                double x = Math.cos(angle) * radius;
+                double z = Math.sin(angle) * radius;
+                double y = 1.5 + i * 0.1;
+
+                Location innerLoc = center.clone().add(x, y, z);
+
+                // Swirling storm energy
+                world.spawnParticle(Particle.ELECTRIC_SPARK, innerLoc, 1, 0.1, 0.1, 0.1, 0.01);
+
+                if (Math.random() < 0.5) {
+                    Color energyColor = Color.fromRGB(100, 100, 200);
+                    world.spawnParticle(Particle.DUST, innerLoc, 1, 0.08, 0.08, 0.08, 0,
+                        new Particle.DustOptions(energyColor, 1.0f));
+                }
+            }
+        }
+
+        private void checkForLightningTargets(Location center) {
+            double auraRadius = cfgDouble("aura.radius", 8.0);
+            double lightningDamage = cfgDouble("lightning.damage", 6.0);
+
+            // Find living entities in the storm aura
+            for (Entity entity : center.getWorld().getNearbyEntities(center, auraRadius, auraRadius, auraRadius)) {
+                if (!(entity instanceof LivingEntity)) continue;
+                if (entity.equals(player)) continue; // Don't strike the caster
+                if (recentlyStruck.contains(entity.getUniqueId())) continue;
+
+                LivingEntity target = (LivingEntity) entity;
+                double distance = center.distance(entity.getLocation());
+
+                if (distance <= auraRadius) {
+                    // Strike this entity with 3 lightning bolts
+                    strikeLightning(target, lightningDamage);
+                    recentlyStruck.add(entity.getUniqueId());
+                    entitiesStruck++;
+
+                    // Message to caster
+                    player.sendMessage(Component.text("Â§9âš¡ Â§eLightning strikes " +
+                        (target instanceof Player ? ((Player) target).getName() : target.getType().name()) + "! Â§9âš¡"));
+                }
+            }
+        }
+        private void strikeLightning(LivingEntity target, double damage) {
+            Location targetLoc = target.getLocation();
+
+            // Strike with 3 lightning bolts in sequence
+            for (int i = 0; i < 3; i++) {
+                int delay = i * 5; // 5 tick delay between strikes
+
+                Bukkit.getScheduler().runTaskLater(context.plugin(), () -> {
+                    if (!target.isDead() && target.isValid()) {
+                        // Create lightning visual effect
+                        spawnLightningBolt(targetLoc);
+
+                        // Damage the target
+                        target.damage(damage, player);
+
+                        // Lightning strike sounds
+                        targetLoc.getWorld().playSound(targetLoc, Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 1.0f, 1.0f);
+                        targetLoc.getWorld().playSound(targetLoc, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.8f, 1.2f);
+                    }
+                }, delay);
+            }
+        }
+        private void spawnLightningBolt(Location target) {
+            World world = target.getWorld();
+            Location skyLoc = target.clone().add(0, 15, 0);
+
+            // Create lightning bolt from sky to target
+            Vector direction = target.toVector().subtract(skyLoc.toVector()).normalize();
+            double distance = skyLoc.distance(target);
+
+            for (int i = 0; i < 20; i++) {
+                double progress = (double) i / 20;
+                Location boltLoc = skyLoc.clone().add(direction.clone().multiply(distance * progress));
+
+                // Add slight zigzag to make it look more realistic
+                double zigzag = Math.sin(progress * Math.PI * 6) * 0.3;
+                boltLoc.add(zigzag, 0, zigzag * 0.5);
+
+                // Lightning bolt particles
+                world.spawnParticle(Particle.ELECTRIC_SPARK, boltLoc, 3, 0.1, 0.1, 0.1, 0.05);
+                world.spawnParticle(Particle.END_ROD, boltLoc, 1, 0.05, 0.05, 0.05, 0.02);
+
+                // Bright white lightning core
+                Color lightningColor = Color.fromRGB(255, 255, 255);
+                world.spawnParticle(Particle.DUST, boltLoc, 2, 0.05, 0.05, 0.05, 0,
+                    new Particle.DustOptions(lightningColor, 2.0f));
+            }
+
+            // Lightning impact effect
+            spawnLightningImpact(target);
+        }
+        private void spawnLightningImpact(Location impact) {
+            World world = impact.getWorld();
+
+            // Lightning impact explosion
+            for (int i = 0; i < 30; i++) {
+                double angle = Math.random() * 2 * Math.PI;
+                double radius = Math.random() * 2.0;
+                double height = Math.random() * 1.0;
+
+                Location impactLoc = impact.clone().add(
+                    Math.cos(angle) * radius,
+                    height,
+                    Math.sin(angle) * radius
+                );
+
+                // Impact particles
+                world.spawnParticle(Particle.ELECTRIC_SPARK, impactLoc, 2, 0.2, 0.2, 0.2, 0.05);
+                world.spawnParticle(Particle.END_ROD, impactLoc, 1, 0.1, 0.1, 0.1, 0.03);
+
+                // Lightning impact flash
+                Color impactColor = Color.fromRGB(255, 255, 200);
+                world.spawnParticle(Particle.DUST, impactLoc, 1, 0.1, 0.1, 0.1, 0,
+                    new Particle.DustOptions(impactColor, 1.5f));
+            }
+        }
+        private void spawnStormActivationEffect() {
+            Location loc = player.getLocation();
+            World world = player.getWorld();
+
+            // Storm aura formation effect
+            double auraRadius = cfgDouble("aura.radius", 8.0);
+
+            for (int i = 0; i < 50; i++) {
+                double angle = Math.random() * 2 * Math.PI;
+                double radius = Math.random() * auraRadius;
+                double height = Math.random() * 4.0 + 1.0;
+
+                Location stormLoc = loc.clone().add(
+                    Math.cos(angle) * radius,
+                    height,
+                    Math.sin(angle) * radius
+                );
+
+                // Storm gathering effect
+                world.spawnParticle(Particle.SMOKE, stormLoc, 3, 0.3, 0.3, 0.3, 0.02);
+                world.spawnParticle(Particle.CLOUD, stormLoc, 2, 0.2, 0.2, 0.2, 0.01);
+                world.spawnParticle(Particle.ELECTRIC_SPARK, stormLoc, 1, 0.2, 0.2, 0.2, 0.02);
+
+                // Dark storm color
+                Color stormColor = Color.fromRGB(70, 70, 100);
+                world.spawnParticle(Particle.DUST, stormLoc, 1, 0.2, 0.2, 0.2, 0,
+                    new Particle.DustOptions(stormColor, 1.3f));
+            }
+        }
+
+        private void spawnStormDeactivationEffect() {
+            Location loc = player.getLocation();
+            World world = player.getWorld();
+
+            // Storm dissipation
+            for (int i = 0; i < 30; i++) {
+                double angle = Math.random() * 2 * Math.PI;
+                double radius = Math.random() * 6.0;
+                double height = Math.random() * 3.0 + 1.0;
+
+                Location dissipationLoc = loc.clone().add(
+                    Math.cos(angle) * radius,
+                    height,
+                    Math.sin(angle) * radius
+                );
+
+                world.spawnParticle(Particle.CLOUD, dissipationLoc, 1, 0.3, 0.2, 0.3, 0.005);
+                world.spawnParticle(Particle.SMOKE, dissipationLoc, 1, 0.2, 0.1, 0.2, 0.002);
+
+                // Fading electrical activity
+                if (Math.random() < 0.2) {
+                    world.spawnParticle(Particle.ELECTRIC_SPARK, dissipationLoc, 1, 0.1, 0.1, 0.1, 0.01);
+                }
+            }
+        }
+
+        private void playStormSounds(Location loc) {
+            if (tickCounter % 80 == 0) {
+                // Ambient storm sounds
+                player.playSound(loc, Sound.WEATHER_RAIN_ABOVE, 0.4f, 1.0f);
+
+                if (Math.random() < 0.3) {
+                    player.playSound(loc, Sound.ITEM_TRIDENT_THUNDER, 0.3f, 1.1f);
+                }
+            }
+        }
+    }
+
+    private double cfgDouble(String path, double def) {
+        return spellConfig.getDouble("storm-rider." + path, def);
+    }
+
+    private int cfgInt(String path, int def) {
+        return spellConfig.getInt("storm-rider." + path, def);
+    }
+
+    private boolean cfgBool(String path, boolean def) {
+        return spellConfig.getBoolean("storm-rider." + path, def);
+    }
+}

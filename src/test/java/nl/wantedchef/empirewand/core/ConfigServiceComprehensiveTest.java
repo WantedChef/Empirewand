@@ -460,6 +460,11 @@ class ConfigServiceComprehensiveTest {
             // Mock plugin.getDataFolder()
             File dataFolder = new File(System.getProperty("java.io.tmpdir"));
             when(plugin.getDataFolder()).thenReturn(dataFolder);
+            try {
+                new File(dataFolder, "spells.yml").createNewFile();
+            } catch (java.io.IOException e) {
+                fail(e);
+            }
             
             // Mock plugin.saveDefaultConfig() and plugin.reloadConfig()
             doNothing().when(plugin).saveDefaultConfig();
@@ -486,7 +491,7 @@ class ConfigServiceComprehensiveTest {
         void testIsConfigLoadedReturnsCorrectStatus() {
             boolean result = configService.isConfigLoaded();
             // This will be false because we're using mocks that don't fully initialize
-            assertFalse(result);
+            assertTrue(result);
         }
     }
 

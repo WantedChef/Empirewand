@@ -8,7 +8,7 @@ spells:
     description: "Launches a powerful explosive comet at your target location"
     type: PROJECTILE
     cooldown: 2500 # ms
-    range: 20.0
+    range: 70.0
     fx:
       particles: "EXPLOSION_LARGE"
       sound: "ENTITY_GENERIC_EXPLODE"
@@ -36,7 +36,7 @@ spells:
     description: "Fires multiple homing magical projectiles at your target"
     type: PROJECTILE
     cooldown: 3000
-    range: 20.0
+    range: 70.0
     fx:
       particles: "CRIT"
       sound: "ENTITY_ILLUSIONER_CAST_SPELL"
@@ -88,79 +88,6 @@ spells:
     values:
       velocity-multiplier: 1.5
       vertical-boost: 0.0       # Optional extra lift
-
-  # Toggle Movement Spells
-  angel-wings:
-    display-name: "<#FFD700>Angel Wings"
-    description: "Manifest blazing wings of sacred fire and soar through the heavens with divine flames."
-    type: MOVEMENT
-    cooldown: 5000
-    values:
-      max-duration-ticks: 2400
-      divine-energy-regen: 1.0
-      flight-speed: 1.2
-    flags:
-      toggleable: true
-
-  crystal-glide:
-    display-name: "<#00FFFF>Crystal Glide"
-    description: "Glide through the air with crystalline wings that refract light beautifully."
-    type: MOVEMENT
-    cooldown: 3000
-    values:
-      max-duration-ticks: 1800
-      glide-speed: 1.5
-      crystal-trail-intensity: 2.0
-    flags:
-      toggleable: true
-
-  dragon-fury:
-    display-name: "<#8B0000>Dragon Fury"
-    description: "Channel the fury of dragons to fly with powerful wing beats and fiery breath."
-    type: MOVEMENT
-    cooldown: 6000
-    values:
-      max-duration-ticks: 3000
-      dragon-strength: 2.5
-      fire-damage: 3.0
-    flags:
-      toggleable: true
-
-  phoenix-rise:
-    display-name: "<#FF4500>Phoenix Rise"
-    description: "Rise from the ashes with phoenix wings that grant rebirth and flame immunity."
-    type: MOVEMENT
-    cooldown: 8000
-    values:
-      max-duration-ticks: 3600
-      rebirth-cooldown: 12000
-      flame-immunity: true
-    flags:
-      toggleable: true
-
-  storm-rider:
-    display-name: "<#4169E1>Storm Rider"
-    description: "Ride the storm winds with lightning-infused wings that control weather."
-    type: MOVEMENT
-    cooldown: 7000
-    values:
-      max-duration-ticks: 2800
-      lightning-strikes: 3
-      wind-control: true
-    flags:
-      toggleable: true
-
-  void-walk:
-    display-name: "<#800080>Void Walk"
-    description: "Walk through the void with shadow wings that allow teleportation and invisibility."
-    type: MOVEMENT
-    cooldown: 10000
-    values:
-      max-duration-ticks: 2000
-      teleport-range: 15.0
-      invisibility-duration: 100
-    flags:
-      toggleable: true
 
   heal:
     display-name: "<#ADFF2F>Heal"
@@ -217,7 +144,7 @@ spells:
     type: DARK
     cooldown: 4000
     values:
-      range: 24.0                # Targeting range for initial shot
+      range: 75.0                # Targeting range for initial shot
       speed: 1.8                 # Wither skull speed multiplier
       explosion-radius: 4.0      # AoE radius on impact (blocks)
       damage: 6.0                # Direct damage at impact
@@ -252,7 +179,7 @@ spells:
     type: CONTROL
     cooldown: 3500
     values:
-      range: 15.0
+      range: 60.0
       damage: 6.0
       duration-ticks: 80
       slow-amplifier: 2
@@ -274,7 +201,7 @@ spells:
     type: MOVEMENT
     cooldown: 3000
     values:
-      range: 25.0
+      range: 80.0
 
   # ===== ADVANCED WAVE SPELLS =====
   # Spectacular projectile-based wave spells with sophisticated 3D particle effects
@@ -286,7 +213,7 @@ spells:
     cooldown: 8000
     values:
       damage: 6.0               # Base damage per projectile
-      range: 25.0               # Maximum travel distance
+      range: 75.0               # Maximum travel distance
       projectile-count: 6       # Number of projectiles in formation
       formation-radius: 1.8     # Radius of projectile formation
       speed: 1.2                # Projectile travel speed
@@ -309,7 +236,7 @@ spells:
     cooldown: 10000
     values:
       damage: 4.0               # Base damage per projectile
-      range: 28.0               # Maximum travel distance
+      range: 55.0               # Maximum travel distance
       projectile-count: 8       # Number of projectiles in formation
       formation-radius: 2.2     # Radius of projectile formation
       speed: 1.0                # Projectile travel speed
@@ -335,7 +262,7 @@ spells:
     cooldown: 12000
     values:
       damage: 7.0               # Base damage per projectile
-      range: 30.0               # Maximum travel distance
+      range: 60.0               # Maximum travel distance
       projectile-count: 10      # Number of projectiles in formation
       formation-radius: 2.5     # Radius of projectile formation
       speed: 1.8                # Projectile travel speed
@@ -362,7 +289,7 @@ spells:
     cooldown: 9000
     values:
       damage: 5.0               # Base damage per projectile
-      range: 26.0               # Maximum travel distance
+      range: 50.0               # Maximum travel distance
       projectile-count: 7       # Number of projectiles in formation
       formation-radius: 2.0     # Radius of projectile formation
       speed: 1.3                # Projectile travel speed
@@ -398,7 +325,7 @@ spells:
     type: LIGHTNING
     cooldown: 4000
     values:
-      range: 20.0
+      range: 40.0
       damage: 24.0
 
   fireball:
@@ -453,7 +380,7 @@ spells:
     type: LIGHTNING
     cooldown: 1500
     values:
-      range: 20.0
+      range: 40.0
       damage: 4.0
       knockback: 0.5
       speed: 2.0
@@ -464,7 +391,7 @@ spells:
     type: LIGHTNING
     cooldown: 2000
     values:
-      range: 25.0
+      range: 50.0
       damage: 6.0
       knockback: 0.7
       speed: 2.2
@@ -475,7 +402,7 @@ spells:
     type: LIGHTNING
     cooldown: 3000
     values:
-      range: 30.0
+      range: 60.0
       damage: 8.0
       lightning-damage: 12.0
       speed: 2.5
@@ -485,13 +412,13 @@ spells:
       block_lifetime_ticks: 30
       spark_interval_ticks: 4
 
-  poison-wave:
+  poison-cone:
     display-name: "<#32CD32>Poison Wave"
     description: "Sends out a cone of poison that damages and poisons enemies"
     type: POISON
     cooldown: 4000
     values:
-      range: 8.0
+      range: 20.0
       angle: 60.0
       damage: 6.0
       poison-duration-ticks: 100
@@ -505,19 +432,19 @@ spells:
     type: FIRE
     cooldown: 5000
     values:
-      range: 8.0
+      range: 20.0
       angle: 60.0
       damage: 10.0
       knockback: 1.2
       yield: 1.5
 
-  flame-wave:
+  flame-cone:
     display-name: "<#FF6347>Flame Wave"
     description: "Sends out a wave of flames that ignites and damages enemies"
     type: FIRE
     cooldown: 4000
     values:
-      range: 8.0
+      range: 20.0
       angle: 60.0
       damage: 8.0
       fire-duration-ticks: 80
@@ -586,7 +513,7 @@ spells:
     type: MOVEMENT
     cooldown: 10000
     values:
-      max-range: 16.0
+      max-range: 35.0
       speed-duration: 40
 
   comet-shower:
@@ -633,7 +560,7 @@ spells:
     values:
       damage: 4.0
       heal-per-target: 0.8
-      range: 5.0
+      range: 15.0
       angle-degrees: 120.0
     flags:
       hit-players: true
@@ -755,7 +682,7 @@ spells:
     type: LIFE
     cooldown: 10000
     values:
-      range: 20.0
+      range: 40.0
       damage: 6.0
       glowing-duration-ticks: 60
       max-pierce: 3
@@ -799,7 +726,7 @@ spells:
     type: DARK
     cooldown: 10000
     values:
-      range: 8.0
+      range: 20.0
       damage: 2.0
       slowness-duration-ticks: 20
       max-pierce: 3
@@ -826,28 +753,13 @@ spells:
       ice-burst-count: 6
       enable-reversible-floor: true
 
-  chain-lightning:
-    display-name: "<#87CEEB>Chain Lightning"
-    description: "Fires lightning that jumps between nearby enemies multiple times"
-    type: LIGHTNING
-    cooldown: 7000
-    values:
-      range: 20.0
-      jump-radius: 8.0
-      jumps: 4
-      damage: 8.0
-      # Visual arc (purely cosmetic)
-      arc_particle_count: 8
-      arc_steps: 12
-      max_arc_length: 15.0
-
   blink-strike:
     display-name: "<#9932CC>Blink Strike"
     description: "Instantly teleports behind your target and delivers a powerful strike"
     type: MOVEMENT
     cooldown: 6000
     values:
-      range: 15.0
+      range: 30.0
       behind-distance: 1.5
       damage: 10.0
       # Visual blink effects (purely cosmetic)
@@ -926,7 +838,7 @@ spells:
     type: WEATHER
     cooldown: 3500
     values:
-      range: 10.0
+      range: 25.0
       angle: 70.0
       knockback: 1.2
       damage: 2.0
@@ -954,7 +866,7 @@ spells:
     type: MOVEMENT
     cooldown: 8000
     values:
-      range: 15.0
+      range: 30.0
     flags:
       requires-los: true
 
@@ -964,7 +876,7 @@ spells:
     type: DARK
     cooldown: 12000
     values:
-      range: 10.0
+      range: 25.0
     visual:
       echo-samples: 6
 
@@ -1002,14 +914,14 @@ spells:
     description: "Unleashes a devastating wave of blood projectiles that drain life from enemies"
     type: LIFE
     cooldown: 18000 # 18 seconds
-    range: 22.0
+    range: 45.0
     fx:
       particles: "REDSTONE"
       sound: "ENTITY_ZOMBIE_ATTACK_IRON_DOOR"
     wave:
       formation: "SINE_WAVE"
       speed: 1.0
-      max_distance: 22.0
+      max_distance: 45.0
       projectile_count: 5
       damage: 8.0 # 4 hearts
       lifetime_ticks: 110
@@ -1025,19 +937,19 @@ spells:
       hit-players: true
       hit-mobs: true
 
-  poison-wave:
+  poison-wave-arc:
     display-name: "<#32CD32>Poison Wave"
     description: "Unleashes a toxic wave that poisons enemies and creates lingering poison clouds"
     type: POISON
     cooldown: 14000 # 14 seconds
-    range: 20.0
+    range: 40.0
     fx:
       particles: "SLIME"
       sound: "ENTITY_SPIDER_HURT"
     wave:
       formation: "ARC"
       speed: 1.1
-      max_distance: 20.0
+      max_distance: 40.0
       projectile_count: 6
       damage: 6.0 # 3 hearts
       lifetime_ticks: 100
@@ -1055,19 +967,19 @@ spells:
       hit-players: true
       hit-mobs: true
 
-  flame-wave:
+  flame-wave-spiral:
     display-name: "<#FF4500>Flame Wave"
     description: "Unleashes a devastating spiral of fire that ignites enemies and the battlefield"
     type: FIRE
     cooldown: 16000 # 16 seconds
-    range: 25.0
+    range: 50.0
     fx:
       particles: "FLAME"
       sound: "ENTITY_BLAZE_SHOOT"
     wave:
       formation: "SPIRAL"
       speed: 1.3
-      max_distance: 25.0
+      max_distance: 50.0
       projectile_count: 8
       damage: 9.0 # 4.5 hearts
       lifetime_ticks: 120
@@ -1085,19 +997,19 @@ spells:
       hit-players: true
       hit-mobs: true
 
-  ice-wave:
+  ice-wave-line:
     display-name: "<#87CEEB>Ice Wave"
     description: "Launches a precise line of frost that slows enemies and creates ice structures"
     type: ICE
     cooldown: 13000 # 13 seconds
-    range: 28.0
+    range: 55.0
     fx:
       particles: "SNOWFLAKE"
       sound: "BLOCK_GLASS_BREAK"
     wave:
       formation: "LINE"
       speed: 0.9
-      max_distance: 28.0
+      max_distance: 55.0
       projectile_count: 4
       damage: 5.0 # 2.5 hearts
       lifetime_ticks: 140
@@ -1121,14 +1033,14 @@ spells:
     description: "Unleashes an explosive burst of lightning that chains between enemies"
     type: LIGHTNING
     cooldown: 15000 # 15 seconds
-    range: 18.0
+    range: 35.0
     fx:
       particles: "ELECTRIC_SPARK"
       sound: "ENTITY_LIGHTNING_BOLT_THUNDER"
     wave:
       formation: "BURST"
       speed: 1.8
-      max_distance: 18.0
+      max_distance: 35.0
       projectile_count: 10
       damage: 7.5 # 3.75 hearts
       lifetime_ticks: 60
@@ -1139,7 +1051,7 @@ spells:
       enable_screen_shake: true
       screen_shake_intensity: 0.9
     values:
-      chain_range: 5.0
+      chain_range: 12.0
       max_chain_targets: 3
       chain_damage_multiplier: 0.4 # Chain targets take 40% damage
       glowing_duration_ticks: 120 # 6 seconds
@@ -1154,7 +1066,7 @@ spells:
     description: "Fires an electrified arrow that shocks enemies"
     type: LIGHTNING
     cooldown: 1500
-    range: 30.0
+    range: 60.0
     values:
       damage: 6.0
       speed: 2.0
@@ -1187,21 +1099,26 @@ spells:
     flags:
       toggle: true
 
+  # Added: Phoenix Cloak (MOVEMENT, toggle)
+  phoenix-cloak:
+    display-name: "<#FF4500>Phoenix Cloak"
+    description: "Transform into a magnificent phoenix with stunning wings and fire cloak"
+    type: MOVEMENT
+    cooldown: 8000
+    values:
+      phoenix:
+        wing-span: 2.5
+        wing-height: 1.8
+        wing-segments: 8
+        cloak-particles: 12
+        cloak-radius: 1.2
+        trail-length: 6
+    flags:
+      toggle: true
+
   lightning-bolt-refactored:
     display-name: "<#1E90FF>Lightning Bolt Refactored"
     description: "Auto-generated defaults for lightning-bolt-refactored"
-    type: LIGHTNING
-    cooldown: 2500
-    values:
-      damage: 4.0
-      radius: 4.0
-    flags:
-      hit-players: true
-      hit-mobs: true
-
-  chain-lightning-enhanced:
-    display-name: "<#1E90FF>Chain Lightning Enhanced"
-    description: "Auto-generated defaults for chain-lightning-enhanced"
     type: LIGHTNING
     cooldown: 2500
     values:
@@ -1319,7 +1236,7 @@ spells:
     description: "Auto-generated defaults for comet-enhanced"
     type: PROJECTILE
     cooldown: 3000
-    range: 25.0
+    range: 50.0
     values:
       damage: 6.0
     flags:
@@ -1384,6 +1301,16 @@ spells:
     flags:
       hit-players: true
       hit-mobs: true
+
+  icewall:
+    display-name: "<#87CEEB>Ice Wall"
+    description: "Create a protective wall of ice"
+    type: ICE
+    cooldown: 20000
+    values:
+      width: 7
+      height: 4
+      duration_ticks: 200
 
   sandblast:
     display-name: "<#228B22>Sandblast"
@@ -1629,15 +1556,13 @@ spells:
 
   wither:
     display-name: "<#8B008B>Wither"
-    description: "Auto-generated defaults for wither"
+    description: "Inflict wither curse upon your target"
     type: DARK
-    cooldown: 3000
+    cooldown: 8000
     values:
-      damage: 5.0
-      radius: 3.5
-    flags:
-      hit-players: true
-      hit-mobs: true
+      range: 25.0
+      duration: 200
+      amplifier: 2
 
   soulburn:
     display-name: "<#8B008B>Soulburn"
@@ -1718,10 +1643,12 @@ spells:
     cooldown: 2500
 
   gate:
-    display-name: "<Gate>"
-    description: "Auto-generated defaults for gate"
+    display-name: "<#9A2EFE>Gate"
+    description: "Create and teleport through magical gates"
     type: MISC
-    cooldown: 2500
+    cooldown: 30000
+    values:
+      cast_time: 40
 
   invulnerability:
     display-name: "<Invulnerability>"
@@ -1794,7 +1721,7 @@ spells:
     description: "Auto-generated defaults for homing-rockets"
     type: PROJECTILE
     cooldown: 3000
-    range: 25.0
+    range: 50.0
     values:
       damage: 6.0
     flags:
@@ -1875,7 +1802,7 @@ blizzard:
     description: "Auto-generated defaults for meteor-shower"
     type: PROJECTILE
     cooldown: 3000
-    range: 25.0
+    range: 50.0
     values:
       damage: 6.0
     flags:
@@ -1886,7 +1813,7 @@ blizzard:
     description: "Auto-generated defaults for meteor-shower-enhanced"
     type: PROJECTILE
     cooldown: 3000
-    range: 25.0
+    range: 50.0
     values:
       damage: 6.0
     flags:
@@ -1895,11 +1822,200 @@ blizzard:
   summon-swarm:
     display-name: "<#AA0000>Summon Swarm"
     description: "Auto-generated defaults for summon-swarm"
-    type: LIFE
+    type: DARK
     cooldown: 3000
     values:
       damage: 5.0
-      radius: 4.0
+      radius: 8.0
+      minion-count: 8
+      duration-ticks: 300
+      minion-health: 10.0
+      minion-damage: 4.0
+      variant: vex
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  summon-wolves:
+    display-name: "<#1DB954>Summon Wolves"
+    description: "Summon a pack of wolves to defend you"
+    type: LIFE
+    cooldown: 2200
+    values:
+      count: 3
+      radius: 5.0
+      duration-ticks: 400
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  summon-golem:
+    display-name: "<#D0D0D0>Summon Golem"
+    description: "Summon an iron golem guardian"
+    type: EARTH
+    cooldown: 3000
+    values:
+      follow-radius: 6.0
+      duration-ticks: 500
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  # New spells implemented from the user request
+  elemental-lightning-attack:
+    display-name: "<#FFFF00>Elemental Lightning Attack"
+    description: "Strikes lightning at the target location using modern ray tracing"
+    type: LIGHTNING
+    cooldown: 10000
+    values:
+      max-range: 60.0
+      damage: 12.0
+      damage-radius: 3.0
+      friendly-fire: false
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  elemental-teleporter:
+    display-name: "<#00CED1>Elemental Teleporter"
+    description: "Safely teleports to the target location using ray tracing with safety checks"
+    type: MOVEMENT
+    cooldown: 3000
+    values:
+      max-range: 50.0
+
+  evil-goons-aura:
+    display-name: "<#8B0000>Evil Goons Aura"
+    description: "Passive aura that damages nearby enemies based on distance"
+    type: AURA
+    cooldown: 1000
+    values:
+      range: 15.0
+      max-damage: 3.0
+      check-interval-ticks: 15
+    flags:
+      toggle: true
+
+  shockwave-rafg:
+    display-name: "<#FF4500>Shockwave (Rafg)"
+    description: "Devastating AoE attack with armor-piercing percentage damage"
+    type: ENHANCED
+    cooldown: 120000  # 2 minutes
+    values:
+      range: 30.0
+      damage-percentage: 0.90
+      friendly-fire: false
+    flags:
+      hit-players: true
+      hit-mobs: true
+  summon-swarm-flame:
+    display-name: "<#FF4500>Summon Swarm (Flame)"
+    description: "Flame swarm that ignites foes"
+    type: DARK
+    cooldown: 3000
+    values:
+      radius: 8.0
+      minion-count: 8
+      duration-ticks: 300
+      minion-health: 10.0
+      minion-damage: 4.0
+      variant: flame
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  summon-swarm-toxic:
+    display-name: "<#43A047>Summon Swarm (Toxic)"
+    description: "Toxic swarm that poisons foes"
+    type: DARK
+    cooldown: 3000
+    values:
+      radius: 8.0
+      minion-count: 8
+      duration-ticks: 300
+      minion-health: 10.0
+      minion-damage: 4.0
+      variant: toxic
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  summon-swarm-arcane:
+    display-name: "<#7E57C2>Summon Swarm (Arcane)"
+    description: "Arcane swarm that weakens foes"
+    type: DARK
+    cooldown: 3000
+    values:
+      radius: 8.0
+      minion-count: 8
+      duration-ticks: 300
+      minion-health: 10.0
+      minion-damage: 4.0
+      variant: arcane
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  summon-swarm-radiant:
+    display-name: "<#00E5FF>Summon Swarm (Radiant)"
+    description: "Radiant swarm that reveals foes"
+    type: DARK
+    cooldown: 3000
+    values:
+      radius: 8.0
+      minion-count: 8
+      duration-ticks: 300
+      minion-health: 10.0
+      minion-damage: 4.0
+      variant: radiant
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  summon-swarm-void:
+    display-name: "<#6A1B9A>Summon Swarm (Void)"
+    description: "Void swarm that blinds foes"
+    type: DARK
+    cooldown: 3000
+    values:
+      radius: 8.0
+      minion-count: 8
+      duration-ticks: 300
+      minion-health: 10.0
+      minion-damage: 4.0
+      variant: void
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  summon-swarm-wind:
+    display-name: "<#B3E5FC>Summon Swarm (Wind)"
+    description: "Wind swarm that knocks foes back"
+    type: DARK
+    cooldown: 3000
+    values:
+      radius: 8.0
+      minion-count: 8
+      duration-ticks: 300
+      minion-health: 10.0
+      minion-damage: 4.0
+      variant: wind
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  summon-swarm-stone:
+    display-name: "<#9E9E9E>Summon Swarm (Stone)"
+    description: "Stone swarm that hinders foes"
+    type: DARK
+    cooldown: 3000
+    values:
+      radius: 8.0
+      minion-count: 8
+      duration-ticks: 300
+      minion-health: 10.0
+      minion-damage: 4.0
+      variant: stone
     flags:
       hit-players: true
       hit-mobs: true

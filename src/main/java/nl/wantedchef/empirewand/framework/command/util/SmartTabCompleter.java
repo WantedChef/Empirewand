@@ -1,5 +1,6 @@
 package nl.wantedchef.empirewand.framework.command.util;
 
+import nl.wantedchef.empirewand.EmpireWandPlugin;
 import nl.wantedchef.empirewand.api.spell.SpellRegistry;
 import nl.wantedchef.empirewand.framework.command.SubCommand;
 
@@ -28,15 +29,17 @@ public class SmartTabCompleter {
     
     private final CommandCache cache;
     private final SpellRegistry spellRegistry;
+    private final EmpireWandPlugin plugin;
     private final Map<String, List<String>> userPreferences = new HashMap<>();
     
     // Common completion categories
     private static final List<String> BOOLEAN_VALUES = List.of("true", "false");
     private static final List<String> COMMON_NUMBERS = List.of("1", "5", "10", "30", "60", "300");
     
-    public SmartTabCompleter(@NotNull CommandCache cache, @NotNull SpellRegistry spellRegistry) {
+    public SmartTabCompleter(@NotNull CommandCache cache, @NotNull SpellRegistry spellRegistry, @NotNull EmpireWandPlugin plugin) {
         this.cache = cache;
         this.spellRegistry = spellRegistry;
+        this.plugin = plugin;
     }
     
     /**
@@ -99,6 +102,15 @@ public class SmartTabCompleter {
                 }
                 yield List.of();
             }
+            case "give", "grant" -> {
+                if (argIndex == 1) {
+                    yield getPlayerCompletions(currentArg);
+                } else if (argIndex == 2) {
+                    yield getWandKeyCompletions(currentArg);
+                }
+                yield List.of();
+            }
+            case "gui", "settings", "config", "configure" -> List.of();
             case "toggle" -> {
                 if (argIndex == 1) {
                     yield getToggleSpellCompletions(currentArg);
@@ -149,7 +161,7 @@ public class SmartTabCompleter {
         Set<String> results = new LinkedHashSet<>(filtered);
         for (String spell : allSpells) {
             String displayName = spellRegistry.getSpellDisplayName(spell);
-            if (displayName != null && displayName.toLowerCase().contains(partial.toLowerCase())) {
+            if (displayName.toLowerCase().contains(partial.toLowerCase())) {
                 results.add(spell);
             }
         }
@@ -212,12 +224,10 @@ public class SmartTabCompleter {
                        spell.toLowerCase().contains("cloak") ||
                        spell.toLowerCase().contains("cloud") ||
                        spell.toLowerCase().contains("aura") ||
-                       (displayName != null && (
-                           displayName.toLowerCase().contains("toggle") ||
-                           displayName.toLowerCase().contains("cloak") ||
-                           displayName.toLowerCase().contains("cloud") ||
-                           displayName.toLowerCase().contains("aura")
-                       ));
+                       displayName.toLowerCase().contains("toggle") ||
+                       displayName.toLowerCase().contains("cloak") ||
+                       displayName.toLowerCase().contains("cloud") ||
+                       displayName.toLowerCase().contains("aura");
             })
             .filter(spell -> spell.toLowerCase().contains(partial.toLowerCase()))
             .sorted()
@@ -366,14 +376,32 @@ public class SmartTabCompleter {
     }
     
     /**
+     * Gets wand key completions for the give command.
+     */
+    @NotNull
+    private List<String> getWandKeyCompletions(@NotNull String partial) {
+        List<String> wandKeys = List.of("empirewand", "mephidantes_zeist");
+        return wandKeys.stream()
+                .filter(key -> key.toLowerCase().startsWith(partial.toLowerCase()))
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Creates a minimal context for delegating to subcommand tab completion.
      */
     @NotNull
     private nl.wantedchef.empirewand.framework.command.CommandContext createDummyContext(@NotNull CommandSender sender, @NotNull String[] args) {
-        // This is a simplified context just for tab completion
-        // In a real implementation, you'd need to properly inject dependencies
+        // Provide a minimal but non-null, valid context for tab completion
         return new nl.wantedchef.empirewand.framework.command.CommandContext(
-            null, sender, args, null, null, spellRegistry, null, null, null
+            plugin,
+            sender,
+            args,
+            plugin.getConfigService(),
+            plugin.getFxService(),
+            spellRegistry,
+            plugin.getWandService(),
+            plugin.getCooldownService(),
+            plugin.getPermissionService()
         );
     }
     

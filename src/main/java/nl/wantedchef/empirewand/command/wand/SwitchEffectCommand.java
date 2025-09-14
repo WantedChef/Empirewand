@@ -73,11 +73,27 @@ public class SwitchEffectCommand implements SubCommand {
         SpellSwitchService switchService = new SpellSwitchService(this.plugin, context.wandService());
         Set<String> availableEffects = switchService.getAvailableEffects();
 
-        if (!availableEffects.contains(effectName)) {
+        // Special-case: allow "default" to clear any explicit setting
+        boolean isDefault = effectName.equals("default");
+        if (!isDefault && !availableEffects.contains(effectName)) {
             throw new CommandException("Invalid effect name. Valid effects are: " + String.join(", ", availableEffects));
         }
 
         WandSettings settings = new WandSettings(item);
+        String current = settings.getSpellSwitchEffect();
+
+        if (isDefault) {
+            // Clear stored value to fall back to default
+            settings.setSpellSwitchEffect(null);
+            context.sendMessage(Component.text("Wand switch effect reset to default.").color(NamedTextColor.GREEN));
+            return;
+        }
+
+        if (current != null && current.equalsIgnoreCase(effectName)) {
+            context.sendMessage(Component.text("That switch effect is already active.").color(NamedTextColor.YELLOW));
+            return;
+        }
+
         settings.setSpellSwitchEffect(effectName);
 
         context.sendMessage(Component.text("Wand switch effect set to: ").color(NamedTextColor.GREEN)
@@ -93,9 +109,27 @@ public class SwitchEffectCommand implements SubCommand {
                 if (context.wandService().isWand(item)) {
                     String partial = context.args()[1].toLowerCase();
                     SpellSwitchService switchService = new SpellSwitchService(this.plugin, context.wandService());
-                    return switchService.getAvailableEffects().stream()
-                            .filter(effect -> effect.startsWith(partial))
-                            .collect(Collectors.toList());
+                    Set<String> effects = switchService.getAvailableEffects();
+
+                    // Include "default" as a valid target
+                    List<String> candidates = effects.stream().collect(Collectors.toList());
+                    candidates.add("default");
+
+                    // Prioritize current setting first when no partial filter
+                    WandSettings settings = new WandSettings(item);
+                    String current = settings.getSpellSwitchEffect();
+
+                    return candidates.stream()
+                            .filter(effect -> effect.toLowerCase().startsWith(partial))
+                            .sorted((a, b) -> {
+                                // Current first, otherwise alphabetical
+                                boolean aCur = a.equalsIgnoreCase(current);
+                                boolean bCur = b.equalsIgnoreCase(current);
+                                if (aCur && !bCur) return -1;
+                                if (bCur && !aCur) return 1;
+                                return a.compareToIgnoreCase(b);
+                            })
+                            .toList();
                 }
             }
         }

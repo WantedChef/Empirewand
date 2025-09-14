@@ -92,7 +92,7 @@ public class Levitate extends Spell<Player> {
         context.fx().playSound(player, Sound.ENTITY_PHANTOM_FLAP, 1.0f, 1.5f);
         context.fx().playSound(player, Sound.ENTITY_ENDER_DRAGON_FLAP, 0.5f, 2.0f);
         
-        player.sendMessage("§f§lLevitate §7activated for " + (duration/20) + " seconds!");
+        player.sendMessage("\u00A7f\u00A7lLevitate \u00A77activated for " + (duration/20) + " seconds!");
         
         return player;
     }

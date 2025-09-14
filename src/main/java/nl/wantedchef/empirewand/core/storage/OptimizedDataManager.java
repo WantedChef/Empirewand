@@ -10,7 +10,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -30,6 +30,7 @@ import java.time.Duration;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -54,8 +55,7 @@ import com.google.gson.GsonBuilder;
  */
 public class OptimizedDataManager {
     
-    private final Plugin plugin;
-    private final Logger logger;
+    private static final Logger logger = Logger.getLogger(OptimizedDataManager.class.getName());
     private final AdvancedPerformanceMonitor performanceMonitor;
     
     // Core storage
@@ -152,36 +152,31 @@ public class OptimizedDataManager {
         private final Instant cachedAt;
         private final Instant expiresAt;
         private final AtomicLong accessCount = new AtomicLong();
-        private volatile Instant lastAccessed;
         private final long size;
         
         public CacheEntry(T data, Duration ttl) {
             this.data = data;
             this.cachedAt = Instant.now();
-            this.lastAccessed = this.cachedAt;
             this.expiresAt = ttl != null ? this.cachedAt.plus(ttl) : null;
             this.size = estimateSize(data);
         }
         
         public T getData() {
-            lastAccessed = Instant.now();
-            accessCount.incrementAndGet();
-            return data;
+            this.accessCount.incrementAndGet();
+            return this.data;
         }
         
         public boolean isExpired() {
             return expiresAt != null && Instant.now().isAfter(expiresAt);
         }
         
-        public long getAccessCount() { return accessCount.get(); }
-        public Instant getLastAccessed() { return lastAccessed; }
         public long getSize() { return size; }
         
         private long estimateSize(T data) {
             if (data == null) return 0;
-            if (data instanceof String) return ((String) data).length() * 2;
-            if (data instanceof Collection) return ((Collection<?>) data).size() * 64;
-            if (data instanceof Map) return ((Map<?, ?>) data).size() * 128;
+            if (data instanceof String s) return s.length() * 2;
+            if (data instanceof Collection<?> c) return c.size() * 64;
+            if (data instanceof Map<?, ?> m) return m.size() * 128;
             return 64; // Default estimate
         }
     }
@@ -229,7 +224,7 @@ public class OptimizedDataManager {
             try {
                 CacheEntry<?> entry = cache.get(key);
                 if (entry == null || entry.isExpired()) {
-                    if (entry != null && entry.isExpired()) {
+                    if (entry != null) { // isExpired() must be true
                         // Remove expired entry
                         lock.readLock().unlock();
                         lock.writeLock().lock();
@@ -255,12 +250,15 @@ public class OptimizedDataManager {
                     accessOrder.put(key, Boolean.TRUE);
                 } finally {
                     lock.writeLock().unlock();
-                    lock.readLock().lock();
+                    lock.readLock().lock(); // Re-acquire read lock
                 }
                 
                 if (type.isInstance(data)) {
                     return Optional.of((T) data);
                 }
+                return Optional.empty();
+            } catch (final ClassCastException e) {
+                logger.log(Level.WARNING, "Error getting cached data", e);
                 return Optional.empty();
             } finally {
                 lock.readLock().unlock();
@@ -457,7 +455,6 @@ public class OptimizedDataManager {
                 memoryStore.clear();
                 
                 // Clear caches
-                String prefix = storeName + ":";
                 l1Cache.invalidateAll(); // Could be optimized to only clear this store's entries
                 l2Cache.invalidateAll();
                 l3Cache.invalidateAll();
@@ -517,7 +514,7 @@ public class OptimizedDataManager {
                     });
                 
                 loaded = true;
-                logger.info("Loaded " + memoryStore.size() + " entries for store: " + storeName);
+                logger.log(Level.INFO, "Loaded {0} entries for store: {1}", new Object[]{memoryStore.size(), storeName});
                 
             } catch (IOException e) {
                 logger.log(Level.SEVERE, "Failed to load store from disk: " + storeName, e);
@@ -543,8 +540,7 @@ public class OptimizedDataManager {
                 if (integrityChecksEnabled) {
                     ValidationResult validation = dataValidator.validate(data);
                     if (!validation.isValid()) {
-                        logger.warning("Data integrity check failed for: " + key + 
-                                     " - errors: " + validation.errors());
+                        logger.log(Level.WARNING, "Data integrity check failed for: {0} - errors: {1}", new Object[]{key, validation.errors()});
                         return Optional.empty();
                     }
                 }
@@ -558,7 +554,7 @@ public class OptimizedDataManager {
                 
                 return Optional.of(object);
                 
-            } catch (Exception e) {
+            } catch (IOException e) {
                 logger.log(Level.WARNING, "Failed to load data for key: " + key, e);
                 return Optional.empty();
             }
@@ -618,8 +614,7 @@ public class OptimizedDataManager {
     }
     
     public OptimizedDataManager(Plugin plugin) {
-        this.plugin = Objects.requireNonNull(plugin);
-        this.logger = plugin.getLogger();
+        // Plugin parameter retained for potential future use
         this.performanceMonitor = new AdvancedPerformanceMonitor(plugin, logger);
         
         // Initialize data directory
@@ -705,9 +700,9 @@ public class OptimizedDataManager {
             try {
                 String backupId = backupManager.createFullBackup(dataStores, description);
                 lastBackupTime.set(System.currentTimeMillis());
-                logger.info("Data backup created: " + backupId);
+                logger.log(Level.INFO, "Data backup created: {0}", backupId);
                 return backupId;
-            } catch (Exception e) {
+            } catch (IOException e) {
                 logger.log(Level.SEVERE, "Failed to create backup", e);
                 throw new RuntimeException(e);
             }
@@ -727,9 +722,9 @@ public class OptimizedDataManager {
                 l2Cache.invalidateAll();
                 l3Cache.invalidateAll();
                 
-                logger.info("Data restored from backup: " + backupId);
-            } catch (Exception e) {
-                logger.log(Level.SEVERE, "Failed to restore from backup: " + backupId, e);
+                logger.log(Level.INFO, "Data restored from backup: {0}", backupId);
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, String.format("Failed to restore from backup: %s", backupId), e);
                 throw new RuntimeException(e);
             }
         }, ioExecutor);
@@ -796,9 +791,13 @@ public class OptimizedDataManager {
             shutdownFuture.complete(null);
             logger.info("OptimizedDataManager shutdown complete");
             
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Error during OptimizedDataManager shutdown", e);
-            shutdownFuture.completeExceptionally(e);
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.log(Level.WARNING, "Interrupted during OptimizedDataManager shutdown", e);
+            this.shutdownFuture.completeExceptionally(e);
+        } catch (final java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
+            logger.log(Level.SEVERE, "Error during OptimizedDataManager shutdown", e);
+            this.shutdownFuture.completeExceptionally(e);
         }
     }
     
@@ -811,7 +810,7 @@ public class OptimizedDataManager {
                 l1Cache.cleanup();
                 l2Cache.cleanup();
                 l3Cache.cleanup();
-            } catch (Exception e) {
+            } catch (final RuntimeException e) {
                 logger.log(Level.WARNING, "Error during cache cleanup", e);
             }
         }, 5, 5, TimeUnit.MINUTES);
@@ -820,7 +819,7 @@ public class OptimizedDataManager {
         asyncExecutor.scheduleWithFixedDelay(() -> {
             try {
                 createBackup("scheduled").join();
-            } catch (Exception e) {
+            } catch (final RuntimeException e) {
                 logger.log(Level.WARNING, "Error during scheduled backup", e);
             }
         }, backupInterval.toMinutes(), backupInterval.toMinutes(), TimeUnit.MINUTES);
@@ -830,9 +829,9 @@ public class OptimizedDataManager {
             try {
                 if (logger.isLoggable(Level.FINE)) {
                     DataManagerMetrics metrics = getMetrics();
-                    logger.fine("Data Manager Metrics: " + metrics);
+                    logger.log(Level.FINE, "Data Manager Metrics: {0}", metrics);
                 }
-            } catch (Exception e) {
+            } catch (final RuntimeException e) {
                 logger.log(Level.WARNING, "Error logging metrics", e);
             }
         }, 60, 60, TimeUnit.SECONDS);
@@ -883,11 +882,11 @@ public class OptimizedDataManager {
         
         public <T> byte[] serialize(T object) {
             String json = gson.toJson(object);
-            return json.getBytes();
+            return json.getBytes(StandardCharsets.UTF_8);
         }
         
         public <T> T deserialize(byte[] data, Class<T> type) {
-            String json = new String(data);
+            String json = new String(data, StandardCharsets.UTF_8);
             return gson.fromJson(json, type);
         }
     }
@@ -912,15 +911,13 @@ public class OptimizedDataManager {
             
             // Save metadata
             BackupMetadata metadata = new BackupMetadata(backupId, Instant.now(), description, dataStores.keySet());
-            // Save metadata to backup directory
+            Files.write(backupPath.resolve("metadata.txt"), metadata.toString().getBytes());
             
             // Save each data store
             for (Map.Entry<String, DataStore<?>> entry : dataStores.entrySet()) {
-                String storeName = entry.getKey();
+                // Serialize and save store data (placeholder - not persisted in this simplified implementation)
                 DataStore<?> store = entry.getValue();
-                
-                Map<String, ?> storeData = store.getAll().join();
-                // Serialize and save store data
+                store.getAll().join();
             }
             
             return backupId;

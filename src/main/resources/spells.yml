@@ -412,7 +412,7 @@ spells:
       block_lifetime_ticks: 30
       spark_interval_ticks: 4
 
-  poison-wave:
+  poison-cone:
     display-name: "<#32CD32>Poison Wave"
     description: "Sends out a cone of poison that damages and poisons enemies"
     type: POISON
@@ -438,7 +438,7 @@ spells:
       knockback: 1.2
       yield: 1.5
 
-  flame-wave:
+  flame-cone:
     display-name: "<#FF6347>Flame Wave"
     description: "Sends out a wave of flames that ignites and damages enemies"
     type: FIRE
@@ -753,21 +753,6 @@ spells:
       ice-burst-count: 6
       enable-reversible-floor: true
 
-  chain-lightning:
-    display-name: "<#87CEEB>Chain Lightning"
-    description: "Fires lightning that jumps between nearby enemies multiple times"
-    type: LIGHTNING
-    cooldown: 7000
-    values:
-      range: 40.0
-      jump-radius: 18.0
-      jumps: 4
-      damage: 8.0
-      # Visual arc (purely cosmetic)
-      arc_particle_count: 8
-      arc_steps: 12
-      max_arc_length: 15.0
-
   blink-strike:
     display-name: "<#9932CC>Blink Strike"
     description: "Instantly teleports behind your target and delivers a powerful strike"
@@ -952,7 +937,7 @@ spells:
       hit-players: true
       hit-mobs: true
 
-  poison-wave:
+  poison-wave-arc:
     display-name: "<#32CD32>Poison Wave"
     description: "Unleashes a toxic wave that poisons enemies and creates lingering poison clouds"
     type: POISON
@@ -982,7 +967,7 @@ spells:
       hit-players: true
       hit-mobs: true
 
-  flame-wave:
+  flame-wave-spiral:
     display-name: "<#FF4500>Flame Wave"
     description: "Unleashes a devastating spiral of fire that ignites enemies and the battlefield"
     type: FIRE
@@ -1012,7 +997,7 @@ spells:
       hit-players: true
       hit-mobs: true
 
-  ice-wave:
+  ice-wave-line:
     display-name: "<#87CEEB>Ice Wave"
     description: "Launches a precise line of frost that slows enemies and creates ice structures"
     type: ICE
@@ -1114,21 +1099,26 @@ spells:
     flags:
       toggle: true
 
+  # Added: Phoenix Cloak (MOVEMENT, toggle)
+  phoenix-cloak:
+    display-name: "<#FF4500>Phoenix Cloak"
+    description: "Transform into a magnificent phoenix with stunning wings and fire cloak"
+    type: MOVEMENT
+    cooldown: 8000
+    values:
+      phoenix:
+        wing-span: 2.5
+        wing-height: 1.8
+        wing-segments: 8
+        cloak-particles: 12
+        cloak-radius: 1.2
+        trail-length: 6
+    flags:
+      toggle: true
+
   lightning-bolt-refactored:
     display-name: "<#1E90FF>Lightning Bolt Refactored"
     description: "Auto-generated defaults for lightning-bolt-refactored"
-    type: LIGHTNING
-    cooldown: 2500
-    values:
-      damage: 4.0
-      radius: 4.0
-    flags:
-      hit-players: true
-      hit-mobs: true
-
-  chain-lightning-enhanced:
-    display-name: "<#1E90FF>Chain Lightning Enhanced"
-    description: "Auto-generated defaults for chain-lightning-enhanced"
     type: LIGHTNING
     cooldown: 2500
     values:
@@ -1311,6 +1301,16 @@ spells:
     flags:
       hit-players: true
       hit-mobs: true
+
+  icewall:
+    display-name: "<#87CEEB>Ice Wall"
+    description: "Create a protective wall of ice"
+    type: ICE
+    cooldown: 20000
+    values:
+      width: 7
+      height: 4
+      duration_ticks: 200
 
   sandblast:
     display-name: "<#228B22>Sandblast"
@@ -1556,15 +1556,13 @@ spells:
 
   wither:
     display-name: "<#8B008B>Wither"
-    description: "Auto-generated defaults for wither"
+    description: "Inflict wither curse upon your target"
     type: DARK
-    cooldown: 3000
+    cooldown: 8000
     values:
-      damage: 5.0
-      radius: 3.5
-    flags:
-      hit-players: true
-      hit-mobs: true
+      range: 25.0
+      duration: 200
+      amplifier: 2
 
   soulburn:
     display-name: "<#8B008B>Soulburn"
@@ -1645,10 +1643,12 @@ spells:
     cooldown: 2500
 
   gate:
-    display-name: "<Gate>"
-    description: "Auto-generated defaults for gate"
+    display-name: "<#9A2EFE>Gate"
+    description: "Create and teleport through magical gates"
     type: MISC
-    cooldown: 2500
+    cooldown: 30000
+    values:
+      cast_time: 40
 
   invulnerability:
     display-name: "<Invulnerability>"
@@ -1822,11 +1822,41 @@ blizzard:
   summon-swarm:
     display-name: "<#AA0000>Summon Swarm"
     description: "Auto-generated defaults for summon-swarm"
-    type: LIFE
+    type: DARK
     cooldown: 3000
     values:
       damage: 5.0
-      radius: 4.0
+      radius: 8.0
+      minion-count: 8
+      duration-ticks: 300
+      minion-health: 10.0
+      minion-damage: 4.0
+      variant: vex
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  summon-wolves:
+    display-name: "<#1DB954>Summon Wolves"
+    description: "Summon a pack of wolves to defend you"
+    type: LIFE
+    cooldown: 2200
+    values:
+      count: 3
+      radius: 5.0
+      duration-ticks: 400
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  summon-golem:
+    display-name: "<#D0D0D0>Summon Golem"
+    description: "Summon an iron golem guardian"
+    type: EARTH
+    cooldown: 3000
+    values:
+      follow-radius: 6.0
+      duration-ticks: 500
     flags:
       hit-players: true
       hit-mobs: true
@@ -1875,6 +1905,117 @@ blizzard:
       range: 30.0
       damage-percentage: 0.90
       friendly-fire: false
+    flags:
+      hit-players: true
+      hit-mobs: true
+  summon-swarm-flame:
+    display-name: "<#FF4500>Summon Swarm (Flame)"
+    description: "Flame swarm that ignites foes"
+    type: DARK
+    cooldown: 3000
+    values:
+      radius: 8.0
+      minion-count: 8
+      duration-ticks: 300
+      minion-health: 10.0
+      minion-damage: 4.0
+      variant: flame
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  summon-swarm-toxic:
+    display-name: "<#43A047>Summon Swarm (Toxic)"
+    description: "Toxic swarm that poisons foes"
+    type: DARK
+    cooldown: 3000
+    values:
+      radius: 8.0
+      minion-count: 8
+      duration-ticks: 300
+      minion-health: 10.0
+      minion-damage: 4.0
+      variant: toxic
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  summon-swarm-arcane:
+    display-name: "<#7E57C2>Summon Swarm (Arcane)"
+    description: "Arcane swarm that weakens foes"
+    type: DARK
+    cooldown: 3000
+    values:
+      radius: 8.0
+      minion-count: 8
+      duration-ticks: 300
+      minion-health: 10.0
+      minion-damage: 4.0
+      variant: arcane
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  summon-swarm-radiant:
+    display-name: "<#00E5FF>Summon Swarm (Radiant)"
+    description: "Radiant swarm that reveals foes"
+    type: DARK
+    cooldown: 3000
+    values:
+      radius: 8.0
+      minion-count: 8
+      duration-ticks: 300
+      minion-health: 10.0
+      minion-damage: 4.0
+      variant: radiant
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  summon-swarm-void:
+    display-name: "<#6A1B9A>Summon Swarm (Void)"
+    description: "Void swarm that blinds foes"
+    type: DARK
+    cooldown: 3000
+    values:
+      radius: 8.0
+      minion-count: 8
+      duration-ticks: 300
+      minion-health: 10.0
+      minion-damage: 4.0
+      variant: void
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  summon-swarm-wind:
+    display-name: "<#B3E5FC>Summon Swarm (Wind)"
+    description: "Wind swarm that knocks foes back"
+    type: DARK
+    cooldown: 3000
+    values:
+      radius: 8.0
+      minion-count: 8
+      duration-ticks: 300
+      minion-health: 10.0
+      minion-damage: 4.0
+      variant: wind
+    flags:
+      hit-players: true
+      hit-mobs: true
+
+  summon-swarm-stone:
+    display-name: "<#9E9E9E>Summon Swarm (Stone)"
+    description: "Stone swarm that hinders foes"
+    type: DARK
+    cooldown: 3000
+    values:
+      radius: 8.0
+      minion-count: 8
+      duration-ticks: 300
+      minion-health: 10.0
+      minion-damage: 4.0
+      variant: stone
     flags:
       hit-players: true
       hit-mobs: true

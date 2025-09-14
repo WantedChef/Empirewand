@@ -11,7 +11,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.attribute.Attribute;
 import org.jetbrains.annotations.NotNull;
+import java.util.Objects;
 
 import java.time.Duration;
 
@@ -50,7 +52,7 @@ public class Absorb extends Spell<Player> {
 
     @Override
     public PrereqInterface prereq() {
-        return new PrereqInterface.LevelPrereq(30);
+        return new PrereqInterface.NonePrereq();
     }
 
     @Override
@@ -73,6 +75,7 @@ public class Absorb extends Spell<Player> {
             int ticks = 0;
             double lastHealth = player.getHealth();
             double absorbedDamage = 0;
+            final org.bukkit.World world = Objects.requireNonNull(player.getWorld(), "world");
             
             @Override
             public void run() {
@@ -84,14 +87,16 @@ public class Absorb extends Spell<Player> {
                 
                 // Absorption field particles
                 double time = ticks * 0.1;
+                final var baseNow = Objects.requireNonNull(player.getLocation(), "location");
                 for (double angle = 0; angle < Math.PI * 2; angle += Math.PI / 6) {
                     double radius = 1.5 + Math.sin(time) * 0.3;
                     double x = Math.cos(angle + time) * radius;
                     double z = Math.sin(angle + time) * radius;
                     double y = Math.sin(time * 2) * 0.5 + 1;
-                    
-                    player.getWorld().spawnParticle(Particle.DUST, 
-                        player.getLocation().add(x, y, z), 1, 0, 0, 0, 0,
+
+                    final var loc = baseNow.clone().add(x, y, z);
+                    world.spawnParticle(Particle.DUST,
+                        loc, 1, 0, 0, 0, 0,
                         new Particle.DustOptions(org.bukkit.Color.YELLOW, 1.0f));
                 }
                 
@@ -102,22 +107,26 @@ public class Absorb extends Spell<Player> {
                     absorbedDamage += damageAbsorbed;
                     
                     // Convert some damage to healing
-                    player.setHealth(Math.min(currentHealth + damageAbsorbed * 0.5, player.getMaxHealth()));
+                    double max = getMaxHealth(player);
+                    player.setHealth(Math.min(currentHealth + damageAbsorbed * 0.5, max));
                     
                     // Absorption effect
-                    player.getWorld().spawnParticle(Particle.HEART, 
-                        player.getLocation().add(0, 1, 0), 5, 0.3, 0.3, 0.3, 0);
-                    player.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, 
-                        player.getLocation(), 10, 0.5, 0.5, 0.5, 0);
+                    final var head = baseNow.clone().add(0, 1, 0);
+                    world.spawnParticle(Particle.HEART,
+                        head, 5, 0.3, 0.3, 0.3, 0);
+                    world.spawnParticle(Particle.HAPPY_VILLAGER,
+                        baseNow, 10, 0.5, 0.5, 0.5, 0);
                     context.fx().playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 0.5f, 1.5f);
                 }
                 
                 // Pulsing effect
                 if (ticks % 20 == 0) {
-                    player.getWorld().spawnParticle(Particle.END_ROD, 
-                        player.getLocation(), 20, 1, 1, 1, 0.05);
-                    player.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, 
-                        player.getLocation().add(0, 1, 0), 5, 0.3, 0.3, 0.3, 0.02);
+                    final var base = baseNow;
+                    world.spawnParticle(Particle.END_ROD,
+                        base, 20, 1, 1, 1, 0.05);
+                    final var head = baseNow.clone().add(0, 1, 0);
+                    world.spawnParticle(Particle.TOTEM_OF_UNDYING,
+                        head, 5, 0.3, 0.3, 0.3, 0.02);
                 }
                 
                 lastHealth = player.getHealth();
@@ -126,11 +135,20 @@ public class Absorb extends Spell<Player> {
         }.runTaskTimer(context.plugin(), 0L, 5L);
         
         // Initial effects
-        player.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, 
-            player.getLocation(), 50, 1, 1, 1, 0.1);
+        {
+            final var world0 = Objects.requireNonNull(player.getWorld(), "world");
+            final var base0 = Objects.requireNonNull(player.getLocation(), "location");
+            world0.spawnParticle(Particle.TOTEM_OF_UNDYING,
+                base0, 50, 1, 1, 1, 0.1);
+        }
         context.fx().playSound(player, Sound.ITEM_TOTEM_USE, 0.8f, 1.5f);
         context.fx().playSound(player, Sound.BLOCK_BEACON_POWER_SELECT, 1.0f, 0.8f);
         
         player.sendMessage("§e§lAbsorb §6field activated for " + (duration/20) + " seconds!");
+    }
+    
+    private double getMaxHealth(org.bukkit.entity.LivingEntity entity) {
+        var attr = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        return attr != null ? attr.getValue() : 20.0;
     }
 }

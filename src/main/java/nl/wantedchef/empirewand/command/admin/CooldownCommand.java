@@ -63,7 +63,7 @@ public class CooldownCommand implements SubCommand {
         }
 
         if (args.length == 2 && "admin".equalsIgnoreCase(args[0])) {
-            return Arrays.asList("cd");
+            return List.of("cd");
         }
 
         if (args.length == 3 && "admin".equalsIgnoreCase(args[0]) && "cd".equalsIgnoreCase(args[1])) {
@@ -111,10 +111,10 @@ public class CooldownCommand implements SubCommand {
         Player player = context.requirePlayer();
 
         switch (action) {
-            case "true":
+            case "true": {
                 if (!context.hasPermission(wandType + ".command.cooldown.toggle")) {
                     throw new CommandException("You don't have permission to toggle cooldown.");
-                } {
+                }
                 // Get wand from player's hand
                 var wand = player.getInventory().getItemInMainHand();
                 if (!context.wandService().isWand(wand)) {
@@ -122,13 +122,13 @@ public class CooldownCommand implements SubCommand {
                 }
                 context.cooldownService().setCooldownDisabled(player.getUniqueId(), wand, false);
                 context.sendMessage(Component.text("Cooldown enabled").color(NamedTextColor.GREEN));
-            }
                 break;
+            }
 
-            case "false":
+            case "false": {
                 if (!context.hasPermission(wandType + ".command.cooldown.toggle")) {
                     throw new CommandException("You don't have permission to toggle cooldown.");
-                } {
+                }
                 // Get wand from player's hand
                 var wand = player.getInventory().getItemInMainHand();
                 if (!context.wandService().isWand(wand)) {
@@ -136,8 +136,8 @@ public class CooldownCommand implements SubCommand {
                 }
                 context.cooldownService().setCooldownDisabled(player.getUniqueId(), wand, true);
                 context.sendMessage(Component.text("Cooldown disabled").color(NamedTextColor.GREEN));
-            }
                 break;
+            }
 
             case "clear":
                 if (!context.hasPermission(wandType + ".command.cooldown.clear")) {

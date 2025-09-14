@@ -239,7 +239,7 @@ public final class ShadowCloak extends Spell<Void> implements ToggleableSpell {
         private void sendMessage(String msg) {
             if (msg == null || msg.isEmpty())
                 return;
-            player.sendMessage(Component.text(msg.replace('&', '§')));
+            player.sendMessage(Component.text(msg.replace('&', '\u00A7')));
         }
 
         private void playSound(String sound, float vol, float pit) {

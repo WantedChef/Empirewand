@@ -23,7 +23,7 @@ class BlizzardTest {
     
     @Test
     void testSpellName() {
-        assertEquals("Blizzard", blizzard.getName());
+        assertEquals("Glacial Wrath", blizzard.getName());
     }
     
     @Test

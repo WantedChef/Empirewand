@@ -12,28 +12,28 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Projectile;
-import org.bukkit.entity.SmallFireball;
+import org.bukkit.entity.Snowball;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-public class Spark extends ProjectileSpell<SmallFireball> {
+public class Spark extends ProjectileSpell<Snowball> {
 
-    public static class Builder extends ProjectileSpell.Builder<SmallFireball> {
+    public static class Builder extends ProjectileSpell.Builder<Snowball> {
         public Builder(EmpireWandAPI api) {
-            super(api, SmallFireball.class);
+            super(api, Snowball.class);
             this.name = "Spark";
-            this.description = "Fires a fast spark of energy.";
+            this.description = "Fires a fast spark of lightning energy like a rod.";
             this.cooldown = java.time.Duration.ofSeconds(2);
             this.spellType = SpellType.LIGHTNING;
             this.trailParticle = null; // Custom trail
-            this.hitSound = Sound.ENTITY_BLAZE_HURT;
+            this.hitSound = Sound.ENTITY_LIGHTNING_BOLT_IMPACT;
         }
 
         @Override
         @NotNull
-        public ProjectileSpell<SmallFireball> build() {
+        public ProjectileSpell<Snowball> build() {
             return new Spark(this);
         }
     }
@@ -58,7 +58,7 @@ public class Spark extends ProjectileSpell<SmallFireball> {
         int particleCount = spellConfig.getInt("values.particle-count", 6);
         int burstInterval = spellConfig.getInt("values.burst-interval-ticks", 10);
 
-        context.caster().launchProjectile(SmallFireball.class,
+        context.caster().launchProjectile(Snowball.class,
                 context.caster().getEyeLocation().getDirection().multiply(speed), projectile -> {
                     projectile.getPersistentDataContainer().set(
                             nl.wantedchef.empirewand.core.storage.Keys.PROJECTILE_SPELL,
@@ -71,7 +71,7 @@ public class Spark extends ProjectileSpell<SmallFireball> {
                             .runTaskTimer(context.plugin(), 0L, 1L);
                 });
 
-        context.fx().playSound(context.caster(), Sound.ENTITY_BLAZE_SHOOT, 0.7f, 1.2f);
+        context.fx().playSound(context.caster(), Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.4f, 1.8f);
     }
 
     @Override
@@ -80,9 +80,13 @@ public class Spark extends ProjectileSpell<SmallFireball> {
         if (!(event.getHitEntity() instanceof LivingEntity living))
             return;
 
+        // Always prevent self-damage for Spark (it's not meant to be a fireball)
+        if (living.equals(context.caster()))
+            return;
+
         boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class).getMainConfig()
                 .getBoolean("features.friendly-fire", false);
-        if (living.equals(context.caster()) && !friendlyFire)
+        if (!friendlyFire && living instanceof org.bukkit.entity.Player)
             return;
 
         double damage = spellConfig.getDouble("values.damage", 6.0);
@@ -92,7 +96,10 @@ public class Spark extends ProjectileSpell<SmallFireball> {
         Vector direction = living.getLocation().toVector().subtract(projectile.getLocation().toVector()).normalize();
         living.setVelocity(direction.multiply(knockbackStrength));
 
-        context.fx().spawnParticles(living.getLocation(), Particle.ELECTRIC_SPARK, 15, 0.3, 0.3, 0.3, 0.1);
+        // Lightning rod-like effects
+        context.fx().spawnParticles(living.getLocation(), Particle.ELECTRIC_SPARK, 25, 0.5, 1.0, 0.5, 0.2);
+        context.fx().spawnParticles(living.getLocation(), Particle.CRIT, 10, 0.3, 0.8, 0.3, 0.1);
+        context.fx().playSound(living.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 0.6f, 1.2f);
     }
 
     private class ParticleTrail extends BukkitRunnable {
@@ -127,12 +134,14 @@ public class Spark extends ProjectileSpell<SmallFireball> {
             if (history.size() > maxSteps)
                 history.removeLast();
 
+            // Lightning rod trail - electric sparks and energy
             for (Location loc : history) {
                 context.fx().spawnParticles(loc, Particle.ELECTRIC_SPARK, particleCount, 0.06, 0.06, 0.06, 0.015);
+                context.fx().spawnParticles(loc, Particle.ENCHANT, 2, 0.03, 0.03, 0.03, 0.005);
             }
 
             if (burstInterval > 0 && ticks % burstInterval == 0) {
-                context.fx().spawnParticles(projectile.getLocation(), Particle.CRIT, 4, 0.2, 0.2, 0.2, 0.01);
+                context.fx().spawnParticles(projectile.getLocation(), Particle.FLASH, 2, 0.1, 0.1, 0.1, 0.01);
             }
         }
     }

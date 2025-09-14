@@ -12,6 +12,7 @@ import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Tameable;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
@@ -218,7 +219,7 @@ public class ShockwaveRafg extends Spell<Void> {
                     continue;
                 }
 
-                double maxHealth = entity.getMaxHealth();
+                double maxHealth = getMaxHealth(entity);
                 double targetDamage = maxHealth * config.damagePercentage;
                 
                 processingEntities.add(entity.getUniqueId());
@@ -260,5 +261,10 @@ public class ShockwaveRafg extends Spell<Void> {
             
             processingEntities.remove(entity.getUniqueId());
         }
+    }
+    
+    private double getMaxHealth(org.bukkit.entity.LivingEntity entity) {
+        var attr = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        return attr != null ? attr.getValue() : 20.0;
     }
 }

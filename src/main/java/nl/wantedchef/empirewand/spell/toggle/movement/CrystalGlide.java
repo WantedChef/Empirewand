@@ -245,7 +245,7 @@ public final class CrystalGlide extends Spell<Void> implements ToggleableSpell {
             
             // Show frost mastery message
             player.sendMessage(Component.text(
-                    "§b❄ §fYou embrace the crystal frost, ice bends to your will! §b❄"));
+                    "\u00A7b❄ \u00A7fYou embrace the crystal frost, ice bends to your will! \u00A7b❄"));
             
             // Spawn frost activation effect
             spawnFrostActivationEffect();
@@ -264,7 +264,7 @@ public final class CrystalGlide extends Spell<Void> implements ToggleableSpell {
             // Final frost dissipation effect
             spawnFrostDeactivationEffect();
             
-            player.sendMessage(Component.text("§b❄ §7The frost melts away, warmth returns... §b❄"));
+            player.sendMessage(Component.text("\u00A7b❄ \u00A77The frost melts away, warmth returns... \u00A7b❄"));
             player.playSound(player.getLocation(), Sound.BLOCK_SNOW_BREAK, 0.6f, 1.0f);
         }
 
@@ -336,11 +336,21 @@ public final class CrystalGlide extends Spell<Void> implements ToggleableSpell {
         
         private double getEnergyCostForState() {
             switch (currentState) {
-                case FORMING: return cfgDouble("energy.forming-cost", 0.08);
-                case GLIDING: return cfgDouble("energy.gliding-cost", 0.15);
-                case CRYSTALLINE: return cfgDouble("energy.crystalline-cost", 0.25);
-                case GLACIAL: return cfgDouble("energy.glacial-cost", 0.4);
-                default: return 0.15;
+                case FORMING -> {
+                    return cfgDouble("energy.forming-cost", 0.08);
+                }
+                case GLIDING -> {
+                    return cfgDouble("energy.gliding-cost", 0.15);
+                }
+                case CRYSTALLINE -> {
+                    return cfgDouble("energy.crystalline-cost", 0.25);
+                }
+                case GLACIAL -> {
+                    return cfgDouble("energy.glacial-cost", 0.4);
+                }
+                default -> {
+                    return 0.15;
+                }
             }
         }
         
@@ -379,13 +389,12 @@ public final class CrystalGlide extends Spell<Void> implements ToggleableSpell {
         }
         
         private double getSpeedMultiplierForState() {
-            switch (currentState) {
-                case FORMING: return 1.0;
-                case GLIDING: return 1.3;
-                case CRYSTALLINE: return 1.6;
-                case GLACIAL: return 2.0;
-                default: return 1.0;
-            }
+            return switch (currentState) {
+                case GLIDING -> 1.3;
+                case CRYSTALLINE -> 1.6;
+                case GLACIAL -> 2.0;
+                default -> 1.0;
+            };
         }
         
         private boolean isSafeLocation(Location loc) {
@@ -469,18 +478,10 @@ public final class CrystalGlide extends Spell<Void> implements ToggleableSpell {
         private void spawnFrostForm(Location center) {
             // State-specific frost form rendering
             switch (currentState) {
-                case FORMING:
-                    spawnFormingFrostForm(center);
-                    break;
-                case GLIDING:
-                    spawnGlidingFrostForm(center);
-                    break;
-                case CRYSTALLINE:
-                    spawnCrystallineFrostForm(center);
-                    break;
-                case GLACIAL:
-                    spawnGlacialFrostForm(center);
-                    break;
+                case FORMING -> spawnFormingFrostForm(center);
+                case GLIDING -> spawnGlidingFrostForm(center);
+                case CRYSTALLINE -> spawnCrystallineFrostForm(center);
+                case GLACIAL -> spawnGlacialFrostForm(center);
             }
             
             // Frost aura - always present
@@ -791,28 +792,23 @@ public final class CrystalGlide extends Spell<Void> implements ToggleableSpell {
             // Trail color based on age
             double alpha = 1.0 - age;
             
-            switch (currentState) {
-                case FORMING:
-                    return Color.fromRGB((int)(180 * alpha), (int)(220 * alpha), (int)(255 * alpha));
-                case GLIDING:
-                    return Color.fromRGB((int)(200 * alpha), (int)(230 * alpha), (int)(255 * alpha));
-                case CRYSTALLINE:
-                    return Color.fromRGB((int)(220 * alpha), (int)(240 * alpha), (int)(255 * alpha));
-                case GLACIAL:
-                    return Color.fromRGB((int)(240 * alpha), (int)(250 * alpha), (int)(255 * alpha));
-                default:
-                    return Color.fromRGB((int)(200 * alpha), (int)(230 * alpha), (int)(255 * alpha));
-            }
+            return switch (currentState) {
+                case FORMING -> Color.fromRGB((int) (180 * alpha), (int) (220 * alpha), (int) (255 * alpha));
+                case GLIDING -> Color.fromRGB((int) (200 * alpha), (int) (230 * alpha), (int) (255 * alpha));
+                case CRYSTALLINE -> Color.fromRGB((int) (220 * alpha), (int) (240 * alpha), (int) (255 * alpha));
+                case GLACIAL -> Color.fromRGB((int) (240 * alpha), (int) (250 * alpha), (int) (255 * alpha));
+                default -> Color.fromRGB((int) (200 * alpha), (int) (230 * alpha), (int) (255 * alpha));
+            };
         }
         
         private double getStateIntensityMultiplier() {
-            switch (currentState) {
-                case FORMING: return 0.7;
-                case GLIDING: return 1.0;
-                case CRYSTALLINE: return 1.4;
-                case GLACIAL: return 1.8;
-                default: return 1.0;
-            }
+            return switch (currentState) {
+                case FORMING -> 0.7;
+                case GLIDING -> 1.0;
+                case CRYSTALLINE -> 1.4;
+                case GLACIAL -> 1.8;
+                default -> 1.0;
+            };
         }
         
         private void applyFrostEffects() {
@@ -823,28 +819,27 @@ public final class CrystalGlide extends Spell<Void> implements ToggleableSpell {
             
             // State-specific effects
             switch (currentState) {
-                case FORMING:
+                case FORMING -> 
                     // Ice formation clarity
                     player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, duration, 0, false, false));
-                    break;
-                case GLIDING:
+                case GLIDING -> {
                     // Enhanced gliding
                     player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, duration, 1, false, false));
                     player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, duration, 0, false, false));
-                    break;
-                case CRYSTALLINE:
+                }
+                case CRYSTALLINE -> {
                     // Crystalline structure
                     player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, duration, 2, false, false));
                     player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, duration, 1, false, false));
                     player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, duration, 0, false, false));
-                    break;
-                case GLACIAL:
+                }
+                case GLACIAL -> {
                     // Glacial mastery
                     player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, duration, 3, false, false));
                     player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, duration, 2, false, false));
                     player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, duration, 1, false, false));
                     player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, duration, 0, false, false));
-                    break;
+                }
             }
             
             // Frost walking
@@ -866,19 +861,13 @@ public final class CrystalGlide extends Spell<Void> implements ToggleableSpell {
         private void playStateSpecificSounds(Location loc) {
             if (tickCounter % 100 == 0) {
                 switch (currentState) {
-                    case FORMING:
-                        player.playSound(loc, Sound.BLOCK_SNOW_PLACE, 0.3f, 1.4f);
-                        break;
-                    case GLIDING:
-                        player.playSound(loc, Sound.BLOCK_GLASS_STEP, 0.4f, 1.8f);
-                        break;
-                    case CRYSTALLINE:
+                    case FORMING -> player.playSound(loc, Sound.BLOCK_SNOW_PLACE, 0.3f, 1.4f);
+                    case GLIDING -> player.playSound(loc, Sound.BLOCK_GLASS_STEP, 0.4f, 1.8f);
+                    case CRYSTALLINE -> {
                         player.playSound(loc, Sound.BLOCK_GLASS_BREAK, 0.2f, 2.0f);
                         player.playSound(loc, Sound.ITEM_BOTTLE_FILL, 0.3f, 1.6f);
-                        break;
-                    case GLACIAL:
-                        player.playSound(loc, Sound.BLOCK_GLASS_HIT, 0.5f, 0.8f);
-                        break;
+                    }
+                    case GLACIAL -> player.playSound(loc, Sound.BLOCK_GLASS_HIT, 0.5f, 0.8f);
                 }
             }
         }

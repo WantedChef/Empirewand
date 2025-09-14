@@ -10,6 +10,7 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.attribute.Attribute;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -64,7 +65,7 @@ public class Prayer extends Spell<Player> {
         
         // Heal the player
         double currentHealth = player.getHealth();
-        double maxHealth = player.getMaxHealth();
+        double maxHealth = getMaxHealth(player);
         player.setHealth(Math.min(currentHealth + healAmount, maxHealth));
         
         // Remove negative effects
@@ -90,5 +91,10 @@ public class Prayer extends Spell<Player> {
         context.fx().playSound(player, Sound.BLOCK_BEACON_POWER_SELECT, 0.8f, 1.2f);
         
         player.sendMessage("§e§lPrayer §6healed you for " + String.format("%.1f", healAmount) + " health!");
+    }
+
+    private double getMaxHealth(org.bukkit.entity.LivingEntity entity) {
+        var attr = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        return attr != null ? attr.getValue() : 20.0;
     }
 }

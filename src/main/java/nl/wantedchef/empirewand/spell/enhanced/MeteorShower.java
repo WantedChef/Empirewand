@@ -293,8 +293,13 @@ public class MeteorShower extends Spell<Void> {
             if (world == null)
                 return;
 
-            // Create falling block (meteor)
-            FallingBlock meteor = world.spawnFallingBlock(location, Material.MAGMA_BLOCK, (byte) 0);
+            // Create falling block (meteor) using non-deprecated API
+            FallingBlock meteor = world.spawn(location, FallingBlock.class, fb -> {
+                fb.setBlockData(Material.MAGMA_BLOCK.createBlockData());
+                fb.setDropItem(false);
+                fb.setHurtEntities(true);
+            });
+            // Ensure flags in case implementation ignores consumer
             meteor.setDropItem(false);
             meteor.setHurtEntities(true);
 

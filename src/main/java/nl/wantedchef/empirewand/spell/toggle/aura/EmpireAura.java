@@ -248,10 +248,24 @@ public final class EmpireAura extends Spell<Void> implements ToggleableSpell {
                 if (confusion != null) {
                     entity.addPotionEffect(new PotionEffect(confusion, confDur, 0, false, false, true));
                 }
-                Vector vec = entity.getLocation().toVector().subtract(playerVec).normalize();
-                vec.setY(0.4);
-                vec.multiply(push);
-                entity.setVelocity(vec);
+                Vector vec = entity.getLocation().toVector().subtract(playerVec);
+
+                // Check for zero-length vector to avoid NaN/infinite values when normalizing
+                if (vec.lengthSquared() > 0.0001) { // Small threshold to avoid division by zero
+                    vec.normalize();
+                    vec.setY(0.4);
+                    vec.multiply(push);
+
+                    // Additional safety check to ensure all values are finite
+                    if (Double.isFinite(vec.getX()) && Double.isFinite(vec.getY()) && Double.isFinite(vec.getZ())) {
+                        entity.setVelocity(vec);
+                    }
+                } else {
+                    // If entities are too close, push them in a random horizontal direction
+                    double angle = Math.random() * 2 * Math.PI;
+                    vec = new Vector(Math.cos(angle) * push, 0.4, Math.sin(angle) * push);
+                    entity.setVelocity(vec);
+                }
             }
         }
 

@@ -14,6 +14,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Tameable;
 import org.bukkit.entity.Wolf;
+import org.bukkit.attribute.Attribute;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -82,7 +83,7 @@ public class Tame extends Spell<Animals> {
             
             // Heal the animal
             if (target instanceof LivingEntity living) {
-                living.setHealth(living.getMaxHealth());
+                living.setHealth(getMaxHealth(living));
             }
             
             // Visual effects
@@ -105,5 +106,10 @@ public class Tame extends Spell<Animals> {
             
             player.sendMessage("§a§lTamed §2" + target.getType().name().toLowerCase().replace("_", " ") + "!");
         }
+    }
+
+    private double getMaxHealth(LivingEntity entity) {
+        var attr = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        return attr != null ? attr.getValue() : 20.0;
     }
 }

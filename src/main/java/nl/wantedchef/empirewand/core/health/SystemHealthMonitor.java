@@ -6,7 +6,6 @@ import org.bukkit.plugin.Plugin;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
-import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.MemoryUsage;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
@@ -20,9 +19,11 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
@@ -46,7 +47,7 @@ import java.util.stream.Collectors;
 public class SystemHealthMonitor {
     
     private final Plugin plugin;
-    private final Logger logger;
+    private static final Logger logger = Logger.getLogger(SystemHealthMonitor.class.getName());
     private final AdvancedPerformanceMonitor performanceMonitor;
     
     // JVM management beans
@@ -55,7 +56,6 @@ public class SystemHealthMonitor {
     private final OperatingSystemMXBean osBean;
     private final RuntimeMXBean runtimeBean;
     private final List<GarbageCollectorMXBean> gcBeans;
-    private final List<MemoryPoolMXBean> memoryPoolBeans;
     
     // Health monitoring
     private final Map<String, HealthIndicator> healthIndicators = new ConcurrentHashMap<>();
@@ -72,8 +72,6 @@ public class SystemHealthMonitor {
     private volatile double memoryCriticalThreshold = 0.95; // 95%
     private volatile double cpuWarningThreshold = 80.0; // 80%
     private volatile double cpuCriticalThreshold = 95.0; // 95%
-    private volatile long responseTimeWarningMs = 1000; // 1 second
-    private volatile long responseTimeCriticalMs = 5000; // 5 seconds
     
     // Health check intervals
     private volatile Duration quickCheckInterval = Duration.ofSeconds(30);
@@ -224,7 +222,8 @@ public class SystemHealthMonitor {
             
             Alert alert = new Alert(level, component, message, details, Instant.now());
             
-            logger.log(getLogLevel(level), "SYSTEM ALERT [" + level + "] " + component + ": " + message);
+            String alertMessage = String.format("SYSTEM ALERT [%s] %s: %s", level, component, message);
+            logger.log(getLogLevel(level), alertMessage);
             
             for (AlertHandler handler : alertHandlers) {
                 try {
@@ -276,7 +275,6 @@ public class SystemHealthMonitor {
     private class SystemMetricsCollector {
         private final com.sun.management.OperatingSystemMXBean sunOsBean;
         
-        @SuppressWarnings("restriction")
         public SystemMetricsCollector() {
             this.sunOsBean = osBean instanceof com.sun.management.OperatingSystemMXBean ? 
                 (com.sun.management.OperatingSystemMXBean) osBean : null;
@@ -304,9 +302,9 @@ public class SystemHealthMonitor {
                     totalGcTime += gcBean.getCollectionTime();
                 }
                 
-                // CPU metrics (if available)
+                // CPU metrics (if available) - avoid deprecated getSystemCpuLoad
                 double processCpuLoad = sunOsBean != null ? sunOsBean.getProcessCpuLoad() * 100 : -1;
-                double systemCpuLoad = sunOsBean != null ? sunOsBean.getSystemCpuLoad() * 100 : -1;
+                double systemCpuLoad = -1; // Removed deprecated getSystemCpuLoad() method call
                 
                 // System load
                 double systemLoadAverage = osBean.getSystemLoadAverage();
@@ -412,7 +410,6 @@ public class SystemHealthMonitor {
     
     public SystemHealthMonitor(Plugin plugin) {
         this.plugin = Objects.requireNonNull(plugin);
-        this.logger = plugin.getLogger();
         this.performanceMonitor = new AdvancedPerformanceMonitor(plugin, logger);
         
         // Initialize JMX beans
@@ -421,7 +418,6 @@ public class SystemHealthMonitor {
         this.osBean = ManagementFactory.getOperatingSystemMXBean();
         this.runtimeBean = ManagementFactory.getRuntimeMXBean();
         this.gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
-        this.memoryPoolBeans = ManagementFactory.getMemoryPoolMXBeans();
         
         // Enable thread CPU time if supported
         if (threadBean.isThreadCpuTimeSupported()) {
@@ -456,7 +452,9 @@ public class SystemHealthMonitor {
      */
     public void registerHealthIndicator(String name, HealthIndicator indicator) {
         healthIndicators.put(name, indicator);
-        logger.info("Registered health indicator: " + name);
+        if (logger.isLoggable(Level.INFO)) {
+            logger.log(Level.INFO, "Registered health indicator: {0}", name);
+        }
     }
     
     /**
@@ -512,7 +510,7 @@ public class SystemHealthMonitor {
                         HealthCheckResult result = entry.getValue().get(30, TimeUnit.SECONDS);
                         results.put(entry.getKey(), result);
                         lastHealthResults.put(entry.getKey(), result);
-                    } catch (Exception e) {
+                    } catch (InterruptedException | ExecutionException | TimeoutException e) {
                         failedHealthChecks.increment();
                         HealthCheckResult errorResult = new HealthCheckResult(entry.getKey(), 
                             HealthStatus.DOWN, "Failed to get health check result", null, e);
@@ -640,10 +638,10 @@ public class SystemHealthMonitor {
         this.memoryCriticalThreshold = thresholds.memoryCriticalThreshold();
         this.cpuWarningThreshold = thresholds.cpuWarningThreshold();
         this.cpuCriticalThreshold = thresholds.cpuCriticalThreshold();
-        this.responseTimeWarningMs = thresholds.responseTimeWarningMs();
-        this.responseTimeCriticalMs = thresholds.responseTimeCriticalMs();
         
-        logger.info("Health monitoring thresholds updated: " + thresholds);
+        if (logger.isLoggable(Level.INFO)) {
+            logger.log(Level.INFO, "Health monitoring thresholds updated: {0}", thresholds);
+        }
     }
     
     /**
@@ -665,8 +663,11 @@ public class SystemHealthMonitor {
             
             logger.info("SystemHealthMonitor shutdown complete");
             
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Error during SystemHealthMonitor shutdown", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // Restore interrupted status
+            logger.log(Level.WARNING, "Interrupted during SystemHealthMonitor shutdown", e);
+        } catch (RuntimeException e) {
+            logger.log(Level.WARNING, "Runtime error during SystemHealthMonitor shutdown", e);
         }
     }
     
@@ -912,12 +913,10 @@ public class SystemHealthMonitor {
         double memoryWarningThreshold,
         double memoryCriticalThreshold,
         double cpuWarningThreshold,
-        double cpuCriticalThreshold,
-        long responseTimeWarningMs,
-        long responseTimeCriticalMs
+        double cpuCriticalThreshold
     ) {
         public static HealthThresholds defaultThresholds() {
-            return new HealthThresholds(0.80, 0.95, 80.0, 95.0, 1000, 5000);
+            return new HealthThresholds(0.80, 0.95, 80.0, 95.0);
         }
     }
     

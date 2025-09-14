@@ -30,7 +30,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -51,13 +50,12 @@ import java.time.Duration;
  */
 public class EnhancedConfigService {
     
+    private static final Logger logger = Logger.getLogger(EnhancedConfigService.class.getName());
     private final Plugin plugin;
-    private final Logger logger;
     private final AdvancedPerformanceMonitor performanceMonitor;
     
     // Configuration storage
     private final AtomicReference<ConfigurationSnapshot> currentSnapshot = new AtomicReference<>();
-    private final ReentrantReadWriteLock configLock = new ReentrantReadWriteLock();
     
     // Hot reloading
     private final WatchService fileWatchService;
@@ -153,10 +151,6 @@ public class EnhancedConfigService {
         
         public boolean isExpired() {
             return ttl != null && Instant.now().isAfter(cachedAt.plus(ttl));
-        }
-        
-        public CacheStats getStats() {
-            return new CacheStats(accessCount.get(), cachedAt, lastAccessed, isExpired());
         }
     }
     
@@ -279,10 +273,9 @@ public class EnhancedConfigService {
         }
     }
     
-    public EnhancedConfigService(Plugin plugin) throws IOException {
-        this.plugin = Objects.requireNonNull(plugin);
-        this.logger = plugin.getLogger();
-        this.performanceMonitor = new AdvancedPerformanceMonitor(plugin, logger);
+    public EnhancedConfigService(Plugin plugin, AdvancedPerformanceMonitor performanceMonitor) throws IOException {
+        this.plugin = Objects.requireNonNull(plugin, "Plugin cannot be null");
+        this.performanceMonitor = Objects.requireNonNull(performanceMonitor, "Performance monitor cannot be null");
         
         // Initialize file watching
         this.fileWatchService = FileSystems.getDefault().newWatchService();

@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import java.util.Objects;
 
 import java.time.Duration;
 
@@ -49,7 +50,7 @@ public class Rocket extends Spell<Player> {
 
     @Override
     public PrereqInterface prereq() {
-        return new PrereqInterface.LevelPrereq(18);
+        return new PrereqInterface.NonePrereq();
     }
 
     @Override
@@ -62,8 +63,10 @@ public class Rocket extends Spell<Player> {
         double power = spellConfig.getDouble("values.power", DEFAULT_POWER);
         int duration = spellConfig.getInt("values.duration", DEFAULT_DURATION);
         
-        // Launch the player
-        final Vector direction = player.getLocation().getDirection().clone();
+    // Launch the player
+    final var startLoc = Objects.requireNonNull(player.getLocation(), "location");
+    final Vector direction = startLoc.getDirection().clone();
+    final org.bukkit.World world = Objects.requireNonNull(startLoc.getWorld(), "world");
         if (player.isSneaking()) {
             // Launch upward if sneaking
             direction.setX(0);
@@ -79,22 +82,26 @@ public class Rocket extends Spell<Player> {
             
             @Override
             public void run() {
-                if (ticks >= duration || !player.isOnline() || player.isOnGround()) {
+                if (ticks >= duration || !player.isOnline() || isGrounded(player)) {
                     // Landing effect
-                    player.getWorld().spawnParticle(Particle.EXPLOSION, 
-                        player.getLocation(), 1, 0, 0, 0, 0);
-                    context.fx().playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 0.5f, 1.5f);
+                    final var base = player.getLocation();
+                    if (base != null) {
+                        world.spawnParticle(Particle.EXPLOSION,
+                            base, 1, 0, 0, 0, 0);
+                    }
+                    context.fx().playSound(player, Sound.ENTITY_GENERIC_EXPLODE, 0.5f, 1.5f);
                     cancel();
                     return;
                 }
                 
                 // Rocket trail
-                player.getWorld().spawnParticle(Particle.FLAME, 
-                    player.getLocation(), 10, 0.2, 0.2, 0.2, 0.05);
-                player.getWorld().spawnParticle(Particle.SMOKE, 
-                    player.getLocation(), 5, 0.1, 0.1, 0.1, 0.02);
-                player.getWorld().spawnParticle(Particle.FIREWORK, 
-                    player.getLocation(), 3, 0.3, 0.3, 0.3, 0.1);
+                final var base = Objects.requireNonNull(player.getLocation(), "location");
+                world.spawnParticle(Particle.FLAME,
+                    base, 10, 0.2, 0.2, 0.2, 0.05);
+                world.spawnParticle(Particle.SMOKE,
+                    base, 5, 0.1, 0.1, 0.1, 0.02);
+                world.spawnParticle(Particle.FIREWORK,
+                    base, 3, 0.3, 0.3, 0.3, 0.1);
                 
                 // Boost effect
                 if (ticks < 20) {
@@ -103,7 +110,7 @@ public class Rocket extends Spell<Player> {
                 
                 // Sound
                 if (ticks % 5 == 0) {
-                    context.fx().playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, 0.8f, 1.0f);
+                    context.fx().playSound(player, Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, 0.8f, 1.0f);
                 }
                 
                 ticks += 2;
@@ -111,17 +118,29 @@ public class Rocket extends Spell<Player> {
         }.runTaskTimer(context.plugin(), 0L, 2L);
         
         // Initial effects
-        player.getWorld().spawnParticle(Particle.EXPLOSION, 
-            player.getLocation(), 1, 0, 0, 0, 0);
+        {
+            final var base = Objects.requireNonNull(player.getLocation(), "location");
+            world.spawnParticle(Particle.EXPLOSION,
+                base, 1, 0, 0, 0, 0);
+        }
         context.fx().playSound(player, Sound.ENTITY_FIREWORK_ROCKET_LARGE_BLAST, 1.5f, 0.8f);
         context.fx().playSound(player, Sound.ENTITY_ENDER_DRAGON_FLAP, 1.0f, 0.5f);
         
-        player.sendMessage("§c§lRocket §elaunch activated!");
+        player.sendMessage("Rocket launch activated!");
         
         // Give temporary fire resistance
         player.addPotionEffect(new org.bukkit.potion.PotionEffect(
             org.bukkit.potion.PotionEffectType.FIRE_RESISTANCE, duration + 100, 0));
         player.addPotionEffect(new org.bukkit.potion.PotionEffect(
             org.bukkit.potion.PotionEffectType.RESISTANCE, duration + 100, 1));
+    }
+
+    private boolean isGrounded(final Player player) {
+        final var location = player.getLocation();
+        if (location == null) {
+            return true; // Assume grounded if location is unknown
+        }
+        final org.bukkit.block.Block blockBelow = location.clone().subtract(0, 0.1, 0).getBlock();
+        return !blockBelow.getType().isAir();
     }
 }

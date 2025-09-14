@@ -270,6 +270,9 @@ public final class EmpireWandPlugin extends JavaPlugin {
         pm.registerEvents(new nl.wantedchef.empirewand.listener.spell.WaveSpellListener(this), this);
         pm.registerEvents(new nl.wantedchef.empirewand.listener.spell.AuraSpellListener(this), this);
         
+        // GUI click listener for wand rules system
+        pm.registerEvents(new nl.wantedchef.empirewand.gui.GuiClickListener(getLogger()), this);
+
         // Performance monitoring (always register last for accurate tracking)
         pm.registerEvents(new nl.wantedchef.empirewand.listener.spell.PerformanceMonitoringListener(this), this);
         

@@ -1,4 +1,4 @@
-package nl.wantedchef.empirewand.spell.enhanced;
+package nl.wantedchef.empirewand.spell.swarns;
 
 import nl.wantedchef.empirewand.EmpireWandPlugin;
 import nl.wantedchef.empirewand.api.EmpireWandAPI;

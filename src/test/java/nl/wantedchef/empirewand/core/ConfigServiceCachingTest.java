@@ -52,10 +52,16 @@ class ConfigServiceCachingTest {
             // Mock plugin.getDataFolder()
             File dataFolder = new File(System.getProperty("java.io.tmpdir"));
             when(plugin.getDataFolder()).thenReturn(dataFolder);
+            try {
+                new File(dataFolder, "spells.yml").createNewFile();
+            } catch (java.io.IOException e) {
+                fail(e);
+            }
             
             // Mock plugin.saveDefaultConfig() and plugin.reloadConfig()
             doNothing().when(plugin).saveDefaultConfig();
             doNothing().when(plugin).reloadConfig();
+            doNothing().when(plugin).saveResource(anyString(), anyBoolean());
             
             // Create service
             ConfigService service = new ConfigService(plugin);
@@ -78,10 +84,16 @@ class ConfigServiceCachingTest {
             // Mock plugin.getDataFolder()
             File dataFolder = new File(System.getProperty("java.io.tmpdir"));
             when(plugin.getDataFolder()).thenReturn(dataFolder);
+            try {
+                new File(dataFolder, "spells.yml").createNewFile();
+            } catch (java.io.IOException e) {
+                fail(e);
+            }
             
             // Mock plugin.saveDefaultConfig() and plugin.reloadConfig()
             doNothing().when(plugin).saveDefaultConfig();
             doNothing().when(plugin).reloadConfig();
+            doNothing().when(plugin).saveResource(anyString(), anyBoolean());
             
             // Create service
             ConfigService service = new ConfigService(plugin);
@@ -104,10 +116,16 @@ class ConfigServiceCachingTest {
             // Mock plugin.getDataFolder()
             File dataFolder = new File(System.getProperty("java.io.tmpdir"));
             when(plugin.getDataFolder()).thenReturn(dataFolder);
+            try {
+                new File(dataFolder, "spells.yml").createNewFile();
+            } catch (java.io.IOException e) {
+                fail(e);
+            }
             
             // Mock plugin.saveDefaultConfig() and plugin.reloadConfig()
             doNothing().when(plugin).saveDefaultConfig();
             doNothing().when(plugin).reloadConfig();
+            doNothing().when(plugin).saveResource(anyString(), anyBoolean());
             
             // Create service
             ConfigService service = new ConfigService(plugin);
@@ -125,6 +143,7 @@ class ConfigServiceCachingTest {
             ReadableConfig configAfter = service.getConfig();
             
             // Should be different instances after reload
+            assertNotSame(configBefore, configAfter);
             assertNotNull(configAfter);
         }
         
@@ -142,6 +161,7 @@ class ConfigServiceCachingTest {
             // Mock plugin.saveDefaultConfig() and plugin.reloadConfig()
             doNothing().when(plugin).saveDefaultConfig();
             doNothing().when(plugin).reloadConfig();
+            doNothing().when(plugin).saveResource(anyString(), anyBoolean());
             
             // Create service
             ConfigService service = new ConfigService(plugin);

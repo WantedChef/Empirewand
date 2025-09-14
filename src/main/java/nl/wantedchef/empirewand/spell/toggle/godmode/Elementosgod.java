@@ -130,22 +130,33 @@ public final class Elementosgod extends Spell<Void> implements ToggleableSpell {
             halos.put(player.getUniqueId(), new HaloData(player, context));
         }
 
-        player.playSound(player.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 0.8f, 1.8f);
+        Location loc = player.getLocation();
+        if (loc != null) {
+            player.playSound(loc, Sound.BLOCK_BEACON_ACTIVATE, 0.8f, 1.8f);
+        }
         lastToggle.put(player.getUniqueId(), now);
     }
 
     @Override
     public void deactivate(@NotNull Player player, SpellContext context) {
-        var plugin = context != null ? context.plugin() : JavaPlugin.getProvidingPlugin(Elementosgod.class);
-        player.removeMetadata(ACTIVE_KEY, plugin);
-        Optional.ofNullable(halos.remove(player.getUniqueId())).ifPresent(HaloData::stop);
-        player.playSound(player.getLocation(), Sound.BLOCK_BEACON_DEACTIVATE, 0.8f, 1.2f);
-        lastToggle.put(player.getUniqueId(), System.currentTimeMillis());
+        doDeactivate(player, context);
     }
 
     @Override
     public void forceDeactivate(@NotNull Player player) {
-        deactivate(player, null);
+        // Perform cleanup without a full SpellContext per interface contract
+        doDeactivate(player, null);
+    }
+
+    private void doDeactivate(@NotNull Player player, @Nullable SpellContext context) {
+        var plugin = context != null ? context.plugin() : JavaPlugin.getProvidingPlugin(Elementosgod.class);
+        player.removeMetadata(ACTIVE_KEY, plugin);
+        Optional.ofNullable(halos.remove(player.getUniqueId())).ifPresent(HaloData::stop);
+        Location loc = player.getLocation();
+        if (loc != null) {
+            player.playSound(loc, Sound.BLOCK_BEACON_DEACTIVATE, 0.8f, 1.2f);
+        }
+        lastToggle.put(player.getUniqueId(), System.currentTimeMillis());
     }
 
     @Override
@@ -196,8 +207,11 @@ public final class Elementosgod extends Spell<Void> implements ToggleableSpell {
         attacker.removeMetadata(REFLECT_META, plugin);
 
         double heal = damage * data.healFactor();
-        double max = target.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
-        target.setHealth(Math.min(max, target.getHealth() + heal));
+        var attr = target.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        if (attr != null) {
+            double max = attr.getValue();
+            target.setHealth(Math.min(max, target.getHealth() + heal));
+        }
     }
 
     private record GodData(double healFactor, double reflectMultiplier) {
@@ -212,7 +226,7 @@ public final class Elementosgod extends Spell<Void> implements ToggleableSpell {
         HaloData(Player player, SpellContext context) {
             this.player = player;
             this.radius = cfgDouble("particles.halo-radius", 0.4);
-            this.height = cfgDouble("particles.halo-height", 1.1);
+            this.height = cfgDouble("particles.halo-height", 0.5);
             this.task = Bukkit.getScheduler().runTaskTimer(context.plugin(), this::tick, 0L, 5L);
         }
 
@@ -221,7 +235,9 @@ public final class Elementosgod extends Spell<Void> implements ToggleableSpell {
                 forceDeactivate(player);
                 return;
             }
-            Location base = player.getLocation().add(0, height, 0);
+            // Use getEyeLocation() to position halo above the player's head
+            Location eyeLocation = player.getEyeLocation();
+            Location base = eyeLocation.add(0, height, 0);
             World world = base.getWorld();
             if (world == null) {
                 return;

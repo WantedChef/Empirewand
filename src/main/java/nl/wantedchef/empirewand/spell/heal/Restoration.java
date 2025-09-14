@@ -11,6 +11,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.attribute.Attribute;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -50,7 +51,7 @@ public class Restoration extends Spell<LivingEntity> {
 
     @Override
     public PrereqInterface prereq() {
-        return new PrereqInterface.LevelPrereq(20);
+        return new PrereqInterface.NonePrereq();
     }
 
     @Override
@@ -69,16 +70,14 @@ public class Restoration extends Spell<LivingEntity> {
 
     @Override
     protected void handleEffect(@NotNull SpellContext context, @NotNull LivingEntity target) {
-        if (target == null) return;
-        
         Player player = context.caster();
         boolean fullRestore = spellConfig.getBoolean("flags.full_restore", DEFAULT_FULL_RESTORE);
         
         // Full health restoration
         if (fullRestore) {
-            target.setHealth(target.getMaxHealth());
+            target.setHealth(getMaxHealth(target));
         } else {
-            target.setHealth(Math.min(target.getHealth() + 20, target.getMaxHealth()));
+            target.setHealth(Math.min(target.getHealth() + 20, getMaxHealth(target)));
         }
         
         // Remove all negative effects
@@ -133,5 +132,10 @@ public class Restoration extends Spell<LivingEntity> {
                type.equals(PotionEffectType.HUNGER) ||
                type.equals(PotionEffectType.UNLUCK) ||
                type.equals(PotionEffectType.BAD_OMEN);
+    }
+    
+    private double getMaxHealth(LivingEntity entity) {
+        var attr = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        return attr != null ? attr.getValue() : 20.0;
     }
 }

@@ -1,5 +1,21 @@
 package nl.wantedchef.empirewand.framework.service;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import org.jetbrains.annotations.NotNull;
+
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import nl.wantedchef.empirewand.api.ServiceHealth;
@@ -17,24 +33,55 @@ import nl.wantedchef.empirewand.spell.control.ZeistChronoAnchor;
 import nl.wantedchef.empirewand.spell.dark.DarkCircle;
 import nl.wantedchef.empirewand.spell.dark.DarkPulse;
 import nl.wantedchef.empirewand.spell.dark.Mephidrain;
+import nl.wantedchef.empirewand.spell.dark.Pain;
 import nl.wantedchef.empirewand.spell.dark.RitualOfUnmaking;
 import nl.wantedchef.empirewand.spell.dark.ShadowStep;
+import nl.wantedchef.empirewand.spell.dark.Soulburn;
+import nl.wantedchef.empirewand.spell.dark.Torture;
+import nl.wantedchef.empirewand.spell.dark.Vengeance;
 import nl.wantedchef.empirewand.spell.dark.VoidSwap;
+import nl.wantedchef.empirewand.spell.dark.Wither;
+import nl.wantedchef.empirewand.spell.defensive.Absorb;
+import nl.wantedchef.empirewand.spell.defensive.Invincible;
+import nl.wantedchef.empirewand.spell.defensive.Reflect;
+import nl.wantedchef.empirewand.spell.defensive.Shell;
+import nl.wantedchef.empirewand.spell.defensive.Silence;
 import nl.wantedchef.empirewand.spell.earth.EarthQuake;
 import nl.wantedchef.empirewand.spell.earth.GraspingVines;
 import nl.wantedchef.empirewand.spell.earth.Lightwall;
+import nl.wantedchef.empirewand.spell.earth.Platform;
+import nl.wantedchef.empirewand.spell.earth.Sandblast;
+import nl.wantedchef.empirewand.spell.earth.Stash;
+import nl.wantedchef.empirewand.spell.earth.Tremor;
+import nl.wantedchef.empirewand.spell.earth.Wall;
 import nl.wantedchef.empirewand.spell.fire.BlazeLaunch;
+import nl.wantedchef.empirewand.spell.fire.Burn;
 import nl.wantedchef.empirewand.spell.fire.Comet;
 import nl.wantedchef.empirewand.spell.fire.CometShower;
 import nl.wantedchef.empirewand.spell.fire.EmpireComet;
-import nl.wantedchef.empirewand.spell.fire.Explosive;
 import nl.wantedchef.empirewand.spell.fire.ExplosionTrail;
+import nl.wantedchef.empirewand.spell.fire.Explosive;
 import nl.wantedchef.empirewand.spell.fire.Fireball;
 import nl.wantedchef.empirewand.spell.fire.FlameWave;
+import nl.wantedchef.empirewand.spell.fire.Flamewalk;
+import nl.wantedchef.empirewand.spell.fire.Inferno;
+import nl.wantedchef.empirewand.spell.fire.Lava;
+import nl.wantedchef.empirewand.spell.fire.MagmaWave;
+import nl.wantedchef.empirewand.spell.heal.DivineHeal;
 import nl.wantedchef.empirewand.spell.heal.Heal;
+import nl.wantedchef.empirewand.spell.heal.Prayer;
 import nl.wantedchef.empirewand.spell.heal.RadiantBeacon;
+import nl.wantedchef.empirewand.spell.heal.Repair;
+import nl.wantedchef.empirewand.spell.heal.Restoration;
+import nl.wantedchef.empirewand.spell.heal.SuperHeal;
+import nl.wantedchef.empirewand.spell.ice.ArcticBlast;
+import nl.wantedchef.empirewand.spell.ice.FreezeRay;
 import nl.wantedchef.empirewand.spell.ice.FrostNova;
+import nl.wantedchef.empirewand.spell.ice.Frostwalk;
 import nl.wantedchef.empirewand.spell.ice.GlacialSpike;
+import nl.wantedchef.empirewand.spell.ice.IceWall;
+import nl.wantedchef.empirewand.spell.ice.IceWave;
+import nl.wantedchef.empirewand.spell.ice.Petrify;
 import nl.wantedchef.empirewand.spell.life.BloodBarrier;
 import nl.wantedchef.empirewand.spell.life.BloodBlock;
 import nl.wantedchef.empirewand.spell.life.BloodNova;
@@ -43,20 +90,34 @@ import nl.wantedchef.empirewand.spell.life.BloodTap;
 import nl.wantedchef.empirewand.spell.life.Hemorrhage;
 import nl.wantedchef.empirewand.spell.life.LifeReap;
 import nl.wantedchef.empirewand.spell.life.LifeSteal;
+import nl.wantedchef.empirewand.spell.life.Lifewalk;
+import nl.wantedchef.empirewand.spell.life.NatureGrowth;
+import nl.wantedchef.empirewand.spell.life.Pollinate;
+import nl.wantedchef.empirewand.spell.life.Regenerate;
+import nl.wantedchef.empirewand.spell.life.Tame;
 import nl.wantedchef.empirewand.spell.lightning.ChainLightning;
 import nl.wantedchef.empirewand.spell.lightning.LightningArrow;
 import nl.wantedchef.empirewand.spell.lightning.LightningBolt;
-import nl.wantedchef.empirewand.spell.lightning.LightningStorm;
 import nl.wantedchef.empirewand.spell.lightning.LittleSpark;
 import nl.wantedchef.empirewand.spell.lightning.SolarLance;
 import nl.wantedchef.empirewand.spell.lightning.Spark;
 import nl.wantedchef.empirewand.spell.lightning.ThunderBlast;
 import nl.wantedchef.empirewand.spell.misc.EmpireLaunch;
 import nl.wantedchef.empirewand.spell.misc.EmpireLevitate;
+import nl.wantedchef.empirewand.spell.misc.Empower;
 import nl.wantedchef.empirewand.spell.misc.EtherealForm;
+import nl.wantedchef.empirewand.spell.misc.Gate;
+import nl.wantedchef.empirewand.spell.misc.Invulnerability;
+import nl.wantedchef.empirewand.spell.misc.MagicTorch;
+import nl.wantedchef.empirewand.spell.misc.Mana;
 import nl.wantedchef.empirewand.spell.movement.BlinkStrike;
 import nl.wantedchef.empirewand.spell.movement.EmpireEscape;
 import nl.wantedchef.empirewand.spell.movement.Leap;
+import nl.wantedchef.empirewand.spell.movement.Levitate;
+import nl.wantedchef.empirewand.spell.movement.Lift;
+import nl.wantedchef.empirewand.spell.movement.Phase;
+import nl.wantedchef.empirewand.spell.movement.Recall;
+import nl.wantedchef.empirewand.spell.movement.Rocket;
 import nl.wantedchef.empirewand.spell.movement.SunburstStep;
 import nl.wantedchef.empirewand.spell.movement.Teleport;
 import nl.wantedchef.empirewand.spell.poison.CrimsonChains;
@@ -68,83 +129,21 @@ import nl.wantedchef.empirewand.spell.projectile.MagicMissile;
 import nl.wantedchef.empirewand.spell.toggle.aura.Aura;
 import nl.wantedchef.empirewand.spell.toggle.aura.EmpireAura;
 import nl.wantedchef.empirewand.spell.toggle.godmode.Elementosgod;
-import nl.wantedchef.empirewand.spell.toggle.movement.KajCloud;
-import nl.wantedchef.empirewand.spell.toggle.movement.MephiCloud;
-import nl.wantedchef.empirewand.spell.toggle.movement.ShadowCloak;
 import nl.wantedchef.empirewand.spell.toggle.movement.AngelWings;
 import nl.wantedchef.empirewand.spell.toggle.movement.CrystalGlide;
 import nl.wantedchef.empirewand.spell.toggle.movement.DragonFury;
-import nl.wantedchef.empirewand.spell.toggle.movement.PhoenixRise;
+import nl.wantedchef.empirewand.spell.toggle.movement.KajCloud;
+import nl.wantedchef.empirewand.spell.toggle.movement.MephiCloud;
+import nl.wantedchef.empirewand.spell.toggle.movement.PhoenixCloak;
+import nl.wantedchef.empirewand.spell.toggle.movement.ShadowCloak;
 import nl.wantedchef.empirewand.spell.toggle.movement.StormRider;
 import nl.wantedchef.empirewand.spell.toggle.movement.VoidWalk;
+import nl.wantedchef.empirewand.spell.weather.Blizzard;
+import nl.wantedchef.empirewand.spell.weather.ClearSkies;
 import nl.wantedchef.empirewand.spell.weather.Gust;
+import nl.wantedchef.empirewand.spell.weather.HailStorm;
+import nl.wantedchef.empirewand.spell.weather.RainDance;
 import nl.wantedchef.empirewand.spell.weather.Tornado;
-// New spell imports - 50 amazing spells from real Empirewand
-import nl.wantedchef.empirewand.spell.fire.Flamewalk;
-import nl.wantedchef.empirewand.spell.fire.Burn;
-import nl.wantedchef.empirewand.spell.fire.Lava;
-import nl.wantedchef.empirewand.spell.fire.Inferno;
-import nl.wantedchef.empirewand.spell.fire.MagmaWave;
-import nl.wantedchef.empirewand.spell.ice.Frostwalk;
-import nl.wantedchef.empirewand.spell.ice.Petrify;
-import nl.wantedchef.empirewand.spell.ice.IceWall;
-import nl.wantedchef.empirewand.spell.ice.FreezeRay;
-import nl.wantedchef.empirewand.spell.ice.ArcticBlast;
-import nl.wantedchef.empirewand.spell.dark.Wither;
-import nl.wantedchef.empirewand.spell.dark.Soulburn;
-import nl.wantedchef.empirewand.spell.dark.Torture;
-import nl.wantedchef.empirewand.spell.dark.Pain;
-import nl.wantedchef.empirewand.spell.dark.Vengeance;
-import nl.wantedchef.empirewand.spell.earth.Sandblast;
-import nl.wantedchef.empirewand.spell.earth.Wall;
-import nl.wantedchef.empirewand.spell.earth.Platform;
-import nl.wantedchef.empirewand.spell.earth.Stash;
-import nl.wantedchef.empirewand.spell.earth.Tremor;
-import nl.wantedchef.empirewand.spell.life.Lifewalk;
-import nl.wantedchef.empirewand.spell.life.Pollinate;
-import nl.wantedchef.empirewand.spell.life.Tame;
-import nl.wantedchef.empirewand.spell.life.NatureGrowth;
-import nl.wantedchef.empirewand.spell.life.Regenerate;
-import nl.wantedchef.empirewand.spell.heal.Prayer;
-import nl.wantedchef.empirewand.spell.heal.SuperHeal;
-import nl.wantedchef.empirewand.spell.heal.Repair;
-import nl.wantedchef.empirewand.spell.heal.Restoration;
-import nl.wantedchef.empirewand.spell.heal.DivineHeal;
-import nl.wantedchef.empirewand.spell.movement.Levitate;
-import nl.wantedchef.empirewand.spell.movement.Lift;
-import nl.wantedchef.empirewand.spell.movement.Phase;
-import nl.wantedchef.empirewand.spell.movement.Recall;
-import nl.wantedchef.empirewand.spell.movement.Rocket;
-import nl.wantedchef.empirewand.spell.misc.Gate;
-import nl.wantedchef.empirewand.spell.misc.Empower;
-import nl.wantedchef.empirewand.spell.misc.Invulnerability;
-import nl.wantedchef.empirewand.spell.misc.Mana;
-import nl.wantedchef.empirewand.spell.misc.MagicTorch;
-import nl.wantedchef.empirewand.spell.offensive.SuperKill;
-import nl.wantedchef.empirewand.spell.offensive.Kill;
-import nl.wantedchef.empirewand.spell.offensive.Wound;
-import nl.wantedchef.empirewand.spell.offensive.Volley;
-import nl.wantedchef.empirewand.spell.offensive.Shuriken;
-import nl.wantedchef.empirewand.spell.defensive.Shell;
-import nl.wantedchef.empirewand.spell.defensive.Silence;
-import nl.wantedchef.empirewand.spell.defensive.Invincible;
-import nl.wantedchef.empirewand.spell.defensive.Reflect;
-import nl.wantedchef.empirewand.spell.defensive.Absorb;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * The primary implementation of the {@link SpellRegistry}. This class is
@@ -247,14 +246,12 @@ public class SpellRegistryImpl implements SpellRegistry {
                     () -> new BloodTap.Builder(api),
                     () -> new Hemorrhage.Builder(api),
                     () -> new nl.wantedchef.empirewand.spell.life.Bloodwave.Builder(api),
+                    () -> new nl.wantedchef.empirewand.spell.swarns.SummonWolves.Builder(api),
                     () -> new LifeReap.Builder(api),
                     () -> new LifeSteal.Builder(api),
                     // Lightning
-                    () -> new ChainLightning.Builder(api),
                     () -> new LightningArrow.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.lightning.Kajarrow.Builder(api),
                     () -> new LightningBolt.Builder(api),
-                    () -> new LightningStorm.Builder(api),
                     () -> new LittleSpark.Builder(api),
                     () -> new SolarLance.Builder(api),
                     () -> new Spark.Builder(api),
@@ -273,7 +270,7 @@ public class SpellRegistryImpl implements SpellRegistry {
                     () -> new AngelWings.Builder(api),
                     () -> new CrystalGlide.Builder(api),
                     () -> new DragonFury.Builder(api),
-                    () -> new PhoenixRise.Builder(api),
+                    () -> new PhoenixCloak.Builder(api),
                     () -> new StormRider.Builder(api),
                     () -> new VoidWalk.Builder(api),
                     () -> new SunburstStep.Builder(api),
@@ -289,6 +286,10 @@ public class SpellRegistryImpl implements SpellRegistry {
                     // Weather
                     () -> new Gust.Builder(api),
                     () -> new Tornado.Builder(api),
+                    () -> new Blizzard.Builder(api),
+                    () -> new ClearSkies.Builder(api),
+                    () -> new HailStorm.Builder(api),
+                    () -> new RainDance.Builder(api),
                     // Enhanced Spells
                     () -> new nl.wantedchef.empirewand.spell.enhanced.MeteorShower.Builder(api),
                     () -> new nl.wantedchef.empirewand.spell.enhanced.TemporalStasis.Builder(api),
@@ -303,12 +304,18 @@ public class SpellRegistryImpl implements SpellRegistry {
                     () -> new nl.wantedchef.empirewand.spell.enhanced.TimeDilation.Builder(api),
                     () -> new nl.wantedchef.empirewand.spell.enhanced.EnergyShield.Builder(api),
                     () -> new nl.wantedchef.empirewand.spell.enhanced.DragonsBreath.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.enhanced.SummonSwarm.Builder(api),
+                    () -> new nl.wantedchef.empirewand.spell.swarns.SummonSwarm.Builder(api),
+                    () -> new nl.wantedchef.empirewand.spell.swarns.SummonSwarmFlame.Builder(api),
+                    () -> new nl.wantedchef.empirewand.spell.swarns.SummonSwarmToxic.Builder(api),
+                    () -> new nl.wantedchef.empirewand.spell.swarns.SummonSwarmArcane.Builder(api),
+                    () -> new nl.wantedchef.empirewand.spell.swarns.SummonSwarmRadiant.Builder(api),
+                    () -> new nl.wantedchef.empirewand.spell.swarns.SummonSwarmVoid.Builder(api),
+                    () -> new nl.wantedchef.empirewand.spell.swarns.SummonSwarmWind.Builder(api),
+                    () -> new nl.wantedchef.empirewand.spell.swarns.SummonSwarmStone.Builder(api),
                     // Enhanced Spell Variants
                     () -> new nl.wantedchef.empirewand.spell.enhanced.MeteorShowerEnhanced.Builder(api),
                     () -> new nl.wantedchef.empirewand.spell.enhanced.BlizzardEnhanced.Builder(api),
                     () -> new nl.wantedchef.empirewand.spell.fire.FireballEnhanced.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.lightning.ChainLightningEnhanced.Builder(api),
                     () -> new nl.wantedchef.empirewand.spell.fire.CometEnhanced.Builder(api),
                     () -> new nl.wantedchef.empirewand.spell.heal.HealEnhanced.Builder(api),
                     () -> new nl.wantedchef.empirewand.spell.movement.TeleportEnhanced.Builder(api),
@@ -324,10 +331,11 @@ public class SpellRegistryImpl implements SpellRegistry {
                     () -> new Inferno.Builder(api),
                     () -> new MagmaWave.Builder(api),
                     
-                    // Ice Spells (5 new)
+                    // Ice Spells (6 new)
                     () -> new Frostwalk.Builder(api),
                     () -> new Petrify.Builder(api),
                     () -> new IceWall.Builder(api),
+                    () -> new IceWave.Builder(api),
                     () -> new FreezeRay.Builder(api),
                     () -> new ArcticBlast.Builder(api),
                     
@@ -373,13 +381,6 @@ public class SpellRegistryImpl implements SpellRegistry {
                     () -> new Mana.Builder(api),
                     () -> new MagicTorch.Builder(api),
                     
-                    // Offensive Spells (5 new)
-                    () -> new SuperKill.Builder(api),
-                    () -> new Kill.Builder(api),
-                    () -> new Wound.Builder(api),
-                    () -> new Volley.Builder(api),
-                    () -> new Shuriken.Builder(api),
-                    
                     // Defensive Spells (5 new)
                     () -> new Shell.Builder(api),
                     () -> new Silence.Builder(api),
@@ -417,8 +418,8 @@ public class SpellRegistryImpl implements SpellRegistry {
     }
 
     /**
-   * Fallback method for spell builder registration when reflection fails.
-   */
+     * Fallback method for spell builder registration when reflection fails.
+     */
     private Supplier<Spell.Builder<?>>[] getFallbackSpellBuilders() {
         final nl.wantedchef.empirewand.api.EmpireWandAPI api = null;
         @SuppressWarnings("unchecked")
@@ -441,7 +442,7 @@ public class SpellRegistryImpl implements SpellRegistry {
                 // Earth
                 () -> new EarthQuake.Builder(api),
                 () -> new GraspingVines.Builder(api),
-                () -> new Lightwall.Builder(api),
+                    () -> new Lightwall.Builder(api),
                 // Fire
                 () -> new BlazeLaunch.Builder(api),
                 () -> new Comet.Builder(api),
@@ -464,15 +465,13 @@ public class SpellRegistryImpl implements SpellRegistry {
                 () -> new BloodSpam.Builder(api),
                 () -> new BloodTap.Builder(api),
                 () -> new Hemorrhage.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.life.Bloodwave.Builder(api),
-                    () -> new LifeReap.Builder(api),
+                () -> new nl.wantedchef.empirewand.spell.life.Bloodwave.Builder(api),
+                () -> new LifeReap.Builder(api),
                 () -> new LifeSteal.Builder(api),
                 // Lightning
                 () -> new ChainLightning.Builder(api),
                 () -> new LightningArrow.Builder(api),
-                    () -> new nl.wantedchef.empirewand.spell.lightning.Kajarrow.Builder(api),
                 () -> new LightningBolt.Builder(api),
-                () -> new LightningStorm.Builder(api),
                 () -> new LittleSpark.Builder(api),
                 () -> new SolarLance.Builder(api),
                 () -> new Spark.Builder(api),
@@ -500,7 +499,12 @@ public class SpellRegistryImpl implements SpellRegistry {
                 () -> new MagicMissile.Builder(api),
                 // Weather
                 () -> new Gust.Builder(api),
-                () -> new Tornado.Builder(api)
+                () -> new Tornado.Builder(api),
+                () -> new Blizzard.Builder(api),
+                () -> new ClearSkies.Builder(api),
+                () -> new HailStorm.Builder(api),
+                () -> new nl.wantedchef.empirewand.spell.weather.LightningStorm.Builder(api),
+                () -> new RainDance.Builder(api)
         };
         return builders;
     }
@@ -509,7 +513,6 @@ public class SpellRegistryImpl implements SpellRegistry {
      * Invalidates all cached data to force recalculation on next access.
      */
     private void invalidateCaches() {
-        cachedCategories = null;
         categorySpellCache.clear();
         toggleableSpellCache.clear();
         metadataCache.clear();
@@ -655,10 +658,6 @@ public class SpellRegistryImpl implements SpellRegistry {
     @Override
     public @NotNull
     Set<String> getSpellsByCategory(@NotNull String category) {
-        if (category == null) {
-            return Collections.emptySet();
-        }
-
         // Check cache first
         Set<String> cached = categorySpellCache.get(category);
         if (cached != null) {
@@ -897,8 +896,8 @@ public class SpellRegistryImpl implements SpellRegistry {
             timing.observe();
             assert timing != null;
             Spell<?> spell = spells.get(key);
-            if (spell instanceof ToggleableSpell) {
-                return Optional.of((ToggleableSpell) spell);
+            if (spell instanceof ToggleableSpell toggleableSpell) {
+                return Optional.of(toggleableSpell);
             }
             return Optional.empty();
         }
@@ -913,8 +912,8 @@ public class SpellRegistryImpl implements SpellRegistry {
             Map<String, ToggleableSpell> result = new HashMap<>(cachedKeys.size());
             for (String key : cachedKeys) {
                 Spell<?> spell = spells.get(key);
-                if (spell instanceof ToggleableSpell) {
-                    result.put(key, (ToggleableSpell) spell);
+                if (spell instanceof ToggleableSpell toggleableSpell) {
+                    result.put(key, toggleableSpell);
                 }
             }
             return Collections.unmodifiableMap(result);
@@ -928,8 +927,8 @@ public class SpellRegistryImpl implements SpellRegistry {
             Set<String> toggleableKeys = new HashSet<>();
 
             for (Map.Entry<String, Spell<?>> entry : spells.entrySet()) {
-                if (entry.getValue() instanceof ToggleableSpell) {
-                    toggleableSpells.put(entry.getKey(), (ToggleableSpell) entry.getValue());
+                if (entry.getValue() instanceof ToggleableSpell toggleableSpell) {
+                    toggleableSpells.put(entry.getKey(), toggleableSpell);
                     toggleableKeys.add(entry.getKey());
                 }
             }
@@ -1219,7 +1218,3 @@ public class SpellRegistryImpl implements SpellRegistry {
         }
     }
 }
-
-
-
-

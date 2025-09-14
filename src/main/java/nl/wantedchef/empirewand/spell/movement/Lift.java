@@ -63,7 +63,7 @@ public class Lift extends Spell<Entity> {
             return target;
         }
         
-        player.sendMessage("§cNo target found!");
+        player.sendMessage("\u00A7cNo target found!");
         return null;
     }
 
@@ -95,6 +95,6 @@ public class Lift extends Spell<Entity> {
         context.fx().playSound(target.getLocation(), Sound.ENTITY_WIND_CHARGE_WIND_BURST, 1.0f, 1.5f);
         
         String targetName = target instanceof Player ? ((Player) target).getName() : target.getType().name();
-        player.sendMessage("§f§lLifted §7" + targetName + " into the air!");
+        player.sendMessage("\u00A7f\u00A7lLifted \u00A77" + targetName + " into the air!");
     }
 }

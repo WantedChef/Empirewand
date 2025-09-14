@@ -20,11 +20,11 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Map;
 import java.util.Set;
@@ -33,7 +33,6 @@ import java.util.Set;
 import java.util.Objects;
 import java.util.function.Supplier;
 import java.time.Duration;
-import java.time.Instant;
 
 /**
  * Enterprise-grade task management system with advanced scheduling, resource pooling,
@@ -54,7 +53,7 @@ import java.time.Instant;
 public class AdvancedTaskManager {
     
     private final Plugin plugin;
-    private final Logger logger;
+    private static final Logger logger = Logger.getLogger(AdvancedTaskManager.class.getName());
     private final AdvancedPerformanceMonitor performanceMonitor;
     
     // Core task tracking
@@ -79,7 +78,6 @@ public class AdvancedTaskManager {
     // Configuration and thresholds
     private volatile int maxTasksPerSecond = 1000;
     private volatile int maxConcurrentAsyncTasks = 200;
-    private volatile long taskTimeoutMs = 30000; // 30 seconds
     private volatile boolean circuitBreakerEnabled = true;
     
     // Rate limiting
@@ -91,7 +89,6 @@ public class AdvancedTaskManager {
     
     // Task cleanup and monitoring
     private final ScheduledFuture<?> cleanupTask;
-    private final ScheduledFuture<?> monitoringTask;
     
     /**
      * Task priority levels for execution ordering.
@@ -189,19 +186,9 @@ public class AdvancedTaskManager {
      */
     private static class TaskMetadata {
         private final TaskContext context;
-        private final Instant submissionTime;
-        private final AtomicInteger retryCount = new AtomicInteger();
-        private volatile Instant startTime;
-        private volatile Instant endTime;
-        private volatile TaskStatus status = TaskStatus.SUBMITTED;
         
         public TaskMetadata(TaskContext context) {
             this.context = context;
-            this.submissionTime = Instant.now();
-        }
-        
-        public enum TaskStatus {
-            SUBMITTED, RUNNING, COMPLETED, FAILED, TIMEOUT, CANCELLED
         }
     }
     
@@ -209,14 +196,12 @@ public class AdvancedTaskManager {
      * Task group for organizing and limiting related tasks.
      */
     private static class TaskGroup {
-        private final String name;
         private final int maxConcurrentTasks;
         private final AtomicInteger activeTasks = new AtomicInteger();
         private final LongAdder totalTasksSubmitted = new LongAdder();
         private final LongAdder totalTasksCompleted = new LongAdder();
         
         public TaskGroup(String name, int maxConcurrentTasks) {
-            this.name = name;
             this.maxConcurrentTasks = maxConcurrentTasks;
         }
         
@@ -319,16 +304,23 @@ public class AdvancedTaskManager {
     
     public AdvancedTaskManager(Plugin plugin) {
         this.plugin = Objects.requireNonNull(plugin);
-        this.logger = plugin.getLogger();
         this.performanceMonitor = new AdvancedPerformanceMonitor(plugin, logger);
         
         // Initialize rate limiter
         this.globalRateLimiter = new RateLimiter(maxTasksPerSecond);
         
-        // Create thread pools with different priorities
-        this.highPriorityExecutor = createThreadPool("HighPriority", 4, 8, TaskPriority.HIGH);
-        this.normalPriorityExecutor = createThreadPool("NormalPriority", 8, 16, TaskPriority.NORMAL);
-        this.lowPriorityExecutor = createThreadPool("LowPriority", 2, 4, TaskPriority.LOW);
+        // Create thread pools with different priorities (adaptive to CPU cores)
+        int cores = Math.max(2, Runtime.getRuntime().availableProcessors());
+        int highCore = Math.max(2, cores / 2);
+        int highMax = Math.max(highCore, cores);
+        int normalCore = Math.max(2, cores);
+        int normalMax = Math.max(normalCore, cores * 2);
+        int lowCore = 1;
+        int lowMax = Math.max(2, cores / 2);
+
+        this.highPriorityExecutor = createThreadPool("HighPriority", highCore, highMax, TaskPriority.HIGH);
+        this.normalPriorityExecutor = createThreadPool("NormalPriority", normalCore, normalMax, TaskPriority.NORMAL);
+        this.lowPriorityExecutor = createThreadPool("LowPriority", lowCore, lowMax, TaskPriority.LOW);
         
         // Create scheduled executor for timed tasks
         this.scheduledExecutor = Executors.newScheduledThreadPool(4, r -> {
@@ -349,13 +341,33 @@ public class AdvancedTaskManager {
         // Start monitoring and cleanup tasks
         this.cleanupTask = scheduledExecutor.scheduleWithFixedDelay(
             this::cleanupDeadTasks, 30, 30, TimeUnit.SECONDS);
-        this.monitoringTask = scheduledExecutor.scheduleWithFixedDelay(
+        scheduledExecutor.scheduleWithFixedDelay(
             this::updateMetrics, 10, 10, TimeUnit.SECONDS);
         
         // Start performance monitoring
         performanceMonitor.startMonitoring();
         
         logger.info("AdvancedTaskManager initialized with enterprise-grade task management");
+    }
+
+    /**
+     * Reports simple health status based on queues and failure counts.
+     */
+    public boolean isHealthy() {
+        try {
+            final boolean queuesOk =
+                this.highPriorityExecutor.getQueue().size() < 100 &&
+                this.normalPriorityExecutor.getQueue().size() < 200 &&
+                this.lowPriorityExecutor.getQueue().size() < 200;
+
+            final boolean breakersOk = this.circuitBreakers.values().stream()
+                .noneMatch(cb -> cb.state == CircuitBreaker.State.OPEN);
+
+            return queuesOk && breakersOk;
+        } catch (final Exception e) {
+            logger.log(Level.FINE, "Health check exception", e);
+            return false;
+        }
     }
     
     /**
@@ -409,19 +421,14 @@ public class AdvancedTaskManager {
                 
                 if (throwable == null) {
                     totalTasksCompleted.increment();
-                    metadata.status = TaskMetadata.TaskStatus.COMPLETED;
                     circuitBreaker.recordSuccess();
                 } else {
                     totalTasksFailed.increment();
-                    metadata.status = throwable instanceof TimeoutException ? 
-                        TaskMetadata.TaskStatus.TIMEOUT : TaskMetadata.TaskStatus.FAILED;
                     circuitBreaker.recordFailure();
                     
                     // Log task failure
-                    logger.warning("Task failed: " + context.getName() + " - " + throwable.getMessage());
+                    logger.warning(String.format("Task failed: %s - %s", context.getName(), throwable.getMessage()));
                 }
-                
-                metadata.endTime = Instant.now();
             });
         
         // Track the task
@@ -497,6 +504,56 @@ public class AdvancedTaskManager {
         BukkitTask task = runnable.runTask(plugin);
         return registerTask(task);
     }
+
+    
+
+    /**
+     * Runs an async task timer with tracking.
+     */
+    public BukkitTask runTaskTimerAsynchronously(BukkitRunnable runnable, long delay, long period) {
+        BukkitTask task = runnable.runTaskTimerAsynchronously(plugin, delay, period);
+        return registerTask(task);
+    }
+
+    /**
+     * Runs an async task timer with tracking.
+     */
+    public BukkitTask runTaskTimerAsynchronously(Runnable runnable, long delay, long period) {
+        BukkitTask task = plugin.getServer().getScheduler().runTaskTimerAsynchronously(plugin, runnable, delay, period);
+        return registerTask(task);
+    }
+
+    /**
+     * Runs a delayed async task with tracking.
+     */
+    public BukkitTask runTaskLaterAsynchronously(BukkitRunnable runnable, long delay) {
+        BukkitTask task = runnable.runTaskLaterAsynchronously(plugin, delay);
+        return registerTask(task);
+    }
+
+    /**
+     * Runs a delayed async task with tracking.
+     */
+    public BukkitTask runTaskLaterAsynchronously(Runnable runnable, long delay) {
+        BukkitTask task = plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, runnable, delay);
+        return registerTask(task);
+    }
+
+    /**
+     * Runs an async task immediately with tracking.
+     */
+    public BukkitTask runTaskAsynchronously(BukkitRunnable runnable) {
+        BukkitTask task = runnable.runTaskAsynchronously(plugin);
+        return registerTask(task);
+    }
+
+    /**
+     * Runs an async task immediately with tracking.
+     */
+    public BukkitTask runTaskAsynchronously(Runnable runnable) {
+        BukkitTask task = plugin.getServer().getScheduler().runTaskAsynchronously(plugin, runnable);
+        return registerTask(task);
+    }
     
     /**
      * Runs an immediate task with tracking.
@@ -511,7 +568,7 @@ public class AdvancedTaskManager {
      */
     public void createTaskGroup(String name, int maxConcurrentTasks) {
         taskGroups.put(name, new TaskGroup(name, maxConcurrentTasks));
-        logger.info("Created task group: " + name + " with max concurrent tasks: " + maxConcurrentTasks);
+        logger.info(String.format("Created task group: %s with max concurrent tasks: %d", name, maxConcurrentTasks));
     }
     
     /**
@@ -519,7 +576,7 @@ public class AdvancedTaskManager {
      */
     public void configureRateLimit(String groupName, int maxTasksPerSecond) {
         groupRateLimiters.put(groupName, new RateLimiter(maxTasksPerSecond));
-        logger.info("Configured rate limit for group " + groupName + ": " + maxTasksPerSecond + " tasks/second");
+        logger.info(String.format("Configured rate limit for group %s: %d tasks/second", groupName, maxTasksPerSecond));
     }
     
     /**
@@ -559,7 +616,6 @@ public class AdvancedTaskManager {
         
         // Cancel monitoring tasks
         if (cleanupTask != null) cleanupTask.cancel(true);
-        if (monitoringTask != null) monitoringTask.cancel(true);
         
         // Cancel all Bukkit tasks
         for (BukkitTask task : activeBukkitTasks) {
@@ -625,7 +681,7 @@ public class AdvancedTaskManager {
         return executor;
     }
     
-    private int getPriorityLevel(Runnable runnable) {
+    private int getPriorityLevel(final Runnable runnable) {
         // Default priority if not wrapped
         return TaskPriority.NORMAL.getLevel();
     }
@@ -634,20 +690,13 @@ public class AdvancedTaskManager {
         return switch (priority) {
             case HIGH, CRITICAL -> highPriorityExecutor;
             case NORMAL -> normalPriorityExecutor;
-            case LOW -> lowPriorityExecutor;
+            default -> lowPriorityExecutor;
         };
     }
     
-    private <T> T executeTaskWithMonitoring(Supplier<T> task, TaskMetadata metadata) {
-        try (var timing = performanceMonitor.startTiming("Task:" + metadata.context.getName(), 100)) {
-            metadata.startTime = Instant.now();
-            metadata.status = TaskMetadata.TaskStatus.RUNNING;
-            
+    private <T> T executeTaskWithMonitoring(final Supplier<T> task, final TaskMetadata metadata) {
+        try (var ignored = this.performanceMonitor.startTiming("Task:" + metadata.context.getName(), 100)) {
             return task.get();
-            
-        } catch (Exception e) {
-            metadata.status = TaskMetadata.TaskStatus.FAILED;
-            throw e;
         }
     }
     
@@ -672,7 +721,7 @@ public class AdvancedTaskManager {
             currentActiveTasks.set(activeBukkitTasks.size() + asyncTasks.size());
             
         } catch (Exception e) {
-            logger.warning("Error during task cleanup: " + e.getMessage());
+            logger.warning(String.format("Error during task cleanup: %s", e.getMessage()));
         }
     }
     
@@ -684,13 +733,13 @@ public class AdvancedTaskManager {
             // Log metrics periodically
             if (System.currentTimeMillis() % 60000 < 10000) { // Every minute
                 TaskManagerMetrics metrics = getMetrics();
-                logger.info(String.format("Task Manager Metrics: Submitted=%d, Completed=%d, Failed=%d, Active=%d",
-                    metrics.totalTasksSubmitted(), metrics.totalTasksCompleted(), 
-                    metrics.totalTasksFailed(), metrics.currentActiveTasks()));
+                logger.log(Level.INFO, "Task Manager Metrics: Submitted={0}, Completed={1}, Failed={2}, Active={3}",
+                    new Object[]{metrics.totalTasksSubmitted(), metrics.totalTasksCompleted(), 
+                    metrics.totalTasksFailed(), metrics.currentActiveTasks()});
             }
             
         } catch (Exception e) {
-            logger.warning("Error updating task metrics: " + e.getMessage());
+            logger.log(Level.WARNING, "Error updating task metrics: {0}", e.getMessage());
         }
     }
     
@@ -709,13 +758,13 @@ public class AdvancedTaskManager {
         // Increase core pool size if queue is building up
         if (queueSize > 10 && activeCount >= corePoolSize && corePoolSize < executor.getMaximumPoolSize()) {
             executor.setCorePoolSize(Math.min(corePoolSize + 1, executor.getMaximumPoolSize()));
-            logger.fine("Increased " + name + " core pool size to " + executor.getCorePoolSize());
+            logger.log(Level.FINE, "Increased {0} core pool size to {1}", new Object[]{name, executor.getCorePoolSize()});
         }
         
         // Decrease core pool size if underutilized
         if (queueSize == 0 && activeCount < corePoolSize / 2 && corePoolSize > 2) {
             executor.setCorePoolSize(Math.max(corePoolSize - 1, 2));
-            logger.fine("Decreased " + name + " core pool size to " + executor.getCorePoolSize());
+            logger.log(Level.FINE, "Decreased {0} core pool size to {1}", new Object[]{name, executor.getCorePoolSize()});
         }
     }
     
@@ -725,7 +774,7 @@ public class AdvancedTaskManager {
             if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
                 executor.shutdownNow();
                 if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-                    logger.warning(name + " executor did not terminate cleanly");
+                    logger.warning(String.format("%s executor did not terminate cleanly", name));
                 }
             }
         } catch (InterruptedException e) {
@@ -757,37 +806,146 @@ public class AdvancedTaskManager {
     
     // Metrics records
     
-    public record TaskManagerMetrics(
-        long totalTasksSubmitted,
-        long totalTasksCompleted,
-        long totalTasksFailed,
-        int currentActiveTasks,
-        long maxConcurrentTasks,
-        int activeBukkitTasks,
-        int activeAsyncTasks,
-        Map<String, TaskGroupMetrics> taskGroups,
-        Map<String, ThreadPoolMetrics> threadPools
-    ) {
+    public static final class TaskManagerMetrics {
+        private final long totalTasksSubmitted;
+        private final long totalTasksCompleted;
+        private final long totalTasksFailed;
+        private final int currentActiveTasks;
+        private final long maxConcurrentTasks;
+        private final int activeBukkitTasks;
+        private final int activeAsyncTasks;
+        private final Map<String, TaskGroupMetrics> taskGroups;
+        private final Map<String, ThreadPoolMetrics> threadPools;
+
+        public TaskManagerMetrics(long totalTasksSubmitted, long totalTasksCompleted, long totalTasksFailed, int currentActiveTasks, long maxConcurrentTasks, int activeBukkitTasks, int activeAsyncTasks, Map<String, TaskGroupMetrics> taskGroups, Map<String, ThreadPoolMetrics> threadPools) {
+            this.totalTasksSubmitted = totalTasksSubmitted;
+            this.totalTasksCompleted = totalTasksCompleted;
+            this.totalTasksFailed = totalTasksFailed;
+            this.currentActiveTasks = currentActiveTasks;
+            this.maxConcurrentTasks = maxConcurrentTasks;
+            this.activeBukkitTasks = activeBukkitTasks;
+            this.activeAsyncTasks = activeAsyncTasks;
+            this.taskGroups = taskGroups;
+            this.threadPools = threadPools;
+        }
+
+        public long totalTasksSubmitted() {
+            return totalTasksSubmitted;
+        }
+
+        public long totalTasksCompleted() {
+            return totalTasksCompleted;
+        }
+
+        public long totalTasksFailed() {
+            return totalTasksFailed;
+        }
+
+        public int currentActiveTasks() {
+            return currentActiveTasks;
+        }
+
+        public long maxConcurrentTasks() {
+            return maxConcurrentTasks;
+        }
+
+        public int activeBukkitTasks() {
+            return activeBukkitTasks;
+        }
+
+        public int activeAsyncTasks() {
+            return activeAsyncTasks;
+        }
+
+        public Map<String, TaskGroupMetrics> taskGroups() {
+            return taskGroups;
+        }
+
+        public Map<String, ThreadPoolMetrics> threadPools() {
+            return threadPools;
+        }
+
         public double getSuccessRate() {
             long total = totalTasksCompleted + totalTasksFailed;
             return total > 0 ? (double) totalTasksCompleted / total : 1.0;
         }
     }
-    
-    public record TaskGroupMetrics(
-        String name,
-        int activeTasks,
-        int maxConcurrentTasks,
-        long totalSubmitted,
-        long totalCompleted
-    ) {}
-    
-    public record ThreadPoolMetrics(
-        int corePoolSize,
-        int maximumPoolSize,
-        int activeCount,
-        int poolSize,
-        int queueSize,
-        long completedTaskCount
-    ) {}
+
+    public static final class TaskGroupMetrics {
+        private final String name;
+        private final int activeTasks;
+        private final int maxConcurrentTasks;
+        private final long totalSubmitted;
+        private final long totalCompleted;
+
+        public TaskGroupMetrics(String name, int activeTasks, int maxConcurrentTasks, long totalSubmitted, long totalCompleted) {
+            this.name = name;
+            this.activeTasks = activeTasks;
+            this.maxConcurrentTasks = maxConcurrentTasks;
+            this.totalSubmitted = totalSubmitted;
+            this.totalCompleted = totalCompleted;
+        }
+
+        public String name() {
+            return name;
+        }
+
+        public int activeTasks() {
+            return activeTasks;
+        }
+
+        public int maxConcurrentTasks() {
+            return maxConcurrentTasks;
+        }
+
+        public long totalSubmitted() {
+            return totalSubmitted;
+        }
+
+        public long totalCompleted() {
+            return totalCompleted;
+        }
+    }
+
+    public static final class ThreadPoolMetrics {
+        private final int corePoolSize;
+        private final int maximumPoolSize;
+        private final int activeCount;
+        private final int poolSize;
+        private final int queueSize;
+        private final long completedTaskCount;
+
+        public ThreadPoolMetrics(int corePoolSize, int maximumPoolSize, int activeCount, int poolSize, int queueSize, long completedTaskCount) {
+            this.corePoolSize = corePoolSize;
+            this.maximumPoolSize = maximumPoolSize;
+            this.activeCount = activeCount;
+            this.poolSize = poolSize;
+            this.queueSize = queueSize;
+            this.completedTaskCount = completedTaskCount;
+        }
+
+        public int corePoolSize() {
+            return corePoolSize;
+        }
+
+        public int maximumPoolSize() {
+            return maximumPoolSize;
+        }
+
+        public int activeCount() {
+            return activeCount;
+        }
+
+        public int poolSize() {
+            return poolSize;
+        }
+
+        public int queueSize() {
+            return queueSize;
+        }
+
+        public long completedTaskCount() {
+            return completedTaskCount;
+        }
+    }
 }

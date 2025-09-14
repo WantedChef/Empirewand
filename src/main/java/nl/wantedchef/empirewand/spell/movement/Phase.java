@@ -69,7 +69,7 @@ public class Phase extends Spell<Void> {
         context.fx().playSound(player, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 0.5f);
         context.fx().playSound(player, Sound.BLOCK_PORTAL_TRIGGER, 0.5f, 2.0f);
         
-        player.sendMessage("§5§lPhase §dactivated for " + (duration/20) + " seconds!");
+        player.sendMessage("\u00A75\u00A7lPhase \u00A7dactivated for " + (duration/20) + " seconds!");
         
         // Phase effect
         new BukkitRunnable() {
@@ -83,7 +83,7 @@ public class Phase extends Spell<Void> {
                     player.getWorld().spawnParticle(Particle.PORTAL, 
                         player.getLocation(), 30, 0.5, 1, 0.5, 0.05);
                     context.fx().playSound(player, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.0f);
-                    player.sendMessage("§7Phase has ended.");
+                    player.sendMessage("\u00A77Phase has ended.");
                     cancel();
                     return;
                 }

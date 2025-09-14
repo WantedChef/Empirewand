@@ -13,6 +13,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import java.util.Objects;
 
 /**
  * Teleport to a targeted location with enhanced sound and visual effects.
@@ -55,14 +56,18 @@ public class TeleportEnhanced extends Spell<Void> {
 
         double range = spellConfig.getDouble("values.range", 30.0);
 
-        // Get target block
-        Block targetBlock = player.getTargetBlock(null, (int) range);
-        if (targetBlock == null) {
+        // Find target using ray tracing for reliability across versions
+        Location targetLocation;
+        var result = player.rayTraceBlocks(range);
+        if (result != null && result.getHitBlock() != null) {
+            Block targetBlock = result.getHitBlock();
+            Location hitLoc = Objects.requireNonNull(targetBlock.getLocation(), "hit location");
+            targetLocation = hitLoc.add(0.5, 1, 0.5); // Center of block, one block above
+        } else {
             context.fx().fizzle(player);
             return null;
         }
-
-        Location targetLocation = targetBlock.getLocation().add(0.5, 1, 0.5); // Center of block, one block above
+        
         targetLocation.setYaw(player.getYaw());
         targetLocation.setPitch(player.getPitch());
 

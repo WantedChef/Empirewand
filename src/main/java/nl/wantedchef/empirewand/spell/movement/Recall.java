@@ -76,13 +76,13 @@ public class Recall extends Spell<Player> {
         Location recallLocation;
         if (player.isSneaking() && deathLocations.containsKey(player.getUniqueId())) {
             recallLocation = deathLocations.get(player.getUniqueId());
-            player.sendMessage("§c§lRecalling §4to last death location...");
-        } else if (player.getBedSpawnLocation() != null) {
-            recallLocation = player.getBedSpawnLocation();
-            player.sendMessage("§a§lRecalling §2to bed spawn...");
+            player.sendMessage("\u00A7c\u00A7lRecalling \u00A74to last death location...");
+        } else if (player.getRespawnLocation() != null) {
+            recallLocation = player.getRespawnLocation();
+            player.sendMessage("\u00A7a\u00A7lRecalling \u00A72to bed spawn...");
         } else {
             recallLocation = player.getWorld().getSpawnLocation();
-            player.sendMessage("§e§lRecalling §6to world spawn...");
+            player.sendMessage("\u00A7e\u00A7lRecalling \u00A76to world spawn...");
         }
         
         // Channel effect
@@ -101,14 +101,14 @@ public class Recall extends Spell<Player> {
                         recallLocation, 50, 0.5, 1, 0.5, 0.1);
                     context.fx().playSound(recallLocation, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.0f);
                     
-                    player.sendMessage("§aRecall complete!");
+                    player.sendMessage("\u00A7aRecall complete!");
                     cancel();
                     return;
                 }
                 
                 // Check if player moved
                 if (player.getLocation().distance(startLoc) > 1) {
-                    player.sendMessage("§cRecall cancelled - you moved!");
+                    player.sendMessage("\u00A7cRecall cancelled - you moved!");
                     cancel();
                     return;
                 }
@@ -123,7 +123,7 @@ public class Recall extends Spell<Player> {
                 
                 if (ticks % 20 == 0) {
                     context.fx().playSound(player, Sound.BLOCK_PORTAL_AMBIENT, 0.5f, 1.0f + (float)ticks/castTime);
-                    player.sendMessage("§7Recalling... " + ((castTime - ticks) / 20) + "s");
+                    player.sendMessage("\u00A77Recalling... " + ((castTime - ticks) / 20) + "s");
                 }
                 
                 ticks += 5;

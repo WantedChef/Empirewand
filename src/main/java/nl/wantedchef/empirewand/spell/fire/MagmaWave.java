@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import java.util.Objects;
 
 import java.time.Duration;
 
@@ -53,7 +54,7 @@ public class MagmaWave extends Spell<Player> {
 
     @Override
     public PrereqInterface prereq() {
-        return new PrereqInterface.LevelPrereq(20);
+        return new PrereqInterface.NonePrereq();
     }
 
     @Override
@@ -67,10 +68,11 @@ public class MagmaWave extends Spell<Player> {
         double range = spellConfig.getDouble("values.range", DEFAULT_RANGE);
         double width = spellConfig.getDouble("values.width", DEFAULT_WIDTH);
         
-        Vector direction = player.getLocation().getDirection().normalize();
-        Location start = player.getLocation();
+    final Location start = Objects.requireNonNull(player.getLocation(), "location");
+    final org.bukkit.World world = Objects.requireNonNull(start.getWorld(), "world");
+    Vector direction = start.getDirection().normalize();
         
-        context.fx().playSound(start, Sound.ENTITY_BLAZE_SHOOT, 2.0f, 0.5f);
+    context.fx().playSound(player, Sound.ENTITY_BLAZE_SHOOT, 2.0f, 0.5f);
         player.sendMessage("§6§lMagma Wave §eunleashed!");
         
         new BukkitRunnable() {
@@ -109,7 +111,7 @@ public class MagmaWave extends Spell<Player> {
                 }
                 
                 // Damage entities in wave
-                for (var entity : waveLoc.getWorld().getNearbyEntities(waveLoc, width/2, 2, width/2)) {
+                for (var entity : world.getNearbyEntities(waveLoc, width/2, 2, width/2)) {
                     if (entity instanceof LivingEntity living && !living.equals(player)) {
                         living.damage(damage, player);
                         living.setFireTicks(80);

@@ -1,4 +1,4 @@
-package nl.wantedchef.empirewand.spell.enhanced;
+package nl.wantedchef.empirewand.spell.swarns;
 
 import nl.wantedchef.empirewand.api.EmpireWandAPI;
 import nl.wantedchef.empirewand.spell.Spell;
@@ -9,16 +9,21 @@ import org.bukkit.entity.Vex;
 import java.util.ArrayList;
 import org.bukkit.Location;
 import org.bukkit.Particle;
+import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Nullable;
+import nl.wantedchef.empirewand.api.service.ConfigService;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import java.time.Duration;
 import java.util.List;
@@ -57,6 +62,7 @@ import java.util.Objects;
  * @since 1.0.0
  */
 public class SummonSwarm extends Spell<Void> {
+    protected enum Variant { VEX, SHADOW, STORM, FROST, FLAME, TOXIC, ARCANE, RADIANT, VOID, WIND, STONE }
 
     /**
      * Builder for creating SummonSwarm spell instances.
@@ -96,7 +102,7 @@ public class SummonSwarm extends Spell<Void> {
      * @param builder the builder containing spell configuration
      * @throws NullPointerException if builder is null
      */
-    private SummonSwarm(@NotNull Builder builder) {
+    protected SummonSwarm(@NotNull Spell.Builder<Void> builder) {
         super(builder);
     }
 
@@ -147,6 +153,7 @@ public class SummonSwarm extends Spell<Void> {
         int durationTicks = spellConfig.getInt("values.duration-ticks", 300);
         double minionHealth = spellConfig.getDouble("values.minion-health", 10.0);
         double minionDamage = spellConfig.getDouble("values.minion-damage", 4.0);
+        Variant variant = getVariant(context);
 
         // Play summoning sound
         var world = player.getWorld();
@@ -155,8 +162,8 @@ public class SummonSwarm extends Spell<Void> {
         }
 
         // Start summoning effect
-        BukkitRunnable summonTask = new SummonSwarmTask(context, player.getLocation(), minionCount, radius, durationTicks, 
-                           minionHealth, minionDamage);
+        BukkitRunnable summonTask = new SummonSwarmTask(this, context, player.getLocation(), minionCount, radius, durationTicks,
+                minionHealth, minionDamage, variant);
         context.plugin().getTaskManager().runTaskTimer(summonTask, 0L, 5L);
         return null;
     }
@@ -181,6 +188,7 @@ public class SummonSwarm extends Spell<Void> {
      * effects, and cleanup when the spell duration expires.
      */
     private static class SummonSwarmTask extends BukkitRunnable {
+        private final SummonSwarm owner;
         private final SpellContext context;
         private final Location center;
         private final int minionCount;
@@ -193,6 +201,7 @@ public class SummonSwarm extends Spell<Void> {
         private final int maxTicks;
         private final List<Vex> summonedMinions = new ArrayList<>();
         private final Random random = new Random();
+        private final Variant variant;
 
         /**
          * Creates a new SummonSwarmTask instance.
@@ -205,8 +214,9 @@ public class SummonSwarm extends Spell<Void> {
          * @param minionHealth the health value for each summoned minion
          * @param minionDamage the damage value for each summoned minion
          */
-        public SummonSwarmTask(@NotNull SpellContext context, @NotNull Location center, int minionCount, double radius, 
-                              int durationTicks, double minionHealth, double minionDamage) {
+        public SummonSwarmTask(@NotNull SummonSwarm owner, @NotNull SpellContext context, @NotNull Location center, int minionCount, double radius,
+                int durationTicks, double minionHealth, double minionDamage, Variant variant) {
+            this.owner = Objects.requireNonNull(owner, "Owner cannot be null");
             this.context = Objects.requireNonNull(context, "Context cannot be null");
             this.center = Objects.requireNonNull(center, "Center location cannot be null");
             this.minionCount = minionCount;
@@ -216,6 +226,7 @@ public class SummonSwarm extends Spell<Void> {
             this.minionDamage = minionDamage;
             this.world = center.getWorld();
             this.maxTicks = durationTicks / 5; // Convert to our tick interval
+            this.variant = variant != null ? variant : Variant.VEX;
         }
 
         /**
@@ -265,21 +276,52 @@ public class SummonSwarm extends Spell<Void> {
                 double z = center.getZ() + Math.sin(angle) * radius;
                 Location spawnLoc = new Location(world, x, world.getHighestBlockYAt((int)x, (int)z) + 1, z);
                 
-                // Spawn vex minion
+                // Spawn vex minion (do NOT target player; we handle following via velocity)
                 Vex minion = world.spawn(spawnLoc, Vex.class, vex -> {
-                    vex.setTarget(player); // Make it follow the player
-                    vex.setHealth(minionHealth);
+                    AttributeInstance maxHp = vex.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+                    if (maxHp != null) maxHp.setBaseValue(Math.max(1.0, minionHealth));
+                    AttributeInstance atk = vex.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE);
+                    if (atk != null) atk.setBaseValue(Math.max(1.0, minionDamage));
+                    vex.setHealth(Math.max(1.0, Math.min(minionHealth, vex.getMaxHealth())));
+                    vex.setPersistent(false);
                 });
                 
                 summonedMinions.add(minion);
                 
-                // Visual effect for summoning
-                world.spawnParticle(Particle.SMOKE, spawnLoc, 20, 0.5, 0.5, 0.5, 0.1);
-                world.spawnParticle(Particle.SQUID_INK, spawnLoc, 10, 0.3, 0.3, 0.3, 0.01);
+                // Visual effect for summoning (variant themed)
+                switch (variant) {
+                    case STORM -> world.spawnParticle(Particle.ELECTRIC_SPARK, spawnLoc, 24, 0.5, 0.5, 0.5, 0.15);
+                    case FROST -> world.spawnParticle(Particle.SNOWFLAKE, spawnLoc, 24, 0.5, 0.5, 0.5, 0.10);
+                    case SHADOW -> {
+                        world.spawnParticle(Particle.SMOKE, spawnLoc, 20, 0.5, 0.5, 0.5, 0.10);
+                        world.spawnParticle(Particle.SQUID_INK, spawnLoc, 10, 0.3, 0.3, 0.3, 0.02);
+                    }
+                    case FLAME -> world.spawnParticle(Particle.FLAME, spawnLoc, 24, 0.5, 0.5, 0.5, 0.02);
+                    case TOXIC -> world.spawnParticle(Particle.SPORE_BLOSSOM_AIR, spawnLoc, 24, 0.5, 0.5, 0.5, 0.02);
+                    case ARCANE -> world.spawnParticle(Particle.ENCHANT, spawnLoc, 16, 0.5, 0.5, 0.5, 0.05);
+                    case RADIANT -> world.spawnParticle(Particle.END_ROD, spawnLoc, 18, 0.5, 0.5, 0.5, 0.02);
+                    case VOID -> world.spawnParticle(Particle.REVERSE_PORTAL, spawnLoc, 16, 0.5, 0.5, 0.5, 0.01);
+                    case WIND -> world.spawnParticle(Particle.CLOUD, spawnLoc, 20, 0.5, 0.5, 0.5, 0.02);
+                    case STONE -> world.spawnParticle(Particle.BLOCK, spawnLoc, 10, 0.5, 0.5, 0.5, 0, Material.STONE.createBlockData());
+                    case VEX -> world.spawnParticle(Particle.ENCHANT, spawnLoc, 16, 0.5, 0.5, 0.5, 0.05);
+                }
+                owner.onMinionSpawn(minion, context);
             }
             
             // Sound effect
-            world.playSound(center, Sound.ENTITY_VEX_CHARGE, 1.5f, 1.2f);
+            switch (variant) {
+                case STORM -> world.playSound(center, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.8f, 2.0f);
+                case FROST -> world.playSound(center, Sound.BLOCK_GLASS_PLACE, 1.2f, 0.6f);
+                case SHADOW -> world.playSound(center, Sound.ENTITY_VEX_CHARGE, 1.5f, 0.8f);
+                case FLAME -> world.playSound(center, Sound.ITEM_FIRECHARGE_USE, 0.9f, 1.1f);
+                case TOXIC -> world.playSound(center, Sound.BLOCK_BREWING_STAND_BREW, 0.7f, 1.2f);
+                case ARCANE -> world.playSound(center, Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1.0f, 1.6f);
+                case RADIANT -> world.playSound(center, Sound.BLOCK_BEACON_ACTIVATE, 0.8f, 1.8f);
+                case VOID -> world.playSound(center, Sound.ENTITY_ENDERMAN_AMBIENT, 0.7f, 0.5f);
+                case WIND -> world.playSound(center, Sound.ENTITY_PHANTOM_FLAP, 0.6f, 1.6f);
+                case STONE -> world.playSound(center, Sound.BLOCK_STONE_PLACE, 1.0f, 0.8f);
+                default -> world.playSound(center, Sound.ENTITY_VEX_CHARGE, 1.5f, 1.2f);
+            }
         }
 
         /**
@@ -298,28 +340,61 @@ public class SummonSwarm extends Spell<Void> {
             
             for (Vex minion : summonedMinions) {
                 if (minion.isValid() && !minion.isDead()) {
-                    // Make minions follow the player
-                    minion.setTarget(player);
-                    
-                    // Find nearby enemies to attack
+                    // Determine nearest valid enemy (never the caster)
                     LivingEntity target = findNearestEnemy(minion);
                     if (target != null && target.isValid() && !target.isDead()) {
                         minion.setTarget(target);
+                        // On-hit themed effects per variant
+                        switch (variant) {
+                            case FROST -> target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 20, 1, false, true));
+                            case FLAME -> target.setFireTicks(Math.max(0, target.getFireTicks()) + 40);
+                            case TOXIC -> target.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 40, 0, false, true));
+                            case ARCANE -> target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 40, 1, false, true));
+                            case RADIANT -> target.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 40, 0, false, true));
+                            case VOID -> target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 25, 0, false, true));
+                            case WIND -> {
+                                var ml = minion.getLocation();
+                                var tl = target.getLocation();
+                                if (ml != null && tl != null) {
+                                    Vector kb = tl.toVector().subtract(ml.toVector()).normalize().multiply(0.4);
+                                    kb.setY(0.25);
+                                    target.setVelocity(target.getVelocity().add(kb));
+                                }
+                            }
+                            case STONE -> {
+                                target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 30, 0, false, true));
+                                target.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, 60, 1, false, true));
+                            }
+                            default -> {}
+                        }
+                    } else {
+                        // No target; ensure the minion isn't hostile toward the caster
+                        minion.setTarget(null);
                     }
                     
                     var minionLoc = minion.getLocation();
                     if (minionLoc != null) {
-                        Vector direction = playerLoc.toVector().subtract(minionLoc.toVector()).normalize();
-                        minion.setVelocity(direction.multiply(0.5));
-                    }
-                    
-                    // Visual effect periodically
-                    if (ticks % 20 == 0) {
-                        var smokeLoc = minion.getLocation();
-                        if (smokeLoc != null && world != null) {
-                            world.spawnParticle(Particle.SMOKE, smokeLoc.add(0, 1, 0), 3, 0.2, 0.2, 0.2, 0.01);
+                        Vector toPlayer = playerLoc.toVector().subtract(minionLoc.toVector());
+                        double d2 = toPlayer.lengthSquared();
+                        if (d2 > 1.0) {
+                            Vector direction = toPlayer.normalize();
+                            minion.setVelocity(direction.multiply(0.5));
                         }
                     }
+                    
+                    // Visual effect periodically by variant
+                    if (ticks % 20 == 0) {
+                        var effLoc = minion.getLocation();
+                        if (effLoc != null && world != null) {
+                            switch (variant) {
+                                case STORM -> world.spawnParticle(Particle.ELECTRIC_SPARK, effLoc.add(0, 1, 0), 6, 0.2, 0.2, 0.2, 0.02);
+                                case FROST -> world.spawnParticle(Particle.SNOWFLAKE, effLoc.add(0, 1, 0), 8, 0.25, 0.25, 0.25, 0.02);
+                                case SHADOW -> world.spawnParticle(Particle.SMOKE, effLoc.add(0, 1, 0), 4, 0.2, 0.2, 0.2, 0.02);
+                                default -> world.spawnParticle(Particle.ENCHANT, effLoc.add(0, 1, 0), 4, 0.2, 0.2, 0.2, 0.01);
+                            }
+                        }
+                    }
+                    owner.onMinionTick(minion, ticks, context);
                 }
             }
         }
@@ -337,20 +412,26 @@ public class SummonSwarm extends Spell<Void> {
             Objects.requireNonNull(minion, "Minion cannot be null");
             
             LivingEntity nearest = null;
-            double nearestDistance = 16.0; // Max search distance
+            double nearestDistance = 16.0 * 16.0; // squared
+            boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class)
+                    .getMainConfig().getBoolean("features.friendly-fire", false);
             
             for (Entity entity : minion.getNearbyEntities(16, 16, 16)) {
                 if (entity instanceof LivingEntity && !(entity instanceof Vex) && 
                     !entity.equals(context.caster()) && entity.isValid() && !entity.isDead()) {
+                    // Respect friendly-fire: skip players if disabled
+                    if (!friendlyFire && entity instanceof Player) {
+                        continue;
+                    }
                     
                     var entityLocation = entity.getLocation();
                     var minionLocation = minion.getLocation();
                     
                     if (entityLocation != null && minionLocation != null) {
-                        double distance = entityLocation.distance(minionLocation);
-                        if (distance < nearestDistance) {
+                        double d2 = entityLocation.toVector().distanceSquared(minionLocation.toVector());
+                        if (d2 < nearestDistance) {
                             nearest = (LivingEntity) entity;
-                            nearestDistance = distance;
+                            nearestDistance = d2;
                         }
                     }
                 }
@@ -372,13 +453,25 @@ public class SummonSwarm extends Spell<Void> {
             
             // Create magical circle around the center
             double currentRadius = radius + Math.sin(ticks * 0.2) * 1.5;
-            
+
             for (int i = 0; i < 24; i++) {
                 double angle = (2 * Math.PI * i / 24) + (ticks * 0.1);
                 double x = currentRadius * Math.cos(angle);
                 double z = currentRadius * Math.sin(angle);
                 Location particleLoc = center.clone().add(x, 0.1, z);
-                world.spawnParticle(Particle.ENCHANT, particleLoc, 1, 0, 0, 0, 0);
+                switch (variant) {
+                    case STORM -> world.spawnParticle(Particle.ELECTRIC_SPARK, particleLoc, 1, 0, 0, 0, 0);
+                    case FROST -> world.spawnParticle(Particle.SNOWFLAKE, particleLoc, 1, 0, 0, 0, 0);
+                    case SHADOW -> world.spawnParticle(Particle.SMOKE, particleLoc, 1, 0, 0, 0, 0);
+                    case FLAME -> world.spawnParticle(Particle.FLAME, particleLoc, 1, 0, 0, 0, 0.01);
+                    case TOXIC -> world.spawnParticle(Particle.SPORE_BLOSSOM_AIR, particleLoc, 1, 0, 0, 0, 0);
+                    case ARCANE -> world.spawnParticle(Particle.ENCHANT, particleLoc, 1, 0, 0, 0, 0);
+                    case RADIANT -> world.spawnParticle(Particle.END_ROD, particleLoc, 1, 0, 0, 0, 0);
+                    case VOID -> world.spawnParticle(Particle.REVERSE_PORTAL, particleLoc, 1, 0, 0, 0, 0);
+                    case WIND -> world.spawnParticle(Particle.CLOUD, particleLoc, 1, 0, 0, 0, 0.01);
+                    case STONE -> world.spawnParticle(Particle.BLOCK, particleLoc, 1, 0, 0, 0, 0, Material.STONE.createBlockData());
+                    default -> world.spawnParticle(Particle.ENCHANT, particleLoc, 1, 0, 0, 0, 0);
+                }
             }
             
             // Create particles around minions
@@ -387,7 +480,19 @@ public class SummonSwarm extends Spell<Void> {
                     var minionLocation = minion.getLocation();
                     if (minionLocation != null && world != null) {
                         if (ticks % 10 == 0) {
-                            world.spawnParticle(Particle.SMOKE, minionLocation.add(0, 1, 0), 2, 0.2, 0.2, 0.2, 0.01);
+                            switch (variant) {
+                                case STORM -> world.spawnParticle(Particle.ELECTRIC_SPARK, minionLocation.add(0, 1, 0), 2, 0.15, 0.15, 0.15, 0.01);
+                                case FROST -> world.spawnParticle(Particle.SNOWFLAKE, minionLocation.add(0, 1, 0), 2, 0.15, 0.15, 0.15, 0.01);
+                                case SHADOW -> world.spawnParticle(Particle.SMOKE, minionLocation.add(0, 1, 0), 2, 0.15, 0.15, 0.15, 0.01);
+                                case FLAME -> world.spawnParticle(Particle.FLAME, minionLocation.add(0, 1, 0), 2, 0.1, 0.1, 0.1, 0.01);
+                                case TOXIC -> world.spawnParticle(Particle.SPORE_BLOSSOM_AIR, minionLocation.add(0, 1, 0), 2, 0.1, 0.1, 0.1, 0);
+                                case ARCANE -> world.spawnParticle(Particle.ENCHANT, minionLocation.add(0, 1, 0), 2, 0.1, 0.1, 0.1, 0);
+                                case RADIANT -> world.spawnParticle(Particle.END_ROD, minionLocation.add(0, 1, 0), 2, 0.1, 0.1, 0.1, 0);
+                                case VOID -> world.spawnParticle(Particle.REVERSE_PORTAL, minionLocation.add(0, 1, 0), 1, 0.05, 0.05, 0.05, 0);
+                                case WIND -> world.spawnParticle(Particle.CLOUD, minionLocation.add(0, 1, 0), 2, 0.12, 0.12, 0.12, 0.01);
+                                case STONE -> world.spawnParticle(Particle.BLOCK, minionLocation.add(0, 1, 0), 2, 0.1, 0.1, 0.1, 0, Material.STONE.createBlockData());
+                                default -> world.spawnParticle(Particle.ENCHANT, minionLocation.add(0, 1, 0), 2, 0.15, 0.15, 0.15, 0.01);
+                            }
                         }
                     }
                 }
@@ -398,7 +503,19 @@ public class SummonSwarm extends Spell<Void> {
                 for (int i = 0; i < 10; i++) {
                     double height = i * 0.3;
                     Location vortexLoc = center.clone().add(0, height, 0);
-                    world.spawnParticle(Particle.WITCH, vortexLoc, 2, 0.1, 0.1, 0.1, 0.01);
+                    switch (variant) {
+                        case STORM -> world.spawnParticle(Particle.ELECTRIC_SPARK, vortexLoc, 2, 0.1, 0.1, 0.1, 0.01);
+                        case FROST -> world.spawnParticle(Particle.SNOWFLAKE, vortexLoc, 2, 0.1, 0.1, 0.1, 0.01);
+                        case SHADOW -> world.spawnParticle(Particle.SMOKE, vortexLoc, 2, 0.1, 0.1, 0.1, 0.01);
+                        case FLAME -> world.spawnParticle(Particle.FLAME, vortexLoc, 2, 0.1, 0.1, 0.1, 0.005);
+                        case TOXIC -> world.spawnParticle(Particle.SPORE_BLOSSOM_AIR, vortexLoc, 2, 0.1, 0.1, 0.1, 0);
+                        case ARCANE -> world.spawnParticle(Particle.ENCHANT, vortexLoc, 2, 0.1, 0.1, 0.1, 0);
+                        case RADIANT -> world.spawnParticle(Particle.END_ROD, vortexLoc, 2, 0.1, 0.1, 0.1, 0);
+                        case VOID -> world.spawnParticle(Particle.REVERSE_PORTAL, vortexLoc, 2, 0.1, 0.1, 0.1, 0);
+                        case WIND -> world.spawnParticle(Particle.CLOUD, vortexLoc, 2, 0.1, 0.1, 0.1, 0.01);
+                        case STONE -> world.spawnParticle(Particle.BLOCK, vortexLoc, 2, 0.1, 0.1, 0.1, 0, Material.STONE.createBlockData());
+                        default -> world.spawnParticle(Particle.WITCH, vortexLoc, 2, 0.1, 0.1, 0.1, 0.01);
+                    }
                 }
             }
         }
@@ -423,6 +540,7 @@ public class SummonSwarm extends Spell<Void> {
                         world.spawnParticle(Particle.SMOKE, minionLocation, 30, 0.5, 0.5, 0.5, 0.1);
                         world.spawnParticle(Particle.EXPLOSION, minionLocation, 1, 0, 0, 0, 0);
                     }
+                    owner.onMinionDismiss(minion, context);
                     minion.remove();
                 }
             }
@@ -432,5 +550,27 @@ public class SummonSwarm extends Spell<Void> {
             
             summonedMinions.clear();
         }
+    }
+    
+    // ===== Extensibility Hooks =====
+    protected Variant getVariant(@NotNull SpellContext context) {
+        String variantStr = spellConfig.getString("values.variant", "vex");
+        try {
+            return Variant.valueOf(variantStr.toUpperCase());
+        } catch (Exception e) {
+            return Variant.VEX;
+        }
+    }
+
+    protected void onMinionSpawn(@NotNull Vex minion, @NotNull SpellContext context) {
+        // default: no-op
+    }
+
+    protected void onMinionTick(@NotNull Vex minion, int ticks, @NotNull SpellContext context) {
+        // default: no-op
+    }
+
+    protected void onMinionDismiss(@NotNull Vex minion, @NotNull SpellContext context) {
+        // default: no-op
     }
 }

@@ -28,7 +28,7 @@ public class CometShower extends Spell<Void> {
      * @param explosionYield The power of the explosion of each comet.
      * @param delayTicks     The delay in ticks between each comet spawn.
      */
-    public record Config(int cometCount, double radius, double explosionYield, int delayTicks) {
+    private record Config(int cometCount, double radius, double explosionYield, int delayTicks, double rayTraceDistance, int fallbackDistance) {
     }
 
     /**
@@ -59,8 +59,8 @@ public class CometShower extends Spell<Void> {
     private static final double DEFAULT_RADIUS = 8.0;
     private static final double DEFAULT_YIELD = 2.6;
     private static final int DEFAULT_DELAY_TICKS = 6;
-    private static final double RAY_TRACE_DISTANCE = 25.0;
-    private static final int TARGET_DISTANCE_FALLBACK = 20;
+    private static final double DEFAULT_RAY_TRACE_DISTANCE = 100.0;
+    private static final int DEFAULT_TARGET_DISTANCE_FALLBACK = 50;
     private static final int SPAWN_HEIGHT_OFFSET = 12;
     private static final Vector COMET_DIRECTION = new Vector(0, -1, 0);
     private static final int FLAME_PARTICLE_COUNT = 10;
@@ -74,7 +74,7 @@ public class CometShower extends Spell<Void> {
 
     private CometShower(Builder builder) {
         super(builder);
-        this.config = new Config(DEFAULT_COMET_COUNT, DEFAULT_RADIUS, DEFAULT_YIELD, DEFAULT_DELAY_TICKS);
+        this.config = new Config(DEFAULT_COMET_COUNT, DEFAULT_RADIUS, DEFAULT_YIELD, DEFAULT_DELAY_TICKS, DEFAULT_RAY_TRACE_DISTANCE, DEFAULT_TARGET_DISTANCE_FALLBACK);
     }
 
     @Override
@@ -84,7 +84,10 @@ public class CometShower extends Spell<Void> {
                 spellConfig.getInt("values.comet-count", DEFAULT_COMET_COUNT),
                 spellConfig.getDouble("values.radius", DEFAULT_RADIUS),
                 spellConfig.getDouble("values.yield", DEFAULT_YIELD),
-                spellConfig.getInt("values.delay-ticks", DEFAULT_DELAY_TICKS));
+                spellConfig.getInt("values.delay-ticks", DEFAULT_DELAY_TICKS),
+                spellConfig.getDouble("values.ray-trace-distance", DEFAULT_RAY_TRACE_DISTANCE),
+                spellConfig.getInt("values.fallback-distance", DEFAULT_TARGET_DISTANCE_FALLBACK)
+        );
     }
 
     @Override
@@ -130,12 +133,13 @@ public class CometShower extends Spell<Void> {
      * @return The target location.
      */
     private Location findTargetLocation(Player caster) {
+        double rayDist = config.rayTraceDistance();
         RayTraceResult rayTrace = caster.getWorld().rayTraceBlocks(caster.getEyeLocation(),
-                caster.getEyeLocation().getDirection(), RAY_TRACE_DISTANCE);
+                caster.getEyeLocation().getDirection(), rayDist);
         if (rayTrace != null && rayTrace.getHitPosition() != null) {
             return rayTrace.getHitPosition().toLocation(caster.getWorld());
         }
-        return caster.getEyeLocation().add(caster.getEyeLocation().getDirection().multiply(TARGET_DISTANCE_FALLBACK));
+        return caster.getEyeLocation().add(caster.getEyeLocation().getDirection().multiply(config.fallbackDistance()));
     }
 
     /**

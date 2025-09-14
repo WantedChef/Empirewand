@@ -9,6 +9,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -89,7 +90,10 @@ public class IceWall extends Spell<Player> {
         
         // Effects
         context.fx().playSound(start, Sound.BLOCK_GLASS_PLACE, 2.0f, 0.5f);
-        start.getWorld().spawnParticle(Particle.SNOWFLAKE, start, 50, width/2.0, height/2.0, 0.5, 0.1);
+        World world = start.getWorld();
+        if (world != null) {
+            world.spawnParticle(Particle.SNOWFLAKE, start, 50, width/2.0, height/2.0, 0.5, 0.1);
+        }
         
         player.sendMessage("§b§lIce Wall §3created for " + (duration/20) + " seconds!");
         
@@ -100,7 +104,11 @@ public class IceWall extends Spell<Player> {
                 for (Block block : wallBlocks) {
                     if (block.getType() == Material.PACKED_ICE) {
                         block.setType(Material.AIR);
-                        block.getWorld().spawnParticle(Particle.DUST, block.getLocation(), 5, 0.2, 0.2, 0.2, 0, Material.ICE.createBlockData());
+                        // Use BLOCK particle with BlockData for 1.20.6 compatibility
+                        World blockWorld = block.getWorld();
+                        if (blockWorld != null) {
+                            blockWorld.spawnParticle(Particle.BLOCK, block.getLocation(), 5, 0.2, 0.2, 0.2, 0, Material.ICE.createBlockData());
+                        }
                     }
                 }
                 context.fx().playSound(start, Sound.BLOCK_GLASS_BREAK, 1.0f, 1.0f);

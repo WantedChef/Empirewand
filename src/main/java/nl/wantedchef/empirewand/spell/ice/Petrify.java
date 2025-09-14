@@ -85,7 +85,8 @@ public class Petrify extends Spell<LivingEntity> {
         
         // Visual effects
         target.getWorld().spawnParticle(Particle.SNOWFLAKE, target.getLocation(), 50, 0.5, 1, 0.5, 0.1);
-        target.getWorld().spawnParticle(Particle.DUST, target.getLocation().add(0, 1, 0), 30, 0.3, 0.5, 0.3, 0, org.bukkit.Material.ICE.createBlockData());
+        // Use BLOCK particle with BlockData for 1.20.6 compatibility
+        target.getWorld().spawnParticle(Particle.BLOCK, target.getLocation().add(0, 1, 0), 30, 0.3, 0.5, 0.3, 0, org.bukkit.Material.ICE.createBlockData());
         
         // Sound effects
         context.fx().playSound(target.getLocation(), Sound.BLOCK_GLASS_PLACE, 1.5f, 0.5f);

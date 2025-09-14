@@ -173,7 +173,7 @@ public final class VoidWalk extends Spell<Void> implements ToggleableSpell {
             
             // Show void mastery message
             player.sendMessage(Component.text(
-                    "§5⚫ §dYou step into the void, reality bends to your will! §5⚫"));
+                    "\u00A75⚫ \u00A7dYou step into the void, reality bends to your will! \u00A75⚫"));
             
             // Spawn void activation effect
             spawnVoidActivationEffect();
@@ -192,7 +192,7 @@ public final class VoidWalk extends Spell<Void> implements ToggleableSpell {
             // Final void dissipation effect
             spawnVoidDeactivationEffect();
             
-            player.sendMessage(Component.text("§5⚫ §7The void releases its hold, reality returns to normal... §5⚫"));
+            player.sendMessage(Component.text("\u00A75⚫ \u00A77The void releases its hold, reality returns to normal... \u00A75⚫"));
             player.playSound(player.getLocation(), Sound.BLOCK_END_PORTAL_SPAWN, 0.6f, 1.0f);
         }
 
@@ -253,33 +253,33 @@ public final class VoidWalk extends Spell<Void> implements ToggleableSpell {
         
         private void playStateSpecificSounds(Location currentLoc) {
             // State-specific ambient sounds
-            switch (currentState) {
+            switch (this.currentState) {
                 case PHASING -> {
                     // Gentle void phasing sounds
-                    if (tickCounter % 80 == 0) {
-                        player.playSound(currentLoc, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.3f, 1.5f);
-                        player.playSound(currentLoc, Sound.AMBIENT_CAVE, 0.2f, 1.8f);
+                    if (this.tickCounter % 80 == 0) {
+                        this.player.playSound(currentLoc, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.3f, 1.5f);
+                        this.player.playSound(currentLoc, Sound.AMBIENT_CAVE, 0.2f, 1.8f);
                     }
                 }
                 case TUNNELING -> {
                     // Intense void tunneling sounds
-                    if (tickCounter % 60 == 0) {
-                        player.playSound(currentLoc, Sound.BLOCK_END_PORTAL_FRAME_FILL, 0.4f, 0.8f);
-                        player.playSound(currentLoc, Sound.ENTITY_ENDERMAN_AMBIENT, 0.3f, 0.7f);
+                    if (this.tickCounter % 60 == 0) {
+                        this.player.playSound(currentLoc, Sound.BLOCK_END_PORTAL_FRAME_FILL, 0.4f, 0.8f);
+                        this.player.playSound(currentLoc, Sound.ENTITY_ENDERMAN_AMBIENT, 0.3f, 0.7f);
                     }
                 }
                 case RIFTING -> {
                     // Reality tearing rift sounds
-                    if (tickCounter % 100 == 0) {
-                        player.playSound(currentLoc, Sound.BLOCK_END_PORTAL_SPAWN, 0.5f, 0.5f);
-                        player.playSound(currentLoc, Sound.ENTITY_ENDER_DRAGON_GROWL, 0.2f, 0.3f);
+                    if (this.tickCounter % 100 == 0) {
+                        this.player.playSound(currentLoc, Sound.BLOCK_END_PORTAL_SPAWN, 0.5f, 0.5f);
+                        this.player.playSound(currentLoc, Sound.ENTITY_ENDER_DRAGON_GROWL, 0.2f, 0.3f);
                     }
                 }
                 case WARPING -> {
                     // Chaotic reality warping sounds
-                    if (tickCounter % 40 == 0) {
-                        player.playSound(currentLoc, Sound.ENTITY_WITHER_SPAWN, 0.3f, 1.2f);
-                        player.playSound(currentLoc, Sound.BLOCK_END_GATEWAY_SPAWN, 0.4f, 0.6f);
+                    if (this.tickCounter % 40 == 0) {
+                        this.player.playSound(currentLoc, Sound.ENTITY_WITHER_SPAWN, 0.3f, 1.2f);
+                        this.player.playSound(currentLoc, Sound.BLOCK_END_GATEWAY_SPAWN, 0.4f, 0.6f);
                     }
                 }
             }
@@ -317,7 +317,7 @@ public final class VoidWalk extends Spell<Void> implements ToggleableSpell {
             // Emergency teleport to last stable location
             if (lastStableLocation != null) {
                 performVoidTeleport(lastStableLocation, true);
-                player.sendMessage(Component.text("§5⚫ §cVoid energy depleted! Emergency stabilization activated! §5⚫"));
+                player.sendMessage(Component.text("\u00A75⚫ \u00A7cVoid energy depleted! Emergency stabilization activated! \u00A75⚫"));
             }
         }
         
@@ -402,7 +402,7 @@ public final class VoidWalk extends Spell<Void> implements ToggleableSpell {
             player.playSound(target, Sound.BLOCK_END_PORTAL_FRAME_FILL, 0.8f, 0.6f);
             
             if (!isEmergency) {
-                player.sendMessage(Component.text("§5⚫ §dVoid tunneling successful! §5⚫"));
+                player.sendMessage(Component.text("\u00A75⚫ \u00A7dVoid tunneling successful! \u00A75⚫"));
             }
         }
         
@@ -455,18 +455,18 @@ public final class VoidWalk extends Spell<Void> implements ToggleableSpell {
         
         private void spawnVoidForm(Location center) {
             // State-specific void form rendering
-            switch (currentState) {
-                case PHASING -> spawnPhasingVoidForm(center);
-                case TUNNELING -> spawnTunnelingVoidForm(center);
-                case RIFTING -> spawnRiftingVoidForm(center);
-                case WARPING -> spawnWarpingVoidForm(center);
+            switch (this.currentState) {
+                case PHASING -> this.spawnPhasingVoidForm(center);
+                case TUNNELING -> this.spawnTunnelingVoidForm(center);
+                case RIFTING -> this.spawnRiftingVoidForm(center);
+                case WARPING -> this.spawnWarpingVoidForm(center);
             }
-            
+
             // Void aura - always present
-            spawnVoidAura(center);
-            
+            this.spawnVoidAura(center);
+
             // Portal visualization
-            renderVoidPortals();
+            this.renderVoidPortals();
         }
         
         private void spawnPhasingVoidForm(Location center) {
@@ -705,30 +705,30 @@ public final class VoidWalk extends Spell<Void> implements ToggleableSpell {
         }
         
         private void applyVoidEffects() {
-            int duration = cfgInt("effects.duration-ticks", 40);
-            
+            final int duration = cfgInt("effects.duration-ticks", 40);
+
             // Basic void effects
-            player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, duration, 0, false, false));
-            
+            this.player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, duration, 0, false, false));
+
             // State-specific effects
-            switch (currentState) {
-                case PHASING -> player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, duration, 0, false, false));
+            switch (this.currentState) {
+                case PHASING -> this.player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, duration, 0, false, false));
                 case TUNNELING -> {
                     // Enhanced movement for tunneling
-                    player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, duration, 1, false, false));
-                    player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, duration, 1, false, false));
+                    this.player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, duration, 1, false, false));
+                    this.player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, duration, 1, false, false));
                 }
-                case RIFTING -> player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, duration, 0, false, false));
+                case RIFTING -> this.player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, duration, 0, false, false));
                 case WARPING -> {
                     // Reality warping power
-                    player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, duration, 1, false, false));
-                    player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, duration, 0, false, false));
+                    this.player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, duration, 1, false, false));
+                    this.player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, duration, 0, false, false));
                 }
             }
-            
+
             // Void resistance
-            if (isVoidResistanceEnabled()) {
-                player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, duration, 0, false, false));
+            if (VoidWalk.this.isVoidResistanceEnabled()) {
+                this.player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, duration, 0, false, false));
             }
         }
         

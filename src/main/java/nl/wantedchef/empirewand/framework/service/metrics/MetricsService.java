@@ -176,9 +176,8 @@ public class MetricsService {
         }
         try {
             recordSpellCast(spellKey);
-            if (config.getConfig().getBoolean("metrics.debug", false)) {
-                debugMetrics.recordSpellCast(durationMs);
-            }
+            // Always record basic spell cast timing for stats command
+            debugMetrics.recordSpellCast(durationMs);
         } catch (Exception e) {
             getLoggerSafely().log(Level.WARNING, "Error recording spell cast with duration", e);
         }
@@ -189,9 +188,8 @@ public class MetricsService {
      */
     public void recordFailedCast() {
         try {
-            if (config.getConfig().getBoolean("metrics.debug", false)) {
-                debugMetrics.recordFailedCast();
-            }
+            // Always record failed casts for stats command
+            debugMetrics.recordFailedCast();
         } catch (Exception e) {
             getLoggerSafely().log(Level.WARNING, "Error recording failed cast", e);
         }

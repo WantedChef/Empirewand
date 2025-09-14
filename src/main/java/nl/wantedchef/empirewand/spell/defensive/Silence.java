@@ -50,7 +50,7 @@ public class Silence extends Spell<LivingEntity> {
 
     @Override
     public PrereqInterface prereq() {
-        return new PrereqInterface.LevelPrereq(20);
+        return new PrereqInterface.NonePrereq();
     }
 
     @Override
@@ -69,8 +69,6 @@ public class Silence extends Spell<LivingEntity> {
 
     @Override
     protected void handleEffect(@NotNull SpellContext context, @NotNull LivingEntity target) {
-        if (target == null) return;
-        
         Player player = context.caster();
         int duration = spellConfig.getInt("values.duration", DEFAULT_DURATION);
         

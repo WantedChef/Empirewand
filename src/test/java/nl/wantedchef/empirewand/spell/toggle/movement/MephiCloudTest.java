@@ -28,7 +28,7 @@ class MephiCloudTest {
     
     @Test
     void testSpellDescription() {
-        assertEquals("Create nether-themed ash and fire particles under you while flying.", 
+        assertEquals("Summon a volcanic infernal platform with advanced thermodynamic fire physics and ember storms.", 
                     mephiCloud.getDescription());
     }
     
@@ -39,6 +39,6 @@ class MephiCloudTest {
     
     @Test
     void testCooldown() {
-        assertEquals(java.time.Duration.ofSeconds(5), mephiCloud.getCooldown());
+        assertEquals(java.time.Duration.ofSeconds(3), mephiCloud.getCooldown());
     }
 }

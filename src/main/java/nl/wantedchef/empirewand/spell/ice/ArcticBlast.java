@@ -47,7 +47,7 @@ public class ArcticBlast extends Spell<Player> {
 
     @Override
     public String key() {
-        return "arcticblast";
+        return "arctic-blast";
     }
 
     @Override
@@ -81,7 +81,8 @@ public class ArcticBlast extends Spell<Player> {
                     Location loc = center.clone().add(x, 0.5, z);
                     
                     loc.getWorld().spawnParticle(Particle.SNOWFLAKE, loc, 3, 0.1, 0.5, 0.1, 0.05);
-                    loc.getWorld().spawnParticle(Particle.DUST, loc, 2, 0.1, 0.3, 0.1, 0, org.bukkit.Material.ICE.createBlockData());
+                    // Use BLOCK particle with BlockData for 1.20.6 compatibility
+                    loc.getWorld().spawnParticle(Particle.BLOCK, loc, 2, 0.1, 0.3, 0.1, 0, org.bukkit.Material.ICE.createBlockData());
                 }
                 
                 // Damage and freeze entities in wave

@@ -16,6 +16,7 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
+import org.bukkit.attribute.Attribute;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -368,8 +369,9 @@ public class MovementSpellListener implements Listener {
                 double healAmount = pdc.getOrDefault(Keys.createKey("lifewalk_heal_rate"), 
                         Keys.DOUBLE_TYPE.getType(), 0.5);
                 
-                if (player.getHealth() < player.getMaxHealth()) {
-                    player.setHealth(Math.min(player.getMaxHealth(), player.getHealth() + healAmount));
+                double max = getMaxHealth(player);
+                if (player.getHealth() < max) {
+                    player.setHealth(Math.min(max, player.getHealth() + healAmount));
                     
                     // Healing particles
                     fxService.spawnParticle("HEART", player.getLocation().add(0, 2, 0), 
@@ -500,8 +502,13 @@ public class MovementSpellListener implements Listener {
             // Update cooldown
             pdc.set(Keys.createKey("shadow_step_last"), Keys.LONG_TYPE.getType(), now);
             
-            // Play effects
-            fxService.playSound(newLocation, "ENTITY_ENDERMAN_TELEPORT", 0.6f, 1.3f);
+            pdc.set(Keys.createKey("lifewalk_last_heal"), Keys.LONG_TYPE.getType(), now);
         }
     }
+    
+    private double getMaxHealth(org.bukkit.entity.LivingEntity entity) {
+        var attr = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        return attr != null ? attr.getValue() : 20.0;
+    }
 }
+

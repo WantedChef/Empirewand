@@ -8,6 +8,7 @@ import nl.wantedchef.empirewand.spell.SpellType;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
 import org.bukkit.DyeColor;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -226,7 +227,7 @@ public class Polymorph extends Spell<Void> {
         Objects.requireNonNull(context, "Context cannot be null");
         Objects.requireNonNull(location, "Location cannot be null");
         
-        // Play sound effect
+        // Enhanced sound effects for transformation
         location.getWorld().playSound(
             location,
             Sound.ENTITY_EVOKER_PREPARE_SUMMON,
@@ -234,15 +235,59 @@ public class Polymorph extends Spell<Void> {
             1.2f  // Pitch
         );
 
-        // Play particle effect
-        location.getWorld().spawnParticle(
-            Particle.ENTITY_EFFECT,
-            location.add(0, 1, 0),
-            30,  // Count
-            0.5, // Offset X
-            0.5, // Offset Y
-            0.5, // Offset Z
-            0.1  // Speed
+        // Additional magical transformation sounds
+        location.getWorld().playSound(
+            location,
+            Sound.ENTITY_ENDERMAN_TELEPORT,
+            0.8f,
+            1.5f
+        );
+
+        location.getWorld().playSound(
+            location,
+            Sound.BLOCK_ENCHANTMENT_TABLE_USE,
+            0.6f,
+            0.8f
+        );
+
+        // Enhanced polymorph particle effects
+        Location effectLocation = location.clone().add(0, 1, 0);
+
+        // Purple magical transformation particles
+        effectLocation.getWorld().spawnParticle(
+            Particle.DUST,
+            effectLocation,
+            40,  // Count
+            0.8, // Offset X
+            1.2, // Offset Y
+            0.8, // Offset Z
+            0,   // Speed
+            new Particle.DustOptions(Color.fromRGB(138, 43, 226), 1.5f) // Purple
+        );
+
+        // Pink transformation sparkles
+        effectLocation.getWorld().spawnParticle(
+            Particle.DUST,
+            effectLocation,
+            25,
+            0.5, 1.0, 0.5, 0,
+            new Particle.DustOptions(Color.fromRGB(255, 105, 180), 1.0f) // Hot pink
+        );
+
+        // Enchantment glitter effect
+        effectLocation.getWorld().spawnParticle(
+            Particle.ENCHANT,
+            effectLocation,
+            50,
+            1.0, 1.5, 1.0, 0.2
+        );
+
+        // Magical explosion
+        effectLocation.getWorld().spawnParticle(
+            Particle.FLASH,
+            effectLocation,
+            3,
+            0, 0, 0, 0
         );
     }
 
@@ -284,8 +329,8 @@ public class Polymorph extends Spell<Void> {
     private LivingEntity getTargetedEntity(@NotNull Player caster) {
         Objects.requireNonNull(caster, "Caster cannot be null");
         
-        // Ray trace for entities within 25 blocks
-        var target = caster.getTargetEntity(25);
+        // Ray trace for entities within 50 blocks - increased range
+        var target = caster.getTargetEntity(50);
         return target instanceof LivingEntity ? (LivingEntity) target : null;
     }
 

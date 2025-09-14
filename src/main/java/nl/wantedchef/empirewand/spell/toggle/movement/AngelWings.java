@@ -212,130 +212,155 @@ public final class AngelWings extends Spell<Void> implements ToggleableSpell {
         private int tickCounter = 0;
         private double wingPhase = 0;
         private double flapIntensity = 1.0;
-        private Location lastLocation;
-        private boolean wasFlying;
+        @Nullable private Location lastLocation;
+        private final boolean wasFlying;
 
         WingData(Player player, SpellContext context) {
             this.player = player;
-            this.lastLocation = player.getLocation().clone();
+            final Location location = player.getLocation();
+            if (location == null) {
+                // Cannot activate if player has no location
+                this.ticker = null;
+                this.wasFlying = false;
+                this.lastLocation = null;
+                // We can't proceed, so we should probably not even be in this state.
+                // Forcing deactivation from the constructor is tricky.
+                // The caller should ideally check this.
+                // For now, we prevent the ticker from starting.
+                Bukkit.getScheduler().runTask(context.plugin(), () -> forceDeactivate(player));
+                return;
+            }
+            this.lastLocation = location.clone();
             this.wasFlying = player.isFlying();
-            
+
             player.showBossBar(divinePowerBar);
-            
+
             // Divine activation sounds
-            player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 2.0f);
-            player.playSound(player.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 0.8f, 1.8f);
-            
+            player.playSound(location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 2.0f);
+            player.playSound(location, Sound.BLOCK_BEACON_ACTIVATE, 0.8f, 1.8f);
+
             // Show activation message
             player.sendMessage(Component.text(
-                    "§6⚐ §cBlazing wings of sacred fire manifest behind you! Spread your fiery wings and soar! §6⚐"));
-            
+                    "\u00A76⚐ \u00A7cBlazing wings of sacred fire manifest behind you! Spread your fiery wings and soar! \u00A76⚐"));
+
             // Spawn magnificent fire activation effect
             spawnFireActivationEffect();
-            
+
             // Grant flight if not already flying
             if (!player.getAllowFlight()) {
                 player.setAllowFlight(true);
                 player.setFlying(true);
             }
-            
+
             // Start the ticker
             this.ticker = Bukkit.getScheduler().runTaskTimer(context.plugin(), this::tick, 0, 1);
         }
 
         void stop() {
-            ticker.cancel();
-            player.hideBossBar(divinePowerBar);
-            
+            if (this.ticker != null) {
+                this.ticker.cancel();
+            }
+            this.player.hideBossBar(this.divinePowerBar);
+
             // Remove effects
-            removeEffects();
-            
+            this.removeEffects();
+
             // Deactivation effect
-            spawnFireDeactivationEffect();
-            
-            player.sendMessage(Component.text("§6⚐ §7Your blazing wings fold and fade into smoldering embers... §6⚐"));
-            player.playSound(player.getLocation(), Sound.BLOCK_BEACON_DEACTIVATE, 0.7f, 1.4f);
-            
+            this.spawnFireDeactivationEffect();
+
+            this.player.sendMessage(Component.text("\u00A76⚐ \u00A77Your blazing wings fold and fade into smoldering embers... \u00A76⚐"));
+            final Location location = this.player.getLocation();
+            if (location != null) {
+                this.player.playSound(location, Sound.BLOCK_BEACON_DEACTIVATE, 0.7f, 1.4f);
+            }
+
             // Remove flight if it was granted by the spell
-            if (!wasFlying && player.getGameMode() != GameMode.CREATIVE && player.getGameMode() != GameMode.SPECTATOR) {
-                player.setAllowFlight(false);
-                player.setFlying(false);
+            if (!this.wasFlying && this.player.getGameMode() != GameMode.CREATIVE && this.player.getGameMode() != GameMode.SPECTATOR) {
+                this.player.setAllowFlight(false);
+                this.player.setFlying(false);
             }
         }
 
         private void tick() {
-            if (!player.isOnline()) {
-                forceDeactivate(player);
+            if (!this.player.isOnline()) {
+                forceDeactivate(this.player);
                 return;
             }
-            
-            tickCounter++;
-            wingPhase += 0.25; // Wing animation speed
-            
-            Location currentLoc = player.getLocation();
-            
+
+            this.tickCounter++;
+            this.wingPhase += 0.25; // Wing animation speed
+
+            final Location currentLoc = this.player.getLocation();
+            if (currentLoc == null) {
+                forceDeactivate(this.player);
+                return;
+            }
+
             // Energy management
-            boolean isFlying = player.isFlying() || player.getGameMode() == GameMode.CREATIVE;
-            boolean isMoving = currentLoc.distanceSquared(lastLocation) > 0.01;
-            
+            final boolean isFlying = this.player.isFlying() || this.player.getGameMode() == GameMode.CREATIVE;
+            final boolean isMoving = this.lastLocation != null && currentLoc.distanceSquared(this.lastLocation) > 0.01;
+
             // Energy consumption
             double energyCost = cfgDouble("energy.base-cost", 0.3);
             if (isFlying && isMoving) {
                 energyCost += cfgDouble("energy.flight-cost", 0.5);
-                flapIntensity = 1.5; // More intense flapping when flying
+                this.flapIntensity = 1.5; // More intense flapping when flying
             } else if (isFlying) {
                 energyCost += cfgDouble("energy.hover-cost", 0.2);
-                flapIntensity = 0.8; // Gentle hovering
+                this.flapIntensity = 0.8; // Gentle hovering
             } else {
-                flapIntensity = 0.4; // Minimal wing movement on ground
+                this.flapIntensity = 0.4; // Minimal wing movement on ground
             }
-            
+
             // Light level affects divine energy regeneration
-            int lightLevel = currentLoc.getBlock().getLightLevel();
+            final int lightLevel = currentLoc.getBlock().getLightLevel();
             if (lightLevel >= cfgInt("light.regen-threshold", 12)) {
-                divineEnergy += cfgDouble("energy.light-regen", 0.4);
+                this.divineEnergy += cfgDouble("energy.light-regen", 0.4);
             }
-            
-            divineEnergy -= energyCost;
-            divineEnergy = Math.max(0, Math.min(100, divineEnergy));
-            divinePowerBar.progress((float) (divineEnergy / 100));
-            
+
+            this.divineEnergy -= energyCost;
+            this.divineEnergy = Math.max(0, Math.min(100, this.divineEnergy));
+            this.divinePowerBar.progress((float) (this.divineEnergy / 100));
+
             // Check if out of energy
-            if (divineEnergy <= 0) {
-                player.sendMessage(Component.text("§cYour divine energy is depleted! The wings fade..."));
-                forceDeactivate(player);
+            if (this.divineEnergy <= 0) {
+                this.player.sendMessage(Component.text("\u00A7cYour divine energy is depleted! The wings fade..."));
+                forceDeactivate(this.player);
                 return;
             }
-            
+
             // Apply divine effects
-            applyDivineEffects();
-            
+            this.applyDivineEffects();
+
             // Wing visual effects
-            spawnAngelWings(currentLoc);
-            
+            this.spawnAngelWings(currentLoc);
+
             // Divine trail when moving
             if (isMoving) {
-                spawnDivineTrail(currentLoc);
+                this.spawnDivineTrail(currentLoc);
             }
-            
+
             // Periodic divine sounds
-            if (tickCounter % 100 == 0) {
-                player.playSound(currentLoc, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.4f, 1.6f);
+            if (this.tickCounter % 100 == 0) {
+                this.player.playSound(currentLoc, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.4f, 1.6f);
             }
-            
+
             // Wing flap sounds when flying actively
-            if (isFlying && isMoving && tickCounter % 20 == 0) {
-                player.playSound(currentLoc, Sound.ITEM_ELYTRA_FLYING, 0.3f, 1.5f);
+            if (isFlying && isMoving && this.tickCounter % 20 == 0) {
+                this.player.playSound(currentLoc, Sound.ITEM_ELYTRA_FLYING, 0.3f, 1.5f);
             }
-            
-            lastLocation = currentLoc.clone();
+
+            this.lastLocation = currentLoc.clone();
         }
         
         private void spawnFireActivationEffect() {
             Location loc = player.getLocation();
+            if (loc == null) {
+                return;
+            }
             World world = player.getWorld();
             
-            // Expanding ring of sacred fire
+            // Expanding ring of divine light
             for (int i = 0; i < 40; i++) {
                 double angle = 2 * Math.PI * i / 40;
                 double radius = 3.5;
@@ -343,17 +368,23 @@ public final class AngelWings extends Spell<Void> implements ToggleableSpell {
                 double z = Math.sin(angle) * radius;
                 Location particleLoc = loc.clone().add(x, 1.0, z);
                 
-                // Sacred fire ring
-                world.spawnParticle(Particle.FLAME, particleLoc, 3, 0.2, 0.8, 0.2, 0.15);
-                world.spawnParticle(Particle.LAVA, particleLoc, 1, 0.1, 0.3, 0.1, 0.05);
+                // Divine white light ring
+                world.spawnParticle(Particle.END_ROD, particleLoc, 2, 0.1, 0.3, 0.1, 0.05);
+                world.spawnParticle(Particle.CLOUD, particleLoc, 1, 0.2, 0.2, 0.2, 0.02);
                 
-                // Golden fire essence
-                Color sacredGold = Color.fromRGB(255, 215, 0);
+                // Golden divine essence
+                Color divineGold = Color.fromRGB(255, 248, 220); // Cornsilk - divine white-gold
                 world.spawnParticle(Particle.DUST, particleLoc, 2, 0.1, 0.1, 0.1, 0.0,
-                    new Particle.DustOptions(sacredGold, 2.0f));
+                    new Particle.DustOptions(divineGold, 2.0f));
+                    
+                // Falling feathers
+                if (Math.random() < 0.3) {
+                    Location featherLoc = particleLoc.clone().add(0, 2, 0);
+                    world.spawnParticle(Particle.FALLING_DUST, featherLoc, 1, 0.1, 0.1, 0.1, 0);
+                }
             }
             
-            // Upward burst of sacred fire
+            // Upward burst of divine light
             for (int i = 0; i < 30; i++) {
                 double angle = 2 * Math.PI * i / 30;
                 double radius = Math.random() * 1.5;
@@ -361,21 +392,24 @@ public final class AngelWings extends Spell<Void> implements ToggleableSpell {
                 double z = Math.sin(angle) * radius;
                 Location burstLoc = loc.clone().add(x, 2.0 + Math.random() * 2.5, z);
                 
-                // Sacred fire burst
-                world.spawnParticle(Particle.FLAME, burstLoc, 2, 0.15, 0.15, 0.15, 0.08);
-                world.spawnParticle(Particle.LAVA, burstLoc, 1, 0.1, 0.1, 0.1, 0.03);
+                // Divine light burst
+                world.spawnParticle(Particle.END_ROD, burstLoc, 1, 0.1, 0.1, 0.1, 0.03);
+                world.spawnParticle(Particle.FIREWORK, burstLoc, 1, 0.2, 0.2, 0.2, 0.1);
                 
-                // Divine fire sparkles
+                // Heavenly sparkles
                 if (Math.random() < 0.7) {
-                    Color fireGold = Color.fromRGB(255, 165, 0);
+                    Color heavenlyWhite = Color.fromRGB(255, 255, 240); // Ivory - pure white
                     world.spawnParticle(Particle.DUST, burstLoc, 1, 0.05, 0.05, 0.05, 0.0,
-                        new Particle.DustOptions(fireGold, 1.8f));
+                        new Particle.DustOptions(heavenlyWhite, 1.8f));
                 }
             }
         }
         
         private void spawnFireDeactivationEffect() {
             Location loc = player.getLocation();
+            if (loc == null) {
+                return;
+            }
             World world = player.getWorld();
             
             // Folding fire wing effect
@@ -425,32 +459,36 @@ public final class AngelWings extends Spell<Void> implements ToggleableSpell {
             }
         }
 
-        private void spawnAngelWings(Location playerLoc) {
+        private void spawnAngelWings(@NotNull Location playerLoc) {
             // Calculate wing animation
             double flapCycle = Math.sin(wingPhase * flapIntensity) * 0.3 + 0.7; // 0.4 to 1.0 range
             double wingspan = cfgDouble("wings.wingspan", 3.0) * flapCycle;
             double wingHeight = cfgDouble("wings.height", 1.5);
             int particlesPerWing = cfgInt("wings.particles-per-wing", 25);
+
+            final World world = playerLoc.getWorld();
+            if (world == null) {
+                return;
+            }
             
             // Create both wings
             for (int wing = 0; wing < 2; wing++) {
                 double wingSide = wing == 0 ? -1 : 1; // Left and right wing
-                spawnWing(playerLoc, wingSide, wingspan, wingHeight, particlesPerWing);
+                spawnWing(playerLoc, world, wingSide, wingspan, wingHeight, particlesPerWing);
             }
             
             // Divine aura around player
             if (tickCounter % 3 == 0) {
-                spawnDivineAura(playerLoc);
+                spawnDivineAura(playerLoc, world);
             }
             
             // Occasional holy bursts
             if (tickCounter % 40 == 0) {
-                spawnHolyBurst(playerLoc);
+                spawnHolyBurst(playerLoc, world);
             }
         }
         
-        private void spawnWing(Location center, double side, double wingspan, double wingHeight, int particles) {
-            World world = center.getWorld();
+        private void spawnWing(@NotNull Location center, @NotNull World world, double side, double wingspan, double wingHeight, int particles) {
             Vector wingBase = getWingBaseVector(player, side);
             
             for (int i = 0; i < particles; i++) {
@@ -464,46 +502,45 @@ public final class AngelWings extends Spell<Void> implements ToggleableSpell {
                 // Add flapping motion
                 double flapOffset = Math.sin(wingPhase * flapIntensity + progress * 2) * 0.2;
                 wingY += flapOffset;
-                
+
                 Vector wingOffset = new Vector(wingX * wingBase.getX(), wingY, wingX * wingBase.getZ() + wingZ);
                 Location wingLoc = center.clone().add(wingOffset).add(0, 0.5, 0);
                 
-                // Main wing particles - blazing sacred fire
-                world.spawnParticle(Particle.FLAME, wingLoc, 2, 0.12, 0.12, 0.12, 0.04);
+                // Main wing particles - divine ethereal light
+                world.spawnParticle(Particle.END_ROD, wingLoc, 1, 0.08, 0.08, 0.08, 0.02);
                 
-                // Sacred fire core
+                // Soft cloud-like wing base
                 if (Math.random() < 0.6) {
-                    world.spawnParticle(Particle.LAVA, wingLoc, 1, 0.08, 0.08, 0.08, 0.01);
+                    world.spawnParticle(Particle.CLOUD, wingLoc, 1, 0.08, 0.08, 0.08, 0.01);
                 }
                 
-                // Wing outline - bright golden fire essence
+                // Wing outline - bright divine golden essence
                 if (progress < 0.15 || progress > 0.85 || Math.random() < 0.4) {
-                    Color goldenFire = Color.fromRGB(255, 215, 0);
+                    Color divineGold = Color.fromRGB(255, 248, 220); // Cornsilk - divine
                     world.spawnParticle(Particle.DUST, wingLoc, 1, 0.05, 0.05, 0.05, 0,
-                        new Particle.DustOptions(goldenFire, 1.5f));
+                        new Particle.DustOptions(divineGold, 1.5f));
                 }
                 
-                // Feather tips - intense flame bursts
+                // Feather tips - heavenly light bursts
                 if (progress > 0.7 && Math.random() < 0.5) {
-                    world.spawnParticle(Particle.FLAME, wingLoc, 3, 0.15, 0.15, 0.15, 0.06);
+                    world.spawnParticle(Particle.FIREWORK, wingLoc, 1, 0.1, 0.1, 0.1, 0.03);
                 }
                 
-                // Divine fire sparkles
+                // Divine sparkles
                 if (Math.random() < 0.3) {
-                    Color sparkleOrange = Color.fromRGB(255, 165, 0);
+                    Color heavenlyWhite = Color.fromRGB(255, 255, 240); // Ivory - pure
                     world.spawnParticle(Particle.DUST, wingLoc, 1, 0.03, 0.03, 0.03, 0,
-                        new Particle.DustOptions(sparkleOrange, 1.2f));
+                        new Particle.DustOptions(heavenlyWhite, 1.2f));
                 }
                 
-                // Sacred fire embers
+                // Floating feathers
                 if (Math.random() < 0.25) {
-                    world.spawnParticle(Particle.LAVA, wingLoc, 1, 0.05, 0.05, 0.05, 0);
+                    world.spawnParticle(Particle.FALLING_DUST, wingLoc, 1, 0.05, 0.05, 0.05, 0);
                 }
             }
         }
         
-        private void spawnDivineAura(Location center) {
-            World world = center.getWorld();
+        private void spawnDivineAura(@NotNull Location center, @NotNull World world) {
             double auraRadius = cfgDouble("aura.radius", 1.2);
             int auraParticles = cfgInt("aura.particles", 10);
             
@@ -532,9 +569,7 @@ public final class AngelWings extends Spell<Void> implements ToggleableSpell {
             }
         }
         
-        private void spawnHolyBurst(Location center) {
-            World world = center.getWorld();
-            
+        private void spawnHolyBurst(@NotNull Location center, @NotNull World world) {
             // Radial burst of sacred fire
             for (int i = 0; i < 15; i++) {
                 double angle = 2 * Math.PI * i / 15;
@@ -557,10 +592,13 @@ public final class AngelWings extends Spell<Void> implements ToggleableSpell {
             }
         }
         
-        private void spawnDivineTrail(Location currentLoc) {
+        private void spawnDivineTrail(@NotNull Location currentLoc) {
             if (lastLocation == null) return;
             
-            World world = currentLoc.getWorld();
+            final World world = currentLoc.getWorld();
+            if (world == null) {
+                return;
+            }
             Vector movement = currentLoc.toVector().subtract(lastLocation.toVector());
             
             if (movement.lengthSquared() > 0.01) {
@@ -597,12 +635,20 @@ public final class AngelWings extends Spell<Void> implements ToggleableSpell {
         
         private Vector getWingBaseVector(Player player, double side) {
             // Calculate perpendicular vector to player facing direction
-            Vector facing = player.getLocation().getDirection();
+            final Location location = player.getLocation();
+            if (location == null) {
+                return new Vector(side, 0, 0); // Return a default vector
+            }
+            Vector facing = location.getDirection();
             Vector right = facing.getCrossProduct(new Vector(0, 1, 0)).normalize();
             return right.multiply(side);
         }
         
         private void applyDivineEffects() {
+            final Location location = player.getLocation();
+            if (location == null) {
+                return;
+            }
             int duration = cfgInt("effects.duration-ticks", 60);
             
             // Slow falling protection
@@ -614,7 +660,7 @@ public final class AngelWings extends Spell<Void> implements ToggleableSpell {
             }
             
             // Regeneration in bright light
-            int lightLevel = player.getLocation().getBlock().getLightLevel();
+            int lightLevel = location.getBlock().getLightLevel();
             if (lightLevel >= cfgInt("light.regen-threshold", 12)) {
                 player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 
                     cfgInt("effects.regen-duration", 40), 0, false, false));

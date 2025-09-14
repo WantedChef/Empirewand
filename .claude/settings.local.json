@@ -27,7 +27,9 @@
       "Bash(gradle.bat:*)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(move temp.java StormRider.java)",
+      "Bash(mv:*)"
     ],
     "deny": [],
     "ask": []

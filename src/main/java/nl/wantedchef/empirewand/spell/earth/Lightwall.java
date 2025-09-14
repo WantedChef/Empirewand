@@ -150,10 +150,13 @@ public class Lightwall extends Spell<Void> {
     protected Void executeSpell(@NotNull SpellContext context) {
         Objects.requireNonNull(context, "Context cannot be null");
         
-        Player player = context.caster();
-        Location eyeLocation = player.getEyeLocation();
-        Location center = eyeLocation.add(eyeLocation.getDirection().multiply(3));
-        Vector right = eyeLocation.getDirection().crossProduct(new Vector(0, 1, 0)).normalize();
+    Player player = context.caster();
+    Location eyeLocation = player.getEyeLocation();
+    Location center = eyeLocation.add(eyeLocation.getDirection().multiply(3));
+    // Compute a stable right vector based on yaw to avoid degeneracy when looking up/down
+    float yaw = eyeLocation.getYaw();
+    double yawRad = Math.toRadians(yaw);
+    Vector right = new Vector(Math.cos(yawRad), 0, -Math.sin(yawRad)).normalize();
 
         double width = spellConfig.getDouble("values.width", 6.0);
         double height = spellConfig.getDouble("values.height", 3.0);
@@ -163,9 +166,14 @@ public class Lightwall extends Spell<Void> {
         boolean hitPlayers = spellConfig.getBoolean("flags.hit-players", true);
         boolean hitMobs = spellConfig.getBoolean("flags.hit-mobs", true);
 
-        List<ArmorStand> wallStands = createWallStands(center, right, width, height);
-        new WallTask(context, wallStands, knockbackStrength, blindnessDuration, hitPlayers, hitMobs, width, height)
-                .runTaskTimer(context.plugin(), 0L, 1L);
+    List<ArmorStand> wallStands = createWallStands(center, right, width, height);
+    // Schedule the wall task and register so it gets cleaned up on shutdown
+    WallTask wallTask = new WallTask(context, wallStands, knockbackStrength, blindnessDuration,
+        hitPlayers, hitMobs, width, height, right, player.getUniqueId());
+    org.bukkit.scheduler.BukkitTask scheduled = wallTask.runTaskTimer(context.plugin(), 0L, 1L);
+    if (context.plugin() instanceof nl.wantedchef.empirewand.EmpireWandPlugin ewPlugin) {
+        ewPlugin.getTaskManager().registerTask(scheduled);
+    }
 
         new BukkitRunnable() {
             @Override
@@ -213,10 +221,7 @@ public class Lightwall extends Spell<Void> {
         
         List<ArmorStand> wallStands = new ArrayList<>();
         var world = center.getWorld();
-        if (world == null) {
-            return wallStands;
-        }
-        
+        assert world != null;
         for (int w = 0; w < width; w++) {
             for (int h = 0; h < height; h++) {
                 Vector offset = right.clone().multiply(w - width / 2).add(new Vector(0, h, 0));
@@ -249,6 +254,8 @@ public class Lightwall extends Spell<Void> {
         private final boolean hitMobs;
         private final double width;
         private final double height;
+        private final Vector right;
+        private final java.util.UUID casterId;
 
         /**
          * Creates a new WallTask instance.
@@ -263,7 +270,8 @@ public class Lightwall extends Spell<Void> {
          * @param height the height of the wall
          */
         public WallTask(@NotNull SpellContext context, @NotNull List<ArmorStand> wallStands, double knockbackStrength,
-                int blindnessDuration, boolean hitPlayers, boolean hitMobs, double width, double height) {
+                int blindnessDuration, boolean hitPlayers, boolean hitMobs, double width, double height,
+                @NotNull Vector right, @NotNull java.util.UUID casterId) {
             this.context = Objects.requireNonNull(context, "Context cannot be null");
             this.wallStands = Objects.requireNonNull(wallStands, "Wall stands cannot be null");
             this.knockbackStrength = knockbackStrength;
@@ -272,6 +280,8 @@ public class Lightwall extends Spell<Void> {
             this.hitMobs = hitMobs;
             this.width = width;
             this.height = height;
+            this.right = right.clone();
+            this.casterId = casterId;
         }
 
         /**
@@ -294,6 +304,10 @@ public class Lightwall extends Spell<Void> {
 
                 world.getNearbyEntities(stand.getLocation(), 1.5, 1.5, 1.5).forEach(entity -> {
                     if (entity instanceof LivingEntity living) {
+                        // Skip the caster
+                        if (entity.getUniqueId().equals(casterId)) {
+                            return;
+                        }
                         if ((entity instanceof Player && !hitPlayers) || (!(entity instanceof Player) && !hitMobs))
                             return;
 
@@ -315,11 +329,7 @@ public class Lightwall extends Spell<Void> {
             if (System.currentTimeMillis() % 1000 < 50) { // Roughly every second
                 ArmorStand firstStand = wallStands.getFirst();
                 Location center = firstStand.getLocation(); // Approximate center
-                Vector direction = firstStand.getLocation().getDirection();
-                if (direction != null) {
-                    Vector right = direction.crossProduct(new Vector(0, 1, 0)).normalize();
-                    spawnWallParticles(context, center, width, height, right);
-                }
+                spawnWallParticles(context, center, width, height, right);
             }
         }
     }

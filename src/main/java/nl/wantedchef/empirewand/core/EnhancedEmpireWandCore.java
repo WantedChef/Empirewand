@@ -12,7 +12,9 @@ import nl.wantedchef.empirewand.core.util.AdvancedPerformanceMonitor;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.time.Instant;
@@ -36,7 +38,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class EnhancedEmpireWandCore {
     
     private final EmpireWandPlugin plugin;
-    private final Logger logger;
+    private static final Logger logger = Logger.getLogger(EnhancedEmpireWandCore.class.getName());
     
     // Core system components
     private AdvancedPerformanceMonitor performanceMonitor;
@@ -82,7 +84,6 @@ public class EnhancedEmpireWandCore {
     
     public EnhancedEmpireWandCore(EmpireWandPlugin plugin) {
         this.plugin = plugin;
-        this.logger = plugin.getLogger();
         this.startupTime = Instant.now();
         
         logger.info("Initializing Enhanced EmpireWand Core System...");
@@ -145,13 +146,13 @@ public class EnhancedEmpireWandCore {
                     "componentCount", getComponentCount()
                 ));
                 
-                logger.info("Enhanced EmpireWand Core system initialized successfully in " +
-                           Duration.between(startupTime, Instant.now()).toMillis() + "ms");
+                logger.log(Level.INFO, "Enhanced EmpireWand Core system initialized successfully in {0}ms",
+                           Duration.between(startupTime, Instant.now()).toMillis());
                 
-            } catch (Exception e) {
+            } catch (final RuntimeException e) {
                 systemState.set(CoreSystemState.ERROR);
                 logger.log(Level.SEVERE, "Failed to initialize Enhanced EmpireWand Core", e);
-                throw new RuntimeException("Core system initialization failed", e);
+                throw e;
             }
         });
     }
@@ -164,12 +165,12 @@ public class EnhancedEmpireWandCore {
             if (shutdownInProgress) {
                 return;
             }
-            
+
             shutdownInProgress = true;
             systemState.set(CoreSystemState.STOPPING);
-            
+
             logger.info("Starting Enhanced EmpireWand Core shutdown sequence...");
-            
+
             try {
                 // Publish shutdown starting event
                 if (eventBus != null) {
@@ -178,28 +179,28 @@ public class EnhancedEmpireWandCore {
                         "uptime", Duration.between(startupTime, Instant.now())
                     ));
                 }
-                
+
                 // Phase 1: Stop accepting new work
                 stopAcceptingNewWork();
-                
+
                 // Phase 2: Wait for current operations to complete
                 waitForCurrentOperations();
-                
+
                 // Phase 3: Stop services in reverse order
                 stopAllServices();
-                
+
                 // Phase 4: Shutdown individual components
                 shutdownComponents();
-                
+
                 // Phase 5: Final cleanup
                 performFinalCleanup();
-                
+
                 systemState.set(CoreSystemState.STOPPED);
-                
-                logger.info("Enhanced EmpireWand Core shutdown completed in " +
-                           Duration.between(startupTime, Instant.now()).toMillis() + "ms total uptime");
-                
-            } catch (Exception e) {
+
+                logger.log(Level.INFO, "Enhanced EmpireWand Core shutdown completed in {0}ms total uptime",
+                           Duration.between(startupTime, Instant.now()).toMillis());
+
+            } catch (final RuntimeException e) {
                 systemState.set(CoreSystemState.ERROR);
                 logger.log(Level.SEVERE, "Error during Enhanced EmpireWand Core shutdown", e);
             }
@@ -274,93 +275,107 @@ public class EnhancedEmpireWandCore {
             performanceMonitor = new AdvancedPerformanceMonitor(plugin, logger);
             performanceMonitor.startMonitoring();
             logger.info("Performance monitoring initialized");
-        } catch (Exception e) {
+        } catch (final RuntimeException e) {
             logger.log(Level.SEVERE, "Failed to initialize performance monitoring", e);
             throw e;
         }
     }
-    
+
     private void initializeEventSystem() {
         logger.info("Initializing event system...");
         try {
             eventBus = new EventBusSystem(plugin);
-            
+
             // Register core event handlers
-            registerCoreEventHandlers();
-            
+            // System state change events
+            eventBus.register("system.state.change", (event) -> {
+                logger.log(Level.INFO, "System state changed: {0}", event);
+            });
+
+            // Critical error events
+            eventBus.register("system.error.critical", (event) -> {
+                logger.log(Level.SEVERE, "Critical system error detected: {0}", event);
+                // Could trigger automatic recovery procedures
+            });
+
+            // Performance warning events
+            eventBus.register("system.performance.warning", (event) -> {
+                logger.log(Level.WARNING, "Performance issue detected: {0}", event);
+            });
+
             logger.info("Event system initialized");
-        } catch (Exception e) {
+        } catch (final RuntimeException e) {
             logger.log(Level.SEVERE, "Failed to initialize event system", e);
             throw e;
         }
     }
-    
+
     private void initializeServiceRegistry() {
         logger.info("Initializing service registry...");
         try {
             serviceRegistry = new OptimizedServiceRegistry(plugin, eventBus);
             logger.info("Service registry initialized");
-        } catch (Exception e) {
+        } catch (final RuntimeException e) {
             logger.log(Level.SEVERE, "Failed to initialize service registry", e);
             throw e;
         }
     }
-    
+
     private void initializeConfigurationSystem() throws IOException {
         logger.info("Initializing configuration system...");
         try {
-            configService = new EnhancedConfigService(plugin);
-            
+            configService = new EnhancedConfigService(plugin, performanceMonitor);
+
             // Register configuration change handlers
             configService.addChangeListener(this::handleConfigurationChange);
-            
+
             logger.info("Configuration system initialized");
-        } catch (Exception e) {
+        } catch (final RuntimeException e) {
             logger.log(Level.SEVERE, "Failed to initialize configuration system", e);
             throw e;
         }
     }
-    
+
     private void initializeDataManagement() {
         logger.info("Initializing data management...");
         try {
             dataManager = new OptimizedDataManager(plugin);
             logger.info("Data management initialized");
-        } catch (Exception e) {
+        } catch (final RuntimeException e) {
             logger.log(Level.SEVERE, "Failed to initialize data management", e);
             throw e;
         }
     }
-    
+
     private void initializeTaskManagement() {
         logger.info("Initializing task management...");
         try {
             taskManager = new AdvancedTaskManager(plugin);
             logger.info("Task management initialized");
-        } catch (Exception e) {
+        } catch (final RuntimeException e) {
             logger.log(Level.SEVERE, "Failed to initialize task management", e);
             throw e;
         }
     }
-    
+
     private void initializeHealthMonitoring() {
         logger.info("Initializing health monitoring...");
         try {
             healthMonitor = new SystemHealthMonitor(plugin);
-            
+
             // Register custom health checks
             registerCustomHealthChecks();
-            
+
             // Add alert handlers
             healthMonitor.addAlertHandler(this::handleSystemAlert);
-            
+
             logger.info("Health monitoring initialized");
-        } catch (Exception e) {
+        } catch (final RuntimeException e) {
             logger.log(Level.SEVERE, "Failed to initialize health monitoring", e);
             throw e;
         }
     }
-    
+
     private void registerCoreServices() {
         logger.info("Registering core services...");
         try {
@@ -370,26 +385,26 @@ public class EnhancedEmpireWandCore {
             serviceRegistry.registerServiceInstance(OptimizedDataManager.class, dataManager);
             serviceRegistry.registerServiceInstance(SystemHealthMonitor.class, healthMonitor);
             serviceRegistry.registerServiceInstance(AdvancedTaskManager.class, taskManager);
-            
+
             logger.info("Core services registered");
-        } catch (Exception e) {
+        } catch (final RuntimeException e) {
             logger.log(Level.SEVERE, "Failed to register core services", e);
             throw e;
         }
     }
-    
+
     private void startAllServices() {
         logger.info("Starting all services...");
         try {
             CompletableFuture<Void> serviceStartup = serviceRegistry.startServices();
             serviceStartup.get(60, TimeUnit.SECONDS); // 60 second timeout
             logger.info("All services started successfully");
-        } catch (Exception e) {
+        } catch (final InterruptedException | ExecutionException | TimeoutException e) {
             logger.log(Level.SEVERE, "Failed to start services", e);
             throw new RuntimeException(e);
         }
     }
-    
+
     private void setupSystemIntegration() {
         logger.info("Setting up system integration...");
         try {
@@ -397,41 +412,41 @@ public class EnhancedEmpireWandCore {
             setupEventIntegration();
             setupMetricsIntegration();
             setupHealthIntegration();
-            
+
             logger.info("System integration configured");
-        } catch (Exception e) {
+        } catch (final RuntimeException e) {
             logger.log(Level.SEVERE, "Failed to setup system integration", e);
             throw e;
         }
     }
-    
+
     private void registerShutdownHooks() {
         // Register JVM shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             logger.info("JVM shutdown detected, initiating Enhanced EmpireWand Core shutdown...");
             try {
                 shutdown().get(30, TimeUnit.SECONDS);
-            } catch (Exception e) {
+            } catch (final ExecutionException | InterruptedException | TimeoutException e) {
                 logger.log(Level.WARNING, "Error during shutdown hook execution", e);
             }
         }, "EmpireWand-Core-Shutdown"));
     }
-    
+
     private void registerCoreEventHandlers() {
         // System state change events
         eventBus.register("system.state.change", (event) -> {
-            logger.info("System state changed: " + event);
+            logger.log(Level.INFO, "System state changed: {0}", event);
         });
-        
+
         // Critical error events
         eventBus.register("system.error.critical", (event) -> {
-            logger.severe("Critical system error detected: " + event);
+            logger.log(Level.SEVERE, "Critical system error detected: {0}", event);
             // Could trigger automatic recovery procedures
         });
-        
+
         // Performance warning events
         eventBus.register("system.performance.warning", (event) -> {
-            logger.warning("Performance issue detected: " + event);
+            logger.log(Level.WARNING, "Performance issue detected: {0}", event);
         });
     }
     
@@ -459,14 +474,10 @@ public class EnhancedEmpireWandCore {
     
     private void setupEventIntegration() {
         // Forward performance events to health monitor
-        eventBus.register("performance.degraded", (event) -> {
-            // Handle performance degradation
-        });
+        eventBus.register("performance.degraded", this::ignoreEvent);
         
         // Forward health events to metrics collection
-        eventBus.register("health.status.changed", (event) -> {
-            // Update system health metrics
-        });
+        eventBus.register("health.status.changed", this::ignoreEvent);
     }
     
     private void setupMetricsIntegration() {
@@ -476,33 +487,37 @@ public class EnhancedEmpireWandCore {
                 try {
                     CoreSystemMetrics metrics = getSystemMetrics();
                     eventBus.publish("metrics.system.update", metrics);
-                } catch (Exception e) {
+                } catch (final RuntimeException e) {
                     logger.log(Level.WARNING, "Error collecting system metrics", e);
                 }
             }, 0, 300); // Every 15 seconds (300 ticks)
         }
     }
+
+    private void ignoreEvent(@SuppressWarnings("unused") Object ignored) {
+        // intentionally no-op; registration keeps integration pathways alive
+    }
     
     private void setupHealthIntegration() {
         // Configure automatic recovery for certain health issues
         eventBus.register("health.critical", (event) -> {
-            logger.warning("Critical health issue detected: " + event);
+            logger.log(Level.WARNING, "Critical health issue detected: {0}", event);
             // Could trigger automatic recovery procedures
-            
+
             // Example: restart unhealthy services
             systemState.set(CoreSystemState.DEGRADED);
         });
     }
-    
+
     private void handleConfigurationChange(EnhancedConfigService.ConfigurationChangeEvent event) {
-        logger.info("Configuration changed: " + event.getChangedKeys());
-        
+        logger.log(Level.INFO, "Configuration changed: {0}", event.getChangedKeys());
+
         // Publish configuration change event
         eventBus.publish("configuration.changed", Map.of(
             "changedKeys", event.getChangedKeys(),
             "timestamp", event.getTimestamp()
         ));
-        
+
         // Handle specific configuration changes
         for (String changedKey : event.getChangedKeys()) {
             if (changedKey.startsWith("performance.")) {
@@ -510,47 +525,47 @@ public class EnhancedEmpireWandCore {
                 updatePerformanceConfiguration(changedKey, event);
             } else if (changedKey.startsWith("health.")) {
                 // Update health monitoring configuration
-                updateHealthConfiguration(changedKey, event);
+                updateHealthConfiguration(changedKey);
             }
         }
     }
-    
+
     private void updatePerformanceConfiguration(String key, EnhancedConfigService.ConfigurationChangeEvent event) {
         // Implementation would update performance monitoring based on config changes
-        logger.fine("Updating performance configuration for key: " + key);
+        logger.log(Level.FINE, "Updating performance configuration for key: {0}", key);
     }
-    
-    private void updateHealthConfiguration(String key, EnhancedConfigService.ConfigurationChangeEvent event) {
+
+    private void updateHealthConfiguration(String key) {
         // Implementation would update health monitoring based on config changes
-        logger.fine("Updating health configuration for key: " + key);
+        logger.log(Level.FINE, "Updating health configuration for key: {0}", key);
     }
-    
+
     private void handleSystemAlert(SystemHealthMonitor.Alert alert) {
-        logger.log(Level.WARNING, "System Alert [" + alert.level() + "] " + 
-                  alert.component() + ": " + alert.message());
-        
+        logger.log(Level.WARNING, "System Alert [{0}] {1}: {2}",
+                  new Object[]{alert.level(), alert.component(), alert.message()});
+
         // Publish alert event
         eventBus.publish("system.alert", alert);
-        
+
         // Handle critical alerts
         if (alert.level() == SystemHealthMonitor.AlertLevel.CRITICAL) {
             systemState.set(CoreSystemState.DEGRADED);
-            
+
             // Could trigger automatic recovery procedures
             initiateAutomaticRecovery(alert);
         }
     }
-    
+
     private void initiateAutomaticRecovery(SystemHealthMonitor.Alert alert) {
-        logger.info("Initiating automatic recovery for critical alert: " + alert.component());
-        
+        logger.log(Level.INFO, "Initiating automatic recovery for critical alert: {0}", alert.component());
+
         // Implementation would contain specific recovery procedures
         // For now, just log the attempt
         taskManager.submitAsync("recovery:" + alert.component(), () -> {
             try {
                 // Simulate recovery process
                 Thread.sleep(5000);
-                logger.info("Recovery completed for: " + alert.component());
+                logger.log(Level.INFO, "Recovery completed for: {0}", alert.component());
                 return null;
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -581,7 +596,7 @@ public class EnhancedEmpireWandCore {
         if (serviceRegistry != null) {
             try {
                 serviceRegistry.stopServices().get(30, TimeUnit.SECONDS);
-            } catch (Exception e) {
+            } catch (final RuntimeException | InterruptedException | ExecutionException | TimeoutException e) {
                 logger.log(Level.WARNING, "Error stopping services", e);
             }
         }
@@ -596,7 +611,7 @@ public class EnhancedEmpireWandCore {
             try {
                 healthMonitor.shutdown();
                 logger.fine("Health monitor shutdown");
-            } catch (Exception e) {
+            } catch (final RuntimeException e) {
                 logger.log(Level.WARNING, "Error shutting down health monitor", e);
             }
         }
@@ -605,7 +620,7 @@ public class EnhancedEmpireWandCore {
             try {
                 taskManager.shutdown();
                 logger.fine("Task manager shutdown");
-            } catch (Exception e) {
+            } catch (final RuntimeException e) {
                 logger.log(Level.WARNING, "Error shutting down task manager", e);
             }
         }
@@ -614,7 +629,7 @@ public class EnhancedEmpireWandCore {
             try {
                 dataManager.shutdown();
                 logger.fine("Data manager shutdown");
-            } catch (Exception e) {
+            } catch (final RuntimeException e) {
                 logger.log(Level.WARNING, "Error shutting down data manager", e);
             }
         }
@@ -623,7 +638,7 @@ public class EnhancedEmpireWandCore {
             try {
                 configService.shutdown();
                 logger.fine("Config service shutdown");
-            } catch (Exception e) {
+            } catch (final RuntimeException e) {
                 logger.log(Level.WARNING, "Error shutting down config service", e);
             }
         }
@@ -632,7 +647,7 @@ public class EnhancedEmpireWandCore {
             try {
                 eventBus.shutdown();
                 logger.fine("Event bus shutdown");
-            } catch (Exception e) {
+            } catch (final RuntimeException e) {
                 logger.log(Level.WARNING, "Error shutting down event bus", e);
             }
         }
@@ -641,7 +656,7 @@ public class EnhancedEmpireWandCore {
             try {
                 performanceMonitor.stopMonitoring();
                 logger.fine("Performance monitor shutdown");
-            } catch (Exception e) {
+            } catch (final RuntimeException e) {
                 logger.log(Level.WARNING, "Error shutting down performance monitor", e);
             }
         }

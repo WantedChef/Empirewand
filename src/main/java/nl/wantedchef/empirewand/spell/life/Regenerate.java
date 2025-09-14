@@ -10,6 +10,7 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
@@ -89,7 +90,7 @@ public class Regenerate extends Spell<Player> {
                 // Periodic extra healing
                 if (ticks % 40 == 0) {
                     double currentHealth = player.getHealth();
-                    double maxHealth = player.getMaxHealth();
+                    double maxHealth = getMaxHealth(player);
                     if (currentHealth < maxHealth) {
                         player.setHealth(Math.min(currentHealth + healAmount, maxHealth));
                         player.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, 
@@ -108,5 +109,10 @@ public class Regenerate extends Spell<Player> {
             player.getLocation().add(0, 1, 0), 30, 0.5, 1, 0.5, 0.1);
         
         player.sendMessage("§a§lRegenerate §2activated for " + (duration/20) + " seconds!");
+    }
+    
+    private double getMaxHealth(org.bukkit.entity.LivingEntity entity) {
+        var attr = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        return attr != null ? attr.getValue() : 20.0;
     }
 }

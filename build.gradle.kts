@@ -42,6 +42,7 @@ dependencies {
     implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
     compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.6")
     implementation("org.bstats:bstats-bukkit:3.0.2")
+    implementation("dev.triumphteam:triumph-gui:3.1.10")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.3")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.3")
@@ -55,6 +56,7 @@ tasks {
     }
     shadowJar {
         relocate("org.bstats", "nl.wantedchef.empirewand.shaded.bstats")
+        relocate("dev.triumphteam.gui", "nl.wantedchef.empirewand.lib.triumph")
         archiveClassifier.set("") // Produce a single, standard JAR
     }
     checkstyle {
@@ -118,11 +120,11 @@ bukkit {
     commands {
         register("ew") {
             description = "EmpireWand commands"
-            usage = "/ew <get|bind|unbind|bindall|bindtype|bindcat|set-spell|list|reload|migrate|spells|toggle|stats|switcheffect|cd>"
+            usage = "/ew <get|give|gui|bind|unbind|bindall|bindtype|bindcat|set-spell|list|reload|migrate|spells|toggle|stats|switcheffect|cd>"
         }
         register("mz") {
             description = "MephidantesZeist commands"
-            usage = "/mz <get|bind|unbind|bindall|bindtype|bindcat|set-spell|list|reload|migrate|spells|toggle|stats|switcheffect|cd>"
+            usage = "/mz <get|give|gui|bind|unbind|bindall|bindtype|bindcat|set-spell|list|reload|migrate|spells|toggle|stats|switcheffect|cd>"
         }
     }
     permissions {
@@ -144,6 +146,8 @@ bukkit {
         register("empirewand.command.cooldown.clear") { default = BukkitPluginDescription.Permission.Default.OP }
         register("empirewand.command.cooldown.status") { default = BukkitPluginDescription.Permission.Default.TRUE }
         register("empirewand.command.cooldown.admin") { default = BukkitPluginDescription.Permission.Default.OP }
+        register("empirewand.gui") { default = BukkitPluginDescription.Permission.Default.OP }
+        register("empirewand.give") { default = BukkitPluginDescription.Permission.Default.OP }
         register("mephidanteszeist.command.get") { default = BukkitPluginDescription.Permission.Default.OP }
         register("mephidanteszeist.command.bind") { default = BukkitPluginDescription.Permission.Default.OP }
         register("mephidanteszeist.command.unbind") { default = BukkitPluginDescription.Permission.Default.OP }
@@ -162,6 +166,8 @@ bukkit {
         register("mephidanteszeist.command.cooldown.clear") { default = BukkitPluginDescription.Permission.Default.OP }
         register("mephidanteszeist.command.cooldown.status") { default = BukkitPluginDescription.Permission.Default.TRUE }
         register("mephidanteszeist.command.cooldown.admin") { default = BukkitPluginDescription.Permission.Default.OP }
+        register("mephidanteszeist.gui") { default = BukkitPluginDescription.Permission.Default.OP }
+        register("mephidanteszeist.give") { default = BukkitPluginDescription.Permission.Default.OP }
         register("empirewand.spell.use.*") { default = BukkitPluginDescription.Permission.Default.TRUE }
         register("empirewand.spell.bind.*") { default = BukkitPluginDescription.Permission.Default.OP }
 

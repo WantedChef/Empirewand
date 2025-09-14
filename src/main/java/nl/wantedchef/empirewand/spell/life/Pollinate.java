@@ -12,9 +12,10 @@ import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.entity.Player;
+import org.bukkit.TreeType;
 import org.jetbrains.annotations.NotNull;
-
 import java.time.Duration;
+import java.util.Objects;
 
 /**
  * Pollinate - Nature growth spell from real Empirewand
@@ -37,8 +38,6 @@ public class Pollinate extends Spell<Player> {
         }
     }
 
-    private static final double DEFAULT_RADIUS = 10.0;
-
     private Pollinate(Builder builder) {
         super(builder);
     }
@@ -50,7 +49,7 @@ public class Pollinate extends Spell<Player> {
 
     @Override
     public PrereqInterface prereq() {
-        return new PrereqInterface.LevelPrereq(8);
+        return new PrereqInterface.NonePrereq();
     }
 
     @Override
@@ -58,23 +57,26 @@ public class Pollinate extends Spell<Player> {
         return context.caster();
     }
     
-    private org.bukkit.TreeType getTreeType(Material sapling) {
+    private TreeType getTreeType(Material sapling) {
         return switch (sapling) {
-            case OAK_SAPLING -> org.bukkit.TreeType.TREE;
-            case SPRUCE_SAPLING -> org.bukkit.TreeType.REDWOOD;
-            case BIRCH_SAPLING -> org.bukkit.TreeType.BIRCH;
-            case JUNGLE_SAPLING -> org.bukkit.TreeType.JUNGLE;
-            case ACACIA_SAPLING -> org.bukkit.TreeType.ACACIA;
-            case DARK_OAK_SAPLING -> org.bukkit.TreeType.DARK_OAK;
-            default -> org.bukkit.TreeType.TREE;
+            case OAK_SAPLING -> TreeType.TREE;
+            case SPRUCE_SAPLING -> TreeType.REDWOOD;
+            case BIRCH_SAPLING -> TreeType.BIRCH;
+            case JUNGLE_SAPLING -> TreeType.JUNGLE;
+            case ACACIA_SAPLING -> TreeType.ACACIA;
+            case DARK_OAK_SAPLING -> TreeType.DARK_OAK;
+            default -> TreeType.TREE;
         };
     }
 
     @Override
     protected void handleEffect(@NotNull SpellContext context, @NotNull Player player) {
-        double radius = spellConfig.getDouble("values.radius", DEFAULT_RADIUS);
-        
-        Location center = player.getLocation();
+        double radius = spellConfig.getDouble("values.radius", 10.0);
+        final Location center = player.getLocation();
+        if (center == null) {
+            return;
+        }
+        final org.bukkit.World world = Objects.requireNonNull(center.getWorld(), "world");
         int growthCount = 0;
         
         // Grow all crops and plants in radius
@@ -82,7 +84,8 @@ public class Pollinate extends Spell<Player> {
             for (int y = -3; y <= 3; y++) {
                 for (int z = (int) -radius; z <= radius; z++) {
                     if (x * x + z * z <= radius * radius) {
-                        Block block = center.clone().add(x, y, z).getBlock();
+                        final Location scan = center.clone().add(x, y, z);
+                        Block block = scan.getBlock();
                         
                         // Grow crops
                         if (block.getBlockData() instanceof Ageable ageable && ageable.getAge() < ageable.getMaximumAge()) {
@@ -91,7 +94,7 @@ public class Pollinate extends Spell<Player> {
                             growthCount++;
                             
                             // Particle effect
-                            block.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, 
+                            world.spawnParticle(Particle.HAPPY_VILLAGER,
                                 block.getLocation().add(0.5, 0.5, 0.5), 3, 0.2, 0.2, 0.2, 0);
                         }
                         
@@ -99,7 +102,7 @@ public class Pollinate extends Spell<Player> {
                         if (block.getType().name().contains("SAPLING") && Math.random() < 0.3) {
                             Material saplingType = block.getType();
                             block.setType(Material.AIR);
-                            block.getWorld().generateTree(block.getLocation(), getTreeType(saplingType));
+                            world.generateTree(block.getLocation(), getTreeType(saplingType));
                             growthCount++;
                         }
                     }
@@ -108,8 +111,8 @@ public class Pollinate extends Spell<Player> {
         }
         
         // Effects
-        center.getWorld().spawnParticle(Particle.SPORE_BLOSSOM_AIR, center, 100, radius/2, 2, radius/2, 0.1);
-        center.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, center, 50, radius/2, 2, radius/2, 0);
+        world.spawnParticle(Particle.SPORE_BLOSSOM_AIR, center, 100, radius/2, 2, radius/2, 0.1);
+        world.spawnParticle(Particle.HAPPY_VILLAGER, center, 50, radius/2, 2, radius/2, 0);
         context.fx().playSound(center, Sound.ITEM_BONE_MEAL_USE, 2.0f, 1.0f);
         context.fx().playSound(center, Sound.BLOCK_GRASS_PLACE, 1.5f, 1.2f);
         

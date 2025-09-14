@@ -28,7 +28,7 @@ class KajCloudTest {
     
     @Test
     void testSpellDescription() {
-        assertEquals("Create beautiful cloud particles under you while flying.", 
+        assertEquals("Summon a fluffy cloud platform to fly on.", 
                     kajCloud.getDescription());
     }
     
@@ -39,6 +39,6 @@ class KajCloudTest {
     
     @Test
     void testCooldown() {
-        assertEquals(java.time.Duration.ofSeconds(5), kajCloud.getCooldown());
+        assertEquals(java.time.Duration.ofSeconds(3), kajCloud.getCooldown());
     }
 }
