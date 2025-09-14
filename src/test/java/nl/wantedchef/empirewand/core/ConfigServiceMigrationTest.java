@@ -2,7 +2,6 @@ package nl.wantedchef.empirewand.core;
 
 import nl.wantedchef.empirewand.core.config.ConfigMigrationService;
 import nl.wantedchef.empirewand.core.config.ConfigValidator;
-import nl.wantedchef.empirewand.core.config.ReadOnlyConfig;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,8 +14,10 @@ import org.mockito.MockitoAnnotations;
 import java.io.File;
 import java.util.logging.Logger;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 
 @DisplayName("ConfigService Migration Tests")
 class ConfigServiceMigrationTest {

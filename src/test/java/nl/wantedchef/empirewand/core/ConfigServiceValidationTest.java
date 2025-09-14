@@ -13,8 +13,9 @@ import org.mockito.MockitoAnnotations;
 import java.io.File;
 import java.util.logging.Logger;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 
 @DisplayName("ConfigService Validation Tests")
 class ConfigServiceValidationTest {

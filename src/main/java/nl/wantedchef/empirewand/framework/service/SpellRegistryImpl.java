@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
@@ -60,7 +61,6 @@ import nl.wantedchef.empirewand.spell.fire.advanced.CometShower;
 import nl.wantedchef.empirewand.spell.fire.advanced.EmpireComet;
 import nl.wantedchef.empirewand.spell.fire.effects.ExplosionTrail;
 import nl.wantedchef.empirewand.spell.fire.basic.Explosive;
-import nl.wantedchef.empirewand.spell.fire.basic.Fireball;
 import nl.wantedchef.empirewand.spell.fire.advanced.FlameWave;
 import nl.wantedchef.empirewand.spell.fire.advanced.Flamewalk;
 import nl.wantedchef.empirewand.spell.fire.advanced.Inferno;
@@ -118,7 +118,6 @@ import nl.wantedchef.empirewand.spell.movement.teleport.Phase;
 import nl.wantedchef.empirewand.spell.movement.teleport.Recall;
 import nl.wantedchef.empirewand.spell.movement.flight.Rocket;
 import nl.wantedchef.empirewand.spell.movement.flight.SunburstStep;
-import nl.wantedchef.empirewand.spell.movement.teleport.Teleport;
 import nl.wantedchef.empirewand.spell.poison.CrimsonChains;
 import nl.wantedchef.empirewand.spell.poison.MephidicReap;
 import nl.wantedchef.empirewand.spell.poison.PoisonWave;
@@ -156,6 +155,7 @@ public class SpellRegistryImpl implements SpellRegistry {
     private final Map<String, Spell<?>> spells = new ConcurrentHashMap<>(64); // Initial capacity to reduce resizing
     private final ConfigService configService;
     private final PerformanceMonitor performanceMonitor;
+    private final Logger logger;
     private final Map<String, Set<String>> categorySpellCache = new ConcurrentHashMap<>();
     private final Map<String, Set<String>> toggleableSpellCache = new ConcurrentHashMap<>();
     private volatile Set<String> cachedCategories = null;
@@ -169,7 +169,8 @@ public class SpellRegistryImpl implements SpellRegistry {
      */
     public SpellRegistryImpl(ConfigService configService) {
         this.configService = configService;
-        this.performanceMonitor = new PerformanceMonitor(java.util.logging.Logger.getLogger("SpellRegistryImpl"));
+        this.logger = java.util.logging.Logger.getLogger("SpellRegistryImpl");
+        this.performanceMonitor = new PerformanceMonitor(this.logger);
         registerAllSpells();
     }
 
@@ -376,12 +377,33 @@ public class SpellRegistryImpl implements SpellRegistry {
             }
             invalidateCaches();
         } catch (Exception e) {
-            for (Supplier<Spell.Builder<?>> builderSupplier : getFallbackSpellBuilders()) {
-                Spell.Builder<?> builder = builderSupplier.get();
-                Spell<?> spell = builder.build();
-                spells.put(spell.key(), spell);
+            // Log the error before falling back to reduced spell set
+            if (e instanceof ClassNotFoundException) {
+                logger.warning("Failed to dynamically load spells due to missing classes. Using fallback spell set.");
+                logger.fine("Missing class details: " + e.getMessage());
+            } else if (e instanceof InstantiationException || e instanceof IllegalAccessException) {
+                logger.warning("Failed to instantiate spell classes. Using fallback spell set.");
+                logger.fine("Instantiation error: " + e.getMessage());
+            } else {
+                logger.severe("Unexpected error during spell registration. Using fallback spell set: " + e.getMessage());
+                if (logger.isLoggable(java.util.logging.Level.FINE)) {
+                    e.printStackTrace();
+                }
             }
-            invalidateCaches();
+
+            // Fall back to reduced spell set
+            try {
+                for (Supplier<Spell.Builder<?>> builderSupplier : getFallbackSpellBuilders()) {
+                    Spell.Builder<?> builder = builderSupplier.get();
+                    Spell<?> spell = builder.build();
+                    spells.put(spell.key(), spell);
+                }
+                invalidateCaches();
+                logger.info("Fallback spell registration completed. " + spells.size() + " spells loaded.");
+            } catch (Exception fallbackError) {
+                logger.severe("Critical error: Even fallback spell registration failed: " + fallbackError.getMessage());
+                fallbackError.printStackTrace();
+            }
         }
     }
 
@@ -574,11 +596,12 @@ public class SpellRegistryImpl implements SpellRegistry {
     /**
      * Invalidates all cached data to force recalculation on next access.
      */
-    private void invalidateCaches() {
+    private synchronized void invalidateCaches() {
         categorySpellCache.clear();
         toggleableSpellCache.clear();
         metadataCache.clear();
         displayNameCache.clear();
+        cachedCategories = null;
     }
 
     // ===== SpellRegistry API =====
@@ -692,22 +715,30 @@ public class SpellRegistryImpl implements SpellRegistry {
     @Override
     public @NotNull
     Set<String> getSpellCategories() {
-        // Use cached categories if available
+        // Use cached categories if available (double-checked locking pattern)
         Set<String> categories = cachedCategories;
         if (categories != null) {
             return categories;
         }
 
-        try (var timing = performanceMonitor.startTiming("SpellRegistryImpl.getSpellCategories", 10)) {
-            timing.observe();
-            // Calculate and cache categories more efficiently
-            Set<String> result = ConcurrentHashMap.newKeySet();
-            for (Spell<?> spell : spells.values()) {
-                result.add(spell.type().name());
+        synchronized (this) {
+            // Check again inside synchronized block
+            categories = cachedCategories;
+            if (categories != null) {
+                return categories;
             }
 
-            cachedCategories = Collections.unmodifiableSet(result);
-            return cachedCategories;
+            try (var timing = performanceMonitor.startTiming("SpellRegistryImpl.getSpellCategories", 10)) {
+                timing.observe();
+                // Calculate and cache categories more efficiently
+                Set<String> result = ConcurrentHashMap.newKeySet();
+                for (Spell<?> spell : spells.values()) {
+                    result.add(spell.type().name());
+                }
+
+                cachedCategories = Collections.unmodifiableSet(result);
+                return cachedCategories;
+            }
         }
     }
 

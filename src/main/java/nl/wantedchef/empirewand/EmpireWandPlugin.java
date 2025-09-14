@@ -384,28 +384,41 @@ public final class EmpireWandPlugin extends JavaPlugin {
 
         // Clean up polymorph entities - get polymorph spell and clean its map
         try {
-            var polymorph = this.spellRegistry.getSpell("polymorph");
-            if (polymorph.isPresent()
-                    && polymorph.get() instanceof nl.wantedchef.empirewand.spell.control.Polymorph p) {
+            if (this.spellRegistry != null) {
+                var polymorph = this.spellRegistry.getSpell("polymorph");
+                if (polymorph.isPresent()
+                        && polymorph.get() instanceof nl.wantedchef.empirewand.spell.control.Polymorph p) {
                 var entities = p.getPolymorphedEntities();
                 for (var entry : entities.entrySet()) {
                     UUID sheepId = entry.getKey();
                     UUID originalId = entry.getValue();
 
-                    // Remove sheep
-                    Entity sheep = getServer().getEntity(sheepId);
-                    if (sheep != null && sheep.isValid()) {
-                        sheep.remove();
+                    // Remove sheep safely
+                    try {
+                        Entity sheep = getServer().getEntity(sheepId);
+                        if (sheep != null && sheep.isValid() && sheep.getWorld().isChunkLoaded(sheep.getChunk())) {
+                            sheep.remove();
+                        }
+                    } catch (Exception ex) {
+                        getLogger().fine("Failed to remove polymorph sheep " + sheepId + ": " + ex.getMessage());
                     }
 
-                    // Restore original if possible
-                    Entity original = getServer().getEntity(originalId);
-                    if (original instanceof LivingEntity living && living.isValid() && !living.isDead()) {
-                        living.setAI(true);
-                        living.setInvulnerable(false);
-                        living.setInvisible(false);
-                        living.setCollidable(true);
+                    // Restore original safely
+                    try {
+                        Entity original = getServer().getEntity(originalId);
+                        if (original instanceof LivingEntity living &&
+                            living.isValid() &&
+                            !living.isDead() &&
+                            living.getWorld().isChunkLoaded(living.getChunk())) {
+                            living.setAI(true);
+                            living.setInvulnerable(false);
+                            living.setInvisible(false);
+                            living.setCollidable(true);
+                        }
+                    } catch (Exception ex) {
+                        getLogger().fine("Failed to restore original entity " + originalId + ": " + ex.getMessage());
                     }
+                }
                 }
             }
         } catch (Exception e) {

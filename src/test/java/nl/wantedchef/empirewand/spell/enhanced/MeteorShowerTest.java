@@ -2,6 +2,7 @@ package nl.wantedchef.empirewand.spell.enhanced;
 
 import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.SpellType;
+import nl.wantedchef.empirewand.spell.weather.MeteorShower;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import static org.junit.jupiter.api.Assertions.assertEquals;

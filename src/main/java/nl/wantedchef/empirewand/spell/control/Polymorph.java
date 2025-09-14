@@ -7,6 +7,7 @@ import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
@@ -197,8 +198,8 @@ public class Polymorph extends Spell<Void> {
         
         // Create sheep at target location
         Sheep sheep = location.getWorld().spawn(location, Sheep.class, spawnedSheep -> {
-            // Use String-based custom name for broader API compatibility
-            spawnedSheep.setCustomName("Polymorphed " + target.getType().name());
+            // Use Component-based custom name for modern API
+            spawnedSheep.customName(Component.text("Polymorphed " + target.getType().name()));
             spawnedSheep.setCustomNameVisible(true);
             DyeColor[] colors = DyeColor.values();
             spawnedSheep.setColor(colors[(int) (Math.random() * colors.length)]);

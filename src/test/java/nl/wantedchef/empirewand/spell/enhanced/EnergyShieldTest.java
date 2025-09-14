@@ -4,7 +4,6 @@ import nl.wantedchef.empirewand.EmpireWandPlugin;
 import nl.wantedchef.empirewand.api.EmpireWandAPI;
 import nl.wantedchef.empirewand.core.config.ReadableConfig;
 import nl.wantedchef.empirewand.core.task.TaskManager;
-import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
 import nl.wantedchef.empirewand.spell.enhanced.defensive.EnergyShield;

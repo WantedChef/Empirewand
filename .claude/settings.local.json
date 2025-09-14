@@ -34,7 +34,15 @@
       "Bash(while read dir)",
       "Bash(do echo \"=== $dir ===\")",
       "Bash(ls:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(.gradlew.bat clean build --stacktrace)",
+      "Bash(.gradlew.bat test --continue)",
+      "Bash(.gradlew.bat checkstyleMain)",
+      "Bash(gradle build:*)",
+      "Bash(bash:*)",
+      "Bash(7z:*)",
+      "Bash(.\\gradlew.bat test:*)",
+      "Bash(.gradlew.bat test:*)"
     ],
     "deny": [],
     "ask": []

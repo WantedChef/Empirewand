@@ -30,6 +30,10 @@ java {
     }
 }
 
+tasks.compileJava {
+    options.compilerArgs.addAll(listOf("-Xlint:deprecation", "-Xlint:unchecked"))
+}
+
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
@@ -56,7 +60,7 @@ tasks {
     shadowJar {
         relocate("org.bstats", "nl.wantedchef.empirewand.shaded.bstats")
         relocate("dev.triumphteam.gui", "nl.wantedchef.empirewand.lib.triumph")
-        archiveClassifier.set("") // Produce a single, standard JAR
+        archiveClassifier.set("all")
     }
     checkstyle {
         toolVersion = "10.12.0"
@@ -83,6 +87,12 @@ tasks {
     test {
         useJUnitPlatform()
         finalizedBy(jacocoTestReport)
+        jvmArgs(
+            "--add-opens=java.base/java.lang=ALL-UNNAMED",
+            "--add-opens=java.base/java.util=ALL-UNNAMED",
+            "--add-opens=java.base/java.text=ALL-UNNAMED",
+            "--add-opens=java.desktop/java.awt.font=ALL-UNNAMED"
+        )
     }
     jacocoTestReport {
         dependsOn(test)
