@@ -48,6 +48,7 @@ import org.jetbrains.annotations.Nullable;
  *     .build();
  * }</pre>
  *
+ * @author WantedChef
  * @since 1.0.0
  */
 public class RitualOfUnmaking extends Spell<Void> {

@@ -67,6 +67,7 @@ import nl.wantedchef.empirewand.spell.projectile.ArcaneOrb;
 import nl.wantedchef.empirewand.spell.projectile.MagicMissile;
 import nl.wantedchef.empirewand.spell.toggle.aura.Aura;
 import nl.wantedchef.empirewand.spell.toggle.aura.EmpireAura;
+import nl.wantedchef.empirewand.spell.toggle.godmode.Elementosgod;
 import nl.wantedchef.empirewand.spell.toggle.movement.KajCloud;
 import nl.wantedchef.empirewand.spell.toggle.movement.MephiCloud;
 import nl.wantedchef.empirewand.spell.toggle.movement.ShadowCloak;
@@ -207,6 +208,7 @@ public class SpellRegistryImpl implements SpellRegistry {
                     // Aura
                     () -> new Aura.Builder(api),
                     () -> new EmpireAura.Builder(api),
+                    () -> new Elementosgod.Builder(api),
                     // Control
                     () -> new Confuse.Builder(api),
                     () -> new Polymorph.Builder(api),
@@ -424,6 +426,7 @@ public class SpellRegistryImpl implements SpellRegistry {
                 // Aura
                 () -> new Aura.Builder(api),
                 () -> new EmpireAura.Builder(api),
+                () -> new Elementosgod.Builder(api),
                 // Control
                 () -> new Confuse.Builder(api),
                 () -> new Polymorph.Builder(api),

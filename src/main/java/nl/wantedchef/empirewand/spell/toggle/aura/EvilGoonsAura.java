@@ -38,6 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>Excludes tamed animals and other players</li>
  * </ul>
  *
+ * @author WantedChef
  * @since 1.0.0
  */
 public class EvilGoonsAura extends Spell<Void> implements ToggleableSpell {
@@ -80,6 +81,11 @@ public class EvilGoonsAura extends Spell<Void> implements ToggleableSpell {
             this.spellType = SpellType.AURA;
         }
 
+        /**
+         * Builds the Evil Goons Aura spell.
+         *
+         * @return the constructed spell
+         */
         @Override
         @NotNull
         public Spell<Void> build() {
@@ -94,11 +100,16 @@ public class EvilGoonsAura extends Spell<Void> implements ToggleableSpell {
         }
     }
 
+    /**
+     * Loads configuration for the aura from the provided config section.
+     *
+     * @param spellConfig the configuration section
+     */
     @Override
     public void loadConfig(@NotNull ReadableConfig spellConfig) {
         Objects.requireNonNull(spellConfig, "SpellConfig cannot be null");
         super.loadConfig(spellConfig);
-        
+
         this.config = new Config(
             spellConfig.getDouble("values.range", DEFAULT_RANGE),
             spellConfig.getDouble("values.max-damage", DEFAULT_MAX_DAMAGE),
@@ -106,18 +117,34 @@ public class EvilGoonsAura extends Spell<Void> implements ToggleableSpell {
         );
     }
 
+    /**
+     * Gets the configuration key for this spell.
+     *
+     * @return "evil-goons-aura"
+     */
     @Override
     @NotNull
     public String key() {
         return "evil-goons-aura";
     }
 
+    /**
+     * Returns the casting prerequisites.
+     *
+     * @return a no-op prerequisite
+     */
     @Override
     @NotNull
     public PrereqInterface prereq() {
         return new PrereqInterface.NonePrereq();
     }
 
+    /**
+     * Toggles the aura based on the current state.
+     *
+     * @param context the spell context
+     * @return always {@code null}
+     */
     @Override
     @Nullable
     protected Void executeSpell(SpellContext context) {
@@ -136,16 +163,34 @@ public class EvilGoonsAura extends Spell<Void> implements ToggleableSpell {
         return null;
     }
 
+    /**
+     * No additional effect handling is required.
+     *
+     * @param context the spell context
+     * @param result  unused
+     */
     @Override
     protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
         // Toggle effect handled in executeSpell
     }
 
+    /**
+     * Checks whether the aura is currently active for a player.
+     *
+     * @param player the player to check
+     * @return {@code true} if active
+     */
     @Override
     public boolean isActive(Player player) {
         return activeAuras.contains(player.getUniqueId());
     }
 
+    /**
+     * Activates the aura for a player.
+     *
+     * @param player  the player
+     * @param context the spell context
+     */
     @Override
     public void activate(Player player, SpellContext context) {
         activeAuras.add(player.getUniqueId());
@@ -153,6 +198,12 @@ public class EvilGoonsAura extends Spell<Void> implements ToggleableSpell {
         context.fx().spawnParticles(player.getLocation(), Particle.SOUL_FIRE_FLAME, 20, 1, 1, 1, 0.05);
     }
 
+    /**
+     * Deactivates the aura for a player.
+     *
+     * @param player  the player
+     * @param context the spell context
+     */
     @Override
     public void deactivate(Player player, SpellContext context) {
         activeAuras.remove(player.getUniqueId());
@@ -162,6 +213,11 @@ public class EvilGoonsAura extends Spell<Void> implements ToggleableSpell {
         context.fx().spawnParticles(player.getLocation(), Particle.SMOKE, 15, 1, 1, 1, 0.05);
     }
 
+    /**
+     * Forcefully deactivates the aura without visual effects.
+     *
+     * @param player the player
+     */
     @Override
     public void forceDeactivate(Player player) {
         activeAuras.remove(player.getUniqueId());
