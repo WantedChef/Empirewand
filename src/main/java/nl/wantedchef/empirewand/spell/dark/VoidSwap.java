@@ -45,6 +45,7 @@ import java.util.Objects;
  *     .build();
  * }</pre>
  *
+ * @author WantedChef
  * @since 1.0.0
  */
 public class VoidSwap extends Spell<Void> {

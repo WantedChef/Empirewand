@@ -34,7 +34,7 @@ import nl.wantedchef.empirewand.spell.SpellType;
 
 /**
  * CrystalGlide 1.0 - Revolutionary ice skating movement spell with crystalline frost mechanics.
- * 
+ *
  * Extraordinary Features:
  * - Dynamic ice trail generation with realistic crystalline structure
  * - Frictionless gliding physics with momentum conservation
@@ -44,6 +44,8 @@ import nl.wantedchef.empirewand.spell.SpellType;
  * - Glacial particle trails with ice shard visualization
  * - Crystalline wing formation with hexagonal ice structures
  * - Arctic wind effects with atmospheric cooling simulation
+ *
+ * @author WantedChef
  */
 public final class CrystalGlide extends Spell<Void> implements ToggleableSpell {
 
@@ -55,7 +57,16 @@ public final class CrystalGlide extends Spell<Void> implements ToggleableSpell {
     /* ---------------------------------------- */
     /* BUILDER */
     /* ---------------------------------------- */
+    /**
+     * Builder for creating {@link CrystalGlide} instances.
+     */
     public static class Builder extends Spell.Builder<Void> {
+
+        /**
+         * Creates a new builder for the CrystalGlide spell.
+         *
+         * @param api the plugin API
+         */
         public Builder(EmpireWandAPI api) {
             super(api);
             name = "Crystal Glide";
@@ -64,12 +75,22 @@ public final class CrystalGlide extends Spell<Void> implements ToggleableSpell {
             spellType = SpellType.MOVEMENT;
         }
 
+        /**
+         * Builds the CrystalGlide spell.
+         *
+         * @return the constructed spell
+         */
         @Override
         public @NotNull Spell<Void> build() {
             return new CrystalGlide(this);
         }
     }
 
+    /**
+     * Constructs the spell from its builder.
+     *
+     * @param builder the spell builder
+     */
     private CrystalGlide(Builder builder) {
         super(builder);
     }
@@ -77,22 +98,45 @@ public final class CrystalGlide extends Spell<Void> implements ToggleableSpell {
     /* ---------------------------------------- */
     /* SPELL API */
     /* ---------------------------------------- */
+
+    /**
+     * Gets the configuration key for this spell.
+     *
+     * @return "crystal-glide"
+     */
     @Override
     public @NotNull String key() {
         return "crystal-glide";
     }
 
+    /**
+     * Returns the casting prerequisites.
+     *
+     * @return a no-op prerequisite
+     */
     @Override
     public @NotNull PrereqInterface prereq() {
         return new PrereqInterface.NonePrereq();
     }
 
+    /**
+     * Toggles the spell for the caster.
+     *
+     * @param context the spell context
+     * @return always {@code null}
+     */
     @Override
     protected @Nullable Void executeSpell(@NotNull SpellContext context) {
         toggle(context.caster(), context);
         return null;
     }
 
+    /**
+     * No additional effect handling is required.
+     *
+     * @param context the spell context
+     * @param result  unused
+     */
     @Override
     protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
         // Instant effect
@@ -101,28 +145,58 @@ public final class CrystalGlide extends Spell<Void> implements ToggleableSpell {
     /* ---------------------------------------- */
     /* TOGGLE API */
     /* ---------------------------------------- */
+
+    /**
+     * Checks whether the glide is active for a player.
+     *
+     * @param player the player to check
+     * @return {@code true} if active
+     */
     @Override
     public boolean isActive(@NotNull Player player) {
         return crystalGliders.containsKey(player.getUniqueId());
     }
 
+    /**
+     * Activates the glide for a player.
+     *
+     * @param player  the player
+     * @param context the spell context
+     */
     @Override
     public void activate(@NotNull Player player, @NotNull SpellContext context) {
-        if (isActive(player))
+        if (isActive(player)) {
             return;
+        }
         crystalGliders.put(player.getUniqueId(), new CrystalGliderData(player, context));
     }
 
+    /**
+     * Deactivates the glide for a player.
+     *
+     * @param player  the player
+     * @param context the spell context
+     */
     @Override
     public void deactivate(@NotNull Player player, @NotNull SpellContext context) {
         Optional.ofNullable(crystalGliders.remove(player.getUniqueId())).ifPresent(CrystalGliderData::stop);
     }
 
+    /**
+     * Forcefully deactivates the glide.
+     *
+     * @param player the player
+     */
     @Override
     public void forceDeactivate(@NotNull Player player) {
         Optional.ofNullable(crystalGliders.remove(player.getUniqueId())).ifPresent(CrystalGliderData::stop);
     }
 
+    /**
+     * Gets the maximum duration of the glide in ticks.
+     *
+     * @return max duration
+     */
     @Override
     public int getMaxDuration() {
         return cfgInt("max-duration-ticks", 2000); // ~1.5 minutes default

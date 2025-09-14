@@ -15,11 +15,22 @@ import org.jetbrains.annotations.NotNull;
 import java.time.Duration;
 
 /**
- * Vengeance - Reflects damage back from real Empirewand
+ * A dark defensive spell that reflects damage back to nearby attackers.
+ *
+ * @author WantedChef
  */
 public class Vengeance extends Spell<Void> {
 
+    /**
+     * Builder for creating {@link Vengeance} instances.
+     */
     public static class Builder extends Spell.Builder<Void> {
+
+        /**
+         * Creates a new builder for the Vengeance spell.
+         *
+         * @param api the plugin API
+         */
         public Builder(EmpireWandAPI api) {
             super(api);
             this.name = "Vengeance";
@@ -28,6 +39,11 @@ public class Vengeance extends Spell<Void> {
             this.spellType = SpellType.DARK;
         }
 
+        /**
+         * Builds the Vengeance spell.
+         *
+         * @return the constructed spell
+         */
         @Override
         @NotNull
         public Spell<Void> build() {
@@ -38,25 +54,52 @@ public class Vengeance extends Spell<Void> {
     private static final int DEFAULT_DURATION = 200;
     private static final double DEFAULT_REFLECT_MULTIPLIER = 1.5;
 
+    /**
+     * Constructs the spell from its builder.
+     *
+     * @param builder the spell builder
+     */
     private Vengeance(Builder builder) {
         super(builder);
     }
 
+    /**
+     * Gets the configuration key for this spell.
+     *
+     * @return "vengeance"
+     */
     @Override
     public String key() {
         return "vengeance";
     }
 
+    /**
+     * Gets the prerequisites for casting.
+     *
+     * @return level prerequisite requiring level 35
+     */
     @Override
     public PrereqInterface prereq() {
         return new PrereqInterface.LevelPrereq(35);
     }
 
+    /**
+     * No direct action is needed on cast; effects are handled asynchronously.
+     *
+     * @param context the spell context
+     * @return always {@code null}
+     */
     @Override
     protected Void executeSpell(@NotNull SpellContext context) {
         return null;
     }
 
+    /**
+     * Applies the damage reflection effect for the configured duration.
+     *
+     * @param context the spell context
+     * @param effect  unused
+     */
     @Override
     protected void handleEffect(@NotNull SpellContext context, @NotNull Void effect) {
         Player player = context.caster();
