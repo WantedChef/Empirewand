@@ -31,7 +31,6 @@ import nl.wantedchef.empirewand.spell.SpellType;
 
 /**
  * PhoenixCloak - A majestic visual phoenix transformation spell.
- * 
  * Features:
  * - Stunning phoenix wings with realistic animation
  * - Flowing fire cloak effect around the player
@@ -64,17 +63,17 @@ public final class PhoenixCloak extends Spell<Void> implements ToggleableSpell {
     }
 
     @Override
-    public String key() {
+    public @NotNull String key() {
         return "phoenix-cloak";
     }
 
     @Override
-    public PrereqInterface prereq() {
+    public @NotNull PrereqInterface prereq() {
         return new PrereqInterface.NonePrereq();
     }
 
     @Override
-    protected Void executeSpell(SpellContext context) {
+    protected Void executeSpell(@NotNull SpellContext context) {
         toggle(context.caster(), context);
         return null;
     }
@@ -90,13 +89,13 @@ public final class PhoenixCloak extends Spell<Void> implements ToggleableSpell {
     }
 
     @Override
-    public void activate(Player player, SpellContext context) {
+    public void activate(@NotNull Player player, @NotNull SpellContext context) {
         if (isActive(player)) return;
         phoenixes.put(player.getUniqueId(), new PhoenixData(player, context));
     }
 
     @Override
-    public void deactivate(Player player, SpellContext context) {
+    public void deactivate(Player player, @NotNull SpellContext context) {
         Optional.ofNullable(phoenixes.remove(player.getUniqueId())).ifPresent(PhoenixData::stop);
     }
 

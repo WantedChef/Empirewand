@@ -1,4 +1,3 @@
-
 import com.github.spotbugs.snom.Confidence
 import net.minecrell.pluginyml.bukkit.BukkitPluginDescription
 
@@ -42,7 +41,7 @@ dependencies {
     implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
     compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.6")
     implementation("org.bstats:bstats-bukkit:3.0.2")
-    implementation("dev.triumphteam:triumph-gui:3.1.10")
+    implementation("dev.triumphteam:triumph-gui:3.1.6")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.3")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.3")
@@ -74,11 +73,6 @@ tasks {
     spotbugs {
         excludeFilter.set(file("config/spotbugs/exclude.xml"))
         reportLevel.set(Confidence.HIGH)
-    }
-    withType<com.github.spotbugs.snom.SpotBugsTask>().configureEach {
-        reports.create("html") {
-            required.set(true)
-        }
     }
     spotbugsMain {
         enabled = true
