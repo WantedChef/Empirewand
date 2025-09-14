@@ -1,17 +1,5 @@
 package nl.wantedchef.empirewand.core.config;
 
-import nl.wantedchef.empirewand.core.config.model.WandDifficulty;
-import nl.wantedchef.empirewand.core.config.model.WandSettings;
-import org.bukkit.plugin.Plugin;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.io.TempDir;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.io.File;
-import java.io.IOException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -21,14 +9,23 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
+import org.bukkit.plugin.Plugin;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mock;
 import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import nl.wantedchef.empirewand.core.config.model.WandDifficulty;
+import nl.wantedchef.empirewand.core.config.model.WandSettings;
 
 /**
  * Test class for WandSettingsService.
@@ -178,8 +175,8 @@ class WandSettingsServiceTest {
                 .thenReturn(getClass().getResourceAsStream("/test-wand-settings.yml"));
         service.initialize().get();
 
-        // Get initial settings
-        WandSettings initialSettings = service.getWandSettings("empirewand");
+        // Touch service to ensure ready
+        assertNotNull(service.getWandSettings("empirewand"));
 
         // Modify file directly (simulate external change)
         // This would be more complex to test properly, so we'll just test reload doesn't fail

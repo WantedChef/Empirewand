@@ -6,6 +6,7 @@ import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
 import nl.wantedchef.empirewand.spell.PrereqInterface;
 import org.bukkit.entity.Vex;
+import org.bukkit.entity.Tameable;
 import java.util.ArrayList;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -284,6 +285,12 @@ public class SummonSwarm extends Spell<Void> {
                     if (atk != null) atk.setBaseValue(Math.max(1.0, minionDamage));
                     vex.setHealth(Math.max(1.0, Math.min(minionHealth, vex.getMaxHealth())));
                     vex.setPersistent(false);
+                    
+                    // Make Vex friendly to the caster - this prevents them from attacking their owner
+                    if (vex instanceof Tameable tameable) {
+                        tameable.setTamed(true);
+                        tameable.setOwner(player);
+                    }
                 });
                 
                 summonedMinions.add(minion);

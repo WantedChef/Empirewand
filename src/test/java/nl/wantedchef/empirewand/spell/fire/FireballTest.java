@@ -1,6 +1,7 @@
 package nl.wantedchef.empirewand.spell.fire;
 
 import nl.wantedchef.empirewand.api.EmpireWandAPI;
+import nl.wantedchef.empirewand.spell.fire.basic.Fireball;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,7 +21,7 @@ class FireballTest {
     @BeforeEach
     void setUp() {
         openMocks(this);
-        fireball = (Fireball) new Fireball.Builder(api).build();
+        fireball = new Fireball.Builder(api).build();
     }
 
     @Test

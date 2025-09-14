@@ -29,7 +29,12 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(git add:*)",
       "Bash(move temp.java StormRider.java)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(xargs ls:*)",
+      "Bash(while read dir)",
+      "Bash(do echo \"=== $dir ===\")",
+      "Bash(ls:*)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

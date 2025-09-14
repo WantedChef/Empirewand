@@ -51,7 +51,7 @@ public final class KajCloud extends Spell<Void> implements ToggleableSpell {
     }
 
     @Override
-    public String key() {
+    public @NotNull String key() {
         return "kaj-cloud";
     }
 

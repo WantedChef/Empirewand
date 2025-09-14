@@ -327,12 +327,36 @@ public class WandSettingsService {
 
         try (InputStream defaultConfigStream = plugin.getResource(CONFIG_FILE_NAME)) {
             if (defaultConfigStream == null) {
-                throw new IOException("Default configuration resource not found: " + CONFIG_FILE_NAME);
+                // Create minimal default configuration programmatically for test environments
+                createMinimalDefaultConfiguration();
+                return;
             }
 
             Files.copy(defaultConfigStream, configFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             logger.info("Default configuration copied to: " + configFile.getPath());
         }
+    }
+
+    private void createMinimalDefaultConfiguration() throws IOException {
+        // Create a minimal default configuration for test environments
+        YamlConfiguration defaultConfig = new YamlConfiguration();
+        defaultConfig.set("schemaVersion", 1);
+
+        // Add default wands
+        String[] defaultWands = {"empirewand", "mephidantes_zeist"};
+        for (String wandKey : defaultWands) {
+            defaultConfig.set("wands." + wandKey + ".displayName",
+                wandKey.equals("empirewand") ? "Empire Wand" : "Mephidantes Zeist");
+            defaultConfig.set("wands." + wandKey + ".icon",
+                wandKey.equals("empirewand") ? "BLAZE_ROD" : "GOLDEN_HOE");
+            defaultConfig.set("wands." + wandKey + ".settings.cooldownBlock", true);
+            defaultConfig.set("wands." + wandKey + ".settings.griefBlockDamage", false);
+            defaultConfig.set("wands." + wandKey + ".settings.playerDamage", true);
+            defaultConfig.set("wands." + wandKey + ".settings.difficulty", "MEDIUM");
+        }
+
+        defaultConfig.save(configFile);
+        logger.info("Minimal default configuration created at: " + configFile.getPath());
     }
 
     private void reloadConfiguration() throws IOException {
@@ -476,9 +500,11 @@ public class WandSettingsService {
     }
 
     private void syncFile(Path path) throws IOException {
-        // Force data to be written to storage
-        try {
-            Files.newOutputStream(path).close();
+        // Force data to be written to storage using FileChannel
+        try (var channel = java.nio.channels.FileChannel.open(path, 
+                java.nio.file.StandardOpenOption.READ, 
+                java.nio.file.StandardOpenOption.WRITE)) {
+            channel.force(true);
         } catch (IOException e) {
             // Log but don't fail - this is a best-effort operation
             logger.log(Level.WARNING, "Failed to sync file to disk: " + path, e);

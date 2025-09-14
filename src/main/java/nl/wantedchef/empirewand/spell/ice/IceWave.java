@@ -4,7 +4,7 @@ import nl.wantedchef.empirewand.api.EmpireWandAPI;
 import nl.wantedchef.empirewand.common.visual.WaveEffectType;
 import nl.wantedchef.empirewand.common.visual.WaveProjectile;
 import nl.wantedchef.empirewand.spell.SpellType;
-import nl.wantedchef.empirewand.spell.enhanced.EnhancedWaveSpell;
+import nl.wantedchef.empirewand.spell.enhanced.destructive.EnhancedWaveSpell;
 import nl.wantedchef.empirewand.spell.PrereqInterface;
 import org.jetbrains.annotations.NotNull;
 

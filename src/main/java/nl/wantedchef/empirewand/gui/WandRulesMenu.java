@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Wand-specific rules configuration menu. Allows players to configure individual
@@ -73,17 +74,17 @@ public class WandRulesMenu {
             // Create GUI
             Gui gui = createGui(player, wandKey, currentSettings, session);
 
-            // Open the GUI
-            gui.open(player);
+                        // Open the GUI
+                        gui.open(player);
 
-            // Play sound feedback
-            player.playSound(player.getLocation(), Sound.BLOCK_CHEST_OPEN, 0.7f, 1.0f);
+                        // Play sound feedback
+                        safePlay(player, Sound.BLOCK_CHEST_OPEN, 0.7f, 1.0f);
 
-            logger.fine("Opened wand rules menu for player: " + player.getName() + ", wand: " + wandKey);
+                        logger.log(Level.FINE, () -> "Opened wand rules menu for player: " + player.getName() + ", wand: " + wandKey);
 
         } catch (Exception e) {
-            logger.severe("Failed to open wand rules menu for player: " + player.getName() +
-                         ", wand: " + wandKey + " - " + e.getMessage());
+                        logger.log(Level.SEVERE, () -> "Failed to open wand rules menu for player: " + player.getName() +
+                                                 ", wand: " + wandKey + " - " + e.getMessage());
             player.sendMessage(Component.text("Failed to open wand configuration menu. Please try again.")
                     .color(NamedTextColor.RED));
         }
@@ -177,7 +178,7 @@ public class WandRulesMenu {
             session.setPendingChanges(wandKey, newSettings);
 
             // Play sound
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.8f, 1.1f);
+            safePlay(player, Sound.UI_BUTTON_CLICK, 0.8f, 1.1f);
 
             // Refresh menu
             player.closeInventory();
@@ -232,7 +233,7 @@ public class WandRulesMenu {
             session.setPendingChanges(wandKey, newSettings);
 
             // Play sound
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.8f, enabled ? 0.8f : 1.2f);
+            safePlay(player, Sound.UI_BUTTON_CLICK, 0.8f, enabled ? 0.8f : 1.2f);
 
             // Refresh menu
             player.closeInventory();
@@ -287,7 +288,7 @@ public class WandRulesMenu {
             session.setPendingChanges(wandKey, newSettings);
 
             // Play sound
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.8f, enabled ? 0.8f : 1.2f);
+            safePlay(player, Sound.UI_BUTTON_CLICK, 0.8f, enabled ? 0.8f : 1.2f);
 
             // Refresh menu
             player.closeInventory();
@@ -342,7 +343,7 @@ public class WandRulesMenu {
             session.setPendingChanges(wandKey, newSettings);
 
             // Play sound
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.8f, enabled ? 0.8f : 1.2f);
+            safePlay(player, Sound.UI_BUTTON_CLICK, 0.8f, enabled ? 0.8f : 1.2f);
 
             // Refresh menu
             player.closeInventory();
@@ -437,7 +438,7 @@ public class WandRulesMenu {
                             .color(NamedTextColor.GREEN));
 
                     // Play success sound
-                    player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.2f);
+                    safePlay(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.2f);
 
                     // Close menu
                     player.closeInventory();
@@ -445,7 +446,7 @@ public class WandRulesMenu {
                 }).exceptionally(throwable -> {
                     player.sendMessage(Component.text("Failed to save settings: " + throwable.getMessage())
                             .color(NamedTextColor.RED));
-                    player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_LAND, 0.7f, 0.5f);
+                                        safePlay(player, Sound.BLOCK_ANVIL_LAND, 0.7f, 0.5f);
                     return null;
                 });
             }
@@ -501,13 +502,13 @@ public class WandRulesMenu {
                         .color(NamedTextColor.YELLOW));
 
                 // Play sound
-                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.7f, 0.8f);
+                safePlay(player, Sound.UI_BUTTON_CLICK, 0.7f, 0.8f);
 
                 // Refresh menu to show original settings
                 player.closeInventory();
                 openMenu(player, wandKey);
             } else {
-                player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.7f, 0.5f);
+                                safePlay(player, Sound.BLOCK_NOTE_BLOCK_BASS, 0.7f, 0.5f);
             }
         }));
     }
@@ -541,7 +542,7 @@ public class WandRulesMenu {
             event.setCancelled(true);
 
             // Play sound
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.7f, 0.9f);
+            safePlay(player, Sound.UI_BUTTON_CLICK, 0.7f, 0.9f);
 
             // Close current menu and open wand selector
             player.closeInventory();
@@ -599,4 +600,11 @@ public class WandRulesMenu {
             return new GuiItem(item);
         }
     }
+
+        private void safePlay(@NotNull Player player, @NotNull Sound sound, float volume, float pitch) {
+                var loc = player.getLocation();
+                if (loc != null) {
+                        player.playSound(loc, sound, volume, pitch);
+                }
+        }
 }
