@@ -120,7 +120,7 @@ public class CooldownCommand implements SubCommand {
                 if (!context.wandService().isWand(wand)) {
                     throw new CommandException("You must be holding a wand to toggle cooldown.");
                 }
-                context.cooldownService().setCooldownDisabled(player.getUniqueId(), wand, false);
+                context.cooldownManager().setCooldownDisabled(player.getUniqueId(), wand, false);
                 context.sendMessage(Component.text("Cooldown enabled").color(NamedTextColor.GREEN));
                 break;
             }
@@ -134,7 +134,7 @@ public class CooldownCommand implements SubCommand {
                 if (!context.wandService().isWand(wand)) {
                     throw new CommandException("You must be holding a wand to toggle cooldown.");
                 }
-                context.cooldownService().setCooldownDisabled(player.getUniqueId(), wand, true);
+                context.cooldownManager().setCooldownDisabled(player.getUniqueId(), wand, true);
                 context.sendMessage(Component.text("Cooldown disabled").color(NamedTextColor.GREEN));
                 break;
             }
@@ -143,7 +143,7 @@ public class CooldownCommand implements SubCommand {
                 if (!context.hasPermission(wandType + ".command.cooldown.clear")) {
                     throw new CommandException("You don't have permission to clear cooldown.");
                 }
-                context.cooldownService().clearAll(player.getUniqueId());
+                context.cooldownManager().clearPlayerCooldowns(player.getUniqueId());
                 context.sendMessage(Component.text("Cooldown cleared").color(NamedTextColor.GREEN));
                 break;
 
@@ -217,7 +217,7 @@ public class CooldownCommand implements SubCommand {
             throw new CommandException("Target player must be holding a wand.");
         }
 
-        context.cooldownService().setCooldownDisabled(target.getUniqueId(), wand, !enable);
+        context.cooldownManager().setCooldownDisabled(target.getUniqueId(), wand, !enable);
 
         String status = enable ? "enabled" : "disabled";
         context.sendMessage(Component.text("Cooldown " + status + " for " + target.getName())
@@ -238,7 +238,7 @@ public class CooldownCommand implements SubCommand {
             throw new CommandException("Player not found: " + targetName);
         }
 
-        context.cooldownService().clearAll(target.getUniqueId());
+        context.cooldownManager().clearPlayerCooldowns(target.getUniqueId());
 
         context.sendMessage(Component.text("Cooldown cleared for " + target.getName())
                 .color(NamedTextColor.GREEN));
@@ -271,7 +271,7 @@ public class CooldownCommand implements SubCommand {
             return;
         }
 
-        boolean disabled = context.cooldownService().isCooldownDisabled(target.getUniqueId(), wand);
+        boolean disabled = context.cooldownManager().isCooldownDisabled(target.getUniqueId(), wand);
         boolean enabled = !disabled;
 
         Component statusMessage = Component.text("Cooldown status for " + target.getName() + ":")

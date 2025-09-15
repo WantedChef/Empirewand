@@ -255,7 +255,7 @@ class WandSessionManagerTest {
     void testSessionCleanup() {
         // This would be more complex to test with actual TTL behavior
         // For now, we'll just test that cleanup doesn't break anything
-        WandSessionManager.WandSession session = sessionManager.getOrCreateSession(mockPlayer);
+        sessionManager.getOrCreateSession(mockPlayer);
 
         assertDoesNotThrow(() -> sessionManager.cleanupExpiredSessions());
 

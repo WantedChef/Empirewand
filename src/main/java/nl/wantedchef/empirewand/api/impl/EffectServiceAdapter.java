@@ -16,43 +16,14 @@ import org.jetbrains.annotations.NotNull;
 import net.kyori.adventure.text.Component;
 
 /**
- * Adapter for EffectService that wraps FxService core implementation.
+ * Optimized adapter for EffectService that wraps FxService core implementation.
  * Delegates all effect operations to core while providing API contract.
- * Implements EmpireWandService base methods with defaults.
+ * Features performance optimizations for high-frequency particle operations.
  *
- * <h2>Usage Example:</h2>
- * 
- * <pre>{@code
- * // Get the effect service from the API
- * EffectService effects = EmpireWandAPI.getProvider().getEffectService();
- *
- * // Display messages to players
- * effects.actionBar(player, "Spell ready!");
- * effects.actionBarKey(player, "spell-cast", Map.of("spell", "Fireball"));
- *
- * // Show titles
- * effects.title(player,
- *         Component.text("Spell Cast!"),
- *         Component.text("Fireball"),
- *         10, 40, 10);
- *
- * // Play sounds
- * effects.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.2f);
- *
- * // Create particle effects
- * effects.spawnParticles(location, Particle.FLAME, 20, 0.5, 0.5, 0.5, 0.1);
- *
- * // Batch particles for performance
- * effects.batchParticles(location, Particle.SMOKE, 10, 0.1, 0.1, 0.1, 0.05);
- * effects.flushParticleBatch();
- *
- * // Create trails and impacts
- * effects.trail(startLocation, endLocation, Particle.SOUL_FIRE_FLAME, 5);
- * effects.impact(location, Particle.EXPLOSION, 30, Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 1.0f);
- *
- * // Follow entities with effects
- * effects.followParticles(plugin, entity, Particle.FLAME, 5, 0, 0, 0, 0.1, null, 20L);
- * }</pre>
+ * Performance improvements:
+ * - Lightweight thread checking for hot paths
+ * - Reduced method call overhead
+ * - Optimized delegation pattern
  *
  * @since 2.0.0
  */
@@ -97,8 +68,6 @@ public class EffectServiceAdapter implements EffectService {
                 return ServiceHealth.UNHEALTHY;
             }
 
-            // Additional health checks can be added here
-            // For example, check if the service can perform basic operations
             return ServiceHealth.HEALTHY;
         } catch (Exception e) {
             return ServiceHealth.UNHEALTHY;
@@ -118,26 +87,26 @@ public class EffectServiceAdapter implements EffectService {
         }
     }
 
-    // EffectService implementations
+    // EffectService implementations - optimized with lightweight thread checking
 
     @Override
     @MainThread
     public void actionBar(@NotNull Player player, @NotNull Component message) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMainLightweight();
         core.actionBar(player, message);
     }
 
     @Override
     @MainThread
     public void actionBar(@NotNull Player player, @NotNull String plainText) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMainLightweight();
         core.actionBar(player, plainText);
     }
 
     @Override
     @MainThread
     public void actionBarKey(@NotNull Player player, @NotNull String messageKey) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMainLightweight();
         core.actionBarKey(player, messageKey);
     }
 
@@ -145,14 +114,14 @@ public class EffectServiceAdapter implements EffectService {
     @MainThread
     public void actionBarKey(@NotNull Player player, @NotNull String messageKey,
             @NotNull java.util.Map<String, String> placeholders) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMainLightweight();
         core.actionBarKey(player, messageKey, placeholders);
     }
 
     @Override
     @MainThread
     public void title(@NotNull Player player, @NotNull Component title, @NotNull Component subtitle) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMain(); // Title operations are less frequent, use full check
         core.title(player, title, subtitle);
     }
 
@@ -160,29 +129,30 @@ public class EffectServiceAdapter implements EffectService {
     @MainThread
     public void title(@NotNull Player player, @NotNull Component title, @NotNull Component subtitle, int fadeIn,
             int stay, int fadeOut) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMain(); // Title operations are less frequent, use full check
         core.title(player, title, subtitle, fadeIn, stay, fadeOut);
     }
 
     @Override
     @MainThread
     public void playSound(@NotNull Player player, @NotNull Sound sound, float volume, float pitch) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMainLightweight();
         core.playSound(player, sound, volume, pitch);
     }
 
     @Override
     @MainThread
     public void playSound(@NotNull Location location, @NotNull Sound sound, float volume, float pitch) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMainLightweight();
         core.playSound(location, sound, volume, pitch);
     }
 
+    // Particle methods - most performance critical, use lightweight checking
     @Override
     @MainThread
     public void spawnParticles(@NotNull Location location, @NotNull Particle particle, int count, double offsetX,
             double offsetY, double offsetZ, double speed) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMainLightweight();
         core.spawnParticles(location, particle, count, offsetX, offsetY, offsetZ, speed);
     }
 
@@ -190,7 +160,7 @@ public class EffectServiceAdapter implements EffectService {
     @MainThread
     public void spawnParticles(@NotNull Location location, @NotNull Particle particle, int count, double offsetX,
             double offsetY, double offsetZ, double speed, Object data) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMainLightweight();
         core.spawnParticles(location, particle, count, offsetX, offsetY, offsetZ, speed, data);
     }
 
@@ -198,7 +168,7 @@ public class EffectServiceAdapter implements EffectService {
     @MainThread
     public void batchParticles(@NotNull Location location, @NotNull Particle particle, int count, double offsetX,
             double offsetY, double offsetZ, double speed) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMainLightweight();
         core.batchParticles(location, particle, count, offsetX, offsetY, offsetZ, speed);
     }
 
@@ -206,21 +176,21 @@ public class EffectServiceAdapter implements EffectService {
     @MainThread
     public void batchParticles(@NotNull Location location, @NotNull Particle particle, int count, double offsetX,
             double offsetY, double offsetZ, double speed, Object data) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMainLightweight();
         core.batchParticles(location, particle, count, offsetX, offsetY, offsetZ, speed, data);
     }
 
     @Override
     @MainThread
     public void flushParticleBatch() {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMainLightweight();
         core.flushParticleBatch();
     }
 
     @Override
     @MainThread
     public void trail(@NotNull Location start, @NotNull Location end, @NotNull Particle particle, int perStep) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMainLightweight();
         core.trail(start, end, particle, perStep);
     }
 
@@ -228,14 +198,14 @@ public class EffectServiceAdapter implements EffectService {
     @MainThread
     public void impact(@NotNull Location location, @NotNull Particle particle, int count, @NotNull Sound sound,
             float volume, float pitch) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMainLightweight();
         core.impact(location, particle, count, sound, volume, pitch);
     }
 
     @Override
     @MainThread
     public void impact(@NotNull Location location) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMainLightweight();
         core.impact(location);
     }
 
@@ -243,35 +213,35 @@ public class EffectServiceAdapter implements EffectService {
     @MainThread
     public void impact(@NotNull Location location, @NotNull Particle particle, int count, double spread,
             @NotNull Sound sound, float volume, float pitch) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMainLightweight();
         core.impact(location, particle, count, spread, sound, volume, pitch);
     }
 
     @Override
     @MainThread
     public void trail(@NotNull Location location) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMainLightweight();
         core.trail(location);
     }
 
     @Override
     @MainThread
     public void followTrail(@NotNull Plugin plugin, @NotNull org.bukkit.entity.Entity entity, long periodTicks) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMain(); // Follow operations are less frequent
         core.followTrail(plugin, entity, periodTicks);
     }
 
     @Override
     @MainThread
     public void fizzle(@NotNull Location location) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMainLightweight();
         core.fizzle(location);
     }
 
     @Override
     @MainThread
     public void fizzle(@NotNull Player player) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMainLightweight();
         core.fizzle(player);
     }
 
@@ -280,31 +250,28 @@ public class EffectServiceAdapter implements EffectService {
     public void followParticles(@NotNull Plugin plugin, @NotNull org.bukkit.entity.Entity entity,
             @NotNull Particle particle, int count, double offsetX, double offsetY, double offsetZ, double speed,
             Object data, long periodTicks) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMain(); // Follow operations are less frequent
         core.followParticles(plugin, entity, particle, count, offsetX, offsetY, offsetZ, speed, data, periodTicks);
     }
 
     @Override
     @MainThread
     public void showError(@NotNull Player player, @NotNull String errorType) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMainLightweight();
         core.showError(player, errorType);
     }
 
     @Override
     @MainThread
     public void showSuccess(@NotNull Player player, @NotNull String successType) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMainLightweight();
         core.showSuccess(player, successType);
     }
 
     @Override
     @MainThread
     public void showInfo(@NotNull Player player, @NotNull String infoType) {
-        ThreadingGuard.ensureMain();
+        ThreadingGuard.ensureMainLightweight();
         core.showInfo(player, infoType);
     }
-
-    // Additional API-specific methods can be added here if needed beyond core
-
 }

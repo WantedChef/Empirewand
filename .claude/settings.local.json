@@ -42,7 +42,8 @@
       "Bash(bash:*)",
       "Bash(7z:*)",
       "Bash(.\\gradlew.bat test:*)",
-      "Bash(.gradlew.bat test:*)"
+      "Bash(.gradlew.bat test:*)",
+      "Bash(.gradlew compileJava -x test)"
     ],
     "deny": [],
     "ask": []

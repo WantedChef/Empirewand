@@ -1,11 +1,7 @@
 package nl.wantedchef.empirewand.framework.service;
 
 import nl.wantedchef.empirewand.EmpireWandPlugin;
-import nl.wantedchef.empirewand.core.config.ConfigMigrationService;
-import nl.wantedchef.empirewand.core.config.ReadOnlyConfig;
-import nl.wantedchef.empirewand.core.config.ReadableConfig;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.plugin.Plugin;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;

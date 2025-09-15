@@ -834,7 +834,7 @@ spells:
 
   gust:
     display-name: "<#ADD8E6>Gust"
-    description: "Creates a powerful wind that knocks back enemies in a cone"
+    description: "Creates a spectacular wind gust with swirling patterns that devastates enemies in a cone"
     type: WEATHER
     cooldown: 3500
     values:
@@ -842,6 +842,21 @@ spells:
       angle: 70.0
       knockback: 1.2
       damage: 2.0
+      wind-duration-ticks: 40
+      wind-force: 0.8
+      particle-trails: true
+      environmental-effects: true
+    fx:
+      # Enhanced visual and audio effects
+      particles: "CLOUD"
+      sound: "ENTITY_PHANTOM_FLAP"
+      wind-sounds: true
+      spiral-effects: true
+      turbulence-effects: true
+    flags:
+      hit-players: true
+      hit-mobs: true
+      spectacular-visuals: true
 
   arcane-orb:
     display-name: "<#7FFFD4>Arcane Orb"
@@ -898,15 +913,23 @@ spells:
 
   tornado:
     display-name: "<#00CED1>Tornado"
-    description: "Summons a tornado that lifts enemies into the air and damages them"
+    description: "Summons a spectacular tornado that creates spiraling winds, pulls enemies with realistic physics, and devastates the battlefield with lightning and debris"
     type: WEATHER
-    cooldown: 12000
+    cooldown: 15000
     values:
-      radius: 6.0
-      lift-velocity: 0.9
-      levitation-duration-ticks: 40
-      levitation-amplifier: 0
-      damage: 4.0
+      # Core tornado properties
+      radius: 8.0                    # Base radius of tornado effect
+      max-height: 12.0              # Maximum height of tornado spiral
+      duration-ticks: 140           # Duration in ticks (7 seconds)
+
+      # Physics and damage
+      pull-strength: 0.4            # Strength of entity pulling force
+      damage: 6.0                   # Base damage per application
+
+      # Visual effects
+      spiral-density: 8             # Density of spiral particle layers
+      wind-speed: 1.2              # Speed modifier for wind effects
+      environmental-effects: true   # Enable environmental particles and weather effects
 
   # Enhanced Wave Spells - Projectile-based wave magic with spectacular effects
   bloodwave:
@@ -2019,3 +2042,113 @@ blizzard:
     flags:
       hit-players: true
       hit-mobs: true
+
+  # Enhanced Rain Dance - Mystical weather summoning ceremony
+  raindance:
+    display-name: "<#00BFFF>Rain Dance"
+    description: "Performs a mystical ceremony to summon rain with spectacular effects"
+    type: WEATHER
+    cooldown: 8000
+    fx:
+      particles: "DRIPPING_WATER"
+      sound: "WEATHER_RAIN"
+    values:
+      storm-duration-ticks: 1200      # Duration of summoned rain (60 seconds)
+      ritual-duration-ticks: 60       # Duration of ceremony before rain starts (3 seconds)
+      ritual-radius: 4.0              # Radius of ceremonial particle effects
+      particle-density: 3             # Intensity of particle effects (1-5)
+      smooth-transition: true         # Enable smooth rain intensity buildup
+      ceremonial-effects: true        # Enable enhanced ceremonial visual effects
+      # Audio progression settings
+      ceremonial-volume: 0.8          # Volume of ceremonial sounds
+      climax-volume: 1.2              # Volume of climactic effects
+      ambient-volume: 0.4             # Volume of ambient rain sounds
+      # Visual effect settings
+      circle-particles: 16            # Base number of particles in ritual circles
+      spiral-density: 8               # Density of spiral particle effects
+      stream-count: 4                 # Number of energy streams in advanced phases
+      pillar-height: 5.0              # Maximum height of central energy pillar
+      atmospheric-radius: 8.0         # Radius of expanding atmospheric effects
+      cloud-density: 20               # Density of high-altitude cloud formation
+      burst-intensity: 60             # Number of particles in climactic burst
+      transition-duration: 100        # Duration of smooth rain transition (5 seconds)
+      rain-area-radius: 20.0          # Radius of enhanced rain particle effects
+    flags:
+      requires-open-sky: false        # Whether spell requires open sky to cast
+      affects-all-players: true       # Whether rain affects all players in world
+      ceremonial-message: true        # Show ceremonial completion message
+
+  # Enhanced HailStorm - Realistic physics-based hailstorm with immersive effects
+  hailstorm:
+    display-name: "<#87CEEB>Hail Storm"
+    description: "Creates a devastating hailstorm with realistic physics, dynamic impacts, and immersive atmospheric effects"
+    type: WEATHER
+    cooldown: 8000
+    fx:
+      particles: "SNOWFLAKE"
+      sound: "ENTITY_LIGHTNING_BOLT_THUNDER"
+    values:
+      # Storm intensity and duration
+      radius: 8.0                     # Storm area radius in blocks
+      damage: 3.0                     # Base damage per hailstone
+      duration-ticks: 120             # Storm duration (6 seconds)
+      hailstone-count: 25             # Number of hailstones per storm
+
+      # Hailstone physics and characteristics
+      max-hail-size: 0.8              # Maximum hailstone size multiplier
+      min-hail-size: 0.2              # Minimum hailstone size multiplier
+      spawn-height-min: 15.0          # Minimum spawn height above ground
+      spawn-height-max: 30.0          # Maximum spawn height above ground
+
+      # Impact and damage mechanics
+      impact-radius-multiplier: 1.5   # Impact radius = hailstone size * this value
+      knockdown-strength: 0.3         # Downward knockback multiplier
+      stun-duration-multiplier: 30    # Slowness duration = hail size * this value
+      damage-falloff: true            # Enable distance-based damage reduction
+
+      # Storm atmosphere settings
+      cloud-height: 25.0              # Height of storm cloud effects
+      wind-radius-multiplier: 1.1     # Wind effect radius = storm radius * this
+      thunder-interval-ticks: 40      # Ticks between thunder sounds
+
+      # Performance optimization
+      particle-batch-size: 50         # Maximum particles per batch
+      physics-update-rate: 1          # Ticks between physics updates
+      cleanup-delay-ticks: 40         # Ticks before cleaning impact zones
+
+    effects:
+      # Atmospheric and environmental effects
+      wind-effect: true               # Enable swirling wind particles around storm
+      damage-zones: true              # Show visual warning zones for impacts
+      storm-clouds: true              # Create dark cloud formations above
+      surface-effects: true           # Different effects based on impact surface
+      atmospheric-sounds: true        # Enhanced audio with wind and atmosphere
+
+      # Visual enhancement options
+      hailstone-trails: true          # Particle trails behind falling hailstones
+      impact-visualization: true      # Enhanced impact particles and effects
+      size-based-particles: true      # Larger hailstones get more particles
+      storm-perimeter: true           # Warning particles around storm edge
+      dramatic-impacts: true          # Special effects for large hailstones
+
+      # Physics simulation options
+      terminal-velocity: true         # Realistic terminal velocity calculations
+      air-resistance: true            # Apply air resistance to falling hailstones
+      wind-drift: true               # Random wind effects on hailstone paths
+      surface-bounce: false           # Enable hailstone bouncing (performance impact)
+
+    flags:
+      # Targeting and interaction
+      hit-players: true               # Damage other players
+      hit-mobs: true                  # Damage hostile mobs
+      friendly-fire: false            # Don't damage caster's allies
+
+      # Environmental interaction
+      surface-dependent-effects: true # Different sounds/particles based on surface
+      create-temporary-ice: false     # Leave temporary ice patches (disabled by default)
+      extinguish-fires: true          # Hailstones extinguish fire blocks
+
+      # Performance and quality
+      async-physics: true             # Use async calculations for better performance
+      distance-culling: true          # Reduce effects for distant players
+      particle-optimization: true     # Use batched particle operations

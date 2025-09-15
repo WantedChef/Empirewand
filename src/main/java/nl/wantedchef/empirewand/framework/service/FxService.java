@@ -37,8 +37,7 @@ public class FxService implements EffectService {
     private final TextService textService;
     private final PerformanceMonitor performanceMonitor;
 
-    // Performance optimization: batch particle operations
-    private static final int MAX_BATCH_SIZE = 50;
+    private static final int AUTO_FLUSH_THRESHOLD = 75; // Auto-flush at 75% capacity
     private final List<ParticleBatch> particleBatch = new ArrayList<>();
     private final Object particleBatchLock = new Object(); // thread-safety
 
@@ -221,9 +220,10 @@ public class FxService implements EffectService {
         double secondsRemaining = Math.max(0.1, msRemaining / 1000.0);
         String formattedTime = String.format(java.util.Locale.US, "%.1f", secondsRemaining);
 
-        actionBarKey(player, "on-cooldown", Map.of(
+        actionBarKey(player, "cooldown-active", Map.of(
                 "spell", textService.stripMiniTags(displayName),
                 "remaining", formattedTime));
+        playUISound(player, "cooldown");
     }
 
     /**
@@ -465,7 +465,8 @@ public class FxService implements EffectService {
             double offsetX, double offsetY, double offsetZ, double speed, Object data) {
         synchronized (particleBatchLock) {
             particleBatch.add(new ParticleBatch(location, particle, count, offsetX, offsetY, offsetZ, speed, data));
-            if (particleBatch.size() >= MAX_BATCH_SIZE) {
+            // Auto-flush when reaching threshold to prevent memory buildup
+            if (particleBatch.size() >= AUTO_FLUSH_THRESHOLD) {
                 flushParticleBatch();
             }
         }

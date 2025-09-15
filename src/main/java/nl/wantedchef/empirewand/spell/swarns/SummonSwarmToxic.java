@@ -4,7 +4,6 @@ import nl.wantedchef.empirewand.api.EmpireWandAPI;
 import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.SpellType;
-import nl.wantedchef.empirewand.spell.swarns.SummonSwarm;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

@@ -3,7 +3,6 @@ package nl.wantedchef.empirewand.framework.command.util;
 import nl.wantedchef.empirewand.EmpireWandPlugin;
 import nl.wantedchef.empirewand.framework.command.CommandContext;
 import nl.wantedchef.empirewand.framework.service.ConfigService;
-import nl.wantedchef.empirewand.framework.service.CooldownService;
 import nl.wantedchef.empirewand.framework.service.FxService;
 import nl.wantedchef.empirewand.api.spell.SpellRegistry;
 import nl.wantedchef.empirewand.api.service.WandService;
@@ -60,7 +59,7 @@ class AsyncCommandExecutorTest {
         FxService fx = mock(FxService.class);
         SpellRegistry spellRegistry = mock(SpellRegistry.class);
         WandService wandService = mock(WandService.class);
-        CooldownService cooldownService = mock(CooldownService.class);
+        nl.wantedchef.empirewand.framework.service.UnifiedCooldownManager cooldownManager = mock(nl.wantedchef.empirewand.framework.service.UnifiedCooldownManager.class);
         PermissionService permissionService = mock(PermissionService.class);
         when(sender.getName()).thenReturn("tester");
         context = new CommandContext(
@@ -71,7 +70,7 @@ class AsyncCommandExecutorTest {
                 fx,
                 spellRegistry,
                 wandService,
-                cooldownService,
+                cooldownManager,
                 permissionService);
         asyncExecutor = new AsyncCommandExecutor(plugin, scheduler);
     }
@@ -84,8 +83,10 @@ class AsyncCommandExecutorTest {
         @DisplayName("Should execute async task successfully")
         void shouldExecuteAsyncTaskSuccessfully() {
             AsyncCommandExecutor.AsyncCommandTask task = () -> "success";
-            Consumer<Object> onSuccess = mock(Consumer.class);
-            Consumer<Exception> onError = mock(Consumer.class);
+            @SuppressWarnings("unchecked")
+            Consumer<Object> onSuccess = (Consumer<Object>) mock(Consumer.class);
+            @SuppressWarnings("unchecked")
+            Consumer<Exception> onError = (Consumer<Exception>) mock(Consumer.class);
             
             // Execute the async task
             asyncExecutor.executeAsync(context, command, task, onSuccess, onError);
@@ -100,8 +101,10 @@ class AsyncCommandExecutorTest {
             AsyncCommandExecutor.AsyncCommandTask task = () -> {
                 throw new RuntimeException("Test exception");
             };
-            Consumer<Object> onSuccess = mock(Consumer.class);
-            Consumer<Exception> onError = mock(Consumer.class);
+            @SuppressWarnings("unchecked")
+            Consumer<Object> onSuccess = (Consumer<Object>) mock(Consumer.class);
+            @SuppressWarnings("unchecked")
+            Consumer<Exception> onError = (Consumer<Exception>) mock(Consumer.class);
             
             // Execute the async task
             asyncExecutor.executeAsync(context, command, task, onSuccess, onError);

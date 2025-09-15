@@ -21,12 +21,10 @@ public class GetCommand implements SubCommand, CommandHelpProvider.HelpAwareComm
 
     private final String wandType;
     private final String displayName;
-    private final Material material;
 
     public GetCommand(String wandType, String displayName, Material material) {
         this.wandType = wandType;
         this.displayName = displayName;
-        this.material = material;
     }
 
     @Override

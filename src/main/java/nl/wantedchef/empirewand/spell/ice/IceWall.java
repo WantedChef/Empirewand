@@ -92,10 +92,22 @@ public class IceWall extends Spell<Player> {
         context.fx().playSound(start, Sound.BLOCK_GLASS_PLACE, 2.0f, 0.5f);
         World world = start.getWorld();
         if (world != null) {
-            world.spawnParticle(Particle.SNOWFLAKE, start, 50, width/2.0, height/2.0, 0.5, 0.1);
+            world.spawnParticle(Particle.SNOWFLAKE, start, 60, width/2.0, height/2.0, 0.6, 0.12);
+            // Rim sparkle
+            for (int w = -width/2; w <= width/2; w++) {
+                Location rim = start.clone().add(perpendicular.clone().multiply(w)).add(0, height + 0.2, 0);
+                world.spawnParticle(Particle.ITEM_SNOWBALL, rim, 1, 0.05, 0.02, 0.05, 0.001);
+            }
         }
         
         player.sendMessage("§b§lIce Wall §3created for " + (duration/20) + " seconds!");
+        
+        // Subtle crackle mid-duration
+        context.plugin().getServer().getScheduler().runTaskLater(context.plugin(), () -> {
+            if (!wallBlocks.isEmpty()) {
+                context.fx().playSound(start, Sound.BLOCK_GLASS_HIT, 0.9f, 1.6f);
+            }
+        }, Math.max(10L, duration / 2L));
         
         // Remove wall after duration
         new BukkitRunnable() {
@@ -107,11 +119,11 @@ public class IceWall extends Spell<Player> {
                         // Use BLOCK particle with BlockData for 1.20.6 compatibility
                         World blockWorld = block.getWorld();
                         if (blockWorld != null) {
-                            blockWorld.spawnParticle(Particle.BLOCK, block.getLocation(), 5, 0.2, 0.2, 0.2, 0, Material.ICE.createBlockData());
+                            blockWorld.spawnParticle(Particle.BLOCK, block.getLocation(), 7, 0.25, 0.25, 0.25, 0, Material.ICE.createBlockData());
                         }
                     }
                 }
-                context.fx().playSound(start, Sound.BLOCK_GLASS_BREAK, 1.0f, 1.0f);
+                context.fx().playSound(start, Sound.BLOCK_GLASS_BREAK, 1.2f, 1.0f);
             }
         }.runTaskLater(context.plugin(), duration);
     }

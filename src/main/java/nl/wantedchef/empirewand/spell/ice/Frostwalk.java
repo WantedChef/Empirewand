@@ -78,6 +78,7 @@ public class Frostwalk extends Spell<Player> {
         new BukkitRunnable() {
             private int ticks = 0;
             private final Set<Block> iceBlocks = new HashSet<>();
+            private final java.util.Map<Block, org.bukkit.block.data.BlockData> previous = new java.util.HashMap<>();
             
             @Override
             public void run() {
@@ -85,7 +86,12 @@ public class Frostwalk extends Spell<Player> {
                     // Revert ice blocks
                     iceBlocks.forEach(block -> {
                         if (block.getType() == Material.ICE || block.getType() == Material.PACKED_ICE) {
-                            block.setType(Material.WATER);
+                            var data = previous.get(block);
+                            if (data != null) {
+                                block.setBlockData(data, false);
+                            } else {
+                                block.setType(Material.WATER, false);
+                            }
                         }
                     });
                     player.sendMessage("§7Frostwalk has ended.");
@@ -98,6 +104,11 @@ public class Frostwalk extends Spell<Player> {
                 // Frost particles - provide BlockData for FALLING_DUST in 1.20.6
                 loc.getWorld().spawnParticle(Particle.FALLING_DUST, loc, 8, 0.5, 0.1, 0.5, 0.02, Material.ICE.createBlockData());
                 loc.getWorld().spawnParticle(Particle.FALLING_DUST, loc, 5, 0.3, 0.1, 0.3, 0.01, Material.SNOW_BLOCK.createBlockData());
+                // Light snowflake aura ring
+                for (double a = 0; a < Math.PI * 2; a += Math.PI / 8) {
+                    Location ring = loc.clone().add(Math.cos(a) * 1.5, 0.1, Math.sin(a) * 1.5);
+                    ring.getWorld().spawnParticle(Particle.SNOWFLAKE, ring, 1, 0.02, 0.02, 0.02, 0);
+                }
                 
                 // Freeze water blocks around player
                 for (int x = -2; x <= 2; x++) {
@@ -105,7 +116,8 @@ public class Frostwalk extends Spell<Player> {
                         for (int y = -1; y <= 0; y++) {
                             Block block = loc.clone().add(x, y, z).getBlock();
                             if (block.getType() == Material.WATER) {
-                                block.setType(Material.PACKED_ICE);
+                                previous.putIfAbsent(block, block.getBlockData());
+                                block.setType(Material.PACKED_ICE, false);
                                 iceBlocks.add(block);
                             }
                         }

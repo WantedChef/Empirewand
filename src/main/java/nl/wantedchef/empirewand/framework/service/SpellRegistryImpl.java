@@ -183,6 +183,10 @@ public class SpellRegistryImpl implements SpellRegistry {
     private void registerAllSpells() {
         try (var timing = performanceMonitor.startTiming("SpellRegistryImpl.registerAllSpells", 100)) {
             timing.observe();
+
+            // Validate spell configurations
+            validateSpellConfigurations();
+
             final nl.wantedchef.empirewand.api.EmpireWandAPI api = null;
             final var readable = configService.getSpellsConfig();
             final ReadableConfig bukkitSpells = readable.getConfigurationSection("spells");
@@ -1292,6 +1296,47 @@ public class SpellRegistryImpl implements SpellRegistry {
             // This would normally reference the registry, but we'll handle execution
             // differently
             throw new UnsupportedOperationException("Execute not supported on this implementation");
+        }
+    }
+
+    /**
+     * Validates spell configurations to ensure they have required fields.
+     * Logs warnings for any configuration issues but doesn't prevent startup.
+     */
+    private void validateSpellConfigurations() {
+        try {
+            var spellsConfig = configService.getSpellsConfig();
+            if (spellsConfig == null) {
+                logger.warning("Spells configuration is null - spells may not work correctly");
+                return;
+            }
+
+            var spellsSection = spellsConfig.getConfigurationSection("spells");
+            if (spellsSection == null) {
+                logger.warning("No 'spells' section found in spells.yml - no spells will be configured");
+                return;
+            }
+
+            // Check for some critical spells that should exist
+            String[] criticalSpells = {"empire-launch", "lightning-arrow", "summon-swarm", "aura"};
+            for (String spellKey : criticalSpells) {
+                var spellConfig = spellsSection.getConfigurationSection(spellKey);
+                if (spellConfig == null) {
+                    logger.warning("Critical spell '" + spellKey + "' not found in configuration");
+                } else {
+                    // Validate required fields
+                    if (spellConfig.get("type") == null) {
+                        logger.warning("Spell '" + spellKey + "' missing required 'type' field");
+                    }
+                    if (spellConfig.get("cooldown") == null) {
+                        logger.warning("Spell '" + spellKey + "' missing required 'cooldown' field");
+                    }
+                }
+            }
+
+            logger.fine("Spell configuration validation completed");
+        } catch (Exception e) {
+            logger.warning("Error during spell configuration validation: " + e.getMessage());
         }
     }
 }

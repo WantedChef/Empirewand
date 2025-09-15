@@ -113,6 +113,25 @@ public final class SpellTypes {
         ))
     );
 
+    /** Cached unmodifiable set of all spell type names */
+    private static final Set<String> VALID_TYPE_NAMES;
+
+    /** Cached unmodifiable list of all spell type names */
+    private static final List<String> VALID_TYPE_NAMES_LIST;
+
+    /** Cached unmodifiable list of all spell types */
+    private static final List<SpellType> ALL_TYPES;
+
+    static {
+        VALID_TYPE_NAMES = Arrays.stream(SpellType.values())
+            .map(Enum::name)
+            .collect(Collectors.toUnmodifiableSet());
+        
+        VALID_TYPE_NAMES_LIST = VALID_TYPE_NAMES.stream().toList();
+
+        ALL_TYPES = List.of(SpellType.values());
+    }
+
     /** Private constructor to prevent instantiation */
     private SpellTypes() {
         throw new AssertionError("Utility class should not be instantiated");
@@ -250,41 +269,37 @@ public final class SpellTypes {
     /**
      * Gets all valid spell type names.
      * <p>
-     * Returns a set of all enum names in uppercase.
+     * Returns a cached, unmodifiable set of all enum names in uppercase.
      *
      * @return an unmodifiable set of valid spell type names
      */
     @NotNull
     public static Set<String> getValidTypeNames() {
-        return Arrays.stream(SpellType.values())
-            .map(Enum::name)
-            .collect(Collectors.toUnmodifiableSet());
+        return VALID_TYPE_NAMES;
     }
 
     /**
      * Backward-compatible alias used by existing commands.
      * <p>
-     * Returns a list of all enum names in uppercase.
+     * Returns a cached, unmodifiable list of all enum names in uppercase.
      *
      * @return a list of valid spell type names
      */
     @NotNull
     public static List<String> validTypeNames() {
-        return Arrays.stream(SpellType.values())
-            .map(Enum::name)
-            .collect(Collectors.toUnmodifiableList());
+        return VALID_TYPE_NAMES_LIST;
     }
 
     /**
      * Gets all spell types as a list.
      * <p>
-     * Returns a list of all enum values in their natural order.
+     * Returns a cached, unmodifiable list of all enum values in their natural order.
      *
      * @return an unmodifiable list of all spell types
      */
     @NotNull
     public static List<SpellType> getAllTypes() {
-        return List.of(SpellType.values());
+        return ALL_TYPES;
     }
 
     /**

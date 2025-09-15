@@ -21,7 +21,7 @@ import static org.mockito.Mockito.when;
 
 class CooldownServiceComprehensiveTest {
 
-    private CooldownService cooldownService;
+    private nl.wantedchef.empirewand.api.service.CooldownService cooldownService;
     private UUID playerId;
     private String spellKey;
     private Plugin plugin;
@@ -32,7 +32,8 @@ class CooldownServiceComprehensiveTest {
     void setUp() {
         plugin = mock(Plugin.class);
         when(plugin.getLogger()).thenReturn(Logger.getAnonymousLogger());
-        cooldownService = new CooldownService(plugin);
+        var unifiedManager = new nl.wantedchef.empirewand.framework.service.UnifiedCooldownManager(plugin);
+        cooldownService = new nl.wantedchef.empirewand.api.impl.CooldownServiceAdapter(unifiedManager);
         playerId = UUID.randomUUID();
         spellKey = "test-spell";
         wand = mock(ItemStack.class);
@@ -45,14 +46,16 @@ class CooldownServiceComprehensiveTest {
         @Test
         @DisplayName("Should create CooldownService with default constructor")
         void shouldCreateCooldownServiceWithDefaultConstructor() {
-            CooldownService service = new CooldownService();
+            var unifiedManager = new nl.wantedchef.empirewand.framework.service.UnifiedCooldownManager(mock(Plugin.class));
+            nl.wantedchef.empirewand.api.service.CooldownService service = new nl.wantedchef.empirewand.api.impl.CooldownServiceAdapter(unifiedManager);
             assertNotNull(service);
         }
 
         @Test
         @DisplayName("Should create CooldownService with plugin constructor")
         void shouldCreateCooldownServiceWithPluginConstructor() {
-            CooldownService service = new CooldownService(plugin);
+            var unifiedManager = new nl.wantedchef.empirewand.framework.service.UnifiedCooldownManager(plugin);
+            nl.wantedchef.empirewand.api.service.CooldownService service = new nl.wantedchef.empirewand.api.impl.CooldownServiceAdapter(unifiedManager);
             assertNotNull(service);
         }
     }
@@ -321,8 +324,7 @@ class CooldownServiceComprehensiveTest {
             // Verify on cooldown
             assertTrue(cooldownService.isOnCooldown(playerId, spellKey, nowTicks));
 
-            // Shutdown service
-            cooldownService.shutdown();
+            // Note: shutdown is not available on CooldownService interface
 
             // Should not be on cooldown after shutdown (data cleared)
             assertFalse(cooldownService.isOnCooldown(playerId, spellKey, nowTicks));

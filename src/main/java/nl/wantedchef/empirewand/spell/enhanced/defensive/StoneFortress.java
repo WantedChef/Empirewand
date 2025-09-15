@@ -7,9 +7,9 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -224,8 +224,6 @@ public class StoneFortress extends Spell<Void> {
          * Base is 5x4 (outer dimensions), walls 2 blocks thick, tower 3x3 at center.
          */
         private void precomputeBuildPositions() {
-            int width = 5, depth = 4; // Outer dimensions
-            int innerWidth = 3, innerDepth = 2; // Inner space
             int baseHeight = 4; // Base walls height
 
             // Base walls (2 blocks thick)

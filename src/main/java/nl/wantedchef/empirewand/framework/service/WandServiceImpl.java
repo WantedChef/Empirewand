@@ -260,19 +260,9 @@ public class WandServiceImpl implements WandService {
 
             PersistentDataContainer pdc = meta.getPersistentDataContainer();
 
-            // Use StringBuilder for better performance when joining strings
-            if (spellKeys.isEmpty()) {
-                pdc.set(Keys.WAND_SPELLS, PersistentDataType.STRING, "");
-            } else {
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < spellKeys.size(); i++) {
-                    if (i > 0) {
-                        sb.append(',');
-                    }
-                    sb.append(spellKeys.get(i));
-                }
-                pdc.set(Keys.WAND_SPELLS, PersistentDataType.STRING, sb.toString());
-            }
+            // Use String.join for better performance and cleaner code
+            String spellsData = String.join(",", spellKeys);
+            pdc.set(Keys.WAND_SPELLS, PersistentDataType.STRING, spellsData);
 
             // Clamp active index to new bounds to avoid out-of-range access
             Integer current = pdc.get(Keys.WAND_ACTIVE_SPELL, PersistentDataType.INTEGER);

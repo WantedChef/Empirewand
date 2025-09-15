@@ -5,7 +5,7 @@ import nl.wantedchef.empirewand.api.service.PermissionService;
 import nl.wantedchef.empirewand.api.spell.SpellRegistry;
 import nl.wantedchef.empirewand.api.service.WandService;
 import nl.wantedchef.empirewand.framework.service.ConfigService;
-import nl.wantedchef.empirewand.framework.service.CooldownService;
+import nl.wantedchef.empirewand.framework.service.UnifiedCooldownManager;
 import nl.wantedchef.empirewand.framework.service.FxService;
 import nl.wantedchef.empirewand.core.util.PerformanceMonitor;
 import net.kyori.adventure.text.Component;
@@ -32,7 +32,7 @@ public record CommandContext(
         @NotNull FxService fx,
         @NotNull SpellRegistry spellRegistry,
         @NotNull WandService wandService,
-        @NotNull CooldownService cooldownService,
+        @NotNull UnifiedCooldownManager cooldownManager,
         @NotNull PermissionService permissionService) {
 
     /**

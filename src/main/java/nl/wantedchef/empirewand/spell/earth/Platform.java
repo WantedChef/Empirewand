@@ -96,7 +96,7 @@ public class Platform extends Spell<Player> {
                     if (block.getType() == Material.STONE) {
                         block.setType(Material.AIR);
                         block.getWorld().spawnParticle(Particle.DUST, block.getLocation(), 3, 0.2, 0.1, 0.2, 0,
-                            Material.STONE.createBlockData());
+                            new org.bukkit.Particle.DustOptions(org.bukkit.Color.fromRGB(169, 169, 169), 1.0f)); // Stone gray dust
                     }
                 }
                 context.fx().playSound(center, Sound.BLOCK_STONE_BREAK, 0.8f, 1.2f);

@@ -1,18 +1,77 @@
-# EmpireWand main configuration
+# EmpireWand Configuration v2.0
+# Enhanced configuration with modern features and better organization
 
-config-version: 1.0
+config-version: 2.0
+
+# =============================================================================
+# CORE SETTINGS
+# =============================================================================
+
+# Plugin behavior and performance settings
+core:
+  # Performance optimization settings
+  performance:
+    # Enable async spell processing for better server performance
+    async-spell-processing: true
+    # Maximum number of concurrent spell operations
+    max-concurrent-spells: 50
+    # Enable spell result caching
+    enable-spell-caching: true
+    # Cache duration in seconds
+    cache-duration: 300
+  
+  # Debug and logging settings
+  debug:
+    # Enable debug mode for detailed logging
+    enabled: false
+    # Log spell casting events
+    log-spell-casts: false
+    # Log performance metrics
+    log-performance: false
+    # Log service registry events
+    log-service-events: false
+  
+  # Safety and limits
+  safety:
+    # Maximum spell range to prevent server lag
+    max-spell-range: 100.0
+    # Maximum number of particles per spell
+    max-particles-per-spell: 1000
+    # Maximum spell cooldown in seconds
+    max-cooldown: 300
+    # Enable spell range validation
+    validate-spell-ranges: true
+
+# =============================================================================
+# MESSAGES & LOCALIZATION
+# =============================================================================
 
 messages:
+  # Permission and access messages
   no-permission: "<red>You don't have permission to do that."
   no-line-of-sight: "<red>You can't see your target."
+  spell-disabled: "<red>This spell is currently disabled."
+  spell-not-found: "<red>Spell not found: {spell}"
+  
+  # Wand interaction messages
   wand-received: "<green>You have received an Empire Wand!"
+  wand-upgraded: "<green>Your wand has been upgraded!"
+  wand-reset: "<yellow>Your wand has been reset to default settings."
+  
+  # Spell binding messages
   spell-bound: "<green>Bound spell {spell} to your wand."
   spell-unbound: "<green>Unbound spell {spell} from your wand."
   all-spells-bound: "<green>Bound all available spells to your wand."
   no-spells-bound: "<red>No spells bound!"
   spell-selected: "<gray>Selected: <aqua>{spell}"
+  
+  # Cooldown and casting messages
   on-cooldown: "<red>That spell is on cooldown! Wait {remaining} seconds."
   fizzle: "<gray>...fizzle..."
+  cast-success: "<green>Successfully cast {spell}!"
+  cast-failed: "<red>Failed to cast {spell}: {reason}"
+  
+  # Wand-specific messages (Dutch)
   wand:
     no-spells: "Je wand heeft geen spells ingesteld."
     unknown-spell: "Onbekende spreuk."
@@ -22,49 +81,185 @@ messages:
     on-cooldown: "Wacht nog {seconds}s."
     swap-blocked: "Wisselen naar offhand is uitgeschakeld voor de wand."
     drop-blocked: "Je kunt de wand niet droppen."
+    wand-locked: "Je wand is vergrendeld."
+    wand-unlocked: "Je wand is ontgrendeld."
+  
+  # GUI and interface messages
+  gui:
+    main-menu-title: "<gold>EmpireWand Menu"
+    spell-selection-title: "<aqua>Select Spell"
+    settings-title: "<yellow>Wand Settings"
+    categories-title: "<green>Spell Categories"
+    back-button: "<gray>← Back"
+    close-button: "<red>✕ Close"
+    confirm-button: "<green>✓ Confirm"
+    cancel-button: "<red>✗ Cancel"
+
+# =============================================================================
+# FEATURES & FUNCTIONALITY
+# =============================================================================
 
 features:
-  block-damage: true
-  friendly-fire: true
+  # Combat and damage settings
+  combat:
+    # Enable/disable damage blocking
+    block-damage: true
+    # Enable friendly fire
+    friendly-fire: true
+    # Enable PvP damage
+    pvp-enabled: true
+    # Enable PvE damage
+    pve-enabled: true
+    # Damage reduction for wand users
+    wand-user-damage-reduction: 0.1
+  
+  # Wand behavior settings
+  wand:
+    # Enable wand dropping
+    allow-dropping: false
+    # Enable wand swapping to offhand
+    allow-offhand-swap: false
+    # Enable wand durability
+    enable-durability: false
+    # Maximum wand durability
+    max-durability: 1000
+    # Durability loss per spell cast
+    durability-loss-per-cast: 1
+  
+  # Spell system features
+  spells:
+    # Enable spell learning system
+    enable-learning: true
+    # Enable spell mastery levels
+    enable-mastery: true
+    # Enable spell combinations
+    enable-combinations: false
+    # Enable spell evolution
+    enable-evolution: false
+  
+  # Visual and audio features
+  effects:
+    # Enable particle effects
+    enable-particles: true
+    # Enable sound effects
+    enable-sounds: true
+    # Enable screen shake effects
+    enable-screen-shake: true
+    # Enable afterimage effects
+    enable-afterimages: true
+    # Maximum afterimage count
+    max-afterimages: 32
+    # Afterimage lifetime in ticks
+    afterimage-lifetime: 18
+    # Afterimage update period in ticks
+    afterimage-period: 2
+
+# =============================================================================
+# COOLDOWNS & TIMING
+# =============================================================================
 
 cooldowns:
-  default: 500 # in milliseconds
+  # Default cooldown for all spells (in milliseconds)
+  default: 500
+  # Global cooldown between any spell casts (in milliseconds)
+  global: 100
+  # Cooldown reduction per mastery level (percentage)
+  mastery-reduction: 0.05
+  # Maximum cooldown reduction from mastery (percentage)
+  max-mastery-reduction: 0.5
+  
+  # Per-spell-type cooldown multipliers
+  multipliers:
+    projectile: 1.0
+    fire: 1.2
+    ice: 1.1
+    lightning: 1.3
+    earth: 1.0
+    movement: 0.8
+    heal: 1.5
+    dark: 1.4
+    life: 1.2
+    control: 1.6
+    aura: 2.0
+    weather: 1.8
 
-# Metrics and analytics (opt-in)
+# =============================================================================
+# METRICS & ANALYTICS
+# =============================================================================
+
 metrics:
-  enabled: true   # Set to false to disable bStats metrics collection
-  debug: false    # Set to true to enable additional debug metrics
-  plugin-id: 27206  
+  # Enable bStats metrics collection
+  enabled: true
+  # Enable additional debug metrics
+  debug: false
+  # bStats plugin ID
+  plugin-id: 27206
+  # Enable performance monitoring
+  performance-monitoring: true
+  # Enable spell usage analytics
+  usage-analytics: true
+  # Data retention period in days
+  data-retention-days: 30
 
-# Custom spell categories for convenience commands like /ew bindcat <category>
-# Provide lists of spell keys to bind together. Keys must match those in spells.yml
+# =============================================================================
+# SPELL CATEGORIES
+# =============================================================================
+
 categories:
+  # Empire spells - powerful golden magic
   empire:
+    display-name: "<gold>Empire Magic"
+    description: "Ancient golden magic of the Empire"
+    icon: "GOLD_INGOT"
     spells:
       - empire-launch
       - empire-escape
       - empire-aura
       - empire-comet
       - empire-levitate
+  
+  # Dark magic - shadow and corruption
   dark:
+    display-name: "<dark_red>Dark Magic"
+    description: "Shadow magic and dark arts"
+    icon: "NETHER_STAR"
     spells:
       - dark-circle
       - dark-pulse
       - shadow-cloak
       - shadow-step
+      - blood-barrier
+      - mephidic-reap
+      - ritual-of-unmaking
+  
+  # Arcane magic - pure magical energy
   magic:
+    display-name: "<light_purple>Arcane Magic"
+    description: "Pure magical energy and arcane arts"
+    icon: "END_CRYSTAL"
     spells:
       - magic-missile
       - arcane-orb
       - polymorph
       - ritual-of-unmaking
+  
+  # Support spells - healing and utility
   support:
+    display-name: "<green>Support Magic"
+    description: "Healing and utility spells"
+    icon: "GOLDEN_APPLE"
     spells:
       - heal
       - radiant-beacon
       - god-cloud
       - blood-barrier
+      - lightwall
+  
+  # Lightning magic - electrical energy
   lightning:
+    display-name: "<yellow>Lightning Magic"
+    description: "Electrical energy and thunder"
+    icon: "LIGHTNING_ROD"
     spells:
       - chain-lightning
       - lightning-bolt
@@ -74,57 +269,175 @@ categories:
       - little-spark
       - thunder-blast
       - solar-lance
+      - kajarrow
+      - shockwave
+  
+  # Fire magic - flames and heat
   fire:
+    display-name: "<red>Fire Magic"
+    description: "Flames, heat, and combustion"
+    icon: "BLAZE_POWDER"
     spells:
       - fireball
       - flame-wave
       - blaze-launch
       - explosive
       - explosion-trail
+      - flame-wave-enhanced
+      - flame-wave-spiral
+  
+  # Ice magic - frost and cold
   ice:
+    display-name: "<aqua>Ice Magic"
+    description: "Frost, cold, and freezing"
+    icon: "SNOWBALL"
     spells:
       - frost-nova
       - glacial-spike
+      - ice-wave
+      - ice-wave-line
+      - arctic-blast
+      - freeze-ray
+      - frostwalk
+      - ice-wall
+      - petrify
+  
+  # Earth magic - stone and nature
   earth:
+    display-name: "<dark_green>Earth Magic"
+    description: "Stone, earth, and nature"
+    icon: "GRASS_BLOCK"
     spells:
       - sandstorm
       - grasping-vines
       - earth-quake
       - lightwall
+      - sandblast
+      - wall
+      - platform
+      - stash
+      - tremor
+      - stone-fortress
+  
+  # Weather magic - atmospheric control
   weather:
+    display-name: "<blue>Weather Magic"
+    description: "Atmospheric control and weather"
+    icon: "CLOUD"
     spells:
       - gust
       - tornado
+      - raindance
+      - hailstorm
+  
+  # Movement magic - teleportation and mobility
   movement:
+    display-name: "<gold>Movement Magic"
+    description: "Teleportation and mobility"
+    icon: "FEATHER"
     spells:
       - teleport
       - blink-strike
       - sunburst-step
+      - ethereal-form
+      - leap
+      - empire-launch
+      - empire-escape
+      - empire-levitate
+      - kaj-cloud
+      - phoenix-cloak
+  
+  # Projectile magic - ranged attacks
   projectile:
+    display-name: "<gray>Projectile Magic"
+    description: "Ranged magical attacks"
+    icon: "ARROW"
     spells:
       - comet
       - comet-shower
+      - magic-missile
+      - arcane-orb
+      - empire-comet
+      - homing-rockets
+      - meteor-shower
+      - meteor-shower-enhanced
+  
+  # Aura magic - area effects
   aura:
+    display-name: "<purple>Aura Magic"
+    description: "Area of effect magic"
+    icon: "BEACON"
     spells:
       - empire-aura
+      - aura
+      - god-cloud
+      - mephi-cloud
+      - evil-goons-aura
+      - divine-aura
+  
+  # Control magic - crowd control
   control:
+    display-name: "<pink>Control Magic"
+    description: "Crowd control and manipulation"
+    icon: "PUMPKIN"
     spells:
       - polymorph
       - confuse
       - stasis-field
+      - zeist-chrono-anchor
+      - silence
+      - time-dilation
+      - temporal-stasis
+  
+  # Poison magic - toxins and disease
   poison:
+    display-name: "<dark_green>Poison Magic"
+    description: "Toxins and disease"
+    icon: "SPIDER_EYE"
     spells:
       - poison-wave
+      - poison-wave-arc
+      - poison-cone
       - mephidic-reap
+  
+  # Life magic - healing and nature
   life:
+    display-name: "<green>Life Magic"
+    description: "Healing and nature magic"
+    icon: "ROSE_BUSH"
     spells:
       - life-reap
       - life-steal
+      - radiant-beacon
+      - lightwall
+      - solar-lance
+      - sunburst-step
+      - summon-wolves
+      - tame
+      - nature-growth
+      - pollinate
+  
+  # Heal magic - restoration
   heal:
+    display-name: "<light_green>Heal Magic"
+    description: "Restoration and healing"
+    icon: "GOLDEN_APPLE"
     spells:
       - heal
       - radiant-beacon
+      - heal-enhanced
+      - divine-heal
+      - super-heal
+      - repair
+      - restoration
+      - prayer
+      - regenerate
+  
+  # Enhanced spells - improved versions
   enhanced:
+    display-name: "<gold>Enhanced Magic"
+    description: "Improved and enhanced spells"
+    icon: "NETHERITE_INGOT"
     spells:
       - fireball-enhanced
       - comet-enhanced
@@ -133,8 +446,129 @@ categories:
       - blizzard-enhanced
       - teleport-enhanced
       - chain-lightning-enhanced
+  
+  # Toggle spells - persistent effects
   toggle:
+    display-name: "<dark_purple>Toggle Magic"
+    description: "Persistent magical effects"
+    icon: "REDSTONE_TORCH"
     spells:
       - kaj-cloud
       - mephi-cloud
       - empire-aura
+      - phoenix-cloak
+      - evil-goons-aura
+      - divine-aura
+
+# =============================================================================
+# ADVANCED SETTINGS
+# =============================================================================
+
+advanced:
+  # Service registry settings
+  service-registry:
+    # Enable service health monitoring
+    health-monitoring: true
+    # Health check interval in seconds
+    health-check-interval: 30
+    # Maximum service restart attempts
+    max-restart-attempts: 3
+    # Service restart cooldown in seconds
+    restart-cooldown: 60
+  
+  # Event bus settings
+  event-bus:
+    # Enable event auditing
+    enable-auditing: true
+    # Maximum audit log size
+    max-audit-records: 10000
+    # Enable event replay system
+    enable-replay: false
+    # Event processing timeout in seconds
+    processing-timeout: 30
+  
+  # Performance monitoring
+  performance:
+    # Enable detailed performance tracking
+    detailed-tracking: false
+    # Performance threshold warnings in milliseconds
+    warning-threshold: 200
+    # Performance threshold errors in milliseconds
+    error-threshold: 1000
+    # Enable performance profiling
+    enable-profiling: false
+  
+  # Security settings
+  security:
+    # Enable spell permission validation
+    validate-permissions: true
+    # Enable spell range validation
+    validate-ranges: true
+    # Enable spell cooldown validation
+    validate-cooldowns: true
+    # Maximum spell execution time in seconds
+    max-execution-time: 10
+
+# =============================================================================
+# INTEGRATION SETTINGS
+# =============================================================================
+
+integrations:
+  # Economy integration
+  economy:
+    # Enable economy integration
+    enabled: false
+    # Cost per spell cast
+    cost-per-cast: 0.0
+    # Cost per spell binding
+    cost-per-binding: 0.0
+  
+  # PlaceholderAPI integration
+  placeholderapi:
+    # Enable PlaceholderAPI integration
+    enabled: true
+    # Available placeholders
+    placeholders:
+      - "%empirewand_spell_count%"
+      - "%empirewand_cooldown_<spell>%"
+      - "%empirewand_mastery_<spell>%"
+  
+  # WorldGuard integration
+  worldguard:
+    # Enable WorldGuard integration
+    enabled: false
+    # Allow spells in protected regions
+    allow-in-protected-regions: false
+    # Require specific flags for spell casting
+    require-spell-flags: false
+
+# =============================================================================
+# EXPERIMENTAL FEATURES
+# =============================================================================
+
+experimental:
+  # AI-powered spell suggestions
+  ai-suggestions:
+    enabled: false
+    # AI model endpoint
+    model-endpoint: ""
+    # API key for AI service
+    api-key: ""
+  
+  # Spell learning system
+  learning:
+    enabled: false
+    # Experience points per spell cast
+    xp-per-cast: 1
+    # Experience required for mastery
+    xp-for-mastery: 100
+    # Enable spell evolution
+    enable-evolution: false
+  
+  # Spell combinations
+  combinations:
+    enabled: false
+    # Maximum combination complexity
+    max-complexity: 3
+    # Enable automatic combination discovery
+    auto-discovery: false

@@ -14,27 +14,28 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.LargeFireball;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+
+import java.time.Duration;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * A spell that launches a powerful comet with a lingering, fiery tail.
+ * Features proper resource management and optimized particle effects.
  */
 public class EmpireComet extends Spell<Void> {
 
-    /**
-     * The builder for the EmpireComet spell.
-     */
     public static class Builder extends Spell.Builder<Void> {
-        /**
-         * Creates a new builder for the EmpireComet spell.
-         *
-         * @param api The EmpireWandAPI instance.
-         */
         public Builder(EmpireWandAPI api) {
             super(api);
             this.name = "Empire Comet";
-            this.description = "Launches a blazing comet with a lingering tail.";
-            this.cooldown = java.time.Duration.ofSeconds(18);
+            this.description = "Launches a blazing comet with a lingering trail";
+            this.cooldown = Duration.ofSeconds(18);
             this.spellType = SpellType.FIRE;
         }
 
@@ -45,19 +46,19 @@ public class EmpireComet extends Spell<Void> {
         }
     }
 
+    // Configuration defaults
     private static final double DEFAULT_YIELD = 3.5;
     private static final double DEFAULT_SPEED = 0.8;
     private static final int DEFAULT_TRAIL_LENGTH = 7;
     private static final int DEFAULT_PARTICLE_COUNT = 4;
     private static final int DEFAULT_BLOCK_LIFETIME_TICKS = 40;
     private static final int DEFAULT_BURST_INTERVAL_TICKS = 6;
+
+    // Effect constants
     private static final int LAUNCH_PARTICLE_COUNT = 25;
     private static final double LAUNCH_PARTICLE_OFFSET = 0.4;
     private static final double LAUNCH_PARTICLE_SPEED = 0.12;
-    private static final float LAUNCH_SOUND_VOLUME = 1.0f;
-    private static final float LAUNCH_SOUND_PITCH = 0.5f;
-    private static final long TASK_TIMER_DELAY = 0L;
-    private static final long TASK_TIMER_PERIOD = 1L;
+    private static final int MAX_LIFETIME_TICKS = 300; // 15 seconds max
 
     private EmpireComet(Builder builder) {
         super(builder);
@@ -74,39 +75,45 @@ public class EmpireComet extends Spell<Void> {
     }
 
     @Override
-    protected Void executeSpell(SpellContext context) {
+    protected Void executeSpell(@NotNull SpellContext context) {
         Player caster = context.caster();
-        if (caster == null) {
-            return null;
-        }
 
-        var config = spellConfig;
-        var explosionYield = config.getDouble("values.yield", DEFAULT_YIELD);
-        var speed = config.getDouble("values.speed", DEFAULT_SPEED);
-        var trailLength = config.getInt("values.trail_length", DEFAULT_TRAIL_LENGTH);
-        var particleCount = config.getInt("values.particle_count", DEFAULT_PARTICLE_COUNT);
-        var blockLifetime = config.getInt("values.block_lifetime_ticks", DEFAULT_BLOCK_LIFETIME_TICKS);
-        var burstInterval = config.getInt("values.burst_interval_ticks", DEFAULT_BURST_INTERVAL_TICKS);
+        // Load configuration
+        double explosionYield = spellConfig.getDouble("values.yield", DEFAULT_YIELD);
+        double speed = spellConfig.getDouble("values.speed", DEFAULT_SPEED);
+        int trailLength = spellConfig.getInt("values.trail_length", DEFAULT_TRAIL_LENGTH);
+        int particleCount = spellConfig.getInt("values.particle_count", DEFAULT_PARTICLE_COUNT);
+        int blockLifetime = spellConfig.getInt("values.block_lifetime_ticks", DEFAULT_BLOCK_LIFETIME_TICKS);
+        int burstInterval = spellConfig.getInt("values.burst_interval_ticks", DEFAULT_BURST_INTERVAL_TICKS);
 
-        // Spawn comet above caster and make it fall straight down
-        Location spawnLocation = caster.getLocation().clone().add(0, 8, 0); // 8 blocks above caster
-        var comet = spawnLocation.getWorld().spawn(spawnLocation, LargeFireball.class);
+        // Spawn comet above caster
+        Location spawnLocation = caster.getLocation().clone().add(0, 8, 0);
+        LargeFireball comet = spawnLocation.getWorld().spawn(spawnLocation, LargeFireball.class);
         comet.setYield((float) explosionYield);
         comet.setIsIncendiary(false);
-        comet.setDirection(new org.bukkit.util.Vector(0, -speed, 0)); // Straight down with configurable speed
+        comet.setDirection(new Vector(0, -speed, 0));
         comet.setShooter(caster);
 
-        context.fx().spawnParticles(caster.getEyeLocation(), Particle.FLAME, LAUNCH_PARTICLE_COUNT, LAUNCH_PARTICLE_OFFSET, LAUNCH_PARTICLE_OFFSET, LAUNCH_PARTICLE_OFFSET, LAUNCH_PARTICLE_SPEED);
-        context.fx().playSound(caster.getLocation(), Sound.ENTITY_BLAZE_SHOOT, LAUNCH_SOUND_VOLUME, LAUNCH_SOUND_PITCH);
+        // Launch effects
+        context.fx().spawnParticles(caster.getEyeLocation(), Particle.FLAME, LAUNCH_PARTICLE_COUNT,
+            LAUNCH_PARTICLE_OFFSET, LAUNCH_PARTICLE_OFFSET, LAUNCH_PARTICLE_OFFSET, LAUNCH_PARTICLE_SPEED);
+        context.fx().playSound(caster.getLocation(), Sound.ENTITY_BLAZE_SHOOT, 1.0f, 0.5f);
 
-        BukkitRunnable task = new EmpireCometTail(context, comet, trailLength, particleCount, blockLifetime, burstInterval);
-        context.plugin().getTaskManager().runTaskTimer(task, TASK_TIMER_DELAY, TASK_TIMER_PERIOD);
+        // Create trail effect task
+        BukkitTask task = new EmpireCometTail(context, comet, trailLength, particleCount, blockLifetime, burstInterval)
+            .runTaskTimer(context.plugin(), 0L, 1L);
+
+        // Register task for cleanup
+        if (context.plugin() instanceof nl.wantedchef.empirewand.EmpireWandPlugin plugin) {
+            plugin.getTaskManager().registerTask(task);
+        }
+
         return null;
     }
 
     @Override
     protected void handleEffect(@NotNull SpellContext context, @NotNull Void result) {
-        // Effects are handled in the scheduler.
+        // Effects are handled in executeSpell
     }
 
     /**
@@ -120,7 +127,6 @@ public class EmpireComet extends Spell<Void> {
         private static final int BURST_PARTICLE_COUNT = 4;
         private static final double BURST_PARTICLE_OFFSET = 0.2;
         private static final double BURST_PARTICLE_SPEED = 0.05;
-        private static final int MAX_LIFETIME_TICKS = 300; // 15 seconds
 
         private final SpellContext context;
         private final LargeFireball comet;
@@ -129,8 +135,8 @@ public class EmpireComet extends Spell<Void> {
         private final int blockLifetime;
         private final int burstInterval;
         private int tick = 0;
-        private final java.util.Deque<TempBlock> queue = new java.util.ArrayDeque<>();
-        private final java.util.Set<Block> ours = new java.util.HashSet<>();
+        private final Deque<TempBlock> queue = new ArrayDeque<>();
+        private final Set<Block> ours = new HashSet<>();
 
         EmpireCometTail(SpellContext context, LargeFireball comet, int trailLength, int particleCount,
                 int blockLifetime, int burstInterval) {
@@ -144,32 +150,40 @@ public class EmpireComet extends Spell<Void> {
 
         @Override
         public void run() {
-            if (!comet.isValid() || comet.isDead()) {
+            if (!comet.isValid() || comet.isDead() || tick > MAX_LIFETIME_TICKS) {
                 cleanup();
                 cancel();
                 return;
             }
 
-            var dir = comet.getVelocity().clone().normalize();
-            var base = comet.getLocation().clone().add(0, Y_OFFSET, 0);
+            Vector dir = comet.getVelocity().clone().normalize();
+            Location base = comet.getLocation().clone().add(0, Y_OFFSET, 0);
 
+            // Create trail
             for (int i = 0; i < trailLength; i++) {
-                var l = base.clone().add(dir.clone().multiply(-i));
-                var b = l.getBlock();
-                if (!ours.contains(b) && b.getType().isAir()) {
-                    queue.addLast(new TempBlock(b, b.getBlockData(), tick + blockLifetime));
-                    b.setType(Material.CRIMSON_NYLIUM, false);
-                    ours.add(b);
-                    context.fx().spawnParticles(l, Particle.FLAME, particleCount * PARTICLE_MULTIPLIER, PARTICLE_OFFSET, PARTICLE_OFFSET, PARTICLE_OFFSET, PARTICLE_SPEED);
+                Location trailLoc = base.clone().add(dir.clone().multiply(-i));
+                Block block = trailLoc.getBlock();
+
+                if (!ours.contains(block) && block.getType().isAir()) {
+                    queue.addLast(new TempBlock(block, block.getBlockData(), tick + blockLifetime));
+                    block.setType(Material.CRIMSON_NYLIUM, false);
+                    ours.add(block);
+
+                    // Spawn particles
+                    context.fx().spawnParticles(trailLoc, Particle.FLAME, particleCount * PARTICLE_MULTIPLIER,
+                        PARTICLE_OFFSET, PARTICLE_OFFSET, PARTICLE_OFFSET, PARTICLE_SPEED);
                 }
             }
 
+            // Create burst effects periodically
             if (tick % burstInterval == 0) {
-                context.fx().spawnParticles(comet.getLocation(), Particle.EXPLOSION, BURST_PARTICLE_COUNT, BURST_PARTICLE_OFFSET, BURST_PARTICLE_OFFSET, BURST_PARTICLE_OFFSET, BURST_PARTICLE_SPEED);
+                context.fx().spawnParticles(comet.getLocation(), Particle.EXPLOSION, BURST_PARTICLE_COUNT,
+                    BURST_PARTICLE_OFFSET, BURST_PARTICLE_OFFSET, BURST_PARTICLE_OFFSET, BURST_PARTICLE_SPEED);
             }
 
+            // Clean up expired blocks
             while (!queue.isEmpty() && queue.peekFirst().expireTick() <= tick) {
-                var tb = queue.pollFirst();
+                TempBlock tb = queue.pollFirst();
                 if (tb.block().getType() == Material.CRIMSON_NYLIUM) {
                     tb.block().setBlockData(tb.previous(), false);
                 }
@@ -177,23 +191,20 @@ public class EmpireComet extends Spell<Void> {
             }
 
             tick++;
-            if (tick > MAX_LIFETIME_TICKS) {
-                cleanup();
-                cancel();
-            }
         }
 
         /**
-         * Cleans up any temporary blocks created by the tail.
+         * Cleans up all temporary blocks created by the trail.
          */
         private void cleanup() {
             while (!queue.isEmpty()) {
-                var tb = queue.pollFirst();
+                TempBlock tb = queue.pollFirst();
                 if (tb.block().getType() == Material.CRIMSON_NYLIUM) {
                     tb.block().setBlockData(tb.previous(), false);
                 }
                 ours.remove(tb.block());
             }
+            ours.clear();
         }
 
         /**

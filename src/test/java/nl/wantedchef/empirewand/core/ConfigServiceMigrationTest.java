@@ -1,7 +1,6 @@
 package nl.wantedchef.empirewand.core;
 
 import nl.wantedchef.empirewand.core.config.ConfigMigrationService;
-import nl.wantedchef.empirewand.core.config.ConfigValidator;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,8 +34,6 @@ class ConfigServiceMigrationTest {
     private Logger logger;
 
     private ConfigService configService;
-    private ConfigValidator validator;
-    private ConfigMigrationService migrationService;
 
     @BeforeEach
     void setUp() {
@@ -46,8 +43,6 @@ class ConfigServiceMigrationTest {
         when(plugin.getLogger()).thenReturn(logger);
         when(plugin.getConfig()).thenReturn(config);
         
-        // Initialize validator
-        validator = new ConfigValidator();
     }
 
     @Nested

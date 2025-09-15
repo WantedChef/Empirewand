@@ -104,6 +104,14 @@ public class GlacialSpike extends ProjectileSpell<Arrow> {
         public void run() {
             if (!arrow.isValid() || arrow.isDead() || arrow.isInBlock()) {
                 cleanup();
+                // Shatter effect on stop
+                world.spawnParticle(Particle.ITEM_SNOWBALL, arrow.getLocation(), 16, 0.4, 0.4, 0.4, 0.02);
+                world.spawnParticle(Particle.BLOCK, arrow.getLocation(), 8, 0.3, 0.3, 0.3, 0, Material.BLUE_ICE.createBlockData());
+                for (org.bukkit.entity.Entity e : world.getNearbyEntities(arrow.getLocation(), 2.5, 2.5, 2.5)) {
+                    if (e instanceof org.bukkit.entity.LivingEntity le) {
+                        le.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.SLOWNESS, 40, 1));
+                    }
+                }
                 cancel();
                 return;
             }
@@ -130,6 +138,9 @@ public class GlacialSpike extends ProjectileSpell<Arrow> {
             tick++;
             if (tick > 20 * 15) {
                 cleanup();
+                // Timed shatter effect
+                world.spawnParticle(Particle.ITEM_SNOWBALL, arrow.getLocation(), 16, 0.4, 0.4, 0.4, 0.02);
+                world.spawnParticle(Particle.BLOCK, arrow.getLocation(), 8, 0.3, 0.3, 0.3, 0, Material.BLUE_ICE.createBlockData());
                 cancel();
             }
         }

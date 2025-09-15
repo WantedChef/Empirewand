@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doReturn;
 
 @DisplayName("StatsCommand Tests")
 class StatsCommandTest {
@@ -109,7 +110,7 @@ class StatsCommandTest {
                   mock(nl.wantedchef.empirewand.framework.service.FxService.class),
                   mock(nl.wantedchef.empirewand.api.spell.SpellRegistry.class),
                   wandService,
-                  mock(nl.wantedchef.empirewand.framework.service.CooldownService.class),
+                  mock(nl.wantedchef.empirewand.framework.service.UnifiedCooldownManager.class),
                   mock(nl.wantedchef.empirewand.api.service.PermissionService.class)
               );
 
@@ -132,7 +133,7 @@ class StatsCommandTest {
                   mock(nl.wantedchef.empirewand.framework.service.FxService.class),
                   mock(nl.wantedchef.empirewand.api.spell.SpellRegistry.class),
                   wandService,
-                  mock(nl.wantedchef.empirewand.framework.service.CooldownService.class),
+                  mock(nl.wantedchef.empirewand.framework.service.UnifiedCooldownManager.class),
                   mock(nl.wantedchef.empirewand.api.service.PermissionService.class)
               );
               when(server.getPlayer("unknown")).thenReturn(null);
@@ -156,7 +157,7 @@ class StatsCommandTest {
                   mock(nl.wantedchef.empirewand.framework.service.FxService.class),
                   mock(nl.wantedchef.empirewand.api.spell.SpellRegistry.class),
                   wandService,
-                  mock(nl.wantedchef.empirewand.framework.service.CooldownService.class),
+                  mock(nl.wantedchef.empirewand.framework.service.UnifiedCooldownManager.class),
                   mock(nl.wantedchef.empirewand.api.service.PermissionService.class)
               );
               when(server.getPlayer("testplayer")).thenReturn(player);
@@ -186,10 +187,10 @@ class StatsCommandTest {
 
               when(player1.getName()).thenReturn("Alice");
               when(player2.getName()).thenReturn("Bob");
-              java.util.Collection<Player> online = new java.util.ArrayList<>();
-              online.add(player1);
-              online.add(player2);
-              when(server.getOnlinePlayers()).thenReturn((java.util.Collection) online);
+              java.util.Collection<Player> onlinePlayers = new java.util.ArrayList<>();
+              onlinePlayers.add(player1);
+              onlinePlayers.add(player2);
+              doReturn(onlinePlayers).when(server).getOnlinePlayers();
 
               CommandContext context = new CommandContext(
                   plugin,
@@ -199,7 +200,7 @@ class StatsCommandTest {
                   mock(nl.wantedchef.empirewand.framework.service.FxService.class),
                   mock(nl.wantedchef.empirewand.api.spell.SpellRegistry.class),
                   wandService,
-                  mock(nl.wantedchef.empirewand.framework.service.CooldownService.class),
+                  mock(nl.wantedchef.empirewand.framework.service.UnifiedCooldownManager.class),
                   mock(nl.wantedchef.empirewand.api.service.PermissionService.class)
               );
 
@@ -219,7 +220,7 @@ class StatsCommandTest {
                   mock(nl.wantedchef.empirewand.framework.service.FxService.class),
                   mock(nl.wantedchef.empirewand.api.spell.SpellRegistry.class),
                   wandService,
-                  mock(nl.wantedchef.empirewand.framework.service.CooldownService.class),
+                  mock(nl.wantedchef.empirewand.framework.service.UnifiedCooldownManager.class),
                   mock(nl.wantedchef.empirewand.api.service.PermissionService.class)
               );
 

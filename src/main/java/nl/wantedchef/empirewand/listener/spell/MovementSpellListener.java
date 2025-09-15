@@ -55,7 +55,6 @@ public class MovementSpellListener implements Listener {
     
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onPlayerTeleport(PlayerTeleportEvent event) {
-        Player player = event.getPlayer();
         
         // Check if this is a spell teleportation
         if (isSpellTeleport(event)) {

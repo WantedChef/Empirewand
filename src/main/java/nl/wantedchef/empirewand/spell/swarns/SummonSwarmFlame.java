@@ -5,7 +5,6 @@ import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
-import nl.wantedchef.empirewand.spell.swarns.SummonSwarm;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Vex;

@@ -3,7 +3,6 @@ package nl.wantedchef.empirewand.command.wand;
 import nl.wantedchef.empirewand.framework.command.CommandContext;
 import nl.wantedchef.empirewand.framework.command.CommandException;
 import nl.wantedchef.empirewand.framework.command.SubCommand;
-import nl.wantedchef.empirewand.framework.service.CooldownService;
 import nl.wantedchef.empirewand.framework.service.FxService;
 import nl.wantedchef.empirewand.api.spell.SpellRegistry;
 import nl.wantedchef.empirewand.spell.Spell;
@@ -87,14 +86,15 @@ public class CastCommand implements SubCommand {
             throw new CommandException("You don't have permission to use this spell");
         }
 
-        // Check cooldown
+        // Check cooldown using the spell's actual key
+        String actualSpellKey = spell.key(); // Use the spell's actual key for cooldowns!
         long nowTicks = player.getWorld().getFullTime();
         var spellsCfg = context.plugin().getConfigService().getSpellsConfig();
         int cdTicks = Math.max(0, spellsCfg.getInt(spellKey + ".cooldown-ticks", 40));
 
-        CooldownService cds = context.plugin().getCooldownService();
-        if (cds.isOnCooldown(player.getUniqueId(), spellKey, nowTicks, item)) {
-            long remaining = cds.remaining(player.getUniqueId(), spellKey, nowTicks, item);
+        var cooldownManager = context.cooldownManager();
+        if (cooldownManager.isSpellOnCooldown(player.getUniqueId(), actualSpellKey, nowTicks, item)) {
+            long remaining = cooldownManager.getSpellCooldownRemaining(player.getUniqueId(), actualSpellKey, nowTicks, item);
             throw new CommandException("Spell is on cooldown for " + (remaining / 20) + " seconds");
         }
 
@@ -115,7 +115,7 @@ public class CastCommand implements SubCommand {
             // Cast the spell
             long start = System.nanoTime();
             spell.cast(spellCtx);
-            cds.set(player.getUniqueId(), spellKey, nowTicks + cdTicks);
+            cooldownManager.setSpellCooldown(player.getUniqueId(), actualSpellKey, nowTicks + cdTicks);
 
             // Show success message
             if (player.isOnline()) {

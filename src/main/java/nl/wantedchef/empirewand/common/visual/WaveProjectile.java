@@ -24,6 +24,32 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
+/**
+ * Simple object pool for Vector objects to reduce GC pressure.
+ */
+class VectorPool {
+    private static final int MAX_POOL_SIZE = 100;
+    private static final java.util.Queue<org.bukkit.util.Vector> pool = new java.util.concurrent.ConcurrentLinkedQueue<>();
+
+    static org.bukkit.util.Vector acquire(double x, double y, double z) {
+        org.bukkit.util.Vector vec = pool.poll();
+        if (vec == null) {
+            return new org.bukkit.util.Vector(x, y, z);
+        }
+        vec.setX(x);
+        vec.setY(y);
+        vec.setZ(z);
+        return vec;
+    }
+
+    static void release(org.bukkit.util.Vector vec) {
+        if (vec != null && pool.size() < MAX_POOL_SIZE) {
+            pool.offer(vec);
+        }
+    }
+}
 
 /**
  * Advanced projectile-based wave system that creates spectacular visual effects
@@ -41,6 +67,11 @@ public class WaveProjectile {
     private final Location origin;
     private BukkitRunnable waveTask;
     private int tickCount = 0;
+
+    // Performance optimization: cache entity lookups
+    private static final int ENTITY_CACHE_TICKS = 3; // Cache entities for 3 ticks
+    private Map<Location, Collection<Entity>> entityCache = new ConcurrentHashMap<>();
+    private Map<Location, Long> cacheTimestamps = new ConcurrentHashMap<>();
 
     /**
      * Configuration for wave projectile behavior and visual effects
@@ -127,7 +158,6 @@ public class WaveProjectile {
     private static class ProjectileData {
         final Vector originalDirection;
         final double formationOffset;
-        final Location startLocation;
         double distanceTraveled;
         int pierceCount;
         final Set<UUID> hitEntityIds;
@@ -135,7 +165,6 @@ public class WaveProjectile {
         ProjectileData(Vector originalDirection, double formationOffset, Location startLocation) {
             this.originalDirection = originalDirection.clone();
             this.formationOffset = formationOffset;
-            this.startLocation = startLocation.clone();
             this.distanceTraveled = 0.0;
             this.pierceCount = 0;
             this.hitEntityIds = new HashSet<>();
@@ -348,29 +377,28 @@ public class WaveProjectile {
     private void checkCollisions() {
         for (SmallFireball projectile : new ArrayList<>(projectiles)) {
             if (!projectile.isValid()) continue;
-            
+
             ProjectileData data = projectileData.get(projectile.getUniqueId());
             if (data == null) continue;
-            
-            // Check entity collisions
-            Collection<Entity> nearbyEntities = projectile.getWorld()
-                .getNearbyEntities(projectile.getLocation(), config.hitRadius, config.hitRadius, config.hitRadius);
-            
+
+            // Optimized entity collision check with caching
+            Collection<Entity> nearbyEntities = getNearbyEntitiesCached(projectile);
+
             for (Entity entity : nearbyEntities) {
                 if (!(entity instanceof LivingEntity)) continue;
                 if (entity.equals(caster)) continue;
                 if (data.hitEntityIds.contains(entity.getUniqueId())) continue;
-                
+
                 LivingEntity livingEntity = (LivingEntity) entity;
-                
+
                 // Apply wave effects
                 applyWaveEffects(livingEntity, projectile.getLocation());
                 data.hitEntityIds.add(entity.getUniqueId());
                 data.pierceCount++;
-                
+
                 // Create impact effect
                 createImpactEffect(projectile.getLocation(), livingEntity);
-                
+
                 // Check if projectile should be removed
                 if (!config.pierceEntities || data.pierceCount >= config.maxPierces) {
                     projectile.remove();
@@ -380,6 +408,56 @@ public class WaveProjectile {
                 }
             }
         }
+    }
+
+    /**
+     * Optimized entity lookup with caching to reduce expensive getNearbyEntities calls.
+     */
+    private Collection<Entity> getNearbyEntitiesCached(SmallFireball projectile) {
+        Location loc = projectile.getLocation();
+        long currentTime = System.currentTimeMillis();
+
+        // Create a rounded location key for caching (reduce precision to improve cache hits)
+        Location cacheKey = new Location(loc.getWorld(),
+            Math.round(loc.getX() * 2) / 2.0,
+            Math.round(loc.getY() * 2) / 2.0,
+            Math.round(loc.getZ() * 2) / 2.0);
+
+        // Check if we have a recent cached result
+        Long lastCacheTime = cacheTimestamps.get(cacheKey);
+        if (lastCacheTime != null && (currentTime - lastCacheTime) < (ENTITY_CACHE_TICKS * 50)) {
+            Collection<Entity> cached = entityCache.get(cacheKey);
+            if (cached != null) {
+                // Filter entities by actual distance since cache key is approximate
+                return cached.stream()
+                    .filter(entity -> entity.getLocation().distance(loc) <= config.hitRadius)
+                    .collect(Collectors.toList());
+            }
+        }
+
+        // Cache miss - perform actual lookup
+        Collection<Entity> nearbyEntities = projectile.getWorld()
+            .getNearbyEntities(loc, config.hitRadius, config.hitRadius, config.hitRadius);
+
+        // Cache the result
+        entityCache.put(cacheKey, new ArrayList<>(nearbyEntities));
+        cacheTimestamps.put(cacheKey, currentTime);
+
+        // Clean up old cache entries periodically
+        if (entityCache.size() > 50) { // Limit cache size
+            cleanupEntityCache(currentTime);
+        }
+
+        return nearbyEntities;
+    }
+
+    /**
+     * Clean up expired cache entries to prevent memory leaks.
+     */
+    private void cleanupEntityCache(long currentTime) {
+        long expiryTime = currentTime - (ENTITY_CACHE_TICKS * 50 * 2); // 2x the cache duration
+        cacheTimestamps.entrySet().removeIf(entry -> entry.getValue() < expiryTime);
+        entityCache.keySet().removeIf(key -> !cacheTimestamps.containsKey(key));
     }
     
     private void applyWaveEffects(LivingEntity target, Location hitLocation) {

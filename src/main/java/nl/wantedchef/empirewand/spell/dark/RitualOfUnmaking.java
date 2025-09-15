@@ -20,7 +20,6 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * A dark spell that channels a destructive ritual damaging and weakening nearby enemies.

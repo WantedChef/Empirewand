@@ -1,7 +1,6 @@
 package nl.wantedchef.empirewand.listener.wand;
 
 import nl.wantedchef.empirewand.EmpireWandPlugin;
-import nl.wantedchef.empirewand.framework.service.CooldownService;
 import nl.wantedchef.empirewand.framework.service.FxService;
 import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.SpellContext;
@@ -63,23 +62,24 @@ public final class WandSwingListener implements Listener {
         }
 
         int index = Math.max(0, Math.min(plugin.getWandService().getActiveIndex(item), spells.size() - 1));
-        String spellKey = spells.get(index);
-        Optional<Spell<?>> spellOpt = plugin.getSpellRegistry().getSpell(spellKey);
+        String configSpellKey = spells.get(index);
+        Optional<Spell<?>> spellOpt = plugin.getSpellRegistry().getSpell(configSpellKey);
         if (spellOpt.isEmpty()) return;
 
-        // Cooldown check consistent with interact path
+        Spell<?> spell = spellOpt.get();
+        String actualSpellKey = spell.key(); // Use the spell's actual key for cooldowns!
+
+        // Cooldown check using the spell's actual key
         long nowTicks = player.getWorld().getFullTime();
         var spellsCfg = plugin.getConfigService().getSpellsConfig();
-        int cdTicks = Math.max(0, spellsCfg.getInt(spellKey + ".cooldown-ticks", 40));
-        CooldownService cds = plugin.getCooldownService();
-        if (cds.isOnCooldown(player.getUniqueId(), spellKey, nowTicks, item)) {
-            long remaining = cds.remaining(player.getUniqueId(), spellKey, nowTicks, item);
+        int cdTicks = Math.max(0, spellsCfg.getInt(configSpellKey + ".cooldown-ticks", 40));
+        var cooldownManager = plugin.getCooldownManager();
+        if (cooldownManager.isSpellOnCooldown(player.getUniqueId(), actualSpellKey, nowTicks, item)) {
+            long remaining = cooldownManager.getSpellCooldownRemaining(player.getUniqueId(), actualSpellKey, nowTicks, item);
             Map<String, String> ph = Map.of("seconds", String.valueOf(remaining / 20));
             plugin.getFxService().showError(player, "wand.on-cooldown", ph);
             return;
         }
-
-        Spell<?> spell = spellOpt.get();
         FxService fx = plugin.getFxService();
         SpellContext ctx = new SpellContext(plugin, player, plugin.getConfigService(), fx);
 
@@ -90,7 +90,7 @@ public final class WandSwingListener implements Listener {
 
         var result = spell.cast(ctx);
         if (result.isSuccess()) {
-            cds.set(player.getUniqueId(), spellKey, nowTicks + cdTicks);
+            cooldownManager.setSpellCooldown(player.getUniqueId(), actualSpellKey, nowTicks + cdTicks);
             // mark metadata so subsequent animation events within 2 ticks will be skipped
             player.setMetadata(META_LAST_WAND_CLICK_TICK, new FixedMetadataValue(plugin, now));
             lastSwingCastTick.put(player.getUniqueId(), now);

@@ -9,7 +9,6 @@ import nl.wantedchef.empirewand.framework.command.CommandException;
 import nl.wantedchef.empirewand.framework.service.WandServiceImpl;
 import nl.wantedchef.empirewand.framework.service.ConfigService;
 import nl.wantedchef.empirewand.framework.service.FxService;
-import nl.wantedchef.empirewand.framework.service.CooldownService;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Server;
@@ -69,7 +68,7 @@ class GiveCommandTest {
     private SpellRegistry mockSpellRegistry;
 
     @Mock
-    private CooldownService mockCooldownService;
+    private nl.wantedchef.empirewand.framework.service.UnifiedCooldownManager mockCooldownManager;
 
     @Mock
     private PermissionService mockPermissionService;
@@ -106,7 +105,7 @@ class GiveCommandTest {
                 mockFxService,
                 mockSpellRegistry,
                 mockWandService,
-                mockCooldownService,
+                mockCooldownManager,
                 mockPermissionService
         );
     }

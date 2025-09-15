@@ -1,6 +1,8 @@
-package nl.wantedchef.empirewand.spell.enhanced;
+package nl.wantedchef.empirewand.spell.weather;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -92,7 +94,7 @@ public class Blizzard extends Spell<Void> {
     private static final int DEFAULT_DURATION_TICKS = 180; // 9 seconds
     private static final boolean DEFAULT_CREATE_ICE = true;
     private static final int DEFAULT_ICE_GROWTH_ATTEMPTS = 25;
-    private static final int DEFAULT_PARTICLE_DENSITY = 50;
+    private static final int DEFAULT_PARTICLE_DENSITY = 15; // Reduced from 50 for performance
     private static final double DEFAULT_WIND_FORCE = 1.2;
     private static final boolean DEFAULT_PULSE_LIGHTNING = true;
 
@@ -232,6 +234,11 @@ public class Blizzard extends Spell<Void> {
 
         private final World world;
         private final Random random = ThreadLocalRandom.current();
+
+        // Performance optimization: cache entity lookups
+        private static final int ENTITY_CACHE_DURATION = 4; // Cache for 4 ticks
+        private Collection<LivingEntity> cachedEntities = new ArrayList<>();
+        private long lastEntityCacheTime = 0;
         private final Set<Location> iceBlocks = new HashSet<>();
         private final Map<Block, BlockData> originalBlocks = new HashMap<>();
         private int ticks = 0;
@@ -286,11 +293,15 @@ public class Blizzard extends Spell<Void> {
                 world.playSound(center, Sound.BLOCK_GLASS_BREAK, 2.5f, 1.5f);
             }
 
-            // 3. Spawn massive particle storm
-            createBlizzardEffects();
+            // 3. Spawn particle storm (throttled for performance)
+            if (ticks % 2 == 0) { // Only every other tick
+                createBlizzardEffects();
+            }
 
-            // 4. Apply damage & slowness every tick for immediacy
-            applyBlizzardEffects();
+            // 4. Apply damage & slowness every 4 ticks for performance
+            if (ticks % 4 == 0) {
+                applyBlizzardEffects();
+            }
 
             // 5. Grow ice crystals every 2 ticks
             if (createIce && ticks % 2 == 0) {
@@ -329,31 +340,44 @@ public class Blizzard extends Spell<Void> {
                 world.spawnParticle(Particle.SNOWFLAKE, loc, 1, 0.1, 0.1, 0.1, 0.005);
             }
 
-            // Wind push: stronger as time progresses
-            double windMultiplier = 1.0 + (ticks * 0.02); // Gradually increases
-            for (LivingEntity entity : world.getNearbyLivingEntities(center, radius, 10, radius)) {
-                if (entity.equals(context.caster()) || entity.isDead() || !entity.isValid()) continue;
+            // Wind push: less frequent for performance, uses cached entities
+            if (ticks % 3 == 0) { // Only every 3 ticks
+                double windMultiplier = 1.0 + (ticks * 0.01); // Slower increase
+                // Reuse cached entities from damage application for wind effects
+                for (LivingEntity entity : cachedEntities) {
+                    if (entity.equals(context.caster()) || entity.isDead() || !entity.isValid()) continue;
+                    // Additional distance check since cached entities might be slightly outdated
+                    if (entity.getLocation().distance(center) > radius) continue;
 
-                Vector direction = new Vector(
-                    random.nextDouble() - 0.5,
-                    random.nextDouble() * 0.3 + 0.1, // Slight upward bias
-                    random.nextDouble() - 0.5
-                ).normalize().multiply(windMultiplier * windForce);
+                    Vector direction = new Vector(
+                        random.nextDouble() - 0.5,
+                        random.nextDouble() * 0.2, // Reduced upward bias
+                        random.nextDouble() - 0.5
+                    ).normalize().multiply(windMultiplier * windForce * 0.7); // Reduced force
 
-                entity.setVelocity(entity.getVelocity().add(direction));
-                if (random.nextDouble() < 0.1) {
-                    entity.getWorld().spawnParticle(Particle.SNOWFLAKE, entity.getLocation(), 3, 0.2, 0.2, 0.2, 0.05);
+                    entity.setVelocity(entity.getVelocity().add(direction));
+                    // Removed particle spawn from wind effect for performance
                 }
             }
         }
 
         /**
-         * Applies damage and slowness to all affected entities.
+         * Applies damage and slowness to all affected entities with caching optimization.
          */
         private void applyBlizzardEffects() {
             if (world == null) return;
 
-            for (LivingEntity entity : world.getNearbyLivingEntities(center, radius, 10, radius)) {
+            // Use cached entities if still valid, otherwise refresh
+            Collection<LivingEntity> affectedEntities;
+            if (ticks - lastEntityCacheTime >= ENTITY_CACHE_DURATION) {
+                affectedEntities = world.getNearbyLivingEntities(center, radius, 10, radius);
+                cachedEntities = new ArrayList<>(affectedEntities); // Cache the result
+                lastEntityCacheTime = ticks;
+            } else {
+                affectedEntities = cachedEntities;
+            }
+
+            for (LivingEntity entity : affectedEntities) {
                 if (entity.equals(context.caster()) || entity.isDead() || !entity.isValid()) continue;
 
                 // Damage

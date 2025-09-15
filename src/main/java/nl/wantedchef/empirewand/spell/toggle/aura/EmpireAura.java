@@ -274,7 +274,7 @@ public final class EmpireAura extends Spell<Void> implements ToggleableSpell {
             int strengthAmp = Math.max(0, cfgInt("effects.strength-amplifier", 0));
             int resistAmp = Math.max(0, cfgInt("effects.resistance-amplifier", 0));
             PotionEffectType strength = effectType("STRENGTH", "INCREASE_DAMAGE");
-            PotionEffectType resistance = effectType("RESISTANCE", "DAMAGE_RESISTANCE");
+            PotionEffectType resistance = effectType("RESISTANCE", "RESISTANCE");
             if (strength != null) {
                 player.addPotionEffect(new PotionEffect(strength, dur, strengthAmp, false, false, true));
             }
@@ -292,7 +292,7 @@ public final class EmpireAura extends Spell<Void> implements ToggleableSpell {
 
         private void removeEffects() {
             PotionEffectType strength = effectType("STRENGTH", "INCREASE_DAMAGE");
-            PotionEffectType resistance = effectType("RESISTANCE", "DAMAGE_RESISTANCE");
+            PotionEffectType resistance = effectType("RESISTANCE", "RESISTANCE");
             PotionEffectType regen = effectType("REGENERATION");
             if (strength != null) {
                 player.removePotionEffect(strength);
@@ -410,13 +410,27 @@ public final class EmpireAura extends Spell<Void> implements ToggleableSpell {
     }
 
     private PotionEffectType effectType(String primary, String... fallbacks) {
-        PotionEffectType type = PotionEffectType.getByName(primary);
+        PotionEffectType type = switch (primary.toUpperCase()) {
+            case "CONFUSION", "NAUSEA" -> PotionEffectType.NAUSEA; // CONFUSION was renamed to NAUSEA in 1.20.6
+            case "STRENGTH", "INCREASE_DAMAGE" -> PotionEffectType.STRENGTH;
+            case "RESISTANCE" -> PotionEffectType.RESISTANCE;
+            case "REGENERATION" -> PotionEffectType.REGENERATION;
+            default -> null;
+        };
+
         if (type != null) {
             return type;
         }
+
         if (fallbacks != null) {
             for (String fb : fallbacks) {
-                type = PotionEffectType.getByName(fb);
+                type = switch (fb.toUpperCase()) {
+                    case "CONFUSION", "NAUSEA" -> PotionEffectType.NAUSEA; // CONFUSION was renamed to NAUSEA in 1.20.6
+                    case "STRENGTH", "INCREASE_DAMAGE" -> PotionEffectType.STRENGTH;
+                    case "RESISTANCE" -> PotionEffectType.RESISTANCE;
+                    case "REGENERATION" -> PotionEffectType.REGENERATION;
+                    default -> null;
+                };
                 if (type != null) {
                     return type;
                 }

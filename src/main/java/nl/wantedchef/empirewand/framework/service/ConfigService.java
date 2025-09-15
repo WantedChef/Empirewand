@@ -383,14 +383,7 @@ public class ConfigService {
         // This method is deprecated in the new PerformanceMonitor
         return "Metrics not available.";
     }
-    
-    /**
-     * Clears performance metrics for this service.
-     */
-    public void clearPerformanceMetrics() {
-        performanceMonitor.clearMetrics();
-    }
-    
+
     /**
      * Reloads all configurations safely.
      */

@@ -339,7 +339,7 @@ public abstract class BaseWandCommand implements CommandExecutor, TabCompleter {
     private CommandContext createContext(CommandSender sender, String[] args) {
         return new CommandContext(plugin, sender, args, plugin.getConfigService(),
                 plugin.getFxService(), plugin.getSpellRegistry(), plugin.getWandService(),
-                plugin.getCooldownService(), plugin.getPermissionService());
+                plugin.getCooldownManager(), plugin.getPermissionService());
     }
 
     private void sendUsage(CommandSender sender) {

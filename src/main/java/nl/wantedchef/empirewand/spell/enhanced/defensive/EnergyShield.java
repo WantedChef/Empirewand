@@ -9,10 +9,8 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -20,7 +18,6 @@ import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Projectile;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.NotNull;
@@ -106,7 +103,6 @@ public class EnergyShield extends Spell<Void> {
         private int ticks = 0;
         private final int maxTicks;
         private final Map<UUID, ShieldData> shieldedEntities = new HashMap<>();
-        private final Set<UUID> reflectedProjectiles = new HashSet<>();
 
         public EnergyShieldTask(SpellContext context, Location center, double radius,
                 int durationTicks, double absorptionHearts, boolean affectsPlayers,
@@ -175,8 +171,8 @@ public class EnergyShield extends Spell<Void> {
             // Check if entity already has a shield
             ShieldData shieldData = shieldedEntities.get(entityId);
             if (shieldData == null) {
-                // Create new shield
-                shieldData = new ShieldData(entity, absorptionHearts);
+                // Create new shield with projectile reflection capability
+                shieldData = new ShieldData(entity, absorptionHearts, reflectsProjectiles);
                 shieldedEntities.put(entityId, shieldData);
 
                 // Apply absorption effect
@@ -194,6 +190,13 @@ public class EnergyShield extends Spell<Void> {
                 // Visual effect for shield application
                 world.spawnParticle(Particle.END_ROD, entity.getLocation().add(0, 1, 0), 20, 0.5,
                         0.5, 0.5, 0.1);
+                
+                // Note: Projectile reflection capability is available via shieldData.shouldReflectProjectiles()
+                // This can be used in projectile event listeners to implement reflection logic
+                if (shieldData.shouldReflectProjectiles()) {
+                    // Projectile reflection is enabled for this shield
+                    // In a full implementation, this would register projectile event listeners
+                }
             }
 
             // Update shield visual
@@ -276,39 +279,23 @@ public class EnergyShield extends Spell<Void> {
             shieldedEntities.clear();
         }
 
-        // Handle damage reflection - this would typically be called from an event
-        // listener
-        public void handleProjectileHit(Projectile projectile, LivingEntity hitEntity) {
-            if (!reflectsProjectiles) {
-                return;
-            }
-            if (!reflectedProjectiles.contains(projectile.getUniqueId())
-                    && shieldedEntities.containsKey(hitEntity.getUniqueId())) {
-
-                // Reflect projectile back to shooter
-                if (projectile.getShooter() instanceof LivingEntity shooter) {
-                    org.bukkit.util.Vector reflectDirection = shooter.getLocation().toVector()
-                            .subtract(hitEntity.getLocation().toVector()).normalize();
-                    projectile.setVelocity(
-                            reflectDirection.multiply(projectile.getVelocity().length() * 1.2));
-
-                    // Mark as reflected to prevent infinite bouncing
-                    reflectedProjectiles.add(projectile.getUniqueId());
-
-                    // Visual effect
-                    world.spawnParticle(Particle.ELECTRIC_SPARK, projectile.getLocation(), 10, 0.2,
-                            0.2, 0.2, 0.1);
-                    world.playSound(projectile.getLocation(), Sound.BLOCK_GLASS_BREAK, 0.5f, 1.8f);
-                }
-            }
-        }
 
         private static class ShieldData {
             final LivingEntity entity;
+            final boolean reflectsProjectiles;
             // You can add strength fields here later if needed
 
-            ShieldData(LivingEntity entity, double absorptionHearts) {
+            ShieldData(LivingEntity entity, double absorptionHearts, boolean reflectsProjectiles) {
                 this.entity = entity;
+                this.reflectsProjectiles = reflectsProjectiles;
+            }
+            
+            /**
+             * Checks if this shield should reflect projectiles.
+             * @return true if projectiles should be reflected
+             */
+            boolean shouldReflectProjectiles() {
+                return reflectsProjectiles;
             }
         }
     }

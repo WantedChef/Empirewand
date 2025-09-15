@@ -1,5 +1,8 @@
 package nl.wantedchef.empirewand.spell;
 
+import nl.wantedchef.empirewand.EmpireWandPlugin;
+import nl.wantedchef.empirewand.api.EmpireWandAPI;
+import nl.wantedchef.empirewand.core.storage.Keys;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -8,13 +11,12 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import nl.wantedchef.empirewand.api.EmpireWandAPI;
-import nl.wantedchef.empirewand.core.storage.Keys;
 
 import java.util.Objects;
 import java.util.logging.Level;
@@ -164,7 +166,7 @@ public abstract class ProjectileSpell<P extends Projectile> extends Spell<Void> 
             
             // Add trail effects if configured
             if (trailParticle != null) {
-                startTrailEffect(projectile);
+                startTrailEffect(projectile, context);
             }
             
             // Tag projectile with spell information
@@ -261,15 +263,17 @@ public abstract class ProjectileSpell<P extends Projectile> extends Spell<Void> 
      * location until it hits something or is removed.
      *
      * @param projectile the projectile to add trail effects to
+     * @param context the spell context for accessing plugin services
      */
-    protected void startTrailEffect(@NotNull P projectile) {
+    protected void startTrailEffect(@NotNull P projectile, @NotNull SpellContext context) {
         Objects.requireNonNull(projectile, "Projectile cannot be null");
+        Objects.requireNonNull(context, "Context cannot be null");
         
         if (trailParticle == null) {
             return;
         }
 
-        new BukkitRunnable() {
+        BukkitRunnable trailTask = new BukkitRunnable() {
             @Override
             public void run() {
                 if (!projectile.isValid() || projectile.isDead()) {
@@ -292,7 +296,16 @@ public abstract class ProjectileSpell<P extends Projectile> extends Spell<Void> 
                     this.cancel();
                 }
             }
-        }.runTaskTimer(projectile.getServer().getPluginManager().getPlugin("EmpireWand"), 0L, 1L);
+        };
+
+        // Schedule and register the repeating task
+        if (context.plugin() instanceof EmpireWandPlugin ewPlugin) {
+            BukkitTask bukkitTask = trailTask.runTaskTimer(ewPlugin, 0L, 1L);
+            ewPlugin.getTaskManager().registerTask(bukkitTask);
+        } else {
+            // Fallback for when the plugin instance is not the expected type
+            trailTask.runTaskTimer(context.plugin(), 0L, 1L);
+        }
     }
 
     /**

@@ -183,7 +183,6 @@ public class DivineAura extends Spell<Void> {
         private final Location center;
         private final double radius;
         private final double healAmount;
-        private final int durationTicks;
         private final boolean affectsPlayers;
         private final boolean grantsRegeneration;
         private final boolean grantsResistance;
@@ -209,7 +208,6 @@ public class DivineAura extends Spell<Void> {
             this.center = Objects.requireNonNull(center, "Center location cannot be null");
             this.radius = radius;
             this.healAmount = healAmount;
-            this.durationTicks = durationTicks;
             this.affectsPlayers = affectsPlayers;
             this.grantsRegeneration = grantsRegeneration;
             this.grantsResistance = grantsResistance;

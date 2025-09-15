@@ -144,9 +144,17 @@ public class BloodBlock extends Spell<Void> {
 
         // Create velocity vector with proper arc
         Vector launchVector = new Vector();
-        launchVector.setX((horizontalDirection.getX() / horizontalDistance) * launchSpeed * Math.cos(launchAngle));
-        launchVector.setZ((horizontalDirection.getZ() / horizontalDistance) * launchSpeed * Math.cos(launchAngle));
-        launchVector.setY(launchSpeed * Math.sin(launchAngle) + Math.max(0, verticalDistance * 0.1));
+        if (horizontalDistance < 1.0e-6) {
+            // Edge case: aim straight up with slight random horizontal nudge
+            double yaw = (Math.random() - 0.5) * 0.2;
+            launchVector.setX(yaw);
+            launchVector.setZ(-yaw);
+            launchVector.setY(launchSpeed);
+        } else {
+            launchVector.setX((horizontalDirection.getX() / horizontalDistance) * launchSpeed * Math.cos(launchAngle));
+            launchVector.setZ((horizontalDirection.getZ() / horizontalDistance) * launchSpeed * Math.cos(launchAngle));
+            launchVector.setY(launchSpeed * Math.sin(launchAngle) + Math.max(0, verticalDistance * 0.1));
+        }
 
         fallingBlock.setVelocity(launchVector);
 

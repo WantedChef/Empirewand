@@ -12,6 +12,8 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.Color;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -130,7 +132,6 @@ public class Fireball extends ProjectileSpell<org.bukkit.entity.Fireball> {
     @Override
     public void loadConfig(@NotNull ReadableConfig spellConfig) {
         super.loadConfig(spellConfig);
-        double multiplier = enhancementLevel.getMultiplier();
         this.config = new Config(
                 spellConfig.getDouble("values.yield", config.yield),
                 spellConfig.getBoolean("flags.incendiary", config.incendiary),
@@ -161,20 +162,26 @@ public class Fireball extends ProjectileSpell<org.bukkit.entity.Fireball> {
                     fireball.getPersistentDataContainer().set(Keys.PROJECTILE_OWNER, PersistentDataType.STRING,
                             player.getUniqueId().toString());
 
-                    // Create fire trail with enhancement-based effects
-                    ProjectileTrail.TrailConfig trailConfig = ProjectileTrail.TrailConfig.builder()
-                            .trailLength(config.trailLength)
-                            .particleCount(config.particleCount)
-                            .blockLifetimeTicks(config.blockLifetimeTicks)
-                            .trailMaterial(Material.MAGMA_BLOCK)
-                            .particle(Particle.FLAME)
-                            .particleOffset(enhancementLevel == EnhancementLevel.ENHANCED ? 0.15 : 0.1)
-                            .build();
-                    context.plugin().getTaskManager().runTaskTimer(
-                        new ProjectileTrail(fireball, trailConfig),
-                        TASK_TIMER_DELAY,
-                        TASK_TIMER_PERIOD
-                    );
+                    // Create spectacular fire trail with enhancement-based effects
+                    if (enhancementLevel == EnhancementLevel.ENHANCED) {
+                        // Enhanced fireball gets spectacular trail
+                        new SpectacularFireballTrail(context, fireball).runTaskTimer(context.plugin(), 0L, 1L);
+                    } else {
+                        // Standard fireball uses enhanced ProjectileTrail
+                        ProjectileTrail.TrailConfig trailConfig = ProjectileTrail.TrailConfig.builder()
+                                .trailLength(config.trailLength)
+                                .particleCount(config.particleCount)
+                                .blockLifetimeTicks(config.blockLifetimeTicks)
+                                .trailMaterial(Material.MAGMA_BLOCK)
+                                .particle(Particle.FLAME)
+                                .particleOffset(0.1)
+                                .build();
+                        context.plugin().getTaskManager().runTaskTimer(
+                            new ProjectileTrail(fireball, trailConfig),
+                            TASK_TIMER_DELAY,
+                            TASK_TIMER_PERIOD
+                        );
+                    }
                 });
 
         context.fx().playSound(player, Sound.ENTITY_BLAZE_SHOOT, LAUNCH_SOUND_VOLUME, LAUNCH_SOUND_PITCH);
@@ -188,21 +195,19 @@ public class Fireball extends ProjectileSpell<org.bukkit.entity.Fireball> {
         // Always cancel the vanilla explosion to prevent caster damage
         event.setCancelled(true);
 
-        // Create explosion effects based on enhancement level
+        // Create spectacular explosion effects based on enhancement level
         if (enhancementLevel == EnhancementLevel.ENHANCED) {
-            // Enhanced effects
-            hitLoc.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, hitLoc, 2, 0, 0, 0, 0);
-            hitLoc.getWorld().spawnParticle(Particle.FLAME, hitLoc, 50, 0.7, 0.7, 0.7, 0.2);
-            hitLoc.getWorld().playSound(hitLoc, Sound.ENTITY_GENERIC_EXPLODE, 1.5f, 0.8f);
+            // Spectacular enhanced effects
+            createSpectacularFireballExplosion(context, hitLoc);
+            createFireballShockwave(context, hitLoc);
 
             // Apply enhanced area damage
             applyAreaDamage(context, hitLoc);
             applyAreaEffects(context, hitLoc);
 
         } else {
-            // Standard effects
-            hitLoc.getWorld().spawnParticle(Particle.EXPLOSION, hitLoc, 30, 0.5, 0.5, 0.5, 0.1);
-            hitLoc.getWorld().playSound(hitLoc, Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 1.0f);
+            // Enhanced standard effects
+            createStandardFireballExplosion(context, hitLoc);
 
             // Apply standard damage
             applyAreaDamage(context, hitLoc);
@@ -213,15 +218,7 @@ public class Fireball extends ProjectileSpell<org.bukkit.entity.Fireball> {
             hitLoc.getWorld().createExplosion(hitLoc, (float) config.yield, config.incendiary, false);
         }
 
-        // Self-explosion effect at caster location for standard version only
-        if (enhancementLevel == EnhancementLevel.STANDARD) {
-            Player caster = context.caster();
-            Location casterLoc = caster.getLocation();
-            casterLoc.getWorld().createExplosion(casterLoc, 2.0f, false, false);
-            casterLoc.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, casterLoc, 1, 0, 0, 0, 0);
-            casterLoc.getWorld().spawnParticle(Particle.FLAME, casterLoc, 30, 1.0, 1.0, 1.0, 0.1);
-            casterLoc.getWorld().playSound(casterLoc, Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 0.8f);
-        }
+        // Enhanced effects at hit location (no self-damage)
     }
 
     /**
@@ -262,6 +259,154 @@ public class Fireball extends ProjectileSpell<org.bukkit.entity.Fireball> {
 
                 // Visual effect
                 context.fx().spawnParticles(living.getLocation(), Particle.FLAME, 10, 0.3, 0.5, 0.3, 0.05);
+            }
+        }
+    }
+    
+    private void createSpectacularFireballExplosion(SpellContext context, Location center) {
+        // Massive fireball explosion with multiple layers
+        context.fx().spawnParticles(center, Particle.EXPLOSION_EMITTER, 4, 1, 1, 1, 0);
+        context.fx().spawnParticles(center, Particle.FLAME, 100, 1.5, 1.5, 1.5, 0.3);
+        context.fx().spawnParticles(center, Particle.LAVA, 60, 1.2, 1.2, 1.2, 0.15);
+        context.fx().spawnParticles(center, Particle.FIREWORK, 40, 2.0, 2.0, 2.0, 0.4);
+        
+        // Fiery dust clouds
+        context.fx().spawnParticles(center, Particle.DUST, 50, 1.8, 1.8, 1.8, 0,
+            new Particle.DustOptions(Color.fromRGB(255, 69, 0), 1.8f)); // Orange Red
+        context.fx().spawnParticles(center, Particle.DUST, 30, 1.3, 1.3, 1.3, 0,
+            new Particle.DustOptions(Color.fromRGB(255, 0, 0), 1.5f)); // Red
+        
+        // Enhanced explosion sounds
+        context.fx().playSound(center, Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 0.8f);
+        context.fx().playSound(center, Sound.ENTITY_DRAGON_FIREBALL_EXPLODE, 1.5f, 1.0f);
+    }
+    
+    private void createStandardFireballExplosion(SpellContext context, Location center) {
+        // Enhanced standard fireball explosion
+        context.fx().spawnParticles(center, Particle.EXPLOSION, 40, 0.8, 0.8, 0.8, 0.2);
+        context.fx().spawnParticles(center, Particle.FLAME, 60, 1.0, 1.0, 1.0, 0.2);
+        context.fx().spawnParticles(center, Particle.LAVA, 25, 0.8, 0.8, 0.8, 0.1);
+        
+        // Enhanced dust effect
+        context.fx().spawnParticles(center, Particle.DUST, 30, 1.2, 1.2, 1.2, 0,
+            new Particle.DustOptions(Color.fromRGB(255, 140, 0), 1.3f)); // Dark Orange
+        
+        // Enhanced sound
+        context.fx().playSound(center, Sound.ENTITY_GENERIC_EXPLODE, 1.3f, 1.0f);
+    }
+    
+    private void createFireballShockwave(SpellContext context, Location center) {
+        // Enhanced fireball shockwave for enhanced version
+        new BukkitRunnable() {
+            int radius = 1;
+            final int maxRadius = 8;
+
+            @Override
+            public void run() {
+                if (radius > maxRadius || center.getWorld() == null) {
+                    this.cancel();
+                    return;
+                }
+
+                // Create expanding fire ring
+                for (int i = 0; i < 32; i++) {
+                    double angle = 2 * Math.PI * i / 32;
+                    double x = radius * Math.cos(angle);
+                    double z = radius * Math.sin(angle);
+                    Location ringLoc = center.clone().add(x, 0.1, z);
+                    
+                    context.fx().spawnParticles(ringLoc, Particle.FLAME, 3, 0.1, 0.1, 0.1, 0.02);
+                    
+                    // Dust ring with intensity based on distance
+                    float intensity = 1.0f - (radius / (float)maxRadius);
+                    context.fx().spawnParticles(ringLoc, Particle.DUST, 1, 0, 0, 0, 0,
+                        new Particle.DustOptions(Color.fromRGB((int)(255 * intensity), (int)(140 * intensity), 0), 1.2f));
+                    
+                    // Occasional lava bursts
+                    if (i % 4 == 0) {
+                        context.fx().spawnParticles(ringLoc, Particle.LAVA, 1, 0.2, 0.2, 0.2, 0.03);
+                    }
+                }
+
+                // Shockwave sound
+                context.fx().playSound(center, Sound.BLOCK_FIRE_AMBIENT,
+                    0.4f + (radius / (float)maxRadius), 0.8f + (radius / (float)maxRadius));
+
+                radius++;
+            }
+        }.runTaskTimer(context.plugin(), 0L, 2L);
+    }
+
+    /**
+     * Spectacular trail effect for enhanced fireball spells.
+     */
+    private static class SpectacularFireballTrail extends BukkitRunnable {
+        private final SpellContext context;
+        private final org.bukkit.entity.Fireball fireball;
+        private int ticks = 0;
+
+        SpectacularFireballTrail(SpellContext context, org.bukkit.entity.Fireball fireball) {
+            this.context = context;
+            this.fireball = fireball;
+        }
+
+        @Override
+        public void run() {
+            if (!fireball.isValid() || fireball.isDead()) {
+                cancel();
+                return;
+            }
+
+            Location location = fireball.getLocation();
+
+            // Spectacular fireball trail effects
+            createFireballCore(location);
+            createFireballAura(location);
+            createFireballFragments(location);
+
+            // Flight sounds
+            if (ticks % 12 == 0) {
+                context.fx().playSound(location, Sound.BLOCK_FIRE_AMBIENT, 0.3f, 1.4f);
+            }
+
+            ticks++;
+        }
+        
+        private void createFireballCore(Location location) {
+            // Main fireball trail
+            context.fx().spawnParticles(location, Particle.FLAME, 6, 0.2, 0.2, 0.2, 0.05);
+            context.fx().spawnParticles(location, Particle.LAVA, 3, 0.15, 0.15, 0.15, 0.02);
+            
+            // Fiery core
+            context.fx().spawnParticles(location, Particle.DUST, 4, 0.3, 0.3, 0.3, 0,
+                new Particle.DustOptions(Color.fromRGB(255, 69, 0), 1.3f));
+        }
+        
+        private void createFireballAura(Location location) {
+            // Rotating fireball aura
+            double angle = ticks * 0.4;
+            for (int i = 0; i < 3; i++) {
+                double auraAngle = angle + (i * 2 * Math.PI / 3);
+                double radius = 0.8 + Math.sin(ticks * 0.3) * 0.2;
+                double x = Math.cos(auraAngle) * radius;
+                double z = Math.sin(auraAngle) * radius;
+                
+                Location auraLoc = location.clone().add(x, 0, z);
+                context.fx().spawnParticles(auraLoc, Particle.FLAME, 1, 0.05, 0.05, 0.05, 0.01);
+                context.fx().spawnParticles(auraLoc, Particle.DUST, 1, 0.05, 0.05, 0.05, 0,
+                    new Particle.DustOptions(Color.fromRGB(255, 140, 0), 0.8f));
+            }
+        }
+        
+        private void createFireballFragments(Location location) {
+            // Fireball sparks and fragments
+            if (ticks % 4 == 0) {
+                context.fx().spawnParticles(location, Particle.FIREWORK, 3, 0.4, 0.4, 0.4, 0.1);
+            }
+            
+            // Smoke trail
+            if (ticks % 2 == 0) {
+                context.fx().spawnParticles(location, Particle.SMOKE, 2, 0.3, 0.3, 0.3, 0.02);
             }
         }
     }

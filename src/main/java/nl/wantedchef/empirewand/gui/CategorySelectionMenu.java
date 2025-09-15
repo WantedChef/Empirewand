@@ -1,14 +1,17 @@
 package nl.wantedchef.empirewand.gui;
 
 import dev.triumphteam.gui.guis.Gui;
-import dev.triumphteam.gui.guis.GuiItem;
+
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import nl.wantedchef.empirewand.EmpireWandPlugin;
 import nl.wantedchef.empirewand.core.config.WandSettingsService;
 import nl.wantedchef.empirewand.core.config.model.WandDifficulty;
 import nl.wantedchef.empirewand.core.config.model.WandSettings;
 import nl.wantedchef.empirewand.gui.session.WandSessionManager;
+import nl.wantedchef.empirewand.gui.util.GuiUtil;
+import nl.wantedchef.empirewand.gui.util.ItemBuilder;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -36,13 +39,16 @@ public class CategorySelectionMenu {
     private final WandSettingsService wandSettingsService;
     private final WandSessionManager sessionManager;
     private final Logger logger;
+    private final EmpireWandPlugin plugin;
 
     public CategorySelectionMenu(@NotNull WandSettingsService wandSettingsService,
                                 @NotNull WandSessionManager sessionManager,
-                                @NotNull Logger logger) {
+                                @NotNull Logger logger,
+                                @NotNull EmpireWandPlugin plugin) {
         this.wandSettingsService = Objects.requireNonNull(wandSettingsService, "WandSettingsService cannot be null");
         this.sessionManager = Objects.requireNonNull(sessionManager, "SessionManager cannot be null");
         this.logger = Objects.requireNonNull(logger, "Logger cannot be null");
+        this.plugin = Objects.requireNonNull(plugin, "Plugin cannot be null");
     }
 
     /**
@@ -80,7 +86,7 @@ public class CategorySelectionMenu {
     }
 
     private Gui createGui(@NotNull Player player, @NotNull String wandKey, @NotNull WandSessionManager.WandSession session) {
-        String displayName = formatWandDisplayName(wandKey);
+        String displayName = GuiUtil.formatWandDisplayName(wandKey);
 
         Gui gui = Gui.gui()
                 .title(Component.text("Quick Config: " + displayName)
@@ -159,7 +165,7 @@ public class CategorySelectionMenu {
             session.setPendingChanges(wandKey, newSettings);
 
             // Send feedback
-            player.sendMessage(Component.text("Set difficulty to " + actionName + " for " + formatWandDisplayName(wandKey))
+            player.sendMessage(Component.text("Set difficulty to " + actionName + " for " + GuiUtil.formatWandDisplayName(wandKey))
                     .color(targetDifficulty == WandDifficulty.EASY ? NamedTextColor.GREEN :
                            targetDifficulty == WandDifficulty.MEDIUM ? NamedTextColor.YELLOW : NamedTextColor.RED));
 
@@ -170,7 +176,7 @@ public class CategorySelectionMenu {
 
             // Close menu and return to main wand rules
             player.closeInventory();
-            new WandRulesMenu(wandSettingsService, sessionManager, logger).openMenu(player, wandKey);
+            new WandRulesMenu(wandSettingsService, sessionManager, logger, plugin).openMenu(player, wandKey);
         }));
     }
 
@@ -245,7 +251,7 @@ public class CategorySelectionMenu {
 
             // Send feedback
             NamedTextColor messageColor = actionName.contains("Disabled") ? NamedTextColor.RED : NamedTextColor.GREEN;
-            player.sendMessage(Component.text("Set damage to " + actionName + " for " + formatWandDisplayName(wandKey))
+            player.sendMessage(Component.text("Set damage to " + actionName + " for " + GuiUtil.formatWandDisplayName(wandKey))
                     .color(messageColor));
 
             // Play sound
@@ -254,7 +260,7 @@ public class CategorySelectionMenu {
 
             // Close menu and return to main wand rules
             player.closeInventory();
-            new WandRulesMenu(wandSettingsService, sessionManager, logger).openMenu(player, wandKey);
+            new WandRulesMenu(wandSettingsService, sessionManager, logger, plugin).openMenu(player, wandKey);
         }));
     }
 
@@ -303,7 +309,7 @@ public class CategorySelectionMenu {
 
             // Send feedback
             NamedTextColor messageColor = enableCooldownBlock ? NamedTextColor.GREEN : NamedTextColor.RED;
-            player.sendMessage(Component.text("Cooldown blocking " + actionName + " for " + formatWandDisplayName(wandKey))
+            player.sendMessage(Component.text("Cooldown blocking " + actionName + " for " + GuiUtil.formatWandDisplayName(wandKey))
                     .color(messageColor));
 
             // Play sound
@@ -312,7 +318,7 @@ public class CategorySelectionMenu {
 
             // Close menu and return to main wand rules
             player.closeInventory();
-            new WandRulesMenu(wandSettingsService, sessionManager, logger).openMenu(player, wandKey);
+            new WandRulesMenu(wandSettingsService, sessionManager, logger, plugin).openMenu(player, wandKey);
         }));
     }
 
@@ -349,7 +355,7 @@ public class CategorySelectionMenu {
 
             // Close current menu and open wand rules
             player.closeInventory();
-            new WandRulesMenu(wandSettingsService, sessionManager, logger).openMenu(player, wandKey);
+            new WandRulesMenu(wandSettingsService, sessionManager, logger, plugin).openMenu(player, wandKey);
         }));
     }
 
@@ -359,46 +365,6 @@ public class CategorySelectionMenu {
         return pendingSettings != null ? pendingSettings : wandSettingsService.getWandSettings(wandKey);
     }
 
-    private String formatWandDisplayName(@NotNull String wandKey) {
-        // Convert snake_case to Title Case
-        String[] parts = wandKey.split("_");
-        StringBuilder displayName = new StringBuilder();
+    
 
-        for (int i = 0; i < parts.length; i++) {
-            if (i > 0) {
-                displayName.append(" ");
-            }
-            String part = parts[i];
-            displayName.append(part.substring(0, 1).toUpperCase())
-                      .append(part.substring(1).toLowerCase());
-        }
-
-        return displayName.toString();
-    }
-
-    /**
-     * Utility class for building ItemStacks with fluent API.
-     */
-    private static class ItemBuilder {
-        private final ItemStack item;
-
-        private ItemBuilder(@NotNull ItemStack item) {
-            this.item = item.clone();
-        }
-
-        @NotNull
-        public static ItemBuilder from(@NotNull ItemStack item) {
-            return new ItemBuilder(item);
-        }
-
-        @NotNull
-        public GuiItem asGuiItem(@NotNull java.util.function.Consumer<org.bukkit.event.inventory.InventoryClickEvent> action) {
-            return new GuiItem(item, action::accept);
-        }
-
-        @NotNull
-        public GuiItem asGuiItem() {
-            return new GuiItem(item);
-        }
-    }
 }

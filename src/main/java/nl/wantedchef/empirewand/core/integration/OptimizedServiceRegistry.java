@@ -157,6 +157,8 @@ public class OptimizedServiceRegistry {
         private final LongAdder callCount = new LongAdder();
         private volatile Instant lastUsed;
         private volatile String version = "1.0.0";
+        private final LongAdder failureCount = new LongAdder();
+        private volatile Instant lastFailure;
         
         public ServiceRegistration(Class<T> serviceType, String name, ServiceScope scope,
                                  int priority, Set<Class<?>> interfaces, ServiceFactory<T> factory) {
@@ -186,6 +188,9 @@ public class OptimizedServiceRegistry {
         public void incrementCallCount() { callCount.increment(); this.lastUsed = Instant.now(); }
         public Instant getLastUsed() { return lastUsed; }
         public String getVersion() { return version; }
+        public void incrementFailureCount() { failureCount.increment(); this.lastFailure = Instant.now(); }
+        public long getFailureCount() { return failureCount.sum(); }
+        public Instant getLastFailure() { return lastFailure; }
     }
     
     /**
@@ -400,10 +405,52 @@ public class OptimizedServiceRegistry {
             }
         }
         
-        @SuppressWarnings("unused")
         private List<Class<?>> findCycle(Map<Class<?>, Set<Class<?>>> graph) {
-            // Implementation would find and return the cyclic dependency chain
+            if (graph == null || graph.isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            Set<Class<?>> visited = new HashSet<>();
+            Set<Class<?>> recursionStack = new HashSet<>();
+
+            for (Class<?> node : graph.keySet()) {
+                if (!visited.contains(node)) {
+                    List<Class<?>> path = new ArrayList<>();
+                    Class<?> cycleNode = findCycleRecursive(node, graph, visited, recursionStack, path);
+                    if (cycleNode != null) {
+                        int cycleStartIndex = path.indexOf(cycleNode);
+                        List<Class<?>> cycle = new ArrayList<>(path.subList(cycleStartIndex, path.size()));
+                        cycle.add(cycleNode); // Add the start of the cycle to show the loop
+                        return cycle;
+                    }
+                }
+            }
+
             return Collections.emptyList();
+        }
+
+        private Class<?> findCycleRecursive(Class<?> node, Map<Class<?>, Set<Class<?>>> graph,
+                                           Set<Class<?>> visited, Set<Class<?>> recursionStack,
+                                           List<Class<?>> path) {
+            visited.add(node);
+            recursionStack.add(node);
+            path.add(node);
+
+            for (Class<?> neighbor : graph.getOrDefault(node, Collections.emptySet())) {
+                if (recursionStack.contains(neighbor)) {
+                    return neighbor; // Cycle detected
+                }
+                if (!visited.contains(neighbor)) {
+                    Class<?> cycleNode = findCycleRecursive(neighbor, graph, visited, recursionStack, path);
+                    if (cycleNode != null) {
+                        return cycleNode;
+                    }
+                }
+            }
+
+            recursionStack.remove(node);
+            path.remove(path.size() - 1); // Backtrack
+            return null;
         }
     }
     
@@ -431,6 +478,7 @@ public class OptimizedServiceRegistry {
                 Object instance = registration.getInstance();
                 if (instance instanceof ServiceLifecycle lifecycle) {
                     if (!lifecycle.isHealthy()) {
+                        registration.incrementFailureCount();
                         logger.log(Level.WARNING, "Service health check failed: {0}", registration.getServiceType().getSimpleName());
                         
                         // Trigger health check failed event
@@ -447,15 +495,38 @@ public class OptimizedServiceRegistry {
                     }
                 }
             } catch (Exception e) {
+                registration.incrementFailureCount();
                 logger.log(Level.WARNING, "Error during health check for service: " + 
                           registration.getServiceType().getSimpleName(), e);
             }
         }
         
-        @SuppressWarnings("unused")
         private boolean shouldRestartUnhealthyService(ServiceRegistration<?> registration) {
-            // Implement logic to determine if service should be automatically restarted
-            return false; // Conservative default
+            if (registration == null) {
+                return false;
+            }
+
+            // Simple restart policy:
+            // - Max 3 restarts.
+            // - Cooldown of 1 minute between restarts.
+            final int MAX_RESTARTS = 3;
+            final Duration RESTART_COOLDOWN = Duration.ofMinutes(1);
+
+            long failures = registration.getFailureCount();
+            if (failures > MAX_RESTARTS) {
+                logger.log(Level.WARNING, "Service {0} has failed {1} times and will not be restarted again.",
+                        new Object[]{registration.getServiceType().getSimpleName(), failures});
+                return false;
+            }
+
+            Instant lastFailure = registration.getLastFailure();
+            if (lastFailure != null && Duration.between(lastFailure, Instant.now()).compareTo(RESTART_COOLDOWN) < 0) {
+                logger.log(Level.INFO, "Service {0} failed recently. Waiting for cooldown before next restart attempt.",
+                        registration.getServiceType().getSimpleName());
+                return false;
+            }
+
+            return true;
         }
         
         private void restartService(ServiceRegistration<?> registration) {
@@ -527,19 +598,19 @@ public class OptimizedServiceRegistry {
         this.eventBus = Objects.requireNonNull(eventBus);
         this.performanceMonitor = new AdvancedPerformanceMonitor(plugin, logger);
         
-        // Initialize components
-        this.dependencyResolver = new DependencyResolver();
-        this.proxyFactory = new ServiceProxyFactory();
-        this.healthMonitor = new ServiceHealthMonitor();
-        this.metricsCollector = new ServiceMetricsCollector();
-        
-        // Initialize executor
+        // Initialize executor FIRST - before any components that depend on it
         this.lifecycleExecutor = Executors.newScheduledThreadPool(4, r -> {
             Thread t = new Thread(r, "EmpireWand-ServiceRegistry");
             t.setDaemon(true);
             t.setPriority(Thread.NORM_PRIORITY);
             return t;
         });
+        
+        // Initialize components that depend on lifecycleExecutor
+        this.dependencyResolver = new DependencyResolver();
+        this.proxyFactory = new ServiceProxyFactory();
+        this.healthMonitor = new ServiceHealthMonitor();
+        this.metricsCollector = new ServiceMetricsCollector();
         
         // Start monitoring
         performanceMonitor.startMonitoring();
@@ -581,16 +652,16 @@ public class OptimizedServiceRegistry {
             
             logger.log(Level.INFO, "Registered service: {0} with scope: {1}", new Object[]{serviceType.getSimpleName(), scope});
             
-            // Publish registration event
-            eventBus.publish("service.registered", Map.of(
-                "serviceType", serviceType,
-                "name", name,
-                "scope", scope
-            ));
-            
         } finally {
             registryLock.writeLock().unlock();
         }
+        
+        // Publish registration event AFTER releasing the lock to avoid deadlock
+        eventBus.publish("service.registered", Map.of(
+            "serviceType", serviceType,
+            "name", name,
+            "scope", scope
+        ));
     }
     
     /**
@@ -739,7 +810,7 @@ public class OptimizedServiceRegistry {
                 registryStarted = true;
                 logger.log(Level.INFO, "Service registry started successfully with {0} services", services.size());
                 
-                // Publish startup complete event
+                // Publish startup complete event (no lock held here, so it's safe)
                 eventBus.publish("service.registry.started", Map.of(
                     "serviceCount", services.size(),
                     "timestamp", Instant.now()
@@ -879,22 +950,56 @@ public class OptimizedServiceRegistry {
         return instance;
     }
     
-    @SuppressWarnings("unused")
+    // Implement performDependencyInjection
     private void performDependencyInjection(Object instance) {
-        // Implementation would scan fields and methods for @Inject annotations
-        // and inject appropriate services
+        try {
+            for (java.lang.reflect.Field field : instance.getClass().getDeclaredFields()) {
+                if (field.isAnnotationPresent(Inject.class)) {
+                    field.setAccessible(true);
+                    Inject inject = field.getAnnotation(Inject.class);
+                    Object dependency;
+                    if (!inject.name().isEmpty()) {
+                        dependency = getService(inject.name(), field.getType());
+                    } else {
+                        dependency = getService(field.getType());
+                    }
+                    if (dependency == null && !inject.optional()) {
+                        throw new IllegalStateException("Required dependency not found: " + field.getType().getSimpleName());
+                    }
+                    field.set(instance, dependency);
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Dependency injection failed for " + instance.getClass().getSimpleName(), e);
+        }
     }
     
-    @SuppressWarnings("unused")
+    // Implement invokePostConstructMethods
     private void invokePostConstructMethods(Object instance) {
-        // Implementation would scan methods for @PostConstruct annotation
-        // and invoke them after dependency injection
+        try {
+            for (java.lang.reflect.Method method : instance.getClass().getDeclaredMethods()) {
+                if (method.isAnnotationPresent(PostConstruct.class)) {
+                    method.setAccessible(true);
+                    method.invoke(instance);
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Post-construct failed for " + instance.getClass().getSimpleName(), e);
+        }
     }
     
-    @SuppressWarnings("unused")
+    // Implement invokePreDestroyMethods
     private void invokePreDestroyMethods(Object instance) {
-        // Implementation would scan methods for @PreDestroy annotation
-        // and invoke them before destruction
+        try {
+            for (java.lang.reflect.Method method : instance.getClass().getDeclaredMethods()) {
+                if (method.isAnnotationPresent(PreDestroy.class)) {
+                    method.setAccessible(true);
+                    method.invoke(instance);
+                }
+            }
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Pre-destroy failed for " + instance.getClass().getSimpleName(), e);
+        }
     }
     
     private void startService(ServiceRegistration<?> registration) {
@@ -932,9 +1037,13 @@ public class OptimizedServiceRegistry {
         }
     }
     
-    @SuppressWarnings("unused")
-    private void recreateServiceProxy(ServiceRegistration<?> registration) {
-        // Implementation would recreate proxy with new interceptors
+    // Implement recreateServiceProxy
+    private <T> void recreateServiceProxy(ServiceRegistration<T> registration) {
+        List<ServiceInterceptor> serviceInterceptors = interceptors.get(registration.getServiceType());
+        if (serviceInterceptors != null) {
+            T proxy = proxyFactory.createProxy(registration.getServiceType(), registration.getInstance(), new ArrayList<>(serviceInterceptors));
+            registration.setInstance(proxy);
+        }
     }
     
     private ServiceRegistration<?> findRegistrationForInstance(Object instance) {

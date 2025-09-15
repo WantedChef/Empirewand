@@ -1,13 +1,16 @@
 package nl.wantedchef.empirewand.gui;
 
 import dev.triumphteam.gui.guis.Gui;
-import dev.triumphteam.gui.guis.GuiItem;
+
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import nl.wantedchef.empirewand.EmpireWandPlugin;
 import nl.wantedchef.empirewand.core.config.WandSettingsService;
 import nl.wantedchef.empirewand.core.config.model.WandSettings;
 import nl.wantedchef.empirewand.gui.session.WandSessionManager;
+import nl.wantedchef.empirewand.gui.util.GuiUtil;
+import nl.wantedchef.empirewand.gui.util.ItemBuilder;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -35,13 +38,16 @@ public class ConfirmMenu {
     private final WandSettingsService wandSettingsService;
     private final WandSessionManager sessionManager;
     private final Logger logger;
+    private final EmpireWandPlugin plugin;
 
     public ConfirmMenu(@NotNull WandSettingsService wandSettingsService,
                       @NotNull WandSessionManager sessionManager,
-                      @NotNull Logger logger) {
+                      @NotNull Logger logger,
+                      @NotNull EmpireWandPlugin plugin) {
         this.wandSettingsService = Objects.requireNonNull(wandSettingsService, "WandSettingsService cannot be null");
         this.sessionManager = Objects.requireNonNull(sessionManager, "SessionManager cannot be null");
         this.logger = Objects.requireNonNull(logger, "Logger cannot be null");
+        this.plugin = Objects.requireNonNull(plugin, "Plugin cannot be null");
     }
 
     /**
@@ -61,7 +67,7 @@ public class ConfirmMenu {
         openConfirmationMenu(
                 player,
                 "Save Changes?",
-                "Save settings for " + formatWandDisplayName(wandKey),
+                "Save settings for " + GuiUtil.formatWandDisplayName(wandKey),
                 createSaveDetailsLore(pendingSettings),
                 Material.EMERALD_BLOCK,
                 NamedTextColor.GREEN,
@@ -94,7 +100,7 @@ public class ConfirmMenu {
         openConfirmationMenu(
                 player,
                 "Discard Changes?",
-                "Discard changes for " + formatWandDisplayName(wandKey),
+                "Discard changes for " + GuiUtil.formatWandDisplayName(wandKey),
                 lore,
                 Material.RED_STAINED_GLASS,
                 NamedTextColor.RED,
@@ -138,7 +144,7 @@ public class ConfirmMenu {
         openConfirmationMenu(
                 player,
                 "Reset to Defaults?",
-                "Reset " + formatWandDisplayName(wandKey) + " to defaults",
+                "Reset " + GuiUtil.formatWandDisplayName(wandKey) + " to defaults",
                 lore,
                 Material.ORANGE_STAINED_GLASS,
                 NamedTextColor.GOLD,
@@ -318,22 +324,7 @@ public class ConfirmMenu {
         return lore;
     }
 
-    private String formatWandDisplayName(@NotNull String wandKey) {
-        // Convert snake_case to Title Case
-        String[] parts = wandKey.split("_");
-        StringBuilder displayName = new StringBuilder();
-
-        for (int i = 0; i < parts.length; i++) {
-            if (i > 0) {
-                displayName.append(" ");
-            }
-            String part = parts[i];
-            displayName.append(part.substring(0, 1).toUpperCase())
-                      .append(part.substring(1).toLowerCase());
-        }
-
-        return displayName.toString();
-    }
+    
 
     /**
      * Convenience method for saving settings with confirmation.
@@ -361,7 +352,7 @@ public class ConfirmMenu {
                         }
 
                         // Send success message
-                        player.sendMessage(Component.text("Settings saved successfully for " + formatWandDisplayName(wandKey))
+                        player.sendMessage(Component.text("Settings saved successfully for " + GuiUtil.formatWandDisplayName(wandKey))
                                 .color(NamedTextColor.GREEN));
 
                         // Play success sound
@@ -387,33 +378,8 @@ public class ConfirmMenu {
                     });
         }, () -> {
             // User cancelled save, return to wand rules menu
-            new WandRulesMenu(wandSettingsService, sessionManager, logger).openMenu(player, wandKey);
+            new WandRulesMenu(wandSettingsService, sessionManager, logger, plugin).openMenu(player, wandKey);
         });
     }
 
-    /**
-     * Utility class for building ItemStacks with fluent API.
-     */
-    private static class ItemBuilder {
-        private final ItemStack item;
-
-        private ItemBuilder(@NotNull ItemStack item) {
-            this.item = item.clone();
-        }
-
-        @NotNull
-        public static ItemBuilder from(@NotNull ItemStack item) {
-            return new ItemBuilder(item);
-        }
-
-        @NotNull
-        public GuiItem asGuiItem(@NotNull java.util.function.Consumer<org.bukkit.event.inventory.InventoryClickEvent> action) {
-            return new GuiItem(item, action::accept);
-        }
-
-        @NotNull
-        public GuiItem asGuiItem() {
-            return new GuiItem(item);
-        }
-    }
 }

@@ -16,6 +16,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.Color;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -162,11 +163,13 @@ public class Comet extends ProjectileSpell<Fireball> {
         });
 
         if (enhancementLevel == EnhancementLevel.ENHANCED) {
-            // Enhanced version uses custom trail effect
-            new CometTrailEffect(context, fireball).runTaskTimer(context.plugin(), 0L, 1L);
-            // Enhanced launch sounds
+            // Enhanced version uses spectacular comet trail effect
+            new SpectacularCometTrailEffect(context, fireball).runTaskTimer(context.plugin(), 0L, 1L);
+            // Enhanced launch sounds with comet aura
+            createLaunchAura(context, caster.getLocation());
             context.fx().playSound(caster, Sound.ENTITY_BLAZE_SHOOT, 1.2f, 0.6f);
             context.fx().playSound(caster, Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, 0.96f, 0.72f);
+            context.fx().playSound(caster, Sound.ENTITY_DRAGON_FIREBALL_EXPLODE, 0.8f, 1.5f);
         } else {
             // Standard version uses ProjectileTrail
             ProjectileTrail.TrailConfig trailConfig = ProjectileTrail.TrailConfig.builder()
@@ -226,16 +229,16 @@ public class Comet extends ProjectileSpell<Fireball> {
         Location hitLoc = projectile.getLocation();
 
         // Enhanced hit sounds
+        float hitVolume = 2.0f;
+        float hitPitch = 0.8f;
         context.fx().playSound(hitLoc, Sound.ENTITY_GENERIC_EXPLODE, hitVolume, hitPitch);
         context.fx().playSound(hitLoc, Sound.BLOCK_FIRE_EXTINGUISH, hitVolume * 0.8f, hitPitch * 1.3f);
 
-        // Enhanced particle effects
-        hitLoc.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, hitLoc, 2, 0, 0, 0, 0);
-        hitLoc.getWorld().spawnParticle(Particle.FLAME, hitLoc, 60, 1.0, 1.0, 1.0, 0.1);
-        hitLoc.getWorld().spawnParticle(Particle.LAVA, hitLoc, 30, 0.8, 0.8, 0.8, 0.05);
+        // Spectacular enhanced particle effects
+        createSpectacularExplosion(context, hitLoc);
 
-        // Create shockwave effect
-        createShockwave(context, hitLoc);
+        // Create enhanced shockwave effect
+        createEnhancedShockwave(context, hitLoc);
 
         // Handle entity damage
         if (event.getHitEntity() instanceof LivingEntity target) {
@@ -251,10 +254,67 @@ public class Comet extends ProjectileSpell<Fireball> {
         }
     }
 
-    private void createShockwave(SpellContext context, Location center) {
+
+    private void createLaunchAura(SpellContext context, Location center) {
+        // Create spectacular launch aura for enhanced comet
+        for (int i = 0; i < 8; i++) {
+            final int step = i;
+            context.plugin().getServer().getScheduler().runTaskLater(context.plugin(), () -> {
+                // Expanding fire ring
+                for (double angle = 0; angle < Math.PI * 2; angle += Math.PI / 12) {
+                    double radius = (step + 1) * 0.5;
+                    double x = Math.cos(angle) * radius;
+                    double z = Math.sin(angle) * radius;
+                    Location auraLoc = center.clone().add(x, 0.3, z);
+                    
+                    context.fx().spawnParticles(auraLoc, Particle.FLAME, 3, 0.1, 0.1, 0.1, 0.05);
+                    context.fx().spawnParticles(auraLoc, Particle.DUST, 2, 0.1, 0.1, 0.1, 0,
+                        new Particle.DustOptions(Color.fromRGB(255, 69, 0), 1.2f)); // Orange Red
+                }
+                
+                // Central comet formation
+                context.fx().spawnParticles(center.clone().add(0, 1, 0), Particle.LAVA, 5, 0.3, 0.3, 0.3, 0.1);
+                context.fx().spawnParticles(center.clone().add(0, 1, 0), Particle.FIREWORK, 8, 0.5, 0.5, 0.5, 0.2);
+            }, step * 2L);
+        }
+    }
+    
+    private void createSpectacularExplosion(SpellContext context, Location center) {
+        // Massive explosion with multiple layers
+        context.fx().spawnParticles(center, Particle.EXPLOSION_EMITTER, 5, 1, 1, 1, 0);
+        context.fx().spawnParticles(center, Particle.FLAME, 120, 2.0, 2.0, 2.0, 0.3);
+        context.fx().spawnParticles(center, Particle.LAVA, 80, 1.5, 1.5, 1.5, 0.15);
+        context.fx().spawnParticles(center, Particle.FIREWORK, 50, 2.5, 2.5, 2.5, 0.4);
+        
+        // Fiery dust clouds
+        context.fx().spawnParticles(center, Particle.DUST, 60, 2.0, 2.0, 2.0, 0,
+            new Particle.DustOptions(Color.fromRGB(255, 69, 0), 2.0f)); // Orange Red
+        context.fx().spawnParticles(center, Particle.DUST, 40, 1.5, 1.5, 1.5, 0,
+            new Particle.DustOptions(Color.fromRGB(255, 140, 0), 1.8f)); // Dark Orange
+        
+        // Comet fragments
+        for (int i = 0; i < 12; i++) {
+            final int fragment = i;
+            context.plugin().getServer().getScheduler().runTaskLater(context.plugin(), () -> {
+                double angle = (2 * Math.PI * fragment / 12);
+                for (int r = 1; r <= 6; r++) {
+                    double x = Math.cos(angle) * r;
+                    double z = Math.sin(angle) * r;
+                    double y = Math.sin(r * 0.3) * 0.5;
+                    Location fragmentLoc = center.clone().add(x, y, z);
+                    
+                    context.fx().spawnParticles(fragmentLoc, Particle.FLAME, 3, 0.2, 0.2, 0.2, 0.05);
+                    context.fx().spawnParticles(fragmentLoc, Particle.LAVA, 1, 0.1, 0.1, 0.1, 0.02);
+                }
+            }, fragment);
+        }
+    }
+    
+    private void createEnhancedShockwave(SpellContext context, Location center) {
         new BukkitRunnable() {
             int radius = 1;
-            final int maxRadius = 8;
+            final int maxRadius = 12;
+            int wave = 0;
 
             @Override
             public void run() {
@@ -263,36 +323,66 @@ public class Comet extends ProjectileSpell<Fireball> {
                     return;
                 }
 
-                // Create ring of fire particles
-                for (int i = 0; i < 36; i++) {
-                    double angle = 2 * Math.PI * i / 36;
-                    double x = radius * Math.cos(angle);
-                    double z = radius * Math.sin(angle);
-                    Location particleLoc = center.clone().add(x, 0, z);
-                    center.getWorld().spawnParticle(Particle.FLAME, particleLoc, 2, 0, 0, 0, 0);
+                // Multiple shockwave rings
+                for (int ringOffset = 0; ringOffset < 3; ringOffset++) {
+                    int currentRadius = radius + ringOffset * 2;
+                    if (currentRadius <= maxRadius) {
+                        createShockwaveRing(context, center, currentRadius, wave);
+                    }
                 }
 
+                // Enhanced shockwave sounds
                 context.fx().playSound(center, Sound.BLOCK_LAVA_POP,
-                    0.3f + (radius / (float)maxRadius), 0.8f + (radius / (float)maxRadius));
+                    0.5f + (radius / (float)maxRadius), 0.6f + (radius / (float)maxRadius));
+                context.fx().playSound(center, Sound.ENTITY_LIGHTNING_BOLT_THUNDER,
+                    0.3f, 1.8f - (radius / (float)maxRadius));
 
-                radius++;
+                radius += 2;
+                wave++;
             }
         }.runTaskTimer(context.plugin(), 0L, 1L);
     }
+    
+    private void createShockwaveRing(SpellContext context, Location center, int radius, int wave) {
+        // Create enhanced shockwave ring with multiple particle types
+        for (int i = 0; i < 48; i++) {
+            double angle = 2 * Math.PI * i / 48;
+            double x = radius * Math.cos(angle);
+            double z = radius * Math.sin(angle);
+            Location ringLoc = center.clone().add(x, 0.2, z);
+            
+            // Flame ring
+            context.fx().spawnParticles(ringLoc, Particle.FLAME, 2, 0.1, 0.1, 0.1, 0.02);
+            
+            // Dust ring with fading color intensity
+            float intensity = 1.0f - (radius / 12.0f);
+            context.fx().spawnParticles(ringLoc, Particle.DUST, 1, 0, 0, 0, 0,
+                new Particle.DustOptions(Color.fromRGB((int)(255 * intensity), (int)(69 * intensity), 0), 1.5f));
+            
+            // Occasional lava bursts
+            if (i % 6 == 0) {
+                context.fx().spawnParticles(ringLoc, Particle.LAVA, 1, 0.2, 0.2, 0.2, 0.05);
+            }
+            
+            // Firework sparks
+            if (wave % 3 == 0 && i % 8 == 0) {
+                context.fx().spawnParticles(ringLoc, Particle.FIREWORK, 2, 0.3, 0.3, 0.3, 0.1);
+            }
+        }
+    }
 
     /**
-     * Enhanced trail effect for comet spells.
+     * Spectacular enhanced trail effect for comet spells.
      */
-    private static class CometTrailEffect extends BukkitRunnable {
+    private static class SpectacularCometTrailEffect extends BukkitRunnable {
         private final SpellContext context;
         private final Fireball fireball;
         private int ticks = 0;
 
-        private static final int TRAIL_PARTICLE_COUNT = 5;
         private static final double TRAIL_PARTICLE_OFFSET = 0.1;
         private static final double TRAIL_PARTICLE_SPEED = 0.01;
 
-        CometTrailEffect(SpellContext context, Fireball fireball) {
+        SpectacularCometTrailEffect(SpellContext context, Fireball fireball) {
             this.context = context;
             this.fireball = fireball;
         }
@@ -306,28 +396,71 @@ public class Comet extends ProjectileSpell<Fireball> {
 
             Location location = fireball.getLocation();
 
-            // Main flame trail
-            context.fx().spawnParticles(location, Particle.FLAME, TRAIL_PARTICLE_COUNT,
-                    TRAIL_PARTICLE_OFFSET, TRAIL_PARTICLE_OFFSET, TRAIL_PARTICLE_OFFSET, TRAIL_PARTICLE_SPEED);
+            // Spectacular multi-layered comet trail
+            createCometTail(location);
+            createCometAura(location);
+            createCometFragments(location);
 
-            // Secondary particle trail
-            if (ticks % 3 == 0) {
-                context.fx().spawnParticles(location, Particle.LAVA, TRAIL_PARTICLE_COUNT / 2,
-                        TRAIL_PARTICLE_OFFSET * 2, TRAIL_PARTICLE_OFFSET * 2, TRAIL_PARTICLE_OFFSET * 2, TRAIL_PARTICLE_SPEED * 0.5);
-            }
-
-            // Occasional spark effects
-            if (ticks % 7 == 0) {
-                context.fx().spawnParticles(location, Particle.FIREWORK, 3,
-                        TRAIL_PARTICLE_OFFSET * 3, TRAIL_PARTICLE_OFFSET * 3, TRAIL_PARTICLE_OFFSET * 3, TRAIL_PARTICLE_SPEED * 2);
-            }
-
-            // Sound effects during flight
-            if (ticks % 15 == 0) {
-                context.fx().playSound(location, Sound.BLOCK_LAVA_AMBIENT, 0.2f, 1.2f);
+            // Enhanced flight sounds
+            if (ticks % 10 == 0) {
+                context.fx().playSound(location, Sound.BLOCK_LAVA_AMBIENT, 0.3f, 1.2f);
+                context.fx().playSound(location, Sound.ENTITY_FIREWORK_ROCKET_BLAST, 0.2f, 0.8f);
             }
 
             ticks++;
+        }
+        
+        private void createCometTail(Location location) {
+            // Main spectacular flame trail
+            context.fx().spawnParticles(location, Particle.FLAME, 8,
+                    TRAIL_PARTICLE_OFFSET, TRAIL_PARTICLE_OFFSET, TRAIL_PARTICLE_OFFSET, TRAIL_PARTICLE_SPEED);
+            
+            // Lava core trail
+            context.fx().spawnParticles(location, Particle.LAVA, 4,
+                    TRAIL_PARTICLE_OFFSET * 0.5, TRAIL_PARTICLE_OFFSET * 0.5, TRAIL_PARTICLE_OFFSET * 0.5, TRAIL_PARTICLE_SPEED * 0.3);
+            
+            // Fiery dust trail
+            context.fx().spawnParticles(location, Particle.DUST, 6, 
+                    TRAIL_PARTICLE_OFFSET * 1.5, TRAIL_PARTICLE_OFFSET * 1.5, TRAIL_PARTICLE_OFFSET * 1.5, 0,
+                    new Particle.DustOptions(Color.fromRGB(255, 69, 0), 1.5f));
+        }
+        
+        private void createCometAura(Location location) {
+            // Rotating comet aura
+            double angle = ticks * 0.3;
+            for (int i = 0; i < 4; i++) {
+                double auraAngle = angle + (i * Math.PI / 2);
+                double radius = 1.2 + Math.sin(ticks * 0.2) * 0.3;
+                double x = Math.cos(auraAngle) * radius;
+                double z = Math.sin(auraAngle) * radius;
+                
+                Location auraLoc = location.clone().add(x, 0, z);
+                context.fx().spawnParticles(auraLoc, Particle.FLAME, 2, 0.1, 0.1, 0.1, 0.02);
+                context.fx().spawnParticles(auraLoc, Particle.DUST, 1, 0.05, 0.05, 0.05, 0,
+                    new Particle.DustOptions(Color.fromRGB(255, 140, 0), 1.0f));
+            }
+        }
+        
+        private void createCometFragments(Location location) {
+            // Occasional comet fragments and sparks
+            if (ticks % 5 == 0) {
+                context.fx().spawnParticles(location, Particle.FIREWORK, 5,
+                        TRAIL_PARTICLE_OFFSET * 2, TRAIL_PARTICLE_OFFSET * 2, TRAIL_PARTICLE_OFFSET * 2, TRAIL_PARTICLE_SPEED * 1.5);
+            }
+            
+            // Comet debris trail
+            if (ticks % 3 == 0) {
+                for (int i = 0; i < 3; i++) {
+                    Location debrisLoc = location.clone().add(
+                        (Math.random() - 0.5) * 0.8,
+                        (Math.random() - 0.5) * 0.8,
+                        (Math.random() - 0.5) * 0.8
+                    );
+                    
+                    context.fx().spawnParticles(debrisLoc, Particle.LAVA, 1, 0.1, 0.1, 0.1, 0.02);
+                    context.fx().spawnParticles(debrisLoc, Particle.SMOKE, 2, 0.1, 0.1, 0.1, 0.01);
+                }
+            }
         }
     }
 }

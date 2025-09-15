@@ -1,24 +1,31 @@
 package nl.wantedchef.empirewand.framework.service;
 
+import org.bukkit.plugin.Plugin;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class CooldownServiceTest {
 
-    private CooldownService cooldownService;
+    private nl.wantedchef.empirewand.api.service.CooldownService cooldownService;
     private UUID playerId;
     private String spellKey;
 
     @BeforeEach
     void setUp() {
-        cooldownService = new CooldownService();
+        var plugin = mock(Plugin.class);
+        when(plugin.getLogger()).thenReturn(Logger.getAnonymousLogger());
+        var unifiedManager = new nl.wantedchef.empirewand.framework.service.UnifiedCooldownManager(plugin);
+        cooldownService = new nl.wantedchef.empirewand.api.impl.CooldownServiceAdapter(unifiedManager);
         playerId = UUID.randomUUID();
         spellKey = "test-spell";
     }

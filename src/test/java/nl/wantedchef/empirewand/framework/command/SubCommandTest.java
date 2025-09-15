@@ -159,7 +159,7 @@ class SubCommandTest {
             mock(nl.wantedchef.empirewand.framework.service.FxService.class),
             mock(nl.wantedchef.empirewand.api.spell.SpellRegistry.class),
             mock(nl.wantedchef.empirewand.api.service.WandService.class),
-            mock(nl.wantedchef.empirewand.framework.service.CooldownService.class),
+              mock(nl.wantedchef.empirewand.framework.service.UnifiedCooldownManager.class),
             mock(nl.wantedchef.empirewand.api.service.PermissionService.class)
         );
     }

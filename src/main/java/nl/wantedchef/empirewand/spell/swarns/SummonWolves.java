@@ -81,7 +81,6 @@ public class SummonWolves extends Spell<Void> {
         private final SpellContext context;
         private final int count;
         private final double radius;
-        private final int durationTicks;
         private final int maxSteps;
         private final List<Wolf> wolves = new ArrayList<>();
         private int steps = 0;
@@ -90,7 +89,6 @@ public class SummonWolves extends Spell<Void> {
             this.context = Objects.requireNonNull(context);
             this.count = count;
             this.radius = radius;
-            this.durationTicks = durationTicks;
             this.maxSteps = Math.max(1, durationTicks / 5);
         }
 

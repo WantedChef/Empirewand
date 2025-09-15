@@ -1,15 +1,6 @@
 import com.github.spotbugs.snom.Confidence
 import net.minecrell.pluginyml.bukkit.BukkitPluginDescription
-
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath("org.ow2.asm:asm:9.7")
-        classpath("org.ow2.asm:asm-commons:9.7")
-    }
-}
+import org.gradle.api.tasks.testing.Test
 
 plugins {
     java
@@ -18,7 +9,7 @@ plugins {
     jacoco
     id("io.papermc.paperweight.userdev") version "1.7.1"
     id("net.minecrell.plugin-yml.bukkit") version "0.6.0"
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("com.gradleup.shadow") version "9.0.0-beta17"
 }
 
 group = "nl.wantedchef.empirewand"
@@ -42,10 +33,10 @@ repositories {
 dependencies {
     paperweight.paperDevBundle("1.20.6-R0.1-SNAPSHOT")
     compileOnly("org.jetbrains:annotations:24.1.0")
-    implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
     compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.6")
     implementation("org.bstats:bstats-bukkit:3.0.2")
     implementation("dev.triumphteam:triumph-gui:3.1.6")
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.3")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.3")
@@ -57,9 +48,92 @@ tasks {
     assemble {
         dependsOn(shadowJar)
     }
+
     shadowJar {
         relocate("org.bstats", "nl.wantedchef.empirewand.shaded.bstats")
         relocate("dev.triumphteam.gui", "nl.wantedchef.empirewand.lib.triumph")
+        relocate("com.github.benmanes.caffeine", "nl.wantedchef.empirewand.shaded.caffeine")
+        archiveClassifier.set("all")
+    }
+
+    checkstyle {
+        toolVersion = "10.12.0"
+        configFile = file("config/checkstyle/checkstyle.xml")
+        isIgnoreFailures = false
+        maxWarnings = 0
+    }
+
+    withType<Checkstyle>().configureEach {
+        reports {
+            xml.required.set(false)
+            html.required.set(true)
+        }
+    }
+
+    spotbugs {
+        excludeFilter.set(file("config/spotbugs/exclude.xml"))
+        reportLevel.set(Confidence.HIGH)
+    }
+
+    spotbugsMain {
+        enabled = true
+    }
+
+    spotbugsTest {
+        enabled = false
+    }
+
+    test {
+        useJUnitPlatform()
+        finalizedBy(jacocoTestReport)
+        jvmArgs(
+            "--add-opens=java.base/java.lang=ALL-UNNAMED",
+            "--add-opens=java.base/java.util=ALL-UNNAMED",
+            "--add-opens=java.base/java.text=ALL-UNNAMED",
+            "--add-opens=java.desktop/java.awt.font=ALL-UNNAMED"
+        )
+    }
+
+    jacocoTestReport {
+        dependsOn(test)
+        reports {
+            xml.required.set(true)
+            html.required.set(true)
+            csv.required.set(true)
+        }
+    }
+
+    jacocoTestCoverageVerification {
+        dependsOn(test)
+        violationRules {
+            rule {
+                limit {
+                    minimum = "0.7".toBigDecimal()
+                }
+            }
+        }
+    }
+
+    jar {
+        enabled = false
+        manifest {
+            attributes["Main-Class"] = "nl.wantedchef.empirewand.EmpireWandPlugin"
+        }
+    }
+
+    build {
+        dependsOn(shadowJar)
+    }
+}
+
+tasks {
+    assemble {
+        dependsOn(shadowJar)
+    }
+    shadowJar {
+        relocate("org.bstats", "nl.wantedchef.empirewand.shaded.bstats")
+        relocate("dev.triumphteam.gui", "nl.wantedchef.empirewand.lib.triumph")
+        relocate("com.github.benmanes.caffeine", "nl.wantedchef.empirewand.shaded.caffeine")
         archiveClassifier.set("all")
     }
     checkstyle {

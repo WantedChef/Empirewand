@@ -24,6 +24,7 @@ public class Recall extends Spell<Player> {
 
     
     private static final Map<UUID, Location> deathLocations = new HashMap<>();
+    private static final int MAX_DEATH_LOCATIONS = 1000; // Limit to prevent memory leaks
 
     public static class Builder extends Spell.Builder<Player> {
         public Builder(EmpireWandAPI api) {
@@ -63,6 +64,15 @@ public class Recall extends Spell<Player> {
     }
     
     public static void recordDeath(Player player) {
+        // Clean up old entries if we exceed the limit to prevent memory leaks
+        if (deathLocations.size() >= MAX_DEATH_LOCATIONS) {
+            // Remove the first entry (oldest) to make room
+            var iterator = deathLocations.entrySet().iterator();
+            if (iterator.hasNext()) {
+                iterator.next();
+                iterator.remove();
+            }
+        }
         deathLocations.put(player.getUniqueId(), player.getLocation());
     }
 

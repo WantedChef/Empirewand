@@ -1,11 +1,18 @@
 package nl.wantedchef.empirewand.listener.spell;
 
 import nl.wantedchef.empirewand.EmpireWandPlugin;
+import nl.wantedchef.empirewand.core.integration.OptimizedServiceRegistry.Inject;
+import nl.wantedchef.empirewand.core.integration.OptimizedServiceRegistry.PostConstruct;
+import nl.wantedchef.empirewand.core.integration.OptimizedServiceRegistry.Service;
 import nl.wantedchef.empirewand.core.storage.Keys;
+import nl.wantedchef.empirewand.core.task.TaskManager;
+import nl.wantedchef.empirewand.framework.service.ConfigService;
 import nl.wantedchef.empirewand.framework.service.FxService;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -18,8 +25,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.GameMode;
-import org.bukkit.attribute.Attribute;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -28,33 +34,49 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 /**
  * Handles aura spell effects including passive damage auras, protective auras,
  * and toggle-based aura management.
  */
+@Service
 public class AuraSpellListener implements Listener {
-    private final EmpireWandPlugin plugin;
-    private final FxService fxService;
-    
+
+    @Inject
+    private EmpireWandPlugin plugin;
+    @Inject
+    private FxService fxService;
+    @Inject
+    private ConfigService configService;
+    @Inject
+    private TaskManager taskManager;
+    @Inject
+    private Logger logger;
+
     // Track active auras
     private final Map<UUID, Set<AuraEffect>> activeAuras = new ConcurrentHashMap<>();
-    
+
     // Track aura participants for efficient proximity checking
     private final Set<UUID> auraParticipants = ConcurrentHashMap.newKeySet();
-    
+
     // Aura processing task
     private static final long AURA_TICK_INTERVAL = 15L; // 0.75 seconds
-    
-    public AuraSpellListener(EmpireWandPlugin plugin) {
-        this.plugin = plugin;
-        this.fxService = plugin.getFxService();
-        
+
+    public AuraSpellListener() {
+        // Service constructor
+    }
+
+    @PostConstruct
+    public void initialize() {
         // Main aura processing task
-        plugin.getTaskManager().runTaskTimer(this::processAuras, 20L, AURA_TICK_INTERVAL);
-        
+        this.taskManager.runTaskTimer(this::processAuras, 20L, AURA_TICK_INTERVAL);
+
         // Cleanup task for expired auras
-        plugin.getTaskManager().runTaskTimer(this::cleanupExpiredAuras, 200L, 200L);
+        this.taskManager.runTaskTimer(this::cleanupExpiredAuras, 200L, 200L);
+
+        this.plugin.getServer().getPluginManager().registerEvents(this, this.plugin);
+        this.logger.info("AuraSpellListener initialized and fully integrated with OptimizedServiceRegistry.");
     }
     
     @EventHandler(priority = EventPriority.MONITOR)
@@ -69,9 +91,10 @@ public class AuraSpellListener implements Listener {
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         UUID playerId = player.getUniqueId();
-        
-        // Save persistent auras
-        savePersistentAuras(player);
+
+        // Note: Persistent auras are saved via the PersistentDataContainer.
+        // This is handled automatically by the server when the player logs out,
+        // so no explicit save action is required here.
         
         // Remove from active tracking
         activeAuras.remove(playerId);
@@ -107,7 +130,7 @@ public class AuraSpellListener implements Listener {
         UUID playerId = player.getUniqueId();
         
         // Get aura configuration from spell config
-        var spellConfig = plugin.getConfigService().getSpellsConfig();
+        var spellConfig = this.configService.getSpellsConfig();
         String configPath = spellKey + ".values.";
         
         double radius = spellConfig.getDouble(configPath + "radius", 5.0);
@@ -138,7 +161,7 @@ public class AuraSpellListener implements Listener {
                 Particle.FIREWORK, 15, 1, 1, 1, 0.2);
         fxService.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.8f, 1.3f);
         
-        plugin.getLogger().info(String.format("Activated %s aura for player %s", spellKey, player.getName()));
+        this.logger.info(String.format("Activated %s aura for player %s", spellKey, player.getName()));
     }
     
     /**
@@ -165,14 +188,17 @@ public class AuraSpellListener implements Listener {
         fxService.spawnParticles(player.getLocation().add(0, 1, 0), 
                 Particle.SMOKE, 10, 0.5, 0.5, 0.5, 0.1);
         
-        plugin.getLogger().info(String.format("Deactivated %s aura for player %s", spellKey, player.getName()));
+        this.logger.info(String.format("Deactivated %s aura for player %s", spellKey, player.getName()));
     }
     
     /**
      * Toggles an aura spell (for toggle-type auras)
      */
-    @SuppressWarnings("unused")
     public boolean toggleAura(Player player, String spellKey) {
+        if (player == null || spellKey == null) {
+            return false;
+        }
+        
         if (hasActiveAura(player, spellKey)) {
             deactivateAura(player, spellKey);
             return false;
@@ -207,7 +233,7 @@ public class AuraSpellListener implements Listener {
         long currentTime = System.currentTimeMillis();
         
         for (UUID playerId : new HashSet<>(auraParticipants)) {
-            Player player = plugin.getServer().getPlayer(playerId);
+            Player player = this.plugin.getServer().getPlayer(playerId);
             if (player == null || !player.isOnline()) {
                 continue;
             }
@@ -481,7 +507,7 @@ public class AuraSpellListener implements Listener {
     private boolean isAlly(Player caster, Player target) {
         // Basic ally check - can be expanded with party/faction systems
         return caster.equals(target) || 
-               (plugin.getConfigService().getConfig().getBoolean("auras.heal-all-players", false));
+               (this.configService.getConfig().getBoolean("auras.heal-all-players", false));
     }
     
     private boolean isUndead(LivingEntity entity) {
@@ -503,7 +529,7 @@ public class AuraSpellListener implements Listener {
             boolean removed = playerAuras.removeIf(aura -> currentTime >= aura.expiryTime());
             
             if (removed) {
-                Player player = plugin.getServer().getPlayer(playerId);
+                Player player = this.plugin.getServer().getPlayer(playerId);
                 if (player != null) {
                     // Cleanup persistent data for expired auras
                     PersistentDataContainer pdc = player.getPersistentDataContainer();
@@ -535,11 +561,6 @@ public class AuraSpellListener implements Listener {
                 activateAura(player, spellKey, remainingTime);
             }
         }
-    }
-    
-    private void savePersistentAuras(@SuppressWarnings("unused") Player player) {
-        // Persistent data is already saved in PersistentDataContainer
-        // This method could be expanded for additional persistence needs
     }
     
     /**

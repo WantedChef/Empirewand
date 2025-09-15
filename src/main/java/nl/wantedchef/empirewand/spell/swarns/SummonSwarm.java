@@ -18,11 +18,13 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.Color;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import nl.wantedchef.empirewand.api.service.ConfigService;
+import nl.wantedchef.empirewand.core.storage.Keys;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -255,8 +257,16 @@ public class SummonSwarm extends Spell<Void> {
             // Update minion behavior
             updateMinionBehavior();
 
+            // CRITICAL: Emergency caster protection - check every tick
+            preventCasterTargeting();
+
             // Create visual effects
             createVisualEffects();
+            
+            // Use durationTicks for duration-based effects (e.g., warning when spell is about to end)
+            if (ticks >= maxTicks - (durationTicks / 20)) { // Warning in last second
+                createDurationWarningEffects();
+            }
 
             ticks++;
         }
@@ -271,10 +281,11 @@ public class SummonSwarm extends Spell<Void> {
             Player player = context.caster();
             
             for (int i = 0; i < minionCount; i++) {
-                // Calculate position in a circle around the player
-                double angle = 2 * Math.PI * i / minionCount;
-                double x = center.getX() + Math.cos(angle) * radius;
-                double z = center.getZ() + Math.sin(angle) * radius;
+                // Calculate position in a circle around the player with some randomness
+                double angle = 2 * Math.PI * i / minionCount + (random.nextDouble() - 0.5) * 0.5; // Add random variation
+                double randomRadius = radius + (random.nextDouble() - 0.5) * 2.0; // Vary radius slightly
+                double x = center.getX() + Math.cos(angle) * randomRadius;
+                double z = center.getZ() + Math.sin(angle) * randomRadius;
                 Location spawnLoc = new Location(world, x, world.getHighestBlockYAt((int)x, (int)z) + 1, z);
                 
                 // Spawn vex minion (do NOT target player; we handle following via velocity)
@@ -283,13 +294,27 @@ public class SummonSwarm extends Spell<Void> {
                     if (maxHp != null) maxHp.setBaseValue(Math.max(1.0, minionHealth));
                     AttributeInstance atk = vex.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE);
                     if (atk != null) atk.setBaseValue(Math.max(1.0, minionDamage));
-                    vex.setHealth(Math.max(1.0, Math.min(minionHealth, vex.getMaxHealth())));
+                    AttributeInstance maxHealthAttr = vex.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+                    double maxHealth = maxHealthAttr != null ? maxHealthAttr.getValue() : minionHealth;
+                    vex.setHealth(Math.max(1.0, Math.min(minionHealth, maxHealth)));
                     vex.setPersistent(false);
-                    
+
+                    // CRITICAL: Clear any target immediately after spawn
+                    vex.setTarget(null);
+
                     // Make Vex friendly to the caster - this prevents them from attacking their owner
                     if (vex instanceof Tameable tameable) {
                         tameable.setTamed(true);
                         tameable.setOwner(player);
+                    }
+
+                    // Tag minion owner to enforce no friendly-fire on caster
+                    try {
+                        vex.getPersistentDataContainer().set(
+                                Keys.createKey("minion.owner"),
+                                Keys.STRING_TYPE.getType(),
+                                player.getUniqueId().toString());
+                    } catch (Exception ignored) {
                     }
                 });
                 
@@ -347,32 +372,44 @@ public class SummonSwarm extends Spell<Void> {
             
             for (Vex minion : summonedMinions) {
                 if (minion.isValid() && !minion.isDead()) {
+                    // CRITICAL: Always check and prevent caster targeting first
+                    LivingEntity currentTarget = minion.getTarget();
+                    if (currentTarget != null && currentTarget.equals(context.caster())) {
+                        minion.setTarget(null); // Immediately clear if targeting caster
+                    }
+
                     // Determine nearest valid enemy (never the caster)
                     LivingEntity target = findNearestEnemy(minion);
                     if (target != null && target.isValid() && !target.isDead()) {
-                        minion.setTarget(target);
-                        // On-hit themed effects per variant
-                        switch (variant) {
-                            case FROST -> target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 20, 1, false, true));
-                            case FLAME -> target.setFireTicks(Math.max(0, target.getFireTicks()) + 40);
-                            case TOXIC -> target.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 40, 0, false, true));
-                            case ARCANE -> target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 40, 1, false, true));
-                            case RADIANT -> target.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 40, 0, false, true));
-                            case VOID -> target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 25, 0, false, true));
-                            case WIND -> {
-                                var ml = minion.getLocation();
-                                var tl = target.getLocation();
-                                if (ml != null && tl != null) {
-                                    Vector kb = tl.toVector().subtract(ml.toVector()).normalize().multiply(0.4);
-                                    kb.setY(0.25);
-                                    target.setVelocity(target.getVelocity().add(kb));
+                        // Double-check: never target the caster
+                        if (!target.equals(context.caster())) {
+                            minion.setTarget(target);
+                            // On-hit themed effects per variant
+                            switch (variant) {
+                                case FROST -> target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 20, 1, false, true));
+                                case FLAME -> target.setFireTicks(Math.max(0, target.getFireTicks()) + 40);
+                                case TOXIC -> target.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 40, 0, false, true));
+                                case ARCANE -> target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 40, 1, false, true));
+                                case RADIANT -> target.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 40, 0, false, true));
+                                case VOID -> target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 25, 0, false, true));
+                                case WIND -> {
+                                    var ml = minion.getLocation();
+                                    var tl = target.getLocation();
+                                    if (ml != null && tl != null) {
+                                        Vector kb = tl.toVector().subtract(ml.toVector()).normalize().multiply(0.4);
+                                        kb.setY(0.25);
+                                        target.setVelocity(target.getVelocity().add(kb));
+                                    }
                                 }
+                                case STONE -> {
+                                    target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 30, 0, false, true));
+                                    target.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, 60, 1, false, true));
+                                }
+                                default -> {}
                             }
-                            case STONE -> {
-                                target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 30, 0, false, true));
-                                target.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, 60, 1, false, true));
-                            }
-                            default -> {}
+                        } else {
+                            // Target was caster, clear it
+                            minion.setTarget(null);
                         }
                     } else {
                         // No target; ensure the minion isn't hostile toward the caster
@@ -404,6 +441,9 @@ public class SummonSwarm extends Spell<Void> {
                     owner.onMinionTick(minion, ticks, context);
                 }
             }
+
+            // FINAL SAFETY CHECK: Ensure no minions are targeting caster at end of behavior update
+            preventCasterTargeting();
         }
 
         /**
@@ -417,23 +457,31 @@ public class SummonSwarm extends Spell<Void> {
          */
         private @Nullable LivingEntity findNearestEnemy(@NotNull Vex minion) {
             Objects.requireNonNull(minion, "Minion cannot be null");
-            
+
             LivingEntity nearest = null;
             double nearestDistance = 16.0 * 16.0; // squared
             boolean friendlyFire = EmpireWandAPI.getService(ConfigService.class)
                     .getMainConfig().getBoolean("features.friendly-fire", false);
-            
+
+            Player caster = context.caster();
+
             for (Entity entity : minion.getNearbyEntities(16, 16, 16)) {
-                if (entity instanceof LivingEntity && !(entity instanceof Vex) && 
-                    !entity.equals(context.caster()) && entity.isValid() && !entity.isDead()) {
+                if (entity instanceof LivingEntity && !(entity instanceof Vex) &&
+                    entity.isValid() && !entity.isDead()) {
+
+                    // AGGRESSIVE CASTER PROTECTION: Multiple checks to prevent caster targeting
+                    if (entity.equals(caster) || entity.getUniqueId().equals(caster.getUniqueId())) {
+                        continue; // Skip caster completely
+                    }
+
                     // Respect friendly-fire: skip players if disabled
                     if (!friendlyFire && entity instanceof Player) {
                         continue;
                     }
-                    
+
                     var entityLocation = entity.getLocation();
                     var minionLocation = minion.getLocation();
-                    
+
                     if (entityLocation != null && minionLocation != null) {
                         double d2 = entityLocation.toVector().distanceSquared(minionLocation.toVector());
                         if (d2 < nearestDistance) {
@@ -443,8 +491,25 @@ public class SummonSwarm extends Spell<Void> {
                     }
                 }
             }
-            
+
             return nearest;
+        }
+
+        /**
+         * Emergency protection method to prevent minions from targeting the caster.
+         * This method runs every tick to ensure no minion ever targets its owner.
+         */
+        private void preventCasterTargeting() {
+            Player caster = context.caster();
+            for (Vex minion : summonedMinions) {
+                if (minion.isValid() && !minion.isDead()) {
+                    LivingEntity currentTarget = minion.getTarget();
+                    if (currentTarget != null && (currentTarget.equals(caster) ||
+                        currentTarget.getUniqueId().equals(caster.getUniqueId()))) {
+                        minion.setTarget(null); // Immediately clear caster target
+                    }
+                }
+            }
         }
 
         /**
@@ -525,6 +590,27 @@ public class SummonSwarm extends Spell<Void> {
                     }
                 }
             }
+        }
+
+        /**
+         * Creates warning effects when the spell is about to end.
+         */
+        private void createDurationWarningEffects() {
+            if (world == null) {
+                return;
+            }
+            
+            // Create pulsing red particles to indicate spell ending
+            for (int i = 0; i < 16; i++) {
+                double angle = (2 * Math.PI * i / 16);
+                double x = radius * Math.cos(angle);
+                double z = radius * Math.sin(angle);
+                Location warningLoc = center.clone().add(x, 0.5, z);
+                world.spawnParticle(Particle.DUST, warningLoc, 1, 0, 0, 0, 0, new Particle.DustOptions(Color.RED, 1.0f));
+            }
+            
+            // Play warning sound
+            world.playSound(center, Sound.BLOCK_NOTE_BLOCK_PLING, 0.5f, 0.5f);
         }
 
         /**

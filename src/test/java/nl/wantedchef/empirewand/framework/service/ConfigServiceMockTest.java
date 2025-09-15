@@ -2,7 +2,6 @@ package nl.wantedchef.empirewand.framework.service;
 
 import nl.wantedchef.empirewand.EmpireWandPlugin;
 import nl.wantedchef.empirewand.core.config.ConfigMigrationService;
-import nl.wantedchef.empirewand.core.config.ReadOnlyConfig;
 import nl.wantedchef.empirewand.core.config.ReadableConfig;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.Plugin;
@@ -22,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @DisplayName("ConfigService Mock Tests")

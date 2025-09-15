@@ -6,9 +6,12 @@ import dev.triumphteam.gui.guis.PaginatedGui;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import nl.wantedchef.empirewand.EmpireWandPlugin;
 import nl.wantedchef.empirewand.core.config.WandSettingsService;
 import nl.wantedchef.empirewand.core.config.model.WandSettings;
 import nl.wantedchef.empirewand.gui.session.WandSessionManager;
+import nl.wantedchef.empirewand.gui.util.GuiUtil;
+import nl.wantedchef.empirewand.gui.util.ItemBuilder;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -29,22 +32,22 @@ import java.util.logging.Logger;
  */
 public class WandSelectorMenu {
 
-    private static final int MENU_SIZE = 54; // 6 rows
     private static final int WANDS_PER_PAGE = 45; // Leave space for navigation
-    private static final int NEXT_PAGE_SLOT = 50;
-    private static final int PREV_PAGE_SLOT = 48;
     private static final int INFO_SLOT = 49;
 
     private final WandSettingsService wandSettingsService;
     private final WandSessionManager sessionManager;
     private final Logger logger;
+    private final EmpireWandPlugin plugin;
 
     public WandSelectorMenu(@NotNull WandSettingsService wandSettingsService,
                            @NotNull WandSessionManager sessionManager,
-                           @NotNull Logger logger) {
+                           @NotNull Logger logger,
+                           @NotNull EmpireWandPlugin plugin) {
         this.wandSettingsService = Objects.requireNonNull(wandSettingsService, "WandSettingsService cannot be null");
         this.sessionManager = Objects.requireNonNull(sessionManager, "SessionManager cannot be null");
         this.logger = Objects.requireNonNull(logger, "Logger cannot be null");
+        this.plugin = Objects.requireNonNull(plugin, "Plugin cannot be null");
     }
 
     /**
@@ -132,7 +135,7 @@ public class WandSelectorMenu {
         ItemMeta meta = item.getItemMeta();
 
         // Set display name
-        String displayName = formatWandDisplayName(wandKey);
+        String displayName = GuiUtil.formatWandDisplayName(wandKey);
         meta.displayName(Component.text(displayName)
                 .color(NamedTextColor.AQUA)
                 .decorate(TextDecoration.BOLD)
@@ -199,7 +202,7 @@ public class WandSelectorMenu {
 
                     // Close current GUI and open wand rules menu
                     player.closeInventory();
-                    new WandRulesMenu(wandSettingsService, sessionManager, logger).openMenu(player, wandKey);
+                    new WandRulesMenu(wandSettingsService, sessionManager, logger, plugin).openMenu(player, wandKey);
                 });
     }
 
@@ -211,22 +214,7 @@ public class WandSelectorMenu {
         };
     }
 
-    private String formatWandDisplayName(@NotNull String wandKey) {
-        // Convert snake_case to Title Case
-        String[] parts = wandKey.split("_");
-        StringBuilder displayName = new StringBuilder();
-
-        for (int i = 0; i < parts.length; i++) {
-            if (i > 0) {
-                displayName.append(" ");
-            }
-            String part = parts[i];
-            displayName.append(part.substring(0, 1).toUpperCase())
-                      .append(part.substring(1).toLowerCase());
-        }
-
-        return displayName.toString();
-    }
+    
 
     private NamedTextColor getDifficultyColor(@NotNull nl.wantedchef.empirewand.core.config.model.WandDifficulty difficulty) {
         return switch (difficulty) {
@@ -269,29 +257,4 @@ public class WandSelectorMenu {
         // Navigation items (previous/next page) are handled by the PaginatedGui automatically
     }
 
-    /**
-     * Utility class for building ItemStacks with fluent API.
-     */
-    private static class ItemBuilder {
-        private final ItemStack item;
-
-        private ItemBuilder(@NotNull ItemStack item) {
-            this.item = item.clone();
-        }
-
-        @NotNull
-        public static ItemBuilder from(@NotNull ItemStack item) {
-            return new ItemBuilder(item);
-        }
-
-        @NotNull
-        public GuiItem asGuiItem(@NotNull java.util.function.Consumer<org.bukkit.event.inventory.InventoryClickEvent> action) {
-            return new GuiItem(item, action::accept);
-        }
-
-        @NotNull
-        public GuiItem asGuiItem() {
-            return new GuiItem(item);
-        }
-    }
 }

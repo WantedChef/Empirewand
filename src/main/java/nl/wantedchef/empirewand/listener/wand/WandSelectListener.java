@@ -2,6 +2,7 @@ package nl.wantedchef.empirewand.listener.wand;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -88,7 +89,9 @@ public final class WandSelectListener implements Listener {
 
         // Only show message if player is still online
         if (p.isOnline()) {
-            plugin.getFxService().actionBar(p, display);
+            Map<String, String> params = Map.of("spell", display);
+            plugin.getFxService().actionBarKey(p, "spell-selected", params);
+            plugin.getFxService().playUISound(p, "select");
         }
     }
 }

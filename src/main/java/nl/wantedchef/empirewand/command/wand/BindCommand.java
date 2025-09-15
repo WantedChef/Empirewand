@@ -55,24 +55,32 @@ public class BindCommand implements SubCommand {
         ItemStack item = player.getInventory().getItemInMainHand();
 
         if (!context.wandService().isWand(item) && !context.wandService().isMephidantesZeist(item)) {
-            throw new CommandException("You must be holding a wand to bind a spell");
+            throw new CommandException("You must be holding a wand in your main hand to bind spells. Try /ew get to get a wand first!");
         }
 
         String spellKey = context.getArg(1).toLowerCase();
 
+        // Validate spell key input
+        if (spellKey.isEmpty() || spellKey.length() > 50) {
+            throw new CommandException("Invalid spell name. Spell names must be between 1-50 characters.");
+        }
+        if (!spellKey.matches("^[a-z0-9_-]+$")) {
+            throw new CommandException("Invalid spell name. Only lowercase letters, numbers, hyphens, and underscores are allowed.");
+        }
+
         if (context.spellRegistry().getSpell(spellKey) == null) {
-            throw new CommandException("Unknown spell: " + spellKey);
+            throw new CommandException("Unknown spell: " + spellKey + ". Use /ew spells to see available spells.");
         }
 
         // Check per-spell bind permission
         String spellPermission = wandType + ".spell.bind." + spellKey;
         if (!context.hasPermission(spellPermission)) {
-            throw new CommandException("No permission to bind this spell");
+            throw new CommandException("You don't have permission to bind the spell '" + spellKey + "'. Contact an admin if you believe this is an error.");
         }
 
         List<String> spells = new ArrayList<>(context.wandService().getSpells(item));
         if (spells.contains(spellKey)) {
-            throw new CommandException("This spell is already bound to your wand");
+            throw new CommandException("The spell '" + spellKey + "' is already bound to your wand. Use /ew unbind " + spellKey + " to remove it first.");
         }
 
         spells.add(spellKey);

@@ -35,15 +35,15 @@ public class IceWave extends EnhancedWaveSpell {
             // Configure enhanced wave properties for ice magic
             this.formation = WaveProjectile.WaveFormation.LINE;
             this.effectType = WaveEffectType.ICE;
-            this.speed = 0.9; // Slower, more controlled
-            this.maxDistance = 28.0; // Long precise range
-            this.projectileCount = 4; // Focused line
-            this.damage = 5.0; // Lower damage, focus on control
-            this.lifetimeTicks = 140; // 7 seconds for full range
-            this.hitRadius = 2.2; // Moderate hit radius
+            this.speed = 1.0; // Slightly faster for punchier feel
+            this.maxDistance = 32.0; // Longer precise range
+            this.projectileCount = 5; // Slightly denser line
+            this.damage = 5.5; // Slight bump
+            this.lifetimeTicks = 150; // Maintain full range with added distance
+            this.hitRadius = 2.4; // Slightly wider for reliability
             this.pierceEntities = true; // Excellent piercing
-            this.maxPierces = 3; // Can hit up to 4 enemies per projectile
-            this.particleDensity = 1.1; // Beautiful ice effects
+            this.maxPierces = 4; // More crowd control
+            this.particleDensity = 1.2; // Slightly richer ice effects
             this.enableScreenShake = false; // Subtle, controlled magic
             this.screenShakeIntensity = 0.2; // Minimal shake
         }

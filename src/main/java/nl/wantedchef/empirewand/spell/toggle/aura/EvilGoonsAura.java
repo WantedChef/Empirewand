@@ -63,6 +63,7 @@ public class EvilGoonsAura extends Spell<Void> implements ToggleableSpell {
     );
 
     private static final Set<UUID> activeAuras = ConcurrentHashMap.newKeySet();
+    private static final int MAX_ACTIVE_AURAS = 100; // Prevent excessive memory usage
     private static BukkitTask globalTask = null;
     private static EmpireWandAPI globalApi = null;
 
@@ -193,6 +194,12 @@ public class EvilGoonsAura extends Spell<Void> implements ToggleableSpell {
      */
     @Override
     public void activate(Player player, SpellContext context) {
+        // Prevent excessive memory usage
+        if (activeAuras.size() >= MAX_ACTIVE_AURAS) {
+            player.sendMessage("§cToo many active auras! Deactivate some first.");
+            return;
+        }
+
         activeAuras.add(player.getUniqueId());
         startGlobalTask(context);
         context.fx().spawnParticles(player.getLocation(), Particle.SOUL_FIRE_FLAME, 20, 1, 1, 1, 0.05);
@@ -299,10 +306,8 @@ public class EvilGoonsAura extends Spell<Void> implements ToggleableSpell {
                 if (damage > 0) {
                     entity.damage(damage, player);
                     
-                    if (globalApi != null) {
-                        var fx = globalApi.getService(nl.wantedchef.empirewand.framework.service.FxService.class);
-                        fx.spawnParticles(entity.getLocation(), Particle.CRIT, 1, 0.1, 0.1, 0.1, 0.05);
-                    }
+                    var fx = EmpireWandAPI.getService(nl.wantedchef.empirewand.framework.service.FxService.class);
+                    fx.spawnParticles(entity.getLocation(), Particle.CRIT, 1, 0.1, 0.1, 0.1, 0.05);
                 }
             }
         }

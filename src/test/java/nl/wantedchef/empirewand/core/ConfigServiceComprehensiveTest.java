@@ -1,7 +1,6 @@
 package nl.wantedchef.empirewand.core;
 
 import nl.wantedchef.empirewand.core.config.ConfigMigrationService;
-import nl.wantedchef.empirewand.core.config.ConfigValidator;
 import nl.wantedchef.empirewand.core.config.ReadOnlyConfig;
 import nl.wantedchef.empirewand.core.config.ReadableConfig;
 import java.util.logging.Level;
@@ -28,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -37,7 +37,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.junit.jupiter.api.Assertions.fail;
 
 @DisplayName("ConfigService Comprehensive Tests")
 class ConfigServiceComprehensiveTest {
@@ -58,7 +57,6 @@ class ConfigServiceComprehensiveTest {
     private ConfigMigrationService migrationService;
 
     private ConfigService configService;
-    private ConfigValidator validator;
 
     @BeforeEach
     void setUp() {
@@ -67,9 +65,6 @@ class ConfigServiceComprehensiveTest {
         // Setup plugin mock
         when(plugin.getLogger()).thenReturn(logger);
         when(plugin.getConfig()).thenReturn(config);
-        
-        // Initialize validator and inject it
-        validator = new ConfigValidator();
     }
 
     @Nested
@@ -147,6 +142,9 @@ class ConfigServiceComprehensiveTest {
             // Create service
             ConfigService service = new ConfigService(plugin);
             
+            // Verify service was created successfully
+            assertNotNull(service, "ConfigService should be created successfully");
+            
             // Verify interactions
             verify(plugin).saveDefaultConfig();
             verify(plugin).reloadConfig();
@@ -173,6 +171,9 @@ class ConfigServiceComprehensiveTest {
             // Create service
             ConfigService service = new ConfigService(plugin);
             
+            // Verify service was created despite error
+            assertNotNull(service, "ConfigService should be created even with missing config");
+            
             // Verify that severe error was logged
             verify(logger).severe("Failed to load main config.yml");
         }
@@ -194,6 +195,9 @@ class ConfigServiceComprehensiveTest {
             
             // Create service
             ConfigService service = new ConfigService(plugin);
+            
+            // Verify service was created successfully
+            assertNotNull(service, "ConfigService should be created successfully");
             
             // Verify logger interactions
             verify(plugin).saveDefaultConfig();
@@ -222,11 +226,8 @@ class ConfigServiceComprehensiveTest {
             when(configFile.isFile()).thenReturn(true);
             when(configFile.canRead()).thenReturn(true);
             
-            // Mock validator to return no errors
-            List<String> emptyErrors = Collections.emptyList();
-            
             // Create service using reflection to access private method
-            ConfigService service = new ConfigService(plugin);
+            new ConfigService(plugin);
             
             // Verify logger interactions
             verify(logger).info("Configuration validation and migration completed successfully.");
@@ -551,6 +552,9 @@ class ConfigServiceComprehensiveTest {
             // Create service - should not throw exception
             ConfigService service = new ConfigService(plugin);
             
+            // Verify service was created despite error
+            assertNotNull(service, "ConfigService should be created even with unexpected error");
+            
             // Verify severe error was logged
             verify(logger).log(eq(Level.SEVERE), eq("Unexpected error loading configurations"), any(Exception.class));
         }
@@ -631,7 +635,7 @@ class ConfigServiceComprehensiveTest {
             ConfigService service = new ConfigService(plugin);
             
             // Get config before reload
-            ReadableConfig configBefore = service.getConfig();
+            service.getConfig();
             
             // Mock reload behavior
             doNothing().when(plugin).reloadConfig();

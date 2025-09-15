@@ -163,7 +163,8 @@ public enum WaveEffectType {
             case BLOOD:
                 // Blood explosion with dark clouds
                 fxService.spawnParticles(location, impactParticle, particleCount, 0.5, 0.5, 0.5, 0.2);
-                fxService.spawnParticles(location, Particle.DUST, particleCount * 2, 0.8, 0.8, 0.8, 0.1);
+                fxService.spawnParticles(location, Particle.DUST, particleCount * 2, 0.8, 0.8, 0.8, 0.1,
+                    new org.bukkit.Particle.DustOptions(org.bukkit.Color.fromRGB(139, 0, 0), 1.5f)); // Dark red dust
                 fxService.spawnParticles(location, Particle.DRIPPING_LAVA, 8, 0.3, 0.3, 0.3, 0.0);
                 break;
                 
@@ -207,7 +208,8 @@ public enum WaveEffectType {
         switch (this) {
             case BLOOD:
                 // Blood spurt from the entity
-                fxService.spawnParticles(location.clone().add(0, 1, 0), Particle.DUST, particleCount, 0.3, 0.5, 0.3, 0.2);
+                fxService.spawnParticles(location.clone().add(0, 1, 0), Particle.DUST, particleCount, 0.3, 0.5, 0.3, 0.2,
+                    new org.bukkit.Particle.DustOptions(org.bukkit.Color.fromRGB(178, 34, 34), 1.0f)); // Blood red dust
                 fxService.spawnParticles(location.clone().add(0, 0.5, 0), Particle.DRIPPING_LAVA, 4, 0.2, 0.2, 0.2, 0.0);
                 break;
                 

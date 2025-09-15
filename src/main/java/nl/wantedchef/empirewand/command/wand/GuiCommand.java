@@ -71,7 +71,8 @@ public class GuiCommand implements SubCommand, CommandHelpProvider.HelpAwareComm
             WandSelectorMenu wandSelectorMenu = new WandSelectorMenu(
                     wandSettingsService,
                     sessionManager,
-                    context.plugin().getLogger()
+                    context.plugin().getLogger(),
+                    context.plugin()
             );
 
             wandSelectorMenu.openMenu(player);

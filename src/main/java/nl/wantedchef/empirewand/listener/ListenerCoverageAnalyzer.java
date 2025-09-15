@@ -155,6 +155,11 @@ public class ListenerCoverageAnalyzer {
                 case AURA -> recommendations.add("Add AuraSpellListener for passive aura effects");
                 case WAVE -> recommendations.add("Add WaveSpellListener for multi-projectile and wave spell mechanics");
                 case STATUS_EFFECT -> recommendations.add("Add StatusEffectListener for potion effect management");
+                case PLAYER -> recommendations.add("Ensure PlayerJoinQuitListener covers all necessary player state management");
+                case WAND -> recommendations.add("Review Wand interaction listeners for comprehensive wand handling");
+                case PERFORMANCE -> recommendations.add("Implement PerformanceMonitoringListener for spell performance tracking");
+                case COMBAT -> recommendations.add("Add or verify combat listeners for damage and PvP interactions");
+                case PROJECTILE -> recommendations.add("Ensure ProjectileHitListener is correctly handling all custom projectiles");
             }
         }
         

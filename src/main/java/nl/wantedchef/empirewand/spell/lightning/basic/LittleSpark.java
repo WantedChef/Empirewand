@@ -64,7 +64,7 @@ public class LittleSpark extends ProjectileSpell<Snowball> {
     }
     
     @Override
-    protected void startTrailEffect(@NotNull Snowball projectile) {
+    protected void startTrailEffect(@NotNull Snowball projectile, @NotNull SpellContext context) {
         // Custom firework spark trail
         new org.bukkit.scheduler.BukkitRunnable() {
             @Override
@@ -83,7 +83,7 @@ public class LittleSpark extends ProjectileSpell<Snowball> {
                     this.cancel();
                 }
             }
-        }.runTaskTimer(projectile.getServer().getPluginManager().getPlugin("EmpireWand"), 0L, 1L);
+        }.runTaskTimer(context.plugin(), 0L, 1L);
     }
 
     @Override

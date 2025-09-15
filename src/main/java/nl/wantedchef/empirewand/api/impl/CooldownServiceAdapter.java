@@ -42,16 +42,16 @@ import java.util.UUID;
  */
 public class CooldownServiceAdapter implements CooldownService {
 
-    private final nl.wantedchef.empirewand.framework.service.CooldownService core;
+    private final nl.wantedchef.empirewand.framework.service.UnifiedCooldownManager core;
 
     /**
      * Constructor.
      *
-     * @param core the core CooldownService to wrap
+     * @param core the core UnifiedCooldownManager to wrap
      */
-    public CooldownServiceAdapter(nl.wantedchef.empirewand.framework.service.CooldownService core) {
+    public CooldownServiceAdapter(nl.wantedchef.empirewand.framework.service.UnifiedCooldownManager core) {
         if (core == null) {
-            throw new IllegalArgumentException("core CooldownService cannot be null");
+            throw new IllegalArgumentException("core UnifiedCooldownManager cannot be null");
         }
         this.core = core;
     }
@@ -106,32 +106,32 @@ public class CooldownServiceAdapter implements CooldownService {
 
     @Override
     public boolean isOnCooldown(@NotNull UUID playerId, @NotNull String key, long nowTicks) {
-        return core.isOnCooldown(playerId, key, nowTicks);
+        return core.isSpellOnCooldown(playerId, key, nowTicks);
     }
 
     @Override
     public boolean isOnCooldown(@NotNull UUID playerId, @NotNull String key, long nowTicks, @NotNull ItemStack wand) {
-        return core.isOnCooldown(playerId, key, nowTicks, wand);
+        return core.isSpellOnCooldown(playerId, key, nowTicks, wand);
     }
 
     @Override
     public long remaining(@NotNull UUID playerId, @NotNull String key, long nowTicks) {
-        return core.remaining(playerId, key, nowTicks);
+        return core.getSpellCooldownRemaining(playerId, key, nowTicks);
     }
 
     @Override
     public long remaining(@NotNull UUID playerId, @NotNull String key, long nowTicks, @NotNull ItemStack wand) {
-        return core.remaining(playerId, key, nowTicks, wand);
+        return core.getSpellCooldownRemaining(playerId, key, nowTicks, wand);
     }
 
     @Override
     public void set(@NotNull UUID playerId, @NotNull String key, long untilTicks) {
-        core.set(playerId, key, untilTicks);
+        core.setSpellCooldown(playerId, key, untilTicks);
     }
 
     @Override
     public void clearAll(@NotNull UUID playerId) {
-        core.clearAll(playerId);
+        core.clearPlayerCooldowns(playerId);
     }
 
     @Override

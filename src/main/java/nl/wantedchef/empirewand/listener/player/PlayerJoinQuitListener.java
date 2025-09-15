@@ -25,7 +25,7 @@ public final class PlayerJoinQuitListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent event) {
         var player = event.getPlayer();
-        plugin.getCooldownService().clearAll(player.getUniqueId());
+        plugin.getCooldownManager().clearPlayerCooldowns(player.getUniqueId());
     }
 }
 

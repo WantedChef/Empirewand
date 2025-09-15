@@ -400,7 +400,7 @@ public class SmartTabCompleter {
             plugin.getFxService(),
             spellRegistry,
             plugin.getWandService(),
-            plugin.getCooldownService(),
+            plugin.getCooldownManager(),
             plugin.getPermissionService()
         );
     }

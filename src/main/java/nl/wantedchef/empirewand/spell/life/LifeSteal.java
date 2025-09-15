@@ -16,9 +16,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Snowball;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Objects;
 
 public class LifeSteal extends ProjectileSpell<Snowball> {
 
@@ -29,7 +29,7 @@ public class LifeSteal extends ProjectileSpell<Snowball> {
             this.description = "Steals health from the target.";
             this.cooldown = java.time.Duration.ofSeconds(3);
             this.spellType = SpellType.LIFE;
-            this.trailParticle = null; // Custom trail
+            this.trailParticle = Particle.DUST; // Enable custom trail via override
             this.hitSound = Sound.ENTITY_GENERIC_DRINK;
         }
 
@@ -58,8 +58,6 @@ public class LifeSteal extends ProjectileSpell<Snowball> {
     protected void launchProjectile(@NotNull SpellContext context) {
         super.launchProjectile(context);
         context.fx().playSound(context.caster(), Sound.ENTITY_WITCH_THROW, 0.8f, 1.2f);
-        context.fx().followParticles(context.plugin(), context.caster().launchProjectile(Snowball.class),
-                Particle.DUST, 8, 0.08, 0.08, 0.08, 0, new Particle.DustOptions(Color.fromRGB(170, 0, 0), 1.0f), 1L);
     }
 
     @Override
@@ -79,9 +77,32 @@ public class LifeSteal extends ProjectileSpell<Snowball> {
 
         target.damage(damage, caster);
         double stolenHealth = damage * stealModifier;
-        double maxHealth = Objects.requireNonNull(caster.getAttribute(Attribute.GENERIC_MAX_HEALTH)).getValue();
+        var maxAttr = caster.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        double maxHealth = maxAttr != null ? maxAttr.getValue() : 20.0;
         caster.setHealth(Math.min(maxHealth, caster.getHealth() + stolenHealth));
 
         context.fx().spawnParticles(caster.getLocation(), Particle.HEART, 5, 0.5, 1, 0.5, 0);
+    }
+
+    @Override
+    protected void startTrailEffect(@NotNull Snowball projectile, @NotNull SpellContext context) {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!projectile.isValid() || projectile.isDead()) {
+                    cancel();
+                    return;
+                }
+                projectile.getWorld().spawnParticle(
+                        Particle.DUST,
+                        projectile.getLocation(),
+                        8,
+                        0.08,
+                        0.08,
+                        0.08,
+                        0,
+                        new Particle.DustOptions(Color.fromRGB(170, 0, 0), 1.0f));
+            }
+        }.runTaskTimer(context.plugin(), 0L, 1L);
     }
 }

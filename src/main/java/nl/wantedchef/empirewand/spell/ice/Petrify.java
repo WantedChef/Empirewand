@@ -92,6 +92,35 @@ public class Petrify extends Spell<LivingEntity> {
         context.fx().playSound(target.getLocation(), Sound.BLOCK_GLASS_PLACE, 1.5f, 0.5f);
         context.fx().playSound(target.getLocation(), Sound.ENTITY_PLAYER_HURT_FREEZE, 1.0f, 1.0f);
         
+        // Temporary ice cage (3x3x3 hollow) around target
+        java.util.List<org.bukkit.block.Block> cage = new java.util.ArrayList<>();
+        org.bukkit.Location base = target.getLocation().getBlock().getLocation();
+        for (int x = -1; x <= 1; x++) {
+            for (int y = 0; y <= 2; y++) {
+                for (int z = -1; z <= 1; z++) {
+                    boolean isShell = Math.abs(x) == 1 || Math.abs(z) == 1 || y == 0 || y == 2;
+                    if (!isShell) continue;
+                    org.bukkit.block.Block b = base.clone().add(x, y, z).getBlock();
+                    if (b.getType().isAir()) {
+                        b.setType(org.bukkit.Material.ICE, false);
+                        cage.add(b);
+                    }
+                }
+            }
+        }
+        
+        // Cleanup cage after duration
+        new org.bukkit.scheduler.BukkitRunnable() {
+            @Override
+            public void run() {
+                for (org.bukkit.block.Block b : cage) {
+                    if (b.getType() == org.bukkit.Material.ICE) {
+                        b.setType(org.bukkit.Material.AIR, false);
+                    }
+                }
+            }
+        }.runTaskLater(context.plugin(), duration);
+        
         player.sendMessage("§b§lTarget Petrified §3for " + (duration/20) + " seconds!");
     }
 }

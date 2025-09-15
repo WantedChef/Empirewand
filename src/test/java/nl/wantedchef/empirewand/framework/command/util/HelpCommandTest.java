@@ -6,7 +6,6 @@ import nl.wantedchef.empirewand.framework.command.SubCommand;
 import nl.wantedchef.empirewand.framework.command.util.CommandHelpProvider.CommandExample;
 import nl.wantedchef.empirewand.api.service.PermissionService;
 import nl.wantedchef.empirewand.framework.service.ConfigService;
-import nl.wantedchef.empirewand.framework.service.CooldownService;
 import nl.wantedchef.empirewand.framework.service.FxService;
 import nl.wantedchef.empirewand.api.service.WandService;
 import nl.wantedchef.empirewand.api.spell.SpellRegistry;
@@ -66,7 +65,7 @@ class HelpCommandTest {
             mock(FxService.class),
             mock(SpellRegistry.class),
             mock(WandService.class),
-            mock(CooldownService.class),
+            mock(nl.wantedchef.empirewand.framework.service.UnifiedCooldownManager.class),
             permission
         );
     }

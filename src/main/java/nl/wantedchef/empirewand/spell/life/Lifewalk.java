@@ -10,14 +10,13 @@ import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Lifewalk - Flowers bloom in your footsteps from real Empirewand
@@ -78,8 +77,10 @@ public class Lifewalk extends Spell<Player> {
         
         new BukkitRunnable() {
             private int ticks = 0;
-            private final Random random = new Random();
-            
+            private final double radiusSq = radius * radius;
+            private int flowersPlacedThisTick = 0;
+            private int cropsGrownThisTick = 0;
+
             @Override
             public void run() {
                 if (ticks >= duration || !player.isOnline()) {
@@ -87,59 +88,63 @@ public class Lifewalk extends Spell<Player> {
                     cancel();
                     return;
                 }
-                
-                Location loc = player.getLocation();
-                
-                // Spawn fake flower drops
-                if (random.nextInt(3) == 0) { // 33% chance each tick
-                    Material flowerType = FLOWERS[random.nextInt(FLOWERS.length)];
-                    ItemStack flowerItem = new ItemStack(flowerType);
-                    
-                    // Spawn the item slightly above the ground
-                    Location dropLoc = loc.clone().add(
-                        (random.nextDouble() - 0.5) * 2, // Random X offset
-                        0.5, // Above ground
-                        (random.nextDouble() - 0.5) * 2  // Random Z offset
-                    );
-                    
-                    Item droppedItem = loc.getWorld().dropItem(dropLoc, flowerItem);
-                    droppedItem.setPickupDelay(Integer.MAX_VALUE); // Make it unpickable
-                    
-                    // Remove the item after 3 seconds
-                    context.plugin().getTaskManager().runTaskLater(() -> {
-                        if (droppedItem.isValid()) {
-                            droppedItem.remove();
-                        }
-                    }, 60L); // 60 ticks = 3 seconds
+
+                final ThreadLocalRandom tlr = ThreadLocalRandom.current();
+                final Location loc = player.getLocation();
+                final var world = loc.getWorld();
+                if (world == null) {
+                    cancel();
+                    return;
                 }
-                
-                // Grow plants around player
-                for (double x = -radius; x <= radius; x += 0.5) {
-                    for (double z = -radius; z <= radius; z += 0.5) {
-                        if (x * x + z * z <= radius * radius) {
-                            Location blockLoc = loc.clone().add(x, -1, z);
-                            Block ground = blockLoc.getBlock();
-                            Block above = blockLoc.clone().add(0, 1, 0).getBlock();
-                            
-                            // Convert dirt to grass
-                            if (ground.getType() == Material.DIRT) {
-                                ground.setType(Material.GRASS_BLOCK);
-                            }
-                            
-                            // Place flowers
-                            if (above.getType() == Material.AIR && ground.getType().isSolid() && random.nextInt(4) == 0) {
-                                above.setType(FLOWERS[random.nextInt(FLOWERS.length)]);
-                            }
-                            
-                            // Grow crops
-                            if (above.getBlockData() instanceof Ageable ageable) {
+
+                // Flower illusion particles instead of spawning entities
+                if (tlr.nextInt(3) == 0) { // ~33% chance each tick
+                    Material flowerType = FLOWERS[tlr.nextInt(FLOWERS.length)];
+                    ItemStack flowerItem = new ItemStack(flowerType);
+                    Location dropLoc = loc.clone().add((tlr.nextDouble() - 0.5) * 2, 0.5,
+                            (tlr.nextDouble() - 0.5) * 2);
+                    context.fx().spawnParticles(dropLoc, org.bukkit.Particle.ITEM, 3, 0.1, 0.1, 0.1, 0, flowerItem);
+                }
+
+                // Grow plants around player (lightweight, capped per tick)
+                final int baseX = loc.getBlockX();
+                final int baseY = loc.getBlockY();
+                final int baseZ = loc.getBlockZ();
+                final int intRadius = (int) Math.ceil(radius);
+                flowersPlacedThisTick = 0;
+                cropsGrownThisTick = 0;
+
+                for (int dx = -intRadius; dx <= intRadius; dx++) {
+                    for (int dz = -intRadius; dz <= intRadius; dz++) {
+                        if ((dx * dx + dz * dz) > radiusSq) continue;
+
+                        Block ground = world.getBlockAt(baseX + dx, baseY - 1, baseZ + dz);
+                        Block above = world.getBlockAt(baseX + dx, baseY, baseZ + dz);
+
+                        // Convert dirt to grass
+                        if (ground.getType() == Material.DIRT) {
+                            ground.setType(Material.GRASS_BLOCK, false);
+                        }
+
+                        // Place flowers (cap per tick to avoid heavy block updates)
+                        if (flowersPlacedThisTick < 3 && above.getType() == Material.AIR && ground.getType().isSolid()
+                                && tlr.nextInt(6) == 0) {
+                            above.setType(FLOWERS[tlr.nextInt(FLOWERS.length)], false);
+                            flowersPlacedThisTick++;
+                        }
+
+                        // Grow crops to max age
+                        var data = above.getBlockData();
+                        if (cropsGrownThisTick < 6 && data instanceof Ageable ageable) {
+                            if (ageable.getAge() < ageable.getMaximumAge()) {
                                 ageable.setAge(ageable.getMaximumAge());
-                                above.setBlockData(ageable);
+                                above.setBlockData(ageable, false);
+                                cropsGrownThisTick++;
                             }
                         }
                     }
                 }
-                
+
                 ticks += 5;
             }
         }.runTaskTimer(context.plugin(), 0L, 5L);

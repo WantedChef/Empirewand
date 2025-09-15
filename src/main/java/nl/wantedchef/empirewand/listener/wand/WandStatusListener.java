@@ -1,7 +1,6 @@
 package nl.wantedchef.empirewand.listener.wand;
 
 import nl.wantedchef.empirewand.EmpireWandPlugin;
-import nl.wantedchef.empirewand.framework.service.CooldownService;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -138,12 +137,12 @@ public final class WandStatusListener implements Listener {
         String displayName = plugin.getSpellRegistry().getSpellDisplayName(currentSpellKey);
 
         // Check if the current spell is on cooldown
-        CooldownService cooldownService = plugin.getCooldownService();
+        var cooldownManager = plugin.getCooldownManager();
         long currentTicks = player.getWorld().getFullTime();
 
-        if (cooldownService.isOnCooldown(player.getUniqueId(), currentSpellKey, currentTicks, wand)) {
+        if (cooldownManager.isSpellOnCooldown(player.getUniqueId(), currentSpellKey, currentTicks, wand)) {
             // Show cooldown information
-            long remainingTicks = cooldownService.remaining(player.getUniqueId(), currentSpellKey, currentTicks, wand);
+            long remainingTicks = cooldownManager.getSpellCooldownRemaining(player.getUniqueId(), currentSpellKey, currentTicks, wand);
             double remainingSeconds = remainingTicks / 20.0;
 
             String message = String.format("§c%s §7(%.1fs)", displayName, remainingSeconds);

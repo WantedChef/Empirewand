@@ -21,7 +21,6 @@ import org.bukkit.entity.Sheep;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -63,9 +62,6 @@ public class Polymorph extends Spell<Void> {
 
     /** Default polymorph duration in seconds */
     private static final Duration DEFAULT_DURATION = Duration.ofSeconds(30);
-    
-    /** Maximum polymorph duration to prevent memory leaks */
-    private static final Duration MAX_DURATION = Duration.ofMinutes(5);
     
     /** Map to track polymorphed entities for cleanup */
     private final Map<UUID, UUID> polymorphedEntities;

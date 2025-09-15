@@ -20,7 +20,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.List;
@@ -340,7 +339,6 @@ public class VoidZone extends Spell<Void> {
         private class VoidZoneInstance {
             final Location location;
             final double radius;
-            final int maxDuration;
             int duration;
             final Set<Block> affectedBlocks = new HashSet<>();
             final Map<Block, BlockData> originalBlocks = new HashMap<>();
@@ -355,7 +353,6 @@ public class VoidZone extends Spell<Void> {
             VoidZoneInstance(@NotNull Location location, double radius, int duration) {
                 this.location = Objects.requireNonNull(location, "Location cannot be null");
                 this.radius = radius;
-                this.maxDuration = duration;
                 this.duration = duration;
                 createVisualEffect();
             }

@@ -15,7 +15,6 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -213,7 +212,6 @@ public class TemporalStasis extends Spell<Void> {
         private final SpellContext context;
         private final Location center;
         private final double radius;
-        private final int durationTicks;
         private int ticks = 0;
         private final int maxTicks;
 
@@ -229,7 +227,6 @@ public class TemporalStasis extends Spell<Void> {
             this.context = Objects.requireNonNull(context, "Context cannot be null");
             this.center = Objects.requireNonNull(center, "Center location cannot be null");
             this.radius = radius;
-            this.durationTicks = durationTicks;
             this.maxTicks = durationTicks / 5; // Convert to our tick interval
         }
 

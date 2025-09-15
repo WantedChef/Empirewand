@@ -23,13 +23,9 @@ import java.util.stream.Collectors;
 public class GiveCommand implements SubCommand, CommandHelpProvider.HelpAwareCommand {
 
     private final String permissionPrefix;
-    private final String wandDisplayName;
-    private final Material wandMaterial;
 
     public GiveCommand(@NotNull String permissionPrefix, @NotNull String wandDisplayName, @NotNull Material wandMaterial) {
         this.permissionPrefix = permissionPrefix;
-        this.wandDisplayName = wandDisplayName;
-        this.wandMaterial = wandMaterial;
     }
 
     @Override

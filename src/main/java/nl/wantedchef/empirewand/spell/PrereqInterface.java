@@ -6,7 +6,6 @@ import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.List;
 import java.util.Objects;
@@ -414,21 +413,4 @@ public interface PrereqInterface {
         };
     }
 
-    /**
-     * Legacy record for backward compatibility.
-     * <p>
-     * This record provides backward compatibility with older prerequisite systems.
-     *
-     * @deprecated Use the new prerequisite system instead
-     */
-    @SuppressFBWarnings(value = { "EI_EXPOSE_REP" }, 
-        justification = "Component is immutable from our usage perspective (Adventure API)")
-    @Deprecated
-    record Legacy(boolean canCast, Component reason) implements PrereqInterface {
-        @Override
-        @NotNull
-        public CheckResult check(@NotNull SpellContext context) {
-            return new CheckResult(canCast, reason);
-        }
     }
-}

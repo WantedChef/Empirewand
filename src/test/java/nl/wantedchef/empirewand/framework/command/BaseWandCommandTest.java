@@ -3,7 +3,6 @@ package nl.wantedchef.empirewand.framework.command;
 import nl.wantedchef.empirewand.EmpireWandPlugin;
 import nl.wantedchef.empirewand.framework.command.util.CommandErrorHandler;
 import nl.wantedchef.empirewand.framework.service.ConfigService;
-import nl.wantedchef.empirewand.framework.service.CooldownService;
 import nl.wantedchef.empirewand.framework.service.FxService;
 import nl.wantedchef.empirewand.api.service.WandService;
 import nl.wantedchef.empirewand.api.service.PermissionService;
@@ -50,7 +49,7 @@ class BaseWandCommandTest {
     private WandService wandService;
 
     @Mock
-    private CooldownService cooldownService;
+    private nl.wantedchef.empirewand.framework.service.UnifiedCooldownManager cooldownManager;
 
     @Mock
     private PermissionService permissionService;
@@ -129,7 +128,7 @@ class BaseWandCommandTest {
         when(plugin.getFxService()).thenReturn(fxService);
         when(plugin.getSpellRegistry()).thenReturn(spellRegistry);
         when(plugin.getWandService()).thenReturn(wandService);
-        when(plugin.getCooldownService()).thenReturn(cooldownService);
+        when(plugin.getCooldownManager()).thenReturn(cooldownManager);
         when(plugin.getPermissionService()).thenReturn(permissionService);
 
         baseCommand = new TestBaseWandCommand(plugin);

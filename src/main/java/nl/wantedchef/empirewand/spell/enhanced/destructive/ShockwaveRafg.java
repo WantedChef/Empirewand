@@ -67,7 +67,7 @@ public class ShockwaveRafg extends Spell<Void> {
         DEFAULT_FRIENDLY_FIRE
     );
 
-    private static final Set<UUID> processingEntities = ConcurrentHashMap.newKeySet();
+    private final Set<UUID> processingEntities = ConcurrentHashMap.newKeySet();
 
     public static class Builder extends Spell.Builder<Void> {
         /**
@@ -220,11 +220,12 @@ public class ShockwaveRafg extends Spell<Void> {
                 }
 
                 double maxHealth = getMaxHealth(entity);
-                double targetDamage = maxHealth * config.damagePercentage;
-                
+
                 processingEntities.add(entity.getUniqueId());
                 
-                entity.damage(1000.0, context.caster()); // High damage that will be intercepted
+                // Use maxHealth to calculate appropriate damage (e.g., 150% of max health)
+                double damageAmount = maxHealth * 1.5;
+                entity.damage(damageAmount, context.caster()); // High damage that will be intercepted
                 
                 context.fx().spawnParticles(entity.getLocation(), Particle.EXPLOSION, 20, 0.5, 0.5, 0.5, 0.1);
                 context.fx().playSound(entity.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1.2f, 0.8f);
@@ -242,10 +243,8 @@ public class ShockwaveRafg extends Spell<Void> {
      * Damage interceptor to apply percentage-based damage instead of the high damage value.
      */
     private class DamageInterceptor implements Listener {
-        private final Player caster;
-
         public DamageInterceptor(Player caster) {
-            this.caster = caster;
+            // caster not used in this implementation
         }
 
         @EventHandler

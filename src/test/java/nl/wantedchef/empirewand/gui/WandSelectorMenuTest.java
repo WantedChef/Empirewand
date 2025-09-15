@@ -1,5 +1,6 @@
 package nl.wantedchef.empirewand.gui;
 
+import nl.wantedchef.empirewand.EmpireWandPlugin;
 import nl.wantedchef.empirewand.core.config.WandSettingsService;
 import nl.wantedchef.empirewand.core.config.model.WandSettings;
 import nl.wantedchef.empirewand.gui.session.WandSessionManager;
@@ -50,6 +51,9 @@ class WandSelectorMenuTest {
     private Player mockPlayer;
 
     @Mock
+    private EmpireWandPlugin mockPlugin;
+
+    @Mock
     private Location mockLocation;
 
     private WandSelectorMenu wandSelectorMenu;
@@ -58,7 +62,7 @@ class WandSelectorMenuTest {
     @BeforeEach
     void setUp() {
         playerId = UUID.randomUUID();
-        wandSelectorMenu = new WandSelectorMenu(mockWandSettingsService, mockSessionManager, mockLogger);
+        wandSelectorMenu = new WandSelectorMenu(mockWandSettingsService, mockSessionManager, mockLogger, mockPlugin);
 
         // Setup mock player
         when(mockPlayer.getUniqueId()).thenReturn(playerId);
@@ -75,20 +79,23 @@ class WandSelectorMenuTest {
     void testMenuCreation() {
         // Test that menu can be created without throwing exceptions
         assertNotNull(wandSelectorMenu);
-        assertDoesNotThrow(() -> new WandSelectorMenu(mockWandSettingsService, mockSessionManager, mockLogger));
+        assertDoesNotThrow(() -> new WandSelectorMenu(mockWandSettingsService, mockSessionManager, mockLogger, mockPlugin));
     }
 
     @Test
     void testConstructorValidation() {
         // Test null parameter validation
         assertThrows(NullPointerException.class, () ->
-                new WandSelectorMenu(null, mockSessionManager, mockLogger));
+                new WandSelectorMenu(null, mockSessionManager, mockLogger, mockPlugin));
 
         assertThrows(NullPointerException.class, () ->
-                new WandSelectorMenu(mockWandSettingsService, null, mockLogger));
+                new WandSelectorMenu(mockWandSettingsService, null, mockLogger, mockPlugin));
 
         assertThrows(NullPointerException.class, () ->
-                new WandSelectorMenu(mockWandSettingsService, mockSessionManager, null));
+                new WandSelectorMenu(mockWandSettingsService, mockSessionManager, null, mockPlugin));
+
+        assertThrows(NullPointerException.class, () ->
+                new WandSelectorMenu(mockWandSettingsService, mockSessionManager, mockLogger, null));
     }
 
     @Test
@@ -226,7 +233,8 @@ class WandSelectorMenuTest {
         WandSelectorMenu realMenu = new WandSelectorMenu(
                 mockWandSettingsService,
                 realSessionManager,
-                mockLogger
+                mockLogger,
+                mockPlugin
         );
 
         // Setup mock service data

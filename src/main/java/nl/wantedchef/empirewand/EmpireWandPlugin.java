@@ -16,12 +16,14 @@ import nl.wantedchef.empirewand.api.spell.SpellRegistry;
 import nl.wantedchef.empirewand.command.EmpireWandCommand;
 import nl.wantedchef.empirewand.command.MephidantesZeistCommand;
 import nl.wantedchef.empirewand.common.visual.Afterimages;
+import nl.wantedchef.empirewand.core.event.EventBusSystem;
+import nl.wantedchef.empirewand.core.integration.OptimizedServiceRegistry;
 import nl.wantedchef.empirewand.core.storage.Keys;
 import nl.wantedchef.empirewand.core.task.TaskManager;
 import nl.wantedchef.empirewand.core.text.TextService;
 import nl.wantedchef.empirewand.core.util.PerformanceMonitor;
 import nl.wantedchef.empirewand.framework.service.ConfigService;
-import nl.wantedchef.empirewand.framework.service.CooldownService;
+import nl.wantedchef.empirewand.framework.service.UnifiedCooldownManager;
 import nl.wantedchef.empirewand.framework.service.FxService;
 import nl.wantedchef.empirewand.framework.service.metrics.DebugMetricsService;
 import nl.wantedchef.empirewand.framework.service.metrics.MetricsService;
@@ -35,6 +37,7 @@ import nl.wantedchef.empirewand.listener.player.PlayerJoinQuitListener;
 import nl.wantedchef.empirewand.listener.player.SpellCleanupListener;
 import nl.wantedchef.empirewand.listener.projectile.ProjectileHitListener;
 
+import nl.wantedchef.empirewand.listener.spell.AuraSpellListener;
 import nl.wantedchef.empirewand.listener.wand.WandCastListener;
 import nl.wantedchef.empirewand.listener.wand.WandDropGuardListener;
 import nl.wantedchef.empirewand.listener.wand.WandSelectListener;
@@ -49,15 +52,17 @@ public final class EmpireWandPlugin extends JavaPlugin {
     private TextService textService;
     private PerformanceMonitor performanceMonitor;
     private DebugMetricsService debugMetricsService;
-    SpellRegistry spellRegistry;
-    CooldownService cooldownService;
-    WandService wandService;
-    FxService fxService;
-    PermissionService permissionService;
-    MetricsService metricsService;
+    private SpellRegistry spellRegistry;
+    private UnifiedCooldownManager cooldownManager;
+    private WandService wandService;
+    private FxService fxService;
+    private PermissionService permissionService;
+    private MetricsService metricsService;
     private TaskManager taskManager;
     private WandStatusListener wandStatusListener;
     private nl.wantedchef.empirewand.api.spell.toggle.SpellManager spellManager;
+    private OptimizedServiceRegistry serviceRegistry;
+    private EventBusSystem eventBus;
 
     @Override
     public void onEnable() {
@@ -65,13 +70,17 @@ public final class EmpireWandPlugin extends JavaPlugin {
             // Initialize task manager first
             this.taskManager = new nl.wantedchef.empirewand.core.task.TaskManager(this);
 
+            // Initialize event bus and service registry
+            this.eventBus = new EventBusSystem(this);
+            this.serviceRegistry = new OptimizedServiceRegistry(this, this.eventBus);
+
             // Initialize core services
             this.configService = new nl.wantedchef.empirewand.framework.service.ConfigService(this);
             this.textService = new nl.wantedchef.empirewand.core.text.TextService();
             this.performanceMonitor = new nl.wantedchef.empirewand.core.util.PerformanceMonitor(getLogger());
             this.debugMetricsService = new nl.wantedchef.empirewand.framework.service.metrics.DebugMetricsService(1000); // 1000
                                                                                                                      // samples
-            this.cooldownService = new nl.wantedchef.empirewand.framework.service.CooldownService(this);
+            this.cooldownManager = new UnifiedCooldownManager(this);
             this.fxService = new nl.wantedchef.empirewand.framework.service.FxService(this.textService,
                     this.performanceMonitor);
             this.permissionService = new nl.wantedchef.empirewand.framework.service.PermissionServiceImpl();
@@ -93,6 +102,12 @@ public final class EmpireWandPlugin extends JavaPlugin {
             this.metricsService = new nl.wantedchef.empirewand.framework.service.metrics.MetricsService(this,
                     this.configService, this.spellRegistry,
                     this.debugMetricsService);
+
+            // Register all services with the registry
+            registerServices();
+
+            // Start all registered services
+            this.serviceRegistry.startServices().join(); // Wait for services to start
 
             // Register listeners & commands
             registerListeners();
@@ -153,11 +168,11 @@ public final class EmpireWandPlugin extends JavaPlugin {
             }
         }
 
-        // 4. Cleanup CooldownService
-        if (this.cooldownService != null) {
+        // 4. Cleanup CooldownManager
+        if (this.cooldownManager != null) {
             try {
-                this.cooldownService.shutdown();
-                getLogger().info("CooldownService shut down");
+                this.cooldownManager.shutdown();
+                getLogger().info("UnifiedCooldownManager shut down");
             } catch (Exception e) {
                 getLogger().warning(String.format("Error shutting down cooldown service: %s", e.getMessage()));
             }
@@ -180,6 +195,16 @@ public final class EmpireWandPlugin extends JavaPlugin {
                 getLogger().info("WandStatusListener shut down");
             } catch (Exception e) {
                 getLogger().warning(String.format("Error shutting down WandStatusListener: %s", e.getMessage()));
+            }
+        }
+
+        // 7. Stop all services
+        if (this.serviceRegistry != null) {
+            try {
+                this.serviceRegistry.stopServices().join(); // Wait for services to stop
+                getLogger().info("All services have been stopped.");
+            } catch (Exception e) {
+                getLogger().warning(String.format("Error stopping services: %s", e.getMessage()));
             }
         }
 
@@ -261,6 +286,7 @@ public final class EmpireWandPlugin extends JavaPlugin {
         pm.registerEvents(new PolymorphCleanupListener(this), this);
         pm.registerEvents(new BloodBarrierDamageListener(this), this);
         pm.registerEvents(new ElementosgodDamageListener(this), this);
+        pm.registerEvents(new nl.wantedchef.empirewand.listener.combat.MinionFriendlyFireListener(), this);
         
         // Enhanced spell effect listeners
         pm.registerEvents(new nl.wantedchef.empirewand.listener.spell.StatusEffectListener(this), this);
@@ -268,8 +294,8 @@ public final class EmpireWandPlugin extends JavaPlugin {
         pm.registerEvents(new nl.wantedchef.empirewand.listener.spell.MovementSpellListener(this), this);
         pm.registerEvents(new nl.wantedchef.empirewand.listener.spell.EnvironmentalSpellListener(this), this);
         pm.registerEvents(new nl.wantedchef.empirewand.listener.spell.WaveSpellListener(this), this);
-        pm.registerEvents(new nl.wantedchef.empirewand.listener.spell.AuraSpellListener(this), this);
-        
+        // AuraSpellListener is now a service, its events are registered in its @PostConstruct method.
+
         // GUI click listener for wand rules system
         pm.registerEvents(new nl.wantedchef.empirewand.gui.GuiClickListener(getLogger()), this);
 
@@ -304,6 +330,28 @@ public final class EmpireWandPlugin extends JavaPlugin {
         }
     }
 
+    private void registerServices() {
+        // Register all services that should be managed by the service registry.
+        this.serviceRegistry.registerServiceInstance(EmpireWandPlugin.class, this);
+        this.serviceRegistry.registerServiceInstance(ConfigService.class, this.configService);
+        this.serviceRegistry.registerServiceInstance(TextService.class, this.textService);
+        this.serviceRegistry.registerServiceInstance(PerformanceMonitor.class, this.performanceMonitor);
+        this.serviceRegistry.registerServiceInstance(DebugMetricsService.class, this.debugMetricsService);
+        this.serviceRegistry.registerServiceInstance(UnifiedCooldownManager.class, this.cooldownManager);
+        this.serviceRegistry.registerServiceInstance(FxService.class, this.fxService);
+        this.serviceRegistry.registerServiceInstance(PermissionService.class, this.permissionService);
+        this.serviceRegistry.registerServiceInstance(nl.wantedchef.empirewand.api.spell.toggle.SpellManager.class, this.spellManager);
+        this.serviceRegistry.registerServiceInstance(SpellRegistry.class, this.spellRegistry);
+        this.serviceRegistry.registerServiceInstance(WandService.class, this.wandService);
+        this.serviceRegistry.registerServiceInstance(MetricsService.class, this.metricsService);
+        this.serviceRegistry.registerServiceInstance(TaskManager.class, this.taskManager);
+        this.serviceRegistry.registerServiceInstance(WandStatusListener.class, this.wandStatusListener);
+        this.serviceRegistry.registerServiceInstance(java.util.logging.Logger.class, getLogger());
+
+        // Register AuraSpellListener as a service class, so the registry can instantiate it.
+        this.serviceRegistry.registerService(AuraSpellListener.class, (context) -> new AuraSpellListener());
+    }
+
     private void initializeAfterimages() {
         var spellsCfg = this.configService.getSpellsConfig();
         boolean aiEnabled = spellsCfg.getBoolean("afterimages.enabled", true);
@@ -334,8 +382,8 @@ public final class EmpireWandPlugin extends JavaPlugin {
         return configService;
     }
 
-    public CooldownService getCooldownService() {
-        return cooldownService;
+    public UnifiedCooldownManager getCooldownManager() {
+        return cooldownManager;
     }
 
     public FxService getFxService() {
@@ -367,6 +415,10 @@ public final class EmpireWandPlugin extends JavaPlugin {
      */
     public TaskManager getTaskManager() {
         return taskManager;
+    }
+
+    public OptimizedServiceRegistry getServiceRegistry() {
+        return this.serviceRegistry;
     }
 
     /**
@@ -433,17 +485,17 @@ record EmpireWandProviderImpl(EmpireWandPlugin plugin) implements EmpireWandAPI.
 
     @Override
     public SpellRegistry getSpellRegistry() {
-        return plugin.spellRegistry;
+        return plugin.getSpellRegistry();
     }
 
     @Override
     public WandService getWandService() {
-        return plugin.wandService;
+        return plugin.getWandService();
     }
 
     @Override
     public PermissionService getPermissionService() {
-        return plugin.permissionService;
+        return plugin.getPermissionService();
     }
 
     @Override
@@ -453,7 +505,7 @@ record EmpireWandProviderImpl(EmpireWandPlugin plugin) implements EmpireWandAPI.
 
     @Override
     public nl.wantedchef.empirewand.api.service.CooldownService getCooldownService() {
-        return new nl.wantedchef.empirewand.api.impl.CooldownServiceAdapter(plugin.getCooldownService());
+        return new nl.wantedchef.empirewand.api.impl.CooldownServiceAdapter(plugin.getCooldownManager());
     }
 
     @Override

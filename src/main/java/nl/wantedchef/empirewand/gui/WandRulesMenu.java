@@ -1,14 +1,17 @@
 package nl.wantedchef.empirewand.gui;
 
 import dev.triumphteam.gui.guis.Gui;
-import dev.triumphteam.gui.guis.GuiItem;
+
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import nl.wantedchef.empirewand.EmpireWandPlugin;
 import nl.wantedchef.empirewand.core.config.WandSettingsService;
 import nl.wantedchef.empirewand.core.config.model.WandDifficulty;
 import nl.wantedchef.empirewand.core.config.model.WandSettings;
 import nl.wantedchef.empirewand.gui.session.WandSessionManager;
+import nl.wantedchef.empirewand.gui.util.GuiUtil;
+import nl.wantedchef.empirewand.gui.util.ItemBuilder;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -19,8 +22,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Wand-specific rules configuration menu. Allows players to configure individual
@@ -36,18 +39,31 @@ public class WandRulesMenu {
     private static final int SAVE_SLOT = 31;
     private static final int CANCEL_SLOT = 33;
     private static final int BACK_SLOT = 40;
+    private static final int GET_WAND_SLOT = 20;
+    private static final int BIND_SPELLS_SLOT = 24;
     private static final int INFO_SLOT = 22;
 
     private final WandSettingsService wandSettingsService;
     private final WandSessionManager sessionManager;
     private final Logger logger;
+    private final EmpireWandPlugin plugin;
 
+    /**
+     * Creates a new WandRulesMenu instance.
+     *
+     * @param wandSettingsService The service for managing wand settings
+     * @param sessionManager The session manager for tracking user state
+     * @param logger The logger for recording events
+     * @param plugin The main plugin instance
+     */
     public WandRulesMenu(@NotNull WandSettingsService wandSettingsService,
                         @NotNull WandSessionManager sessionManager,
-                        @NotNull Logger logger) {
+                        @NotNull Logger logger,
+                        @NotNull EmpireWandPlugin plugin) {
         this.wandSettingsService = Objects.requireNonNull(wandSettingsService, "WandSettingsService cannot be null");
         this.sessionManager = Objects.requireNonNull(sessionManager, "SessionManager cannot be null");
         this.logger = Objects.requireNonNull(logger, "Logger cannot be null");
+        this.plugin = Objects.requireNonNull(plugin, "Plugin cannot be null");
     }
 
     /**
@@ -93,7 +109,7 @@ public class WandRulesMenu {
     private Gui createGui(@NotNull Player player, @NotNull String wandKey, @NotNull WandSettings currentSettings,
                          @NotNull WandSessionManager.WandSession session) {
 
-        String displayName = formatWandDisplayName(wandKey);
+        String displayName = GuiUtil.formatWandDisplayName(wandKey);
 
         Gui gui = Gui.gui()
                 .title(Component.text("Configure: " + displayName)
@@ -111,6 +127,8 @@ public class WandRulesMenu {
 
         // Add control items
         addInfoItem(gui, wandKey);
+        addGetWandItem(gui, player, wandKey);
+        addBindSpellsItem(gui, player, wandKey);
         addSaveItem(gui, player, wandKey, session);
         addCancelItem(gui, player, wandKey, session);
         addBackItem(gui, player);
@@ -355,7 +373,7 @@ public class WandRulesMenu {
         ItemStack item = new ItemStack(Material.KNOWLEDGE_BOOK);
         ItemMeta meta = item.getItemMeta();
 
-        String displayName = formatWandDisplayName(wandKey);
+        String displayName = GuiUtil.formatWandDisplayName(wandKey);
         meta.displayName(Component.text(displayName + " Settings")
                 .color(NamedTextColor.GOLD)
                 .decorate(TextDecoration.BOLD)
@@ -381,6 +399,84 @@ public class WandRulesMenu {
         item.setItemMeta(meta);
 
         gui.setItem(INFO_SLOT, ItemBuilder.from(item).asGuiItem());
+    }
+
+    private void addGetWandItem(@NotNull Gui gui, @NotNull Player player, @NotNull String wandKey) {
+        Material material = switch (wandKey.toLowerCase()) {
+            case "mephidantes_zeist" -> Material.NETHERITE_HOE;
+            case "empirewand" -> Material.BLAZE_ROD;
+            default -> Material.STICK;
+        };
+
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+        meta.displayName(Component.text("Get " + GuiUtil.formatWandDisplayName(wandKey))
+                .color(NamedTextColor.AQUA)
+                .decorate(TextDecoration.BOLD)
+                .decoration(TextDecoration.ITALIC, false));
+
+        List<Component> lore = new ArrayList<>();
+        lore.add(Component.empty());
+        lore.add(Component.text("Click to receive this wand")
+                .color(NamedTextColor.GREEN)
+                .decoration(TextDecoration.ITALIC, true));
+        meta.lore(lore);
+        item.setItemMeta(meta);
+
+        gui.setItem(GET_WAND_SLOT, ItemBuilder.from(item).asGuiItem(event -> {
+            event.setCancelled(true);
+
+            try {
+                boolean success;
+                if ("mephidantes_zeist".equalsIgnoreCase(wandKey)) {
+                    success = plugin.getWandService().giveMephidantesZeist(player);
+                } else {
+                    success = plugin.getWandService().giveWand(player);
+                }
+
+                if (success) {
+                    player.sendMessage(Component.text("You received a " + GuiUtil.formatWandDisplayName(wandKey) + "!")
+                            .color(NamedTextColor.GREEN));
+                    safePlay(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.9f, 1.2f);
+                } else {
+                    player.sendMessage(Component.text("Inventory full. Could not give the wand.")
+                            .color(NamedTextColor.RED));
+                    safePlay(player, Sound.BLOCK_ANVIL_LAND, 0.7f, 0.8f);
+                }
+            } catch (Exception ex) {
+                logger.warning("Failed to give wand '" + wandKey + "' to player '" + player.getName() + "': " + ex.getMessage());
+                player.sendMessage(Component.text("Failed to give wand. Please try again.")
+                        .color(NamedTextColor.RED));
+                safePlay(player, Sound.BLOCK_ANVIL_LAND, 0.7f, 0.8f);
+            }
+        }));
+    }
+
+    private void addBindSpellsItem(@NotNull Gui gui, @NotNull Player player, @NotNull String wandKey) {
+        ItemStack item = new ItemStack(Material.ENCHANTED_BOOK);
+        ItemMeta meta = item.getItemMeta();
+        meta.displayName(Component.text("Bind Spells")
+                .color(NamedTextColor.LIGHT_PURPLE)
+                .decorate(TextDecoration.BOLD)
+                .decoration(TextDecoration.ITALIC, false));
+
+        List<Component> lore = new ArrayList<>();
+        lore.add(Component.empty());
+        lore.add(Component.text("Open the spell binding menu")
+                .color(NamedTextColor.GRAY)
+                .decoration(TextDecoration.ITALIC, false));
+        lore.add(Component.text("Hold your wand to bind/unbind")
+                .color(NamedTextColor.YELLOW)
+                .decoration(TextDecoration.ITALIC, false));
+        meta.lore(lore);
+        item.setItemMeta(meta);
+
+        gui.setItem(BIND_SPELLS_SLOT, ItemBuilder.from(item).asGuiItem(event -> {
+            event.setCancelled(true);
+            safePlay(player, Sound.UI_BUTTON_CLICK, 0.8f, 1.0f);
+            player.closeInventory();
+            new SpellBindingMenu(plugin, logger).openMenu(player, wandKey);
+        }));
     }
 
     private void addSaveItem(@NotNull Gui gui, @NotNull Player player, @NotNull String wandKey,
@@ -430,23 +526,28 @@ public class WandRulesMenu {
             WandSettings pendingSettings = session.getPendingChanges(wandKey);
             if (pendingSettings != null) {
                 wandSettingsService.updateWandSettings(pendingSettings).thenRun(() -> {
-                    // Clear pending changes
-                    session.removePendingChanges(wandKey);
+                    // Schedule UI operations on the main thread
+                    plugin.getTaskManager().runTask(() -> {
+                        // Clear pending changes
+                        session.removePendingChanges(wandKey);
 
-                    // Send success message
-                    player.sendMessage(Component.text("Settings saved successfully for " + formatWandDisplayName(wandKey))
-                            .color(NamedTextColor.GREEN));
+                        // Send success message
+                        player.sendMessage(Component.text("Settings saved successfully for " + GuiUtil.formatWandDisplayName(wandKey))
+                                .color(NamedTextColor.GREEN));
 
-                    // Play success sound
-                    safePlay(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.2f);
+                        // Play success sound
+                        safePlay(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.2f);
 
-                    // Close menu
-                    player.closeInventory();
-
+                        // Close menu
+                        player.closeInventory();
+                    });
                 }).exceptionally(throwable -> {
-                    player.sendMessage(Component.text("Failed to save settings: " + throwable.getMessage())
-                            .color(NamedTextColor.RED));
-                                        safePlay(player, Sound.BLOCK_ANVIL_LAND, 0.7f, 0.5f);
+                    // Schedule error handling on the main thread
+                    plugin.getTaskManager().runTask(() -> {
+                        player.sendMessage(Component.text("Failed to save settings: " + throwable.getMessage())
+                                .color(NamedTextColor.RED));
+                        safePlay(player, Sound.BLOCK_ANVIL_LAND, 0.7f, 0.5f);
+                    });
                     return null;
                 });
             }
@@ -498,7 +599,7 @@ public class WandRulesMenu {
                 session.removePendingChanges(wandKey);
 
                 // Send message
-                player.sendMessage(Component.text("Changes cancelled for " + formatWandDisplayName(wandKey))
+                player.sendMessage(Component.text("Changes cancelled for " + GuiUtil.formatWandDisplayName(wandKey))
                         .color(NamedTextColor.YELLOW));
 
                 // Play sound
@@ -546,7 +647,7 @@ public class WandRulesMenu {
 
             // Close current menu and open wand selector
             player.closeInventory();
-            new WandSelectorMenu(wandSettingsService, sessionManager, logger).openMenu(player);
+            new WandSelectorMenu(wandSettingsService, sessionManager, logger, plugin).openMenu(player);
         }));
     }
 
@@ -558,53 +659,10 @@ public class WandRulesMenu {
         };
     }
 
-    private String formatWandDisplayName(@NotNull String wandKey) {
-        // Convert snake_case to Title Case
-        String[] parts = wandKey.split("_");
-        StringBuilder displayName = new StringBuilder();
-
-        for (int i = 0; i < parts.length; i++) {
-            if (i > 0) {
-                displayName.append(" ");
-            }
-            String part = parts[i];
-            displayName.append(part.substring(0, 1).toUpperCase())
-                      .append(part.substring(1).toLowerCase());
-        }
-
-        return displayName.toString();
-    }
-
-    /**
-     * Utility class for building ItemStacks with fluent API.
-     */
-    private static class ItemBuilder {
-        private final ItemStack item;
-
-        private ItemBuilder(@NotNull ItemStack item) {
-            this.item = item.clone();
-        }
-
-        @NotNull
-        public static ItemBuilder from(@NotNull ItemStack item) {
-            return new ItemBuilder(item);
-        }
-
-        @NotNull
-        public GuiItem asGuiItem(@NotNull java.util.function.Consumer<org.bukkit.event.inventory.InventoryClickEvent> action) {
-            return new GuiItem(item, action::accept);
-        }
-
-        @NotNull
-        public GuiItem asGuiItem() {
-            return new GuiItem(item);
+    private void safePlay(@NotNull Player player, @NotNull Sound sound, float volume, float pitch) {
+        var loc = player.getLocation();
+        if (loc != null) {
+            player.playSound(loc, sound, volume, pitch);
         }
     }
-
-        private void safePlay(@NotNull Player player, @NotNull Sound sound, float volume, float pitch) {
-                var loc = player.getLocation();
-                if (loc != null) {
-                        player.playSound(loc, sound, volume, pitch);
-                }
-        }
 }

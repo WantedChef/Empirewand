@@ -143,12 +143,12 @@ public class BloodBarrier extends Spell<Void> {
             }
             Location playerLoc = Objects.requireNonNull(player.getLocation(), "player location");
             player.removeMetadata(BARRIER_ACTIVE_KEY, context.plugin());
-            for (org.bukkit.entity.LivingEntity entity : world.getLivingEntities()) {
-                Location entityLoc = Objects.requireNonNull(entity.getLocation(), "entity location");
-                if (entityLoc.distance(playerLoc) <= 3.0 && !entity.equals(player)) {
-                    entity.damage(0.5, Objects.requireNonNull(player, "player"));
+            double radius = 3.0;
+            world.getNearbyLivingEntities(playerLoc, radius).forEach(entity -> {
+                if (!entity.equals(player)) {
+                    entity.damage(0.5, player);
                 }
-            }
+            });
         }
     }
 }

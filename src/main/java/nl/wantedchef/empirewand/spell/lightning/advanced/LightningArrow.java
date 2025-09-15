@@ -77,26 +77,27 @@ public class LightningArrow extends ProjectileSpell<Arrow> {
     protected void handleHit(@NotNull SpellContext context, @NotNull Projectile projectile,
             @NotNull ProjectileHitEvent event) {
         Location hitLoc = projectile.getLocation();
-        boolean blockDamage = spellConfig.getBoolean("flags.block-damage", false);
 
-        if (blockDamage) {
-            hitLoc.getWorld().strikeLightning(hitLoc);
-        } else {
-            hitLoc.getWorld().strikeLightningEffect(hitLoc);
-            double damage = spellConfig.getDouble("values.damage", 8.0);
-            double radius = spellConfig.getDouble("values.radius", 3.0);
-            boolean glowing = spellConfig.getBoolean("flags.glowing", true);
-            int glowTicks = spellConfig.getInt("values.glowing-duration-ticks", 60);
+        // Always strike lightning on impact - this creates the visual and sound effect
+        hitLoc.getWorld().strikeLightning(hitLoc);
 
-            for (var e : hitLoc.getWorld().getNearbyLivingEntities(hitLoc, radius)) {
-                if (e.equals(context.caster()) && !EmpireWandAPI.getService(ConfigService.class).getMainConfig()
-                        .getBoolean("features.friendly-fire", false))
-                    continue;
+        // Apply additional spell damage to entities in radius
+        double spellDamage = spellConfig.getDouble("values.damage", 8.0);
+        double lightningDamage = spellConfig.getDouble("values.lightning-damage", 12.0);
+        double radius = spellConfig.getDouble("values.radius", 3.0);
+        boolean glowing = spellConfig.getBoolean("flags.glowing", true);
+        int glowTicks = spellConfig.getInt("values.glowing-duration-ticks", 60);
 
-                e.damage(damage, context.caster());
-                if (glowing) {
-                    e.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, glowTicks, 0, false, true));
-                }
+        for (var e : hitLoc.getWorld().getNearbyLivingEntities(hitLoc, radius)) {
+            if (e.equals(context.caster()) && !EmpireWandAPI.getService(ConfigService.class).getMainConfig()
+                    .getBoolean("features.friendly-fire", false))
+                continue;
+
+            // Apply both spell damage and lightning damage
+            double totalDamage = spellDamage + lightningDamage;
+            e.damage(totalDamage, context.caster());
+            if (glowing) {
+                e.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, glowTicks, 0, false, true));
             }
         }
     }

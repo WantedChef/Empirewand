@@ -97,7 +97,7 @@ public class Tame extends Spell<Animals> {
             if (target instanceof Wolf wolf) {
                 wolf.setCollarColor(org.bukkit.DyeColor.RED);
                 context.fx().playSound(target.getLocation(), Sound.ENTITY_WOLF_WHINE, 1.0f, 1.0f);
-            } else if (target instanceof Cat cat) {
+            } else if (target instanceof Cat) {
                 context.fx().playSound(target.getLocation(), Sound.ENTITY_CAT_PURR, 1.0f, 1.0f);
             } else if (target instanceof Horse horse) {
                 horse.setJumpStrength(1.0);

@@ -26,7 +26,6 @@ import nl.wantedchef.empirewand.api.service.WandService;
 import nl.wantedchef.empirewand.api.spell.SpellRegistry;
 import nl.wantedchef.empirewand.core.util.PerformanceMonitor;
 import nl.wantedchef.empirewand.framework.service.ConfigService;
-import nl.wantedchef.empirewand.framework.service.CooldownService;
 import nl.wantedchef.empirewand.framework.service.FxService;
 import nl.wantedchef.empirewand.framework.service.metrics.MetricsService;
 
@@ -57,7 +56,7 @@ class CommandContextTest {
     private WandService wandService;
 
     @Mock
-    private CooldownService cooldownService;
+    private nl.wantedchef.empirewand.framework.service.UnifiedCooldownManager cooldownManager;
 
     @Mock
     private PermissionService permissionService;
@@ -73,7 +72,7 @@ class CommandContextTest {
         when(sender.getName()).thenReturn("Tester");
 
         context = new CommandContext(plugin, sender, new String[] {"arg1", "arg2", "arg3"},
-                configService, fxService, spellRegistry, wandService, cooldownService,
+                configService, fxService, spellRegistry, wandService, cooldownManager,
                 permissionService);
     }
 
@@ -110,7 +109,7 @@ class CommandContextTest {
             assertEquals(fxService, context.fx());
             assertEquals(spellRegistry, context.spellRegistry());
             assertEquals(wandService, context.wandService());
-            assertEquals(cooldownService, context.cooldownService());
+            assertEquals(cooldownManager, context.cooldownManager());
             assertEquals(permissionService, context.permissionService());
         }
     }
@@ -130,7 +129,7 @@ class CommandContextTest {
         void shouldReturnPlayerWhenSenderIsPlayer() {
             CommandContext playerContext =
                     new CommandContext(plugin, player, new String[] {}, configService, fxService,
-                            spellRegistry, wandService, cooldownService, permissionService);
+                            spellRegistry, wandService, cooldownManager, permissionService);
 
             assertEquals(player, playerContext.asPlayer());
         }
@@ -150,7 +149,7 @@ class CommandContextTest {
         void shouldReturnPlayerWhenRequiringPlayerAndSenderIsPlayer() throws CommandException {
             CommandContext playerContext =
                     new CommandContext(plugin, player, new String[] {}, configService, fxService,
-                            spellRegistry, wandService, cooldownService, permissionService);
+                            spellRegistry, wandService, cooldownManager, permissionService);
 
             assertEquals(player, playerContext.requirePlayer());
         }
@@ -239,7 +238,7 @@ class CommandContextTest {
         void shouldValidateEnumArgument() throws CommandException {
             CommandContext testContext = new CommandContext(plugin, sender,
                     new String[] {"value1", "VALUE2"}, configService, fxService, spellRegistry,
-                    wandService, cooldownService, permissionService);
+                    wandService, cooldownManager, permissionService);
 
             assertEquals("value1", testContext.validateEnumArg(0, "value1", "value2", "value3"));
             assertEquals("value2", testContext.validateEnumArg(1, "value1", "value2", "value3"));
@@ -250,7 +249,7 @@ class CommandContextTest {
         void shouldThrowExceptionForInvalidEnumArgument() {
             CommandContext testContext = new CommandContext(plugin, sender,
                     new String[] {"invalid"}, configService, fxService, spellRegistry, wandService,
-                    cooldownService, permissionService);
+                    cooldownManager, permissionService);
 
             CommandException exception = assertThrows(CommandException.class, () -> {
                 testContext.validateEnumArg(0, "value1", "value2", "value3");
@@ -264,7 +263,7 @@ class CommandContextTest {
         @DisplayName("Should validate integer argument range")
         void shouldValidateIntegerArgumentRange() throws CommandException {
             CommandContext testContext = new CommandContext(plugin, sender, new String[] {"50"},
-                    configService, fxService, spellRegistry, wandService, cooldownService,
+                    configService, fxService, spellRegistry, wandService, cooldownManager,
                     permissionService);
 
             assertEquals(50, testContext.validateIntArg(0, 1, 100));
@@ -274,7 +273,7 @@ class CommandContextTest {
         @DisplayName("Should throw exception for out of range integer argument")
         void shouldThrowExceptionForOutOfRangeIntegerArgument() {
             CommandContext testContext = new CommandContext(plugin, sender, new String[] {"150"},
-                    configService, fxService, spellRegistry, wandService, cooldownService,
+                    configService, fxService, spellRegistry, wandService, cooldownManager,
                     permissionService);
 
             CommandException exception = assertThrows(CommandException.class, () -> {
@@ -289,7 +288,7 @@ class CommandContextTest {
         void shouldValidateBooleanArgument() throws CommandException {
             CommandContext testContext = new CommandContext(plugin, sender,
                     new String[] {"true", "false"}, configService, fxService, spellRegistry,
-                    wandService, cooldownService, permissionService);
+                    wandService, cooldownManager, permissionService);
 
             assertTrue(testContext.validateBooleanArg(0));
             assertFalse(testContext.validateBooleanArg(1));
@@ -299,7 +298,7 @@ class CommandContextTest {
         @DisplayName("Should throw exception for invalid boolean argument")
         void shouldThrowExceptionForInvalidBooleanArgument() {
             CommandContext testContext = new CommandContext(plugin, sender, new String[] {"maybe"},
-                    configService, fxService, spellRegistry, wandService, cooldownService,
+                    configService, fxService, spellRegistry, wandService, cooldownManager,
                     permissionService);
 
             CommandException exception = assertThrows(CommandException.class, () -> {

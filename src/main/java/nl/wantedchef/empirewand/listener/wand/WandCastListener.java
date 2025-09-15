@@ -1,7 +1,6 @@
 package nl.wantedchef.empirewand.listener.wand;
 
 import nl.wantedchef.empirewand.EmpireWandPlugin;
-import nl.wantedchef.empirewand.framework.service.CooldownService;
 import nl.wantedchef.empirewand.framework.service.FxService;
 import nl.wantedchef.empirewand.api.spell.SpellRegistry;
 import nl.wantedchef.empirewand.spell.Spell;
@@ -127,9 +126,10 @@ public final class WandCastListener implements Listener {
         // Get display name and show feedback
         String displayName = plugin.getSpellRegistry().getSpellDisplayName(newSpellKey);
 
-        // Show action bar and chat message
-        plugin.getFxService().actionBar(player, displayName);
-        player.sendMessage("§aSelected: §r" + displayName);
+        // Show improved spell selection feedback
+        Map<String, String> params = Map.of("spell", displayName);
+        plugin.getFxService().actionBarKey(player, "spell-switched", params);
+        plugin.getFxService().playUISound(player, "select");
 
         // Play spell switch effect
         spellSwitchService.playSpellSwitchEffect(player, item);
@@ -166,9 +166,10 @@ public final class WandCastListener implements Listener {
         // Get display name and show feedback
         String displayName = plugin.getSpellRegistry().getSpellDisplayName(newSpellKey);
 
-        // Show action bar and chat message
-        plugin.getFxService().actionBar(player, displayName);
-        player.sendMessage("§aSelected: §r" + displayName);
+        // Show improved spell selection feedback
+        Map<String, String> params = Map.of("spell", displayName);
+        plugin.getFxService().actionBarKey(player, "spell-switched", params);
+        plugin.getFxService().playUISound(player, "select");
 
         // Play spell switch effect
         spellSwitchService.playSpellSwitchEffect(player, item);
@@ -188,36 +189,44 @@ public final class WandCastListener implements Listener {
 
     private void castCurrentSpell(Player player, ItemStack item, List<String> spells) {
         int index = Math.max(0, Math.min(plugin.getWandService().getActiveIndex(item), spells.size() - 1));
-        String spellKey = spells.get(index);
+        String configSpellKey = spells.get(index);
 
         SpellRegistry registry = plugin.getSpellRegistry();
-        Optional<Spell<?>> spellOpt = registry.getSpell(spellKey);
+        Optional<Spell<?>> spellOpt = registry.getSpell(configSpellKey);
         if (spellOpt.isEmpty()) {
             plugin.getFxService().showError(player, "wand.unknown-spell");
             plugin.getLogger()
-                    .warning(String.format("Unknown spell '%s' on wand for player %s", spellKey, player.getName()));
+                    .warning(String.format("Unknown spell '%s' on wand for player %s", configSpellKey, player.getName()));
             return;
         }
 
         Spell<?> spell = spellOpt.get();
+        String actualSpellKey = spell.key(); // Use the spell's actual key for cooldowns!
 
         var perms = plugin.getPermissionService();
 
-        // Re-check permissions in case they changed dynamically
-        if (!perms.has(player, perms.getSpellUsePermission(spellKey))) {
+        // Re-check permissions in case they changed dynamically (use config key for permissions)
+        if (!perms.has(player, perms.getSpellUsePermission(configSpellKey))) {
             plugin.getFxService().showError(player, "wand.no-permission");
             return;
         }
 
         long nowTicks = player.getWorld().getFullTime();
         var spellsCfg = plugin.getConfigService().getSpellsConfig();
-        int cdTicks = Math.max(0, spellsCfg.getInt(spellKey + ".cooldown-ticks", 40));
+        int cdTicks = Math.max(0, spellsCfg.getInt(configSpellKey + ".cooldown-ticks", 40));
 
-        CooldownService cds = plugin.getCooldownService();
-        if (cds.isOnCooldown(player.getUniqueId(), spellKey, nowTicks, item)) {
-            long remaining = cds.remaining(player.getUniqueId(), spellKey, nowTicks, item);
-            Map<String, String> ph = Map.of("seconds", String.valueOf(remaining / 20));
-            plugin.getFxService().showError(player, "wand.on-cooldown", ph);
+        var cooldownManager = plugin.getCooldownManager();
+        if (cooldownManager.isSpellOnCooldown(player.getUniqueId(), actualSpellKey, nowTicks, item)) {
+            long remainingTicks = cooldownManager.getSpellCooldownRemaining(player.getUniqueId(), actualSpellKey, nowTicks, item);
+            double remainingSeconds = Math.max(0.1, remainingTicks / 20.0);
+            String formattedTime = String.format(java.util.Locale.US, "%.1f", remainingSeconds);
+
+            Map<String, String> ph = Map.of(
+                "spell", plugin.getSpellRegistry().getSpellDisplayName(configSpellKey),
+                "seconds", formattedTime
+            );
+            plugin.getFxService().actionBarKey(player, "wand.on-cooldown", ph);
+            plugin.getFxService().playUISound(player, "cooldown");
             return;
         }
 
@@ -241,25 +250,25 @@ public final class WandCastListener implements Listener {
 
             // Only apply cooldown and show success on success
             if (result.isSuccess()) {
-                cds.set(player.getUniqueId(), spellKey, nowTicks + cdTicks);
+                cooldownManager.setSpellCooldown(player.getUniqueId(), actualSpellKey, nowTicks + cdTicks);
 
                 if (player.isOnline()) {
                     var params = new HashMap<String, String>();
-                    params.put("spell", registry.getSpellDisplayName(spellKey));
+                    params.put("spell", registry.getSpellDisplayName(configSpellKey));
                     fx.showSuccess(player, "spell-cast", params);
                 }
 
-                plugin.getMetricsService().recordSpellCast(spellKey, (System.nanoTime() - start) / 1_000_000);
+                plugin.getMetricsService().recordSpellCast(configSpellKey, (System.nanoTime() - start) / 1_000_000);
             } else {
                 // Failure: log error and record metrics (don't show error message to player)
                 plugin.getLogger().info(String.format("Spell cast failed for '%s' by player %s",
-                    spellKey, player.getName()));
+                    configSpellKey, player.getName()));
                 plugin.getMetricsService().recordFailedCast();
             }
         } catch (Exception e) {
             // Base Spell.cast handles failure events; as a safety net, log the error
             plugin.getLogger().warning(String.format("Spell cast exception for '%s' by player %s: %s",
-                spellKey, player.getName(), e.getMessage()));
+                configSpellKey, player.getName(), e.getMessage()));
             plugin.getMetricsService().recordFailedCast();
         }
     }
