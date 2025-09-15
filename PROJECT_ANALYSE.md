@@ -482,11 +482,7 @@ CooldownService cooldowns = api.getCooldownService();
 3. **Caching Strategy**: Meer aggressive caching
 4. **Async Optimization**: Verbeterde thread pools
 
-### Features
-1. **Spell Combinations**: Advanced spell combining
-2. **Spell Learning**: XP-based progression system
-3. **Multiplayer Features**: Party spell casting
-4. **Economy Integration**: Spell purchasing system
+
 
 ### Testing
 1. **Integration Tests**: End-to-end testing

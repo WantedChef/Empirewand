@@ -5,6 +5,7 @@ import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
+import nl.wantedchef.empirewand.spell.util.SpellUtils;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -76,14 +77,14 @@ public class CometShower extends Spell<Void> {
         Player caster = context.caster();
         Location targetLocation = findTargetLocation(caster);
 
-        // Load configuration
-        int cometCount = spellConfig.getInt("values.comet-count", DEFAULT_COMET_COUNT);
-        double radius = spellConfig.getDouble("values.radius", DEFAULT_RADIUS);
-        double explosionYield = spellConfig.getDouble("values.yield", DEFAULT_YIELD);
-        int delayTicks = spellConfig.getInt("values.delay-ticks", DEFAULT_DELAY_TICKS);
+        // Load configuration using SpellUtils
+        int cometCount = SpellUtils.getConfigInt(spellConfig, "values.comet-count", DEFAULT_COMET_COUNT);
+        double radius = SpellUtils.getConfigDouble(spellConfig, "values.radius", DEFAULT_RADIUS);
+        double explosionYield = SpellUtils.getConfigDouble(spellConfig, "values.yield", DEFAULT_YIELD);
+        int delayTicks = SpellUtils.getConfigInt(spellConfig, "values.delay-ticks", DEFAULT_DELAY_TICKS);
 
-        // Play initial sound effect
-        context.fx().playSound(caster.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1.5f, 0.8f);
+        // Play initial sound effect using SpellUtils
+        SpellUtils.playSoundAtCaster(context, Sound.ENTITY_ENDER_DRAGON_GROWL, 1.5f, 0.8f);
 
         // Create and schedule the comet shower task
         BukkitTask task = new BukkitRunnable() {
@@ -118,8 +119,8 @@ public class CometShower extends Spell<Void> {
      * Finds the target location for the comet shower using ray tracing.
      */
     private Location findTargetLocation(Player caster) {
-        double rayDist = spellConfig.getDouble("values.ray-trace-distance", DEFAULT_RAY_TRACE_DISTANCE);
-        int fallbackDistance = spellConfig.getInt("values.fallback-distance", DEFAULT_FALLBACK_DISTANCE);
+        double rayDist = SpellUtils.getConfigDouble(spellConfig, "values.ray-trace-distance", DEFAULT_RAY_TRACE_DISTANCE);
+        int fallbackDistance = SpellUtils.getConfigInt(spellConfig, "values.fallback-distance", DEFAULT_FALLBACK_DISTANCE);
 
         RayTraceResult rayTrace = caster.getWorld().rayTraceBlocks(
             caster.getEyeLocation(),
@@ -141,13 +142,8 @@ public class CometShower extends Spell<Void> {
      * Launches a single comet at a random location within the target area.
      */
     private void launchComet(Player caster, Location center, double radius, double explosionYield, SpellContext context) {
-        // Generate random position within the radius using proper distribution
-        double angle = ThreadLocalRandom.current().nextDouble() * 2 * Math.PI;
-        double distance = Math.sqrt(ThreadLocalRandom.current().nextDouble()) * radius;
-
-        double x = center.getX() + distance * Math.cos(angle);
-        double z = center.getZ() + distance * Math.sin(angle);
-        Location spawnLoc = new Location(center.getWorld(), x, center.getY() + SPAWN_HEIGHT_OFFSET, z);
+        // Generate random position within the radius using SpellUtils
+        Location spawnLoc = SpellUtils.getRandomLocationInRadius(center, radius, SPAWN_HEIGHT_OFFSET);
 
         // Spawn the comet fireball
         LargeFireball comet = spawnLoc.getWorld().spawn(spawnLoc, LargeFireball.class, fireball -> {
@@ -157,13 +153,11 @@ public class CometShower extends Spell<Void> {
             fireball.setShooter(caster);
         });
 
-        // Create visual effects
-        context.fx().spawnParticles(spawnLoc, Particle.FLAME, FLAME_PARTICLE_COUNT,
-            PARTICLE_OFFSET, PARTICLE_OFFSET, PARTICLE_OFFSET, PARTICLE_SPEED);
-        context.fx().spawnParticles(spawnLoc, Particle.LAVA, LAVA_PARTICLE_COUNT,
-            PARTICLE_OFFSET * 0.5, PARTICLE_OFFSET * 0.5, PARTICLE_OFFSET * 0.5, PARTICLE_SPEED * 0.5);
+        // Create visual effects using SpellUtils
+        SpellUtils.spawnParticles(context, spawnLoc, Particle.FLAME, FLAME_PARTICLE_COUNT, PARTICLE_OFFSET, PARTICLE_SPEED);
+        SpellUtils.spawnParticles(context, spawnLoc, Particle.LAVA, LAVA_PARTICLE_COUNT, PARTICLE_OFFSET * 0.5, PARTICLE_SPEED * 0.5);
 
-        // Sound effect for each comet
-        context.fx().playSound(spawnLoc, Sound.ENTITY_BLAZE_SHOOT, 0.8f, 0.7f);
+        // Sound effect for each comet using SpellUtils
+        SpellUtils.playSoundAtLocation(context, spawnLoc, Sound.ENTITY_BLAZE_SHOOT, 0.8f, 0.7f);
     }
 }

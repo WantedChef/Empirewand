@@ -6,6 +6,7 @@ import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
+import nl.wantedchef.empirewand.spell.util.SpellUtils;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -164,15 +165,15 @@ public class DarkCircle extends Spell<Void> {
         super.loadConfig(spellConfig);
         
         this.config = new Config(
-            spellConfig.getDouble("values.radius", DEFAULT_RADIUS),
-            spellConfig.getDouble("values.pull-strength", DEFAULT_PULL_STRENGTH),
-            spellConfig.getDouble("values.launch-power", DEFAULT_LAUNCH_POWER),
-            spellConfig.getInt("values.pull-duration-ticks", DEFAULT_PULL_DURATION),
-            spellConfig.getInt("values.launch-delay-ticks", DEFAULT_LAUNCH_DELAY),
-            spellConfig.getDouble("values.detonation-damage", DEFAULT_DETONATION_DAMAGE),
-            spellConfig.getDouble("values.radial-knockback", DEFAULT_RADIAL_KNOCKBACK),
-            spellConfig.getInt("values.wither-duration-ticks", DEFAULT_WITHER_DURATION),
-            spellConfig.getBoolean("values.friendly-fire", DEFAULT_FRIENDLY_FIRE)
+            SpellUtils.getConfigDouble(spellConfig, "values.radius", DEFAULT_RADIUS),
+            SpellUtils.getConfigDouble(spellConfig, "values.pull-strength", DEFAULT_PULL_STRENGTH),
+            SpellUtils.getConfigDouble(spellConfig, "values.launch-power", DEFAULT_LAUNCH_POWER),
+            SpellUtils.getConfigInt(spellConfig, "values.pull-duration-ticks", DEFAULT_PULL_DURATION),
+            SpellUtils.getConfigInt(spellConfig, "values.launch-delay-ticks", DEFAULT_LAUNCH_DELAY),
+            SpellUtils.getConfigDouble(spellConfig, "values.detonation-damage", DEFAULT_DETONATION_DAMAGE),
+            SpellUtils.getConfigDouble(spellConfig, "values.radial-knockback", DEFAULT_RADIAL_KNOCKBACK),
+            SpellUtils.getConfigInt(spellConfig, "values.wither-duration-ticks", DEFAULT_WITHER_DURATION),
+            SpellUtils.getConfigBoolean(spellConfig, "values.friendly-fire", DEFAULT_FRIENDLY_FIRE)
         );
     }
 

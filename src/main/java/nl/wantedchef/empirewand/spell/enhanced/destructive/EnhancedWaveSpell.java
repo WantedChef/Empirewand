@@ -6,6 +6,7 @@ import nl.wantedchef.empirewand.common.visual.WaveEffectType;
 import nl.wantedchef.empirewand.core.config.ReadableConfig;
 import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.SpellContext;
+import nl.wantedchef.empirewand.spell.util.SpellUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -163,17 +164,17 @@ public abstract class EnhancedWaveSpell extends Spell<WaveProjectile> {
             spellConfig.getString("wave.formation", waveConfig.formation.name())
         );
         
-        double speed = spellConfig.getDouble("wave.speed", waveConfig.speed);
-        double maxDistance = spellConfig.getDouble("wave.max_distance", waveConfig.maxDistance);
-        int projectileCount = spellConfig.getInt("wave.projectile_count", waveConfig.projectileCount);
-        double damage = spellConfig.getDouble("wave.damage", waveConfig.damage);
-        int lifetimeTicks = spellConfig.getInt("wave.lifetime_ticks", waveConfig.lifetimeTicks);
-        double hitRadius = spellConfig.getDouble("wave.hit_radius", waveConfig.hitRadius);
-        boolean pierceEntities = spellConfig.getBoolean("wave.pierce_entities", waveConfig.pierceEntities);
-        int maxPierces = spellConfig.getInt("wave.max_pierces", waveConfig.maxPierces);
-        double particleDensity = spellConfig.getDouble("wave.particle_density", waveConfig.particleDensity);
-        boolean enableScreenShake = spellConfig.getBoolean("wave.enable_screen_shake", waveConfig.enableScreenShake);
-        double screenShakeIntensity = spellConfig.getDouble("wave.screen_shake_intensity", waveConfig.screenShakeIntensity);
+        double speed = SpellUtils.getConfigDouble(spellConfig, "wave.speed", waveConfig.speed);
+        double maxDistance = SpellUtils.getConfigDouble(spellConfig, "wave.max_distance", waveConfig.maxDistance);
+        int projectileCount = SpellUtils.getConfigInt(spellConfig, "wave.projectile_count", waveConfig.projectileCount);
+        double damage = SpellUtils.getConfigDouble(spellConfig, "wave.damage", waveConfig.damage);
+        int lifetimeTicks = SpellUtils.getConfigInt(spellConfig, "wave.lifetime_ticks", waveConfig.lifetimeTicks);
+        double hitRadius = SpellUtils.getConfigDouble(spellConfig, "wave.hit_radius", waveConfig.hitRadius);
+        boolean pierceEntities = SpellUtils.getConfigBoolean(spellConfig, "wave.pierce_entities", waveConfig.pierceEntities);
+        int maxPierces = SpellUtils.getConfigInt(spellConfig, "wave.max_pierces", waveConfig.maxPierces);
+        double particleDensity = SpellUtils.getConfigDouble(spellConfig, "wave.particle_density", waveConfig.particleDensity);
+        boolean enableScreenShake = SpellUtils.getConfigBoolean(spellConfig, "wave.enable_screen_shake", waveConfig.enableScreenShake);
+        double screenShakeIntensity = SpellUtils.getConfigDouble(spellConfig, "wave.screen_shake_intensity", waveConfig.screenShakeIntensity);
         
         this.waveConfig = new WaveConfig(
             formation, waveConfig.effectType, speed, maxDistance, projectileCount, damage,

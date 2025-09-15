@@ -5,6 +5,7 @@ import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
+import nl.wantedchef.empirewand.spell.util.SpellUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Location;
@@ -59,7 +60,7 @@ public class EmpireLaunch extends Spell<Void> {
         Player caster = context.caster();
 
         // Find targeted living entity
-        double range = spellConfig.getDouble("values.range", 20.0);
+        double range = SpellUtils.getConfigDouble(spellConfig, "values.range", 20.0);
 
         // Validate caster has valid location and world
         var eyeLocation = caster.getEyeLocation();
@@ -87,9 +88,9 @@ public class EmpireLaunch extends Spell<Void> {
 
         org.bukkit.entity.LivingEntity target = (org.bukkit.entity.LivingEntity) rayTrace.getHitEntity();
 
-        double powerUp = spellConfig.getDouble("values.power-up", 3.0);
-        double forwardMult = spellConfig.getDouble("values.forward-multiplier", 1.5);
-        int trailTicks = spellConfig.getInt("values.trail-duration-ticks", 200); // 10 seconds
+        double powerUp = SpellUtils.getConfigDouble(spellConfig, "values.power-up", 3.0);
+        double forwardMult = SpellUtils.getConfigDouble(spellConfig, "values.forward-multiplier", 1.5);
+        int trailTicks = SpellUtils.getConfigInt(spellConfig, "values.trail-duration-ticks", 200); // 10 seconds
 
         Vector dir = caster.getEyeLocation().getDirection().normalize();
         Vector launchVector = dir.multiply(forwardMult).setY(powerUp);

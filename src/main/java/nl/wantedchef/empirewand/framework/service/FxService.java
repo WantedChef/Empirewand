@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import nl.wantedchef.empirewand.api.service.EffectService;
 import nl.wantedchef.empirewand.core.text.TextService;
 import nl.wantedchef.empirewand.core.util.PerformanceMonitor;
+import nl.wantedchef.empirewand.core.logging.StructuredLogger;
 
 import net.kyori.adventure.text.Component;
 
@@ -36,6 +37,7 @@ public class FxService implements EffectService {
 
     private final TextService textService;
     private final PerformanceMonitor performanceMonitor;
+    private final StructuredLogger structuredLogger;
 
     private static final int AUTO_FLUSH_THRESHOLD = 75; // Auto-flush at 75% capacity
     private final List<ParticleBatch> particleBatch = new ArrayList<>();
@@ -105,16 +107,21 @@ public class FxService implements EffectService {
      * @param textService The text service for message formatting.
      * @param performanceMonitor The performance monitor for tracking
      * effect-related timings.
+     * @param structuredLogger The structured logger for enhanced logging.
      */
-    public FxService(TextService textService, PerformanceMonitor performanceMonitor) {
+    public FxService(TextService textService, PerformanceMonitor performanceMonitor, StructuredLogger structuredLogger) {
         if (textService == null) {
             throw new IllegalArgumentException("TextService cannot be null");
         }
         if (performanceMonitor == null) {
             throw new IllegalArgumentException("PerformanceMonitor cannot be null");
         }
+        if (structuredLogger == null) {
+            throw new IllegalArgumentException("StructuredLogger cannot be null");
+        }
         this.textService = textService;
         this.performanceMonitor = performanceMonitor;
+        this.structuredLogger = structuredLogger;
     }
 
     // ---- Action bar helpers ----
@@ -422,9 +429,21 @@ public class FxService implements EffectService {
             World world = location.getWorld();
             if (world != null) {
                 world.spawnParticle(particle, location, count, offsetX, offsetY, offsetZ, speed);
+                
+                // Log particle spawning with structured logging
+                structuredLogger.logPerformance("particle_spawned", 0L, 
+                    Map.of("particle", particle.name(),
+                           "count", count,
+                           "world", world.getName(),
+                           "x", location.getX(),
+                           "y", location.getY(),
+                           "z", location.getZ()));
             }
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "Failed to spawn particles", e);
+            structuredLogger.logError("particle_spawn_failed", "Failed to spawn particles", 
+                Map.of("particle", particle != null ? particle.name() : "null",
+                       "error", e.getMessage()));
         }
     }
 

@@ -100,15 +100,22 @@ class ConfigServiceComprehensiveTest {
         @Test
         @DisplayName("Should handle configuration loading errors gracefully")
         void shouldHandleConfigurationLoadingErrorsGracefully() {
+            // Create a new plugin mock for this specific test
+            Plugin testPlugin = mock(Plugin.class);
+            when(testPlugin.getLogger()).thenReturn(mock(Logger.class));
+            when(testPlugin.getDataFolder()).thenReturn(new File("test"));
+            
             // Simulate exception during config loading
-            when(plugin.getConfig()).thenThrow(new RuntimeException("Config loading error"));
+            when(testPlugin.getConfig()).thenThrow(new RuntimeException("Config loading error"));
+            doNothing().when(testPlugin).saveDefaultConfig();
+            doNothing().when(testPlugin).reloadConfig();
             
-            // Call loadConfigs - should not throw exception
-            assertDoesNotThrow(() -> configService.loadConfigs());
-            
-            // Should initialize with empty configs
-            assertNotNull(configService.getConfig());
-            assertNotNull(configService.getSpellsConfig());
+            // Create ConfigService with the mocked plugin - should handle exception gracefully
+            assertDoesNotThrow(() -> {
+                ConfigService testConfigService = new ConfigService(testPlugin);
+                assertNotNull(testConfigService.getConfig());
+                assertNotNull(testConfigService.getSpellsConfig());
+            });
         }
     }
 

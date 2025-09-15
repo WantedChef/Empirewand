@@ -7,6 +7,7 @@ import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
+import nl.wantedchef.empirewand.spell.util.SpellUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Particle;
 import org.bukkit.entity.Player;
@@ -112,9 +113,9 @@ public class EvilGoonsAura extends Spell<Void> implements ToggleableSpell {
         super.loadConfig(spellConfig);
 
         this.config = new Config(
-            spellConfig.getDouble("values.range", DEFAULT_RANGE),
-            spellConfig.getDouble("values.max-damage", DEFAULT_MAX_DAMAGE),
-            spellConfig.getInt("values.check-interval-ticks", DEFAULT_CHECK_INTERVAL_TICKS)
+            SpellUtils.getConfigDouble(spellConfig, "values.range", DEFAULT_RANGE),
+            SpellUtils.getConfigDouble(spellConfig, "values.max-damage", DEFAULT_MAX_DAMAGE),
+            SpellUtils.getConfigInt(spellConfig, "values.check-interval-ticks", DEFAULT_CHECK_INTERVAL_TICKS)
         );
     }
 

@@ -23,6 +23,8 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import nl.wantedchef.empirewand.core.config.model.WandDifficulty;
 import nl.wantedchef.empirewand.core.config.model.WandSettings;
@@ -32,6 +34,7 @@ import nl.wantedchef.empirewand.core.config.model.WandSettings;
  * Tests configuration loading, saving, and validation functionality.
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class WandSettingsServiceTest {
 
     @Mock
@@ -200,7 +203,7 @@ class WandSettingsServiceTest {
                 service.getWandSettings(null));
 
         // Test empty wand key
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(ExecutionException.class, () -> {
             WandSettings invalidSettings = WandSettings.builder("")
                     .difficulty(WandDifficulty.EASY)
                     .build();

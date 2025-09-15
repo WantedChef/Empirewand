@@ -5,6 +5,7 @@ import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
 import nl.wantedchef.empirewand.spell.PrereqInterface;
+import nl.wantedchef.empirewand.spell.util.SpellUtils;
 import org.bukkit.entity.Vex;
 import org.bukkit.entity.Tameable;
 import java.util.ArrayList;
@@ -151,11 +152,11 @@ public class SummonSwarm extends Spell<Void> {
         Player player = context.caster();
 
         // Configuration
-        int minionCount = spellConfig.getInt("values.minion-count", 8);
-        double radius = spellConfig.getDouble("values.radius", 8.0);
-        int durationTicks = spellConfig.getInt("values.duration-ticks", 300);
-        double minionHealth = spellConfig.getDouble("values.minion-health", 10.0);
-        double minionDamage = spellConfig.getDouble("values.minion-damage", 4.0);
+        int minionCount = SpellUtils.getConfigInt(spellConfig, "values.minion-count", 8);
+        double radius = SpellUtils.getConfigDouble(spellConfig, "values.radius", 8.0);
+        int durationTicks = SpellUtils.getConfigInt(spellConfig, "values.duration-ticks", 300);
+        double minionHealth = SpellUtils.getConfigDouble(spellConfig, "values.minion-health", 10.0);
+        double minionDamage = SpellUtils.getConfigDouble(spellConfig, "values.minion-damage", 4.0);
         Variant variant = getVariant(context);
 
         // Play summoning sound

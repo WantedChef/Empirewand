@@ -6,6 +6,7 @@ import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
+import nl.wantedchef.empirewand.spell.util.SpellUtils;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -144,15 +145,15 @@ public class MeteorShower extends Spell<Void> {
     public void loadConfig(@NotNull ReadableConfig spellConfig) {
         super.loadConfig(spellConfig);
         this.config = new Config(
-                spellConfig.getDouble("values.range", 25.0),
-                spellConfig.getInt("values.meteor-count", 15),
-                spellConfig.getDouble("values.damage", 12.0),
-                spellConfig.getInt("values.crater-radius", 3),
-                spellConfig.getInt("values.duration-ticks", 80),
-                spellConfig.getDouble("values.meteor-speed", 2.0),
-                spellConfig.getDouble("values.trail-intensity", 1.5),
-                (float) spellConfig.getDouble("values.explosion-power", 3.5),
-                spellConfig.getDouble("values.shockwave-radius", 8.0)
+                SpellUtils.getConfigDouble(spellConfig, "values.range", 25.0),
+                SpellUtils.getConfigInt(spellConfig, "values.meteor-count", 15),
+                SpellUtils.getConfigDouble(spellConfig, "values.damage", 12.0),
+                SpellUtils.getConfigInt(spellConfig, "values.crater-radius", 3),
+                SpellUtils.getConfigInt(spellConfig, "values.duration-ticks", 80),
+                SpellUtils.getConfigDouble(spellConfig, "values.meteor-speed", 2.0),
+                SpellUtils.getConfigDouble(spellConfig, "values.trail-intensity", 1.5),
+                (float) SpellUtils.getConfigDouble(spellConfig, "values.explosion-power", 3.5),
+                SpellUtils.getConfigDouble(spellConfig, "values.shockwave-radius", 8.0)
         );
     }
 

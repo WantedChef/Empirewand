@@ -6,6 +6,7 @@ import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
+import nl.wantedchef.empirewand.spell.util.SpellUtils;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -83,7 +84,7 @@ public class ElementalTeleporter extends Spell<Void> {
         super.loadConfig(spellConfig);
         
         this.config = new Config(
-            spellConfig.getDouble("values.max-range", DEFAULT_MAX_RANGE)
+            SpellUtils.getConfigDouble(spellConfig, "values.max-range", DEFAULT_MAX_RANGE)
         );
     }
 

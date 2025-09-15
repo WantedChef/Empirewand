@@ -3,6 +3,7 @@ package nl.wantedchef.empirewand.framework.service;
 import nl.wantedchef.empirewand.api.service.EffectService;
 import nl.wantedchef.empirewand.core.text.TextService;
 import nl.wantedchef.empirewand.core.util.PerformanceMonitor;
+import nl.wantedchef.empirewand.core.logging.StructuredLogger;
 
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -34,6 +35,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -49,6 +51,9 @@ class FxServiceTest {
 
     @Mock
     private PerformanceMonitor performanceMonitor;
+
+    @Mock
+    private StructuredLogger structuredLogger;
 
     @Mock
     private Player player;
@@ -76,8 +81,12 @@ class FxServiceTest {
         when(player.getLocation()).thenReturn(location);
         when(performanceMonitor.startTiming(anyString(), anyLong())).thenReturn(mock(PerformanceMonitor.TimingContext.class));
         
+        // Setup structuredLogger mock to avoid NullPointerException
+        doNothing().when(structuredLogger).logPerformance(anyString(), anyLong(), anyMap());
+        doNothing().when(structuredLogger).logError(anyString(), anyString(), anyMap());
+        
         // Create FxService instance
-        fxService = new FxService(textService, performanceMonitor);
+        fxService = new FxService(textService, performanceMonitor, structuredLogger);
     }
 
     @Test
@@ -108,7 +117,7 @@ class FxServiceTest {
         @DisplayName("Test FxService constructor throws exception when textService is null")
         void testConstructorWithNullTextService() {
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-                new FxService(null, performanceMonitor);
+                new FxService(null, performanceMonitor, structuredLogger);
             });
             
             assertEquals("TextService cannot be null", exception.getMessage());
@@ -118,10 +127,20 @@ class FxServiceTest {
         @DisplayName("Test FxService constructor throws exception when performanceMonitor is null")
         void testConstructorWithNullPerformanceMonitor() {
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-                new FxService(textService, null);
+                new FxService(textService, null, structuredLogger);
             });
             
             assertEquals("PerformanceMonitor cannot be null", exception.getMessage());
+        }
+        
+        @Test
+        @DisplayName("Test FxService constructor throws exception when structuredLogger is null")
+        void testConstructorWithNullStructuredLogger() {
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+                new FxService(textService, performanceMonitor, null);
+            });
+            
+            assertEquals("StructuredLogger cannot be null", exception.getMessage());
         }
     }
 

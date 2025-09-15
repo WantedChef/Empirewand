@@ -23,12 +23,12 @@ class KajCloudTest {
     
     @Test
     void testSpellName() {
-        assertEquals("Kaj Cloud", kajCloud.getName());
+        assertEquals("Divine God Cloud", kajCloud.getName());
     }
     
     @Test
     void testSpellDescription() {
-        assertEquals("Summon a fluffy cloud platform to fly on.", 
+        assertEquals("Summon a magnificent holy spirit cloud with divine power and celestial glory.", 
                     kajCloud.getDescription());
     }
     

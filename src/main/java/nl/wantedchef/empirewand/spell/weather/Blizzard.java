@@ -34,6 +34,7 @@ import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
+import nl.wantedchef.empirewand.spell.util.SpellUtils;
 
 /**
  * A devastating, cinematic ice spell that unleashes a roaring blizzard of epic proportions,
@@ -149,16 +150,16 @@ public class Blizzard extends Spell<Void> {
         super.loadConfig(spellConfig);
 
         this.config = new Config(
-            spellConfig.getDouble("values.radius", DEFAULT_RADIUS),
-            spellConfig.getDouble("values.damage", DEFAULT_DAMAGE),
-            spellConfig.getInt("values.slow-duration-ticks", DEFAULT_SLOW_DURATION),
-            spellConfig.getInt("values.slow-amplifier", DEFAULT_SLOW_AMPLIFIER),
-            spellConfig.getInt("values.duration-ticks", DEFAULT_DURATION_TICKS),
-            spellConfig.getBoolean("flags.create-ice", DEFAULT_CREATE_ICE),
-            spellConfig.getInt("values.ice-growth-attempts", DEFAULT_ICE_GROWTH_ATTEMPTS),
-            spellConfig.getInt("values.particle-density", DEFAULT_PARTICLE_DENSITY),
-            spellConfig.getDouble("values.wind-force", DEFAULT_WIND_FORCE),
-            spellConfig.getBoolean("flags.pulse-lightning", DEFAULT_PULSE_LIGHTNING)
+            SpellUtils.getConfigDouble(spellConfig, "values.radius", DEFAULT_RADIUS),
+            SpellUtils.getConfigDouble(spellConfig, "values.damage", DEFAULT_DAMAGE),
+            SpellUtils.getConfigInt(spellConfig, "values.slow-duration-ticks", DEFAULT_SLOW_DURATION),
+            SpellUtils.getConfigInt(spellConfig, "values.slow-amplifier", DEFAULT_SLOW_AMPLIFIER),
+            SpellUtils.getConfigInt(spellConfig, "values.duration-ticks", DEFAULT_DURATION_TICKS),
+            SpellUtils.getConfigBoolean(spellConfig, "flags.create-ice", DEFAULT_CREATE_ICE),
+            SpellUtils.getConfigInt(spellConfig, "values.ice-growth-attempts", DEFAULT_ICE_GROWTH_ATTEMPTS),
+            SpellUtils.getConfigInt(spellConfig, "values.particle-density", DEFAULT_PARTICLE_DENSITY),
+            SpellUtils.getConfigDouble(spellConfig, "values.wind-force", DEFAULT_WIND_FORCE),
+            SpellUtils.getConfigBoolean(spellConfig, "flags.pulse-lightning", DEFAULT_PULSE_LIGHTNING)
         );
     }
 

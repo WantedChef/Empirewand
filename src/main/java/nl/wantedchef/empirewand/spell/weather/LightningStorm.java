@@ -5,6 +5,7 @@ import nl.wantedchef.empirewand.spell.PrereqInterface;
 import nl.wantedchef.empirewand.spell.Spell;
 import nl.wantedchef.empirewand.spell.SpellContext;
 import nl.wantedchef.empirewand.spell.SpellType;
+import nl.wantedchef.empirewand.spell.util.SpellUtils;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -93,12 +94,12 @@ public class LightningStorm extends Spell<Void> {
         Location center = player.getLocation().clone();
 
         // Configuration values
-        double radius = spellConfig.getDouble("values.radius", 12.0);
-        int chainStrikes = spellConfig.getInt("values.chain-strikes", 3);
-        double chainRange = spellConfig.getDouble("values.chain-range", 8.0);
-        double stormDuration = spellConfig.getDouble("values.duration", 6.0);
-        boolean damageEntities = spellConfig.getBoolean("values.damage-entities", true);
-        double damage = spellConfig.getDouble("values.damage", 8.0);
+        double radius = SpellUtils.getConfigDouble(spellConfig, "values.radius", 12.0);
+        int chainStrikes = SpellUtils.getConfigInt(spellConfig, "values.chain-strikes", 3);
+        double chainRange = SpellUtils.getConfigDouble(spellConfig, "values.chain-range", 8.0);
+        double stormDuration = SpellUtils.getConfigDouble(spellConfig, "values.duration", 6.0);
+        boolean damageEntities = SpellUtils.getConfigBoolean(spellConfig, "values.damage-entities", true);
+        double damage = SpellUtils.getConfigDouble(spellConfig, "values.damage", 8.0);
 
         // Create storm clouds above the area
         createStormClouds(context, world, center, radius);
